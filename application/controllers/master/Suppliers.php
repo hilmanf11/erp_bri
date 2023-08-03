@@ -12,7 +12,7 @@ class Suppliers extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[20]|is_unique[suppliers.number]');
+        $this->form_validation->set_rules('code', 'Code', 'required|min_length[1]|max_length[10]|is_unique[suppliers.code]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -34,6 +34,15 @@ class Suppliers extends CI_Controller
         $send = $this->crud->reads('suppliers', ["name" => $post]);
         echo json_encode($send);
     }
+    //CODE OTOMATIS
+    public function autoid(){
+        $sql = $this->db->query("SELECT max(`number`) as kode From suppliers");
+        $row = $sql->row();
+        $kode = substr($row->kode, 1);
+        $autoid = "S". sprintf("%03s", $kode + 1);
+        echo $autoid;
+    }
+
     //GET DATATABLES
     public function datatables()
     {
@@ -60,7 +69,7 @@ class Suppliers extends CI_Controller
                     }
                 }
             }
-            $this->db->order_by('name', 'ASC');
+            $this->db->order_by('number', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -92,10 +101,14 @@ class Suppliers extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
-            $post = $this->input->post();
-            $send = $this->crud->update('suppliers', ["id" => $id], $post);
-            echo $send;
+            if ($this->form_validation->run() == TRUE) {
+                $id   = base64_decode($this->input->get('id'));
+                $post = $this->input->post();
+                $send = $this->crud->update('suppliers', ["id" => $id], $post);
+                echo $send;
+            } else {
+                show_error(validation_errors());
+            }
         } else {
             show_error("Cannot Process your request");
         }
@@ -107,7 +120,114 @@ class Suppliers extends CI_Controller
         $send = $this->crud->delete('suppliers', $data);
         echo $send;
     }
-    //PRINT & EXCEL DATA
+    //UPLOAD DATA
+    public function upload()
+    {
+        error_reporting(0);
+        require_once 'assets/vendors/excel_reader2.php';
+        $target = basename($_FILES['file_upload']['name']);
+        move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
+        chmod($_FILES['file_upload']['name'], 0777);
+        $file = $_FILES['file_upload']['name'];
+        $data = new Spreadsheet_Excel_Reader($file, false);
+        $total_row = $data->rowcount($sheet_index = 0);
+        for ($i = 3; $i <= $total_row; $i++) {
+            $datas[] = array(
+                //excel
+                'name' => $data->val($i, 2),
+                'code' => $data->val($i, 3),
+                'type' => $data->val($i, 4),
+                'address' => $data->val($i, 5),
+                'contact_person' => $data->val($i, 6),
+                'telp' => $data->val($i, 7),
+                'fax' => $data->val($i, 8),
+                'email' => $data->val($i, 9),
+                'website' => $data->val($i, 10),
+                'currency' => $data->val($i, 11),
+                'payment_term' => $data->val($i, 12),
+                'incoterm' => $data->val($i, 13),
+                'vat_status' => $data->val($i, 14),
+                'vat' => $data->val($i, 15),
+                'tax_no' => $data->val($i, 16),
+                'bank_account' => $data->val($i, 17),
+                'bank_name' => $data->val($i, 18)
+            );
+        }
+        $datas['total'] = count($datas);
+        echo json_encode($datas);
+        unlink($_FILES['file_upload']['name']);
+    }
+    public function uploadclearFailed()
+    {
+        @unlink('excel/failed/suppliers.txt');
+    }
+    public function uploadcreateFailed()
+    {
+        if ($this->input->post()) {
+            $message = $this->input->post('message');
+            $textFailed = fopen('excel/failed/suppliers.txt', 'a');
+            fwrite($textFailed, $message . "\n");
+            fclose($textFailed);
+        }
+    }
+
+    //UPLOAD DOWNLOAD FAILED
+    public function uploadDownloadFailed()
+    {
+        $file = "excel/failed/suppliers.txt";
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
+    }
+
+    //UPLOAD CREATE DATA
+    public function uploadcreate()
+    {
+        if ($this->input->post()) {
+            $data = $this->input->post('data');
+            //Cek Process Number
+            $suppliers = $this->crud->read('suppliers', [], ["code" => $data['code']]);
+
+            $sql = $this->db->query("SELECT max(`number`) as kode From suppliers");
+            $row = $sql->row();
+            $kode = substr($row->kode, 1);
+            $autoid = "S". sprintf("%03s", $kode + 1);
+
+            if (!empty($main_process->id)) {
+                echo json_encode(array("title" => "Available", "message" => "Code " . $data['code'] . " has been Available", "theme" => "error"));
+            } else {
+                $dataFinal = array(
+                    // field      //excel
+                    "number" => $autoid,
+                    "name" => $data['name'],
+                    "code" => $data['code'],
+                    "type" => $data['type'],
+                    "address" => $data['address'],
+                    "attention" => $data['contact_person'],
+                    "telp" => $data['telp'],
+                    "fax" => $data['fax'],
+                    "email" => $data['email'],
+                    "website" => $data['website'],
+                    "currency" => $data['currency'],
+                    "payment_term" => $data['payment_term'],
+                    "incoterm" => $data['incoterm'],
+                    "vat_status" => $data['vat_status'],
+                    "vat" => $data['vat'],
+                    "tax" => $data['tax_no'],
+                    "bank_account" => $data['bank_account'],
+                    "bank_name" => $data['bank_name'],
+                );
+                $send   = $this->crud->create('suppliers', $dataFinal);
+                echo $send;
+            }
+        }
+    }
+    // PRINT & EXCEL DATA
     public function print($option = "")
     {
         if ($option == "excel") {
@@ -127,7 +247,7 @@ class Suppliers extends CI_Controller
         $this->db->order_by('a.name', 'ASC');
         $records = $this->db->get()->result_array();
 
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#suppliers {border-collapse: collapse;width: 100%;font-size: 12px;}#suppliers td, #suppliers th {border: 1px solid #ddd;padding: 2px;}#suppliers tr:nth-child(even){background-color: #f2f2f2;}#suppliers tr:hover {background-color: #ddd;}#suppliers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">
                 <table style="width: 100%;">
@@ -149,7 +269,7 @@ class Suppliers extends CI_Controller
         </center>
         <br><br><br>
         
-        <table id="customers" border="1">
+        <table id="suppliers" border="1">
             <tr>
                 <th width="20">No</th>
                 <th>Code</th>

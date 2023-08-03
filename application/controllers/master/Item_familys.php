@@ -12,7 +12,7 @@ class Item_familys extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[20]|is_unique[item_familys.number]');
+        $this->form_validation->set_rules('code', 'Code', 'required|min_length[1]|max_length[20]|is_unique[item_familys.code]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -31,8 +31,18 @@ class Item_familys extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT a.*, b.account_name FROM item_familys a LEFT JOIN account_coa b ON a.account_number = b.account_number WHERE a.name like '%$post%'");
+        $send = $this->crud->reads('item_familys', ["name" => $post]);
         echo json_encode($send);
+    }
+
+     //CODE OTOMATIS
+     public function autoid(){
+        $sql = $this->db->query("SELECT max(`number`) as kode From item_familys");
+        $row = $sql->row();
+        $kode = substr($row->kode, 1);
+        $autoid = "P". sprintf("%02s", $kode + 1);
+        echo $autoid;
+
     }
 
     public function readFg()
@@ -62,17 +72,14 @@ class Item_familys extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.account_name, c.name as item_category_name');
+            $this->db->select('a.*, b.name as item_category_name');
             $this->db->from('item_familys a');
-            $this->db->join('account_coa b', 'a.account_number = b.account_number', 'left');
-            $this->db->join('item_categories c', 'a.item_category_id = c.id', 'left');
+            $this->db->join('item_categories b', 'a.item_category_number = b.number');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if($filter->field == "account_name"){
-                        $this->db->like("b.".$filter->field, $filter->value);
-                    }else if($filter->field == "item_category_name"){
-                        $this->db->like("c.name", $filter->value);
+                    if($filter->field == "item_category_name"){
+                        $this->db->like("b.number", $filter->value);
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
                     }
@@ -137,10 +144,10 @@ class Item_familys extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        
-        $this->db->select('a.*, b.account_name');
+        //QUERRY PRINT
+        $this->db->select('a.*, b.name as item_category_name');
         $this->db->from('item_familys a');
-        $this->db->join('account_coa b', 'a.account_number = b.account_number', 'left');
+        $this->db->join('item_categories b', 'a.item_category_number = b.number');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('a.name', 'ASC');
         $records = $this->db->get()->result_array();
@@ -170,10 +177,10 @@ class Item_familys extends CI_Controller
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
-                <th>Code</th>
+                <th>Id</th>
                 <th>Name</th>
-                <th>Account No</th>
-                <th>Account Name</th>
+                <th>Code</th>
+                <th>Category</th>
                 <th>Description</th>
             </tr>';
         $no = 1;
@@ -181,8 +188,9 @@ class Item_familys extends CI_Controller
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['number'] . '</td>
-                    <td>' . $data['account_number'] . '</td>
-                    <td>' . $data['account_name'] . '</td>
+                    <td>' . $data['name'] . '</td>
+                    <td>' . $data['code'] . '</td>
+                    <td>' . $data['item_category_name'] . '</td>
                     <td>' . $data['description'] . '</td>';
             $no++;
         }

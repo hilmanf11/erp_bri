@@ -3,7 +3,8 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'number',width:80,align:'center'">Code</th>
+            <th rowspan="2" data-options="field:'number',width:80,align:'center'">ID</th>
+            <th rowspan="2" data-options="field:'code',width:80,align:'center'">Code</th>
             <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Name</th>
             <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -27,8 +28,12 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">ID</span>
+                <input style="width:30%;" name="number" id="number" required="" readonly class="easyui-textbox">
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Code</span>
-                <input style="width:30%;" name="number" required="" class="easyui-textbox">
+                <input style="width:30%;" name="code" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Name</span>
@@ -44,11 +49,21 @@
 <!-- PDF -->
 <iframe id="printout" src="<?= base_url('master/item_categories/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
+
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/item_categories/create') ?>';
         $('#frm_insert').form('clear');
+
+        $.ajax({
+            type: "post",
+            url: '<?= base_url('master/item_categories/autoid') ?>',
+            dataType: "html",
+            success: function (response) {
+                $('#number').textbox('setValue', response);
+            }
+        });
     }
     //EDIT DATA
     function update() {
@@ -133,7 +148,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            // $('#dlg_insert').dialog('close');
+                            $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
                     });

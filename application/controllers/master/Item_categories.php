@@ -11,8 +11,9 @@ class Item_categories extends CI_Controller
         $this->load->library('form_validation');
         $this->load->library('session');
         $this->load->model('crud');
+
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[20]|is_unique[item_categories.number]');
+        $this->form_validation->set_rules('code', 'Code', 'required|min_length[1]|max_length[10]|is_unique[item_categories.code]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -33,6 +34,15 @@ class Item_categories extends CI_Controller
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $send = $this->crud->reads('item_categories', ["name" => $post]);
         echo json_encode($send);
+    }
+    //CODE OTOMATIS
+    public function autoid(){
+        $sql = $this->db->query("SELECT max(`number`) as kode From item_categories");
+        $row = $sql->row();
+        $kode = substr($row->kode, 1);
+        $autoid = "C". sprintf("%02s", $kode + 1);
+        echo $autoid;
+
     }
     //GET DATATABLES
     public function datatables()
@@ -117,7 +127,7 @@ class Item_categories extends CI_Controller
         $this->db->select('*');
         $this->db->from('item_categories');
         $this->db->where('deleted', 0);
-        $this->db->order_by('name', 'ASC');
+        $this->db->order_by('number', 'ASC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
@@ -144,6 +154,7 @@ class Item_categories extends CI_Controller
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
+                <th>Id</th>
                 <th>Code</th>
                 <th>Name</th>
                 <th>Description</th>
@@ -153,6 +164,7 @@ class Item_categories extends CI_Controller
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['number'] . '</td>
+                    <td>' . $data['code'] . '</td>
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['description'] . '</td>';
             $no++;

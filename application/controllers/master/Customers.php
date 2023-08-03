@@ -12,7 +12,8 @@ class Customers extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[20]|is_unique[customers.number]');
+        $this->form_validation->set_rules('code', 'Code', 'required|min_length[1]|max_length[10]|is_unique[customers.code]');
+        
     }
     //HALAMAN UTAMA
     public function index()
@@ -33,6 +34,14 @@ class Customers extends CI_Controller
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $send = $this->crud->reads('customers', ["name" => $post]);
         echo json_encode($send);
+    }
+    //CODE OTOMATIS
+    public function autoid(){
+        $sql = $this->db->query("SELECT max(`number`) as kode From customers");
+        $row = $sql->row();
+        $kode = substr($row->kode, 1);
+        $autoid = "C". sprintf("%03s", $kode + 1);
+        echo $autoid;
     }
     //GET DATATABLES
     public function datatables()
@@ -60,7 +69,7 @@ class Customers extends CI_Controller
                     }
                 }
             }
-            $this->db->order_by('a.name', 'ASC');
+            $this->db->order_by('a.number', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -88,18 +97,22 @@ class Customers extends CI_Controller
             show_error("Cannot Process your request");
         }
     }
-    //UPDATE DATA
-    public function update()
-    {
-        if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
-            $post = $this->input->post();
-            $send = $this->crud->update('customers', ["id" => $id], $post);
-            echo $send;
-        } else {
-            show_error("Cannot Process your request");
-        }
-    }
+     //UPDATE DATA
+     public function update()
+     {
+         if ($this->input->post()) {
+             if ($this->form_validation->run() == TRUE) {
+                 $id   = base64_decode($this->input->get('id'));
+                 $post = $this->input->post();
+                 $send = $this->crud->update('customers', ["id" => $id], $post);
+                 echo $send;
+             } else {
+                 show_error(validation_errors());
+             }
+         } else {
+             show_error("Cannot Process your request");
+         }
+     }
     //DELETE DATA
     public function delete()
     {
@@ -107,6 +120,109 @@ class Customers extends CI_Controller
         $send = $this->crud->delete('customers', $data);
         echo $send;
     }
+
+    //UPLOAD DATA
+    public function upload()
+    {
+        error_reporting(0);
+        require_once 'assets/vendors/excel_reader2.php';
+        $target = basename($_FILES['file_upload']['name']);
+        move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
+        chmod($_FILES['file_upload']['name'], 0777);
+        $file = $_FILES['file_upload']['name'];
+        $data = new Spreadsheet_Excel_Reader($file, false);
+        $total_row = $data->rowcount($sheet_index = 0);
+        for ($i = 3; $i <= $total_row; $i++) {
+            $datas[] = array(
+                //excel
+                'name' => $data->val($i, 2),
+                'code' => $data->val($i, 3),
+                'type' => $data->val($i, 4),
+                'address' => $data->val($i, 5),
+                'billing_address' => $data->val($i, 6),
+                'contact_person' => $data->val($i, 7),
+                'telp' => $data->val($i, 8),
+                'billing_telp' => $data->val($i, 9),
+                'email' => $data->val($i, 10),
+                'website' => $data->val($i, 11),
+                'currency' => $data->val($i, 12),
+                'payment_term' => $data->val($i, 13),
+                'bank_account' => $data->val($i, 14),
+                'bank_name' => $data->val($i, 15)
+            );
+        }
+        $datas['total'] = count($datas);
+        echo json_encode($datas);
+        unlink($_FILES['file_upload']['name']);
+    }
+    public function uploadclearFailed()
+    {
+        @unlink('excel/failed/customers.txt');
+    }
+    public function uploadcreateFailed()
+    {
+        if ($this->input->post()) {
+            $message = $this->input->post('message');
+            $textFailed = fopen('excel/failed/customers.txt', 'a');
+            fwrite($textFailed, $message . "\n");
+            fclose($textFailed);
+        }
+    }
+
+    //UPLOAD DOWNLOAD FAILED
+    public function uploadDownloadFailed()
+    {
+        $file = "excel/failed/customers.txt";
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
+    }
+
+    //UPLOAD CREATE DATA
+    public function uploadcreate()
+    {
+        if ($this->input->post()) {
+            $data = $this->input->post('data');
+            //Cek Process Number
+            $customers = $this->crud->read('customers', [], ["code" => $data['code']]);
+
+            $sql = $this->db->query("SELECT max(`number`) as kode From customers");
+            $row = $sql->row();
+            $kode = substr($row->kode, 1);
+            $autoid = "C". sprintf("%03s", $kode + 1);
+
+            if (!empty($main_process->id)) {
+                echo json_encode(array("title" => "Available", "message" => "Code " . $data['code'] . " has been Available", "theme" => "error"));
+            } else {
+                $dataFinal = array(
+                    //field
+                    "number" => $autoid,
+                    "name" => $data['name'],
+                    "code" => $data['code'],
+                    "type" => $data['type'],
+                    "address" => $data['address'],
+                    "address_billing" => $data['billing_address'],
+                    "attention" => $data['contact_person'],
+                    "telp" => $data['telp'],
+                    "telp_billing" => $data['billing_telp'],
+                    "email" => $data['email'],
+                    "website" => $data['website'],
+                    "currency" => $data['currency'],
+                    "payment_term" => $data['payment_term'],
+                    "bank_account" => $data['bank_account'],
+                    "bank_name" => $data['bank_name'],
+                );
+                $send   = $this->crud->create('customers', $dataFinal);
+                echo $send;
+            }
+        }
+    }
+
     //PRINT & EXCEL DATA
     public function print($option = "")
     {
@@ -173,6 +289,7 @@ class Customers extends CI_Controller
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
+                <th>Id</th>
                 <th>Code</th>
                 <th>Name</th>
                 <th>Type</th>
@@ -194,6 +311,7 @@ class Customers extends CI_Controller
             $html .= '<tr>
                         <td>' . $no . '</td>
                         <td>' . $data['number'] . '</td>
+                        <td>' . $data['code'] . '</td>
                         <td>' . $data['name'] . '</td>
                         <td>' . $data['type'] . '</td>
                         <td>' . $data['address'] . '</td>
