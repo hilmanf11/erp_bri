@@ -3,28 +3,27 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'number',align:'center',width:100">Id</th>
-            <th rowspan="2" data-options="field:'name',halign:'center',width:200">Name</th>
-            <th rowspan="2" data-options="field:'code',align:'center',width:100">Code</th>
-            <th rowspan="2" data-options="field:'type',align:'center',width:100">Type</th>
-            <th rowspan="2" data-options="field:'address',halign:'center',width:250">Address</th>
-            <th rowspan="2" data-options="field:'attention',halign:'center',width:150">Contact Person</th>
-            <th rowspan="2" data-options="field:'telp',halign:'center',width:150">Telp</th>
-            <th rowspan="2" data-options="field:'fax',halign:'center',width:150">Fax</th>
-            <th rowspan="2" data-options="field:'email',halign:'center',width:200">Email</th>
-            <th rowspan="2" data-options="field:'website',halign:'center',width:150">Website</th>
-            <th rowspan="2" data-options="field:'currency',align:'center',width:80">Currency</th>
-            <th rowspan="2" data-options="field:'payment_term',align:'center',width:100">Payment Term</th>
-            <th rowspan="2" data-options="field:'incoterm',align:'center',width:80">Incoterm</th>
-            <th rowspan="2" data-options="field:'vat_status',align:'center',width:80">Vat Status</th>
-            <th rowspan="2" data-options="field:'vat',align:'center',width:80">Vat</th>
-            <th rowspan="2" data-options="field:'tax',halign:'center',width:120">Tax No</th>
-            <!-- <th rowspan="2" data-options="field:'account_number',width:100,halign:'center'">Account No</th>
-            <th rowspan="2" data-options="field:'account_name',width:200,halign:'center'">Account Name</th> -->
-            <th rowspan="2" data-options="field:'bank_account',halign:'center',width:120">Bank Account</th>
-            <th rowspan="2" data-options="field:'bank_name',halign:'center',width:200">Bank Name</th>
+            <th rowspan="2" data-options="field:'number',align:'center',width:100">Product ID</th>
+            <th rowspan="2" data-options="field:'code',halign:'center',width:250">Product Number</th>
+            <th rowspan="2" data-options="field:'name',halign:'center',width:250">Product Name</th>
+            <th rowspan="2" data-options="field:'specification',align:'center',width:100">Specification</th>
+            <th rowspan="2" data-options="field:'type',align:'center',width:120">Product Type</th>
+            <th rowspan="2" data-options="field:'uom_number',halign:'center',width:150">Unit Of Measure</th>
+            <th rowspan="2" data-options="field:'item_category_code',halign:'center',width:200">Category</th>
+            <th rowspan="2" data-options="field:'item_family_code',halign:'center',width:200">Product Family</th>
+            <th rowspan="2" data-options="field:'leadtime',halign:'center',width:150">Lead Time Production</th>
+            <th rowspan="2" data-options="field:'weight',halign:'center',width:100">Weight (gr)</th>
+            <th rowspan="2" data-options="field:'mpq',halign:'center',width:100">MPQ</th>
+            <th rowspan="2" data-options="field:'moq',align:'center',width:100">MOQ</th>
+            <th rowspan="2" data-options="field:'safety_stock',align:'center',width:150">Safety Stock (%)</th>
+            <th rowspan="2" data-options="field:'lot',width:100,halign:'center'">Lot</th>
+            <th rowspan="2" data-options="field:'lifetime',width:100,halign:'center'">Lifetime</th>
+            <th rowspan="2" data-options="field:'min',halign:'center',width:80">Min</th>
+            <th rowspan="2" data-options="field:'max',halign:'center',width:80">Max</th>
+            <th rowspan="2" data-options="field:'status',width:100,halign:'center'">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
+            
         </tr>
         <tr>
             <th data-options="field:'created_by',width:100,align:'center'"> By</th>
@@ -44,86 +43,80 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Id</span>
-                <input style="width:30%;" name="number" id="number" readonly required="" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Product ID</span>
+                <input style="width:30%;" name="number" id="number"  class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Name</span>
-                <input style="width:60%;" name="name" required="" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Product Number</span>
+                <input style="width:60%;" name="code" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Code</span>
-                <input style="width:30%;" name="code" required="" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Product Name</span>
+                <input style="width:30%;" name="name" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Type</span>
+                <span style="width:35%; display:inline-block;">Specification</span>
+                <input style="width:30%;" name="specification" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Product Type</span>
                 <select style="width:30%;" name="type" class="easyui-combobox" panelHeight="auto">
+                    <option value="EXPORT">EXPORT</option>
                     <option value="IMPORT">IMPORT</option>
                     <option value="LOCAL">LOCAL</option>
                 </select>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Address</span>
-                <input style="width:60%; height: 60px;" name="address" required="" class="easyui-textbox" multiline="true">
+                <span style="width:35%; display:inline-block;">Category</span>
+                <input style="width:60%;" name="item_category_code" id="item_category_code" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Contact Person</span>
-                <input style="width:60%;" name="attention" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Product Family</span>
+                <input style="width:60%;" name="item_family_code" id="item_family_code" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Telp</span>
-                <input style="width:60%;" name="telp" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Uom</span>
+                <input style="width:60%;" name="uom_number" id="uom_number" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Fax</span>
-                <input style="width:60%;" name="fax" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Lead Time Production</span>
+                <input style="width:60%;" name="leadtime" class="easyui-numberbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Email</span>
-                <input style="width:60%;" name="email" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Weight (gr)</span>
+                <input style="width:60%;" name="weight" class="easyui-numberbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Website</span>
-                <input style="width:60%;" name="website" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">MPQ</span>
+                <input style="width:60%;" name="mpq" class="easyui-numberbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Currency</span>
-                <input style="width:60%;" name="currency" id="currency" class="easyui-combogrid">
+                <span style="width:35%; display:inline-block;">MOQ</span>
+                <input style="width:60%;" name="moq" class="easyui-numberbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Payment Term (Days)</span>
-                <input style="width:30%;" name="payment_term" class="easyui-numberbox">
+                <span style="width:35%; display:inline-block;">Safety Stock (%)</span>
+                <input style="width:60%;" name="safety_stock" class="easyui-numberbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Incoterm</span>
-                <input style="width:60%;" name="incoterm" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Lot</span>
+                <input style="width:60%;" name="lot" class="easyui-numberbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Vat Status</span>
-                <select style="width:30%;" name="vat_status" class="easyui-combobox" panelHeight="auto">
-                    <option value="VAT">VAT</option>
-                    <option value="NON VAT">NON VAT</option>
-                </select>
+                <span style="width:35%; display:inline-block;">Lifetime</span>
+                <input style="width:60%;" name="lifetime" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">VAT (%)</span>
-                <input style="width:30%;" name="vat" class="easyui-numberbox">
+                <span style="width:35%; display:inline-block;">Min</span>
+                <input style="width:60%;" name="min" class="easyui-numberbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Tax No</span>
-                <input style="width:60%;" name="tax" class="easyui-textbox">
-            </div>
-            <!-- <div class="fitem">
-                <span style="width:35%; display:inline-block;">Account Name</span>
-                <input style="width:60%;" name="account_number" id="account_number" required="" class="easyui-combobox">
+                <span style="width:35%; display:inline-block;">Max</span>
+                <input style="width:60%;" name="max" class="easyui-numberbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Bank Account</span>
-                <input style="width:60%;" name="bank_account" class="easyui-textbox">
-            </div> -->
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Bank Name</span>
-                <input style="width:60%;" name="bank_name" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Status</span>
+                <input style="width:60%;" name="status" class="easyui-textbox">
             </div>
         </fieldset>
     </form>
@@ -149,17 +142,17 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/suppliers/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/items/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/suppliers/create') ?>';
+        url_save = '<?= base_url('master/items/create') ?>';
         $('#frm_insert').form('clear');
 
         $.ajax({
             type: "post",
-            url: '<?= base_url('master/suppliers/autoid') ?>',
+            url: '<?= base_url('master/items/autoid') ?>',
             dataType: "html",
             success: function (response) {
                 $('#number').textbox('setValue', response);
@@ -172,7 +165,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/suppliers/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('master/items/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -187,7 +180,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/suppliers/delete') ?>',
+                            url: '<?= base_url('master/items/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -210,23 +203,23 @@
         }
     }
 
-    //Upload Data
+   //Upload Data
     function upload() {
         $('#dlg_upload').dialog('open');
     }
 
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_suppliers.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_items.xls') ?>');
     }
-
     //PRINT PDF
     function pdf() {
         $("#printout").get(0).contentWindow.print();
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/suppliers/print/excel') ?>');
+        window.location.assign('<?= base_url('master/items/print/excel') ?>');
     }
+    
     //RELOAD
     function reload() {
         window.location.reload();
@@ -234,7 +227,7 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/suppliers/datatables') ?>',
+            url: '<?= base_url('master/items/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
@@ -290,19 +283,20 @@
                 }, ]
             ]
         });
-        //Upload Data
-        $('#dlg_upload').dialog({
+
+         //Upload Data
+         $('#dlg_upload').dialog({
             buttons: [{
                 text: 'List Failed',
                 handler: function() {
-                    window.open('<?= base_url('master/suppliers/uploadDownloadFailed') ?>', '_blank');
+                    window.open('<?= base_url('master/items/uploadDownloadFailed') ?>', '_blank');
                 }
             }, {
                 text: 'Upload',
                 iconCls: 'icon-ok',
                 handler: function() {
                     $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/suppliers/upload') ?>',
+                        url: '<?= base_url('master/items/upload') ?>',
                         onSubmit: function() {
                             if ($(this).form('validate') == false) {
                                 return $(this).form('validate');
@@ -317,7 +311,7 @@
                             $.messager.progress('close');
                             //Clear File
                             $.ajax({
-                                url: "<?= base_url('master/suppliers/uploadclearFailed') ?>"
+                                url: "<?= base_url('master/items/uploadclearFailed') ?>"
                             });
                             var json = eval('(' + result + ')');
                             requestData(json.total, json);
@@ -332,7 +326,7 @@
                                     $.ajax({
                                         type: "POST",
                                         async: true,
-                                        url: "<?= base_url('master/suppliers/uploadCreate') ?>",
+                                        url: "<?= base_url('master/items/uploadCreate') ?>",
                                         data: {
                                             "data": json[number - 1]
                                         },
@@ -350,7 +344,7 @@
                                                 $.ajax({
                                                     type: "POST",
                                                     async: true,
-                                                    url: "<?= base_url('master/suppliers/uploadcreateFailed') ?>",
+                                                    url: "<?= base_url('master/items/uploadcreateFailed') ?>",
                                                     data: {
                                                         data: json[number - 1],
                                                         message: result.message
@@ -370,11 +364,37 @@
             }]
         });
 
-        $('#account_number').combobox({
-            url: '<?= base_url('finance/account_coa/reads') ?>',
-            valueField: 'account_number',
-            textField: 'account_name',
-            prompt: "Choose Account No"
+
+        $('#item_category_code').combobox({
+            url: '<?php echo base_url('master/item_categories/reads'); ?>',
+            valueField: 'code',
+            textField: 'name',
+            prompt: "Choose Category",
+            onSelect: function(item_categories) {
+                $('#item_family_code').combobox({
+                    url: '<?php echo base_url('master/item_familys/reads'); ?>/' + item_categories.number,
+                    valueField: 'code',
+                    textField: 'name',
+                    prompt: "Choose Family Product"
+                    onSelect: function(item_family){
+                        $.ajax({
+                            type: "method",
+                            url: '<?php echo base_url('master/items/autoid/'); ?>' + item_categories.code + '/' + item_family.code,
+                            dataType: "html",
+                            success: function (response) {
+                                $('#number').textbox('setValue', response);
+                            }
+                        });
+                    }
+                });
+            }
+        });
+
+        $('#uom_number').combobox({
+            url: '<?= base_url('master/uom/reads') ?>',
+            valueField: 'number',
+            textField: 'name',
+            prompt: "Choose Unit Of Measure"
         });
     });
 </script>

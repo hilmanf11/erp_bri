@@ -56,19 +56,13 @@ class Customers extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.account_name');
+            $this->db->select('*');
             $this->db->from('customers a');
-            $this->db->join('account_coa b', 'a.account_number = b.account_number', 'left');
-            $this->db->where('a.deleted', 0);
+            $this->db->where('deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if($filter->field != "account_name"){
-                        $this->db->like("a.".$filter->field, $filter->value);
-                    }else{
-                        $this->db->like("b.".$filter->field, $filter->value);
-                    }
-                }
-            }
+                    $this->db->like("a.".$filter->field, $filter->value);
+            }}
             $this->db->order_by('a.number', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
@@ -237,11 +231,10 @@ class Customers extends CI_Controller
         $config = $this->db->get()->row();
         $config_iso = $this->db->get('config_iso')->row();
 
-        $this->db->select('a.*, b.account_name');
-        $this->db->from('customers a');
-        $this->db->join('account_coa b', 'a.account_number = b.account_number', 'left');
-        $this->db->where('a.deleted', 0);
-        $this->db->order_by('a.name', 'ASC');
+        $this->db->select('*');
+        $this->db->from('customers');
+        $this->db->where('deleted', 0);
+        $this->db->order_by('name', 'ASC');
         $records = $this->db->get()->result_array();
         
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
