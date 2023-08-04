@@ -36,7 +36,7 @@ class Suppliers extends CI_Controller
     }
     //CODE OTOMATIS
     public function autoid(){
-        $sql = $this->db->query("SELECT max(`number`) as kode From suppliers");
+        $sql = $this->db->query("SELECT max(`code`) as kode From suppliers");
         $row = $sql->row();
         $kode = substr($row->kode, 1);
         $autoid = "S". sprintf("%03s", $kode + 1);
@@ -188,7 +188,7 @@ class Suppliers extends CI_Controller
             //Cek Process Number
             $suppliers = $this->crud->read('suppliers', [], ["number" => $data['number']]);
 
-            $sql = $this->db->query("SELECT max(`number`) as kode From suppliers");
+            $sql = $this->db->query("SELECT max(`code`) as kode From suppliers");
             $row = $sql->row();
             $kode = substr($row->kode, 1);
             $autoid = "S". sprintf("%03s", $kode + 1);

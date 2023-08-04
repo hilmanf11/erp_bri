@@ -12,7 +12,7 @@ class Items extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('code', 'Code', 'required|min_length[1]|max_length[10]|is_unique[items.code]');
+        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[10]|is_unique[items.number]');
         
     }
     //HALAMAN UTAMA
@@ -36,11 +36,12 @@ class Items extends CI_Controller
          echo json_encode($send);
      }
      //CODE OTOMATIS
-     public function autoid(){
-         $sql = $this->db->query("SELECT max(`number`) as kode From items");
+     public function autoid($item_category_number, $item_family_number){
+        $code = $item_category_number.$item_family_number;
+         $sql = $this->db->query("SELECT max(`code`) as kode From items where code like '%$code%'");
          $row = $sql->row();
-         $kode = substr($row->kode, 1);
-         $autoid = "C". sprintf("%03s", $kode + 1);
+         $kode = substr($row->kode, 6);
+         $autoid = $code."NA". sprintf("%04s", $kode + 1);
          echo $autoid;
      }
 
@@ -59,27 +60,27 @@ class Items extends CI_Controller
              //Select Query
              $this->db->select('a.*, b.name as item_category_name , c.name as item_familys_name, d.name as item_uom_name');
              $this->db->from('items a');
-             $this->db->join('item_categories b', 'a.item_category_code = b.code');
-             $this->db->join('item_familys c', 'a.item_family_code = c.code');
+             $this->db->join('item_categories b', 'a.item_category_number = b.number');
+             $this->db->join('item_familys c', 'a.item_family_number = c.number');
              $this->db->join('uom d', 'a.uom_number = d.number');
              $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
                     if($filter->field == "item_category_name"){
-                        $this->db->like("b.code", $filter->value);
+                        $this->db->like("b.name", $filter->value);
 
                     }elseif($filter->field == "item_familys_name"){
-                        $this->db->like("c.code", $filter->value);
+                        $this->db->like("c.name", $filter->value);
                     
                     }elseif($filter->field == "item_uom_name"){
-                        $this->db->like("d.number", $filter->value);
+                        $this->db->like("d.name", $filter->value);
 
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
                     }
                 }
             }
-             $this->db->order_by('a.number', 'ASC');
+             $this->db->order_by('a.code', 'ASC');
              //Total Data
              $totalRows = $this->db->count_all_results('', false);
              //Limit 1 - 10
@@ -145,20 +146,24 @@ class Items extends CI_Controller
          for ($i = 3; $i <= $total_row; $i++) {
              $datas[] = array(
                  //excel
-                 'name' => $data->val($i, 2),
-                 'code' => $data->val($i, 3),
-                 'type' => $data->val($i, 4),
-                 'address' => $data->val($i, 5),
-                 'billing_address' => $data->val($i, 6),
-                 'contact_person' => $data->val($i, 7),
-                 'telp' => $data->val($i, 8),
-                 'billing_telp' => $data->val($i, 9),
-                 'email' => $data->val($i, 10),
-                 'website' => $data->val($i, 11),
-                 'currency' => $data->val($i, 12),
-                 'payment_term' => $data->val($i, 13),
-                 'bank_account' => $data->val($i, 14),
-                 'bank_name' => $data->val($i, 15)
+                 'part_no' => $data->val($i, 2),
+                 'part_name' => $data->val($i, 3),
+                 'specification' => $data->val($i, 4),
+                 'product_type' => $data->val($i, 5),
+                 'unit_of_measure' => $data->val($i, 6),
+                 'category' => $data->val($i, 7),
+                 'product_family' => $data->val($i, 8),
+                 'lead_time_production' => $data->val($i, 9),
+                 'weight' => $data->val($i, 10),
+                 'mpq' => $data->val($i, 11),
+                 'moq' => $data->val($i, 12),
+                 'safety_stock' => $data->val($i, 13),
+                 'lot' => $data->val($i, 14),
+                 'lifetime' => $data->val($i, 15),
+                 'min' => $data->val($i, 16),
+                 'max' => $data->val($i, 17),
+                 'status' => $data->val($i, 18)
+                 
              );
          }
          $datas['total'] = count($datas);
@@ -198,34 +203,38 @@ class Items extends CI_Controller
      {
          if ($this->input->post()) {
              $data = $this->input->post('data');
-             //Cek Process Number
-             $items = $this->crud->read('items', [], ["code" => $data['code']]);
- 
-             $sql = $this->db->query("SELECT max(`number`) as kode From items");
+             //Cek Process Number                                      Excel
+             $items = $this->crud->read('items', [], ["code" => $data['part_no']]);
+             
+             $code = $data['category'].$data['product_family'];
+             $sql = $this->db->query("SELECT max(`code`) as kode From items where code like '%$code%'");
              $row = $sql->row();
-             $kode = substr($row->kode, 1);
-             $autoid = "C". sprintf("%03s", $kode + 1);
+             $kode = substr($row->kode, 6);
+             $autoid = $code."NA". sprintf("%04s", $kode + 1);
  
-             if (!empty($main_process->id)) {
-                 echo json_encode(array("title" => "Available", "message" => "Code " . $data['code'] . " has been Available", "theme" => "error"));
+             if (!empty($items->id)) {                                                         //excel
+                 echo json_encode(array("title" => "Available", "message" => "Code " . $data['part_no'] . " has been Available", "theme" => "error"));
              } else {
                  $dataFinal = array(
-                     //field
-                     "number" => $autoid,
-                     "name" => $data['name'],
-                     "code" => $data['code'],
-                     "type" => $data['type'],
-                     "address" => $data['address'],
-                     "address_billing" => $data['billing_address'],
-                     "attention" => $data['contact_person'],
-                     "telp" => $data['telp'],
-                     "telp_billing" => $data['billing_telp'],
-                     "email" => $data['email'],
-                     "website" => $data['website'],
-                     "currency" => $data['currency'],
-                     "payment_term" => $data['payment_term'],
-                     "bank_account" => $data['bank_account'],
-                     "bank_name" => $data['bank_name'],
+                     //field        //excel
+                     "code" => $autoid,
+                     "number" => $data['part_no'],
+                     "name" => $data['part_name'],
+                     "specification" => $data['specification'],
+                     "type" => $data['product_type'],
+                     "uom_number" => $data['unit_of_measure'],
+                     "item_category_number" => $data['category'],
+                     "item_family_number" => $data['product_family'],
+                     "leadtime" => $data['lead_time_production'],
+                     "weight" => $data['weight'],
+                     "mpq" => $data['mpq'],
+                     "moq" => $data['moq'],
+                     "safety_stock" => $data['safety_stock'],
+                     "lot" => $data['lot'],
+                     "lifetime" => $data['lifetime'],
+                     "min" => $data['min'],
+                     "max" => $data['max'],
+                     "status" => $data['status'],
                  );
                  $send   = $this->crud->create('items', $dataFinal);
                  echo $send;
@@ -263,7 +272,7 @@ class Items extends CI_Controller
                          </td>
                          <td style="font-size: 14px; text-align: left; margin:2px;">
                              <b>' . $config->name . '</b><br>
-                             <small>MASTER CUSTOMER</small>
+                             <small>MASTER ITEMS</small>
                          </td>
                      </tr>
                  </table>
@@ -299,42 +308,46 @@ class Items extends CI_Controller
              <tr>
                  <th width="20">No</th>
                  <th>Id</th>
-                 <th>Code</th>
-                 <th>Name</th>
-                 <th>Type</th>
-                 <th>Address</th>
-                 <th>Billing Address</th>
-                 <th>Contact Person</th>
-                 <th>Billing Telp</th>
-                 <th>Email</th>
-                 <th>Website</th>
-                 <th>Currency</th>
-                 <th>Payment Term</th>
-                 <th>Account No</th>
-                 <th>Account Name</th>
-                 <th>Bank Account</th>
-                 <th>Bank Name</th>
+                 <th>Part No</th>
+                 <th>Part Name</th>
+                 <th>Specification</th>
+                 <th>Product Type</th>
+                 <th>Unit Of Measure</th>
+                 <th>Category</th>
+                 <th>Product Family</th>
+                 <th>Lead Time Production</th>
+                 <th>Weight (gr)</th>
+                 <th>MPQ</th>
+                 <th>MOQ</th>
+                 <th>Safety Stock (%)</th>
+                 <th>Lot</th>
+                 <th>Lifetime</th>
+                 <th>Min</th>
+                 <th>Max</th>
+                 <th>Status</th>
              </tr>';
          $no = 1;
          foreach ($records as $data) {
              $html .= '<tr>
                          <td>' . $no . '</td>
-                         <td>' . $data['number'] . '</td>
                          <td>' . $data['code'] . '</td>
+                         <td>' . $data['number'] . '</td>
                          <td>' . $data['name'] . '</td>
+                         <td>' . $data['specification'] . '</td>
                          <td>' . $data['type'] . '</td>
-                         <td>' . $data['address'] . '</td>
-                         <td>' . $data['address_billing'] . '</td>
-                         <td>' . $data['telp'] . '</td>
-                         <td>' . $data['telp_billing'] . '</td>
-                         <td>' . $data['email'] . '</td>
-                         <td>' . $data['website'] . '</td>
-                         <td>' . $data['currency'] . '</td>
-                         <td>' . $data['payment_term'] . '</td>
-                         <td>' . $data['account_number'] . '</td>
-                         <td>' . $data['account_name'] . '</td>
-                         <td>' . $data['bank_account'] . '</td>
-                         <td>' . $data['bank_name'] . '</td>
+                         <td>' . $data['uom_number'] . '</td>
+                         <td>' . $data['item_category_number'] . '</td>
+                         <td>' . $data['item_family_number'] . '</td>
+                         <td>' . $data['leadtime'] . '</td>
+                         <td>' . $data['weight'] . '</td>
+                         <td>' . $data['mpq'] . '</td>
+                         <td>' . $data['moq'] . '</td>
+                         <td>' . $data['safety_stock'] . '</td>
+                         <td>' . $data['lot'] . '</td>
+                         <td>' . $data['lifetime'] . '</td>
+                         <td>' . $data['min'] . '</td>
+                         <td>' . $data['max'] . '</td>
+                         <td>' . $data['status'] . '</td>
                      </tr>';
              $no++;
          }

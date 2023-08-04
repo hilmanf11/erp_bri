@@ -37,7 +37,7 @@ class Customers extends CI_Controller
     }
     //CODE OTOMATIS
     public function autoid(){
-        $sql = $this->db->query("SELECT max(`number`) as kode From customers");
+        $sql = $this->db->query("SELECT max(`code`) as kode From customers");
         $row = $sql->row();
         $kode = substr($row->kode, 1);
         $autoid = "C". sprintf("%03s", $kode + 1);
@@ -130,7 +130,7 @@ class Customers extends CI_Controller
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
                 //excel
-                'code' => $data->val($i, 2),
+                'name' => $data->val($i, 2),
                 'number' => $data->val($i, 3),
                 'type' => $data->val($i, 4),
                 'address' => $data->val($i, 5),

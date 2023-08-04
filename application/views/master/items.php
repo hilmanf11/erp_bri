@@ -3,14 +3,14 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'number',align:'center',width:100">Product ID</th>
-            <th rowspan="2" data-options="field:'code',halign:'center',width:250">Product Number</th>
+            <th rowspan="2" data-options="field:'code',align:'center',width:100">Product ID</th>
+            <th rowspan="2" data-options="field:'number',halign:'center',width:250">Product Number</th>
             <th rowspan="2" data-options="field:'name',halign:'center',width:250">Product Name</th>
             <th rowspan="2" data-options="field:'specification',align:'center',width:100">Specification</th>
             <th rowspan="2" data-options="field:'type',align:'center',width:120">Product Type</th>
             <th rowspan="2" data-options="field:'uom_number',halign:'center',width:150">Unit Of Measure</th>
-            <th rowspan="2" data-options="field:'item_category_code',halign:'center',width:200">Category</th>
-            <th rowspan="2" data-options="field:'item_family_code',halign:'center',width:200">Product Family</th>
+            <th rowspan="2" data-options="field:'item_category_name',halign:'center',width:200">Category</th>
+            <th rowspan="2" data-options="field:'item_familys_name',halign:'center',width:200">Product Family</th>
             <th rowspan="2" data-options="field:'leadtime',halign:'center',width:150">Lead Time Production</th>
             <th rowspan="2" data-options="field:'weight',halign:'center',width:100">Weight (gr)</th>
             <th rowspan="2" data-options="field:'mpq',halign:'center',width:100">MPQ</th>
@@ -44,11 +44,11 @@
             <legend><b>Form Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product ID</span>
-                <input style="width:30%;" name="number" id="number"  class="easyui-textbox">
+                <input style="width:30%;" name="code" id="code"  class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product Number</span>
-                <input style="width:60%;" name="code" required="" class="easyui-textbox">
+                <input style="width:60%;" name="number" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product Name</span>
@@ -68,11 +68,11 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Category</span>
-                <input style="width:60%;" name="item_category_code" id="item_category_code" required="" class="easyui-combobox">
+                <input style="width:60%;" name="item_category_number" id="item_category_number" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product Family</span>
-                <input style="width:60%;" name="item_family_code" id="item_family_code" required="" class="easyui-combobox">
+                <input style="width:60%;" name="item_family_number" id="item_family_number" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Uom</span>
@@ -365,24 +365,24 @@
         });
 
 
-        $('#item_category_code').combobox({
+        $('#item_category_number').combobox({
             url: '<?php echo base_url('master/item_categories/reads'); ?>',
-            valueField: 'code',
+            valueField: 'number',
             textField: 'name',
             prompt: "Choose Category",
             onSelect: function(item_categories) {
-                $('#item_family_code').combobox({
+                $('#item_family_number').combobox({
                     url: '<?php echo base_url('master/item_familys/reads'); ?>/' + item_categories.number,
-                    valueField: 'code',
+                    valueField: 'number',
                     textField: 'name',
-                    prompt: "Choose Family Product"
+                    prompt: "Choose Family Product",
                     onSelect: function(item_family){
                         $.ajax({
                             type: "method",
-                            url: '<?php echo base_url('master/items/autoid/'); ?>' + item_categories.code + '/' + item_family.code,
+                            url: '<?php echo base_url('master/items/autoid/'); ?>' + item_categories.number + '/' + item_family.number,
                             dataType: "html",
                             success: function (response) {
-                                $('#number').textbox('setValue', response);
+                                $('#code').textbox('setValue', response);
                             }
                         });
                     }
