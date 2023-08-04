@@ -3,9 +3,9 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'number',align:'center',width:100">Id</th>
+            <th rowspan="2" data-options="field:'code',align:'center',width:100">Id</th>
+            <th rowspan="2" data-options="field:'number',align:'center',width:100">Code</th>
             <th rowspan="2" data-options="field:'name',halign:'center',width:200">Name</th>
-            <th rowspan="2" data-options="field:'code',align:'center',width:100">Code</th>
             <th rowspan="2" data-options="field:'type',align:'center',width:100">Type</th>
             <th rowspan="2" data-options="field:'address',halign:'center',width:250">Address</th>
             <th rowspan="2" data-options="field:'attention',halign:'center',width:150">Contact Person</th>
@@ -45,15 +45,15 @@
             <legend><b>Form Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Id</span>
-                <input style="width:30%;" name="number" id="number" readonly required="" class="easyui-textbox">
+                <input style="width:30%;" name="code" id="code" readonly required="" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Code</span>
+                <input style="width:30%;" name="number" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Name</span>
                 <input style="width:60%;" name="name" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Code</span>
-                <input style="width:30%;" name="code" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Type</span>
@@ -116,11 +116,11 @@
             <!-- <div class="fitem">
                 <span style="width:35%; display:inline-block;">Account Name</span>
                 <input style="width:60%;" name="account_number" id="account_number" required="" class="easyui-combobox">
-            </div>
+            </div> -->
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Bank Account</span>
                 <input style="width:60%;" name="bank_account" class="easyui-textbox">
-            </div> -->
+            </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Bank Name</span>
                 <input style="width:60%;" name="bank_name" class="easyui-textbox">
@@ -162,7 +162,7 @@
             url: '<?= base_url('master/suppliers/autoid') ?>',
             dataType: "html",
             success: function (response) {
-                $('#number').textbox('setValue', response);
+                $('#code').textbox('setValue', response);
             }
         });
     }
@@ -368,13 +368,6 @@
                     });
                 }
             }]
-        });
-
-        $('#account_number').combobox({
-            url: '<?= base_url('finance/account_coa/reads') ?>',
-            valueField: 'account_number',
-            textField: 'account_name',
-            prompt: "Choose Account No"
         });
     });
 </script>

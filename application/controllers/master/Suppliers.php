@@ -12,7 +12,7 @@ class Suppliers extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('code', 'Code', 'required|min_length[1]|max_length[10]|is_unique[suppliers.code]');
+        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[10]|is_unique[suppliers.number]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -61,9 +61,10 @@ class Suppliers extends CI_Controller
             $this->db->where('deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                        $this->db->like($filter->field, $filter->value);
-            }}
-            $this->db->order_by('number', 'ASC');
+                    $this->db->like("b.".$filter->field, $filter->value);
+                }
+            }
+            $this->db->order_by('code', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -129,7 +130,7 @@ class Suppliers extends CI_Controller
             $datas[] = array(
                 //excel
                 'name' => $data->val($i, 2),
-                'code' => $data->val($i, 3),
+                'number' => $data->val($i, 3),
                 'type' => $data->val($i, 4),
                 'address' => $data->val($i, 5),
                 'contact_person' => $data->val($i, 6),
@@ -185,7 +186,7 @@ class Suppliers extends CI_Controller
         if ($this->input->post()) {
             $data = $this->input->post('data');
             //Cek Process Number
-            $suppliers = $this->crud->read('suppliers', [], ["code" => $data['code']]);
+            $suppliers = $this->crud->read('suppliers', [], ["number" => $data['number']]);
 
             $sql = $this->db->query("SELECT max(`number`) as kode From suppliers");
             $row = $sql->row();
@@ -193,13 +194,13 @@ class Suppliers extends CI_Controller
             $autoid = "S". sprintf("%03s", $kode + 1);
 
             if (!empty($main_process->id)) {
-                echo json_encode(array("title" => "Available", "message" => "Code " . $data['code'] . " has been Available", "theme" => "error"));
+                echo json_encode(array("title" => "Available", "message" => "Code " . $data['number'] . " has been Available", "theme" => "error"));
             } else {
                 $dataFinal = array(
                     // field      //excel
-                    "number" => $autoid,
+                    "code" => $autoid,
                     "name" => $data['name'],
-                    "code" => $data['code'],
+                    "number" => $data['number'],
                     "type" => $data['type'],
                     "address" => $data['address'],
                     "attention" => $data['contact_person'],

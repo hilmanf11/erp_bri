@@ -12,7 +12,7 @@ class Customers extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('code', 'Code', 'required|min_length[1]|max_length[10]|is_unique[customers.code]');
+        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[10]|is_unique[customers.number]');
         
     }
     //HALAMAN UTAMA
@@ -57,13 +57,14 @@ class Customers extends CI_Controller
             $result = array();
             //Select Query
             $this->db->select('*');
-            $this->db->from('customers a');
+            $this->db->from('customers');
             $this->db->where('deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    $this->db->like("a.".$filter->field, $filter->value);
-            }}
-            $this->db->order_by('a.number', 'ASC');
+                    $this->db->like("b.".$filter->field, $filter->value);
+                }
+            }
+            $this->db->order_by('code', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -129,8 +130,8 @@ class Customers extends CI_Controller
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
                 //excel
-                'name' => $data->val($i, 2),
-                'code' => $data->val($i, 3),
+                'code' => $data->val($i, 2),
+                'number' => $data->val($i, 3),
                 'type' => $data->val($i, 4),
                 'address' => $data->val($i, 5),
                 'billing_address' => $data->val($i, 6),
@@ -183,21 +184,21 @@ class Customers extends CI_Controller
         if ($this->input->post()) {
             $data = $this->input->post('data');
             //Cek Process Number
-            $customers = $this->crud->read('customers', [], ["code" => $data['code']]);
+            $customers = $this->crud->read('customers', [], ["number" => $data['number']]);
 
-            $sql = $this->db->query("SELECT max(`number`) as kode From customers");
+            $sql = $this->db->query("SELECT max(`code`) as kode From customers");
             $row = $sql->row();
             $kode = substr($row->kode, 1);
             $autoid = "C". sprintf("%03s", $kode + 1);
 
             if (!empty($main_process->id)) {
-                echo json_encode(array("title" => "Available", "message" => "Code " . $data['code'] . " has been Available", "theme" => "error"));
+                echo json_encode(array("title" => "Available", "message" => "Code " . $data['number'] . " has been Available", "theme" => "error"));
             } else {
                 $dataFinal = array(
                     //field
-                    "number" => $autoid,
+                    "code" => $autoid,
+                    "number" => $data['number'],
                     "name" => $data['name'],
-                    "code" => $data['code'],
                     "type" => $data['type'],
                     "address" => $data['address'],
                     "address_billing" => $data['billing_address'],
@@ -253,28 +254,8 @@ class Customers extends CI_Controller
                 </table>
             </div>
             <div style="float: right; font-size: 12px; text-align: right;">
-                <table style="width:100%; font-size:10px;">
-                    <tr>
-                        <td width="60">Doc No</td>
-                        <td width="5">:</td>
-                        <td width="100">' . $config_iso->doc_customer . '</td>
-                    </tr>
-                    <tr>
-                        <td>Form</td>
-                        <td>:</td>
-                        <td>' . $config_iso->form_customer . '</td>
-                    </tr>
-                    <tr>
-                        <td>Print Date</td>
-                        <td>:</td>
-                        <td>' . date("Y-m-d H:i") . '</td>
-                    </tr>
-                    <tr>
-                        <td>Print By</td>
-                        <td>:</td>
-                        <td>' . $this->session->name . '</td>
-                    </tr>
-                </table> 
+                Print Date ' . date("d M Y H:m:s") . ' <br>
+                Print By ' . $this->session->username . '  
             </div>
         </center>
         <br><br><br><br>
@@ -294,8 +275,6 @@ class Customers extends CI_Controller
                 <th>Website</th>
                 <th>Currency</th>
                 <th>Payment Term</th>
-                <th>Account No</th>
-                <th>Account Name</th>
                 <th>Bank Account</th>
                 <th>Bank Name</th>
             </tr>';
@@ -303,8 +282,8 @@ class Customers extends CI_Controller
         foreach ($records as $data) {
             $html .= '<tr>
                         <td>' . $no . '</td>
-                        <td>' . $data['number'] . '</td>
                         <td>' . $data['code'] . '</td>
+                        <td>' . $data['number'] . '</td>
                         <td>' . $data['name'] . '</td>
                         <td>' . $data['type'] . '</td>
                         <td>' . $data['address'] . '</td>
@@ -315,8 +294,6 @@ class Customers extends CI_Controller
                         <td>' . $data['website'] . '</td>
                         <td>' . $data['currency'] . '</td>
                         <td>' . $data['payment_term'] . '</td>
-                        <td>' . $data['account_number'] . '</td>
-                        <td>' . $data['account_name'] . '</td>
                         <td>' . $data['bank_account'] . '</td>
                         <td>' . $data['bank_name'] . '</td>
                     </tr>';

@@ -28,35 +28,21 @@ class Item_familys extends CI_Controller
         }
     }
     //GET DATA
-    public function reads($number)
+    public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_familys', ["name" => $post], ["item_category_number"=> $number]);
+        $send = $this->crud->reads('item_familys', ["name" => $post]);
         echo json_encode($send);
     }
 
      //CODE OTOMATIS
      public function autoid(){
-        $sql = $this->db->query("SELECT max(`number`) as kode From item_familys");
+        $sql = $this->db->query("SELECT max(`code`) as kode From item_familys");
         $row = $sql->row();
         $kode = substr($row->kode, 1);
         $autoid = "P". sprintf("%02s", $kode + 1);
         echo $autoid;
 
-    }
-
-    public function readFg()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_familys', ["name" => $post], ["number" => "001"]);
-        echo json_encode($send);
-    }
-
-    public function readNotFg()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT * FROM item_familys WHERE `number` != '001'");
-        echo json_encode($send);
     }
 
     //GET DATATABLES
@@ -85,7 +71,7 @@ class Item_familys extends CI_Controller
                     }
                 }
             }
-            $this->db->order_by('a.name', 'ASC');
+            $this->db->order_by('a.code', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -149,7 +135,7 @@ class Item_familys extends CI_Controller
         $this->db->from('item_familys a');
         $this->db->join('item_categories b', 'a.item_category_number = b.number');
         $this->db->where('a.deleted', 0);
-        $this->db->order_by('a.name', 'ASC');
+        $this->db->order_by('a.code', 'ASC');
         $records = $this->db->get()->result_array();
 
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
@@ -162,7 +148,7 @@ class Item_familys extends CI_Controller
                         </td>
                         <td style="font-size: 14px; text-align: left; margin:2px;">
                             <b>' . $config->name . '</b><br>
-                            <small>MASTER ITEM FAMILY</small>
+                            <small>MASTER PRODUCT FAMILY</small>
                         </td>
                     </tr>
                 </table>
@@ -178,8 +164,8 @@ class Item_familys extends CI_Controller
             <tr>
                 <th width="20">No</th>
                 <th>Id</th>
-                <th>Name</th>
                 <th>Code</th>
+                <th>Name</th>
                 <th>Category</th>
                 <th>Description</th>
             </tr>';
@@ -187,9 +173,9 @@ class Item_familys extends CI_Controller
         foreach ($records as $data) {
             $html .= '<tr>
                     <td>' . $no . '</td>
+                    <td>' . $data['code'] . '</td>
                     <td>' . $data['number'] . '</td>
                     <td>' . $data['name'] . '</td>
-                    <td>' . $data['code'] . '</td>
                     <td>' . $data['item_category_name'] . '</td>
                     <td>' . $data['description'] . '</td>';
             $no++;

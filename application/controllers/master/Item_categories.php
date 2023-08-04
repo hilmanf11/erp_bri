@@ -37,7 +37,7 @@ class Item_categories extends CI_Controller
     }
     //CODE OTOMATIS
     public function autoid(){
-        $sql = $this->db->query("SELECT max(`number`) as kode From item_categories");
+        $sql = $this->db->query("SELECT max(`code`) as kode From item_categories");
         $row = $sql->row();
         $kode = substr($row->kode, 1);
         $autoid = "C". sprintf("%02s", $kode + 1);
@@ -65,7 +65,7 @@ class Item_categories extends CI_Controller
                     $this->db->like($filter->field, $filter->value);
                 }
             }
-            $this->db->order_by('number', 'ASC');
+            $this->db->order_by('code', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -124,11 +124,13 @@ class Item_categories extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
+
         $this->db->select('*');
         $this->db->from('item_categories');
         $this->db->where('deleted', 0);
-        $this->db->order_by('number', 'ASC');
+        $this->db->order_by('code', 'ASC');
         $records = $this->db->get()->result_array();
+
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">
@@ -163,8 +165,8 @@ class Item_categories extends CI_Controller
         foreach ($records as $data) {
             $html .= '<tr>
                     <td>' . $no . '</td>
-                    <td>' . $data['number'] . '</td>
                     <td>' . $data['code'] . '</td>
+                    <td>' . $data['number'] . '</td>
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['description'] . '</td>';
             $no++;

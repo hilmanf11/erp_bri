@@ -3,8 +3,8 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'number',width:80,align:'center'">ID</th>
-            <th rowspan="2" data-options="field:'code',width:80,align:'center'">Code</th>
+            <th rowspan="2" data-options="field:'code',width:80,align:'center'">ID</th>
+            <th rowspan="2" data-options="field:'number',width:80,align:'center'">Code</th>
             <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Name</th>
             <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -29,11 +29,11 @@
             <legend><b>Form Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">ID</span>
-                <input style="width:30%;" name="number" id="number" required="" readonly class="easyui-textbox">
+                <input style="width:30%;" name="code" id="number" required="" readonly class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Code</span>
-                <input style="width:30%;" name="code" required="" class="easyui-textbox">
+                <input style="width:30%;" name="number" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Name</span>
