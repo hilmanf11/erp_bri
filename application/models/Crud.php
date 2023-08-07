@@ -95,11 +95,19 @@ class Crud extends CI_Model
     {
         if ($this->session->username != "") {
             $id = $this->autoid($table);
-            $data = array_merge($values, [
-                "id" => $id,
-                "created_by" => $this->session->username,
-                "created_date" => date('Y-m-d H:i:s')
-            ]);
+
+            if (@$values['id'] == "") {
+                $data = array_merge($values, [
+                    "created_by" => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            } else {
+                $data = array_merge($values, [
+                    "id" => $id,
+                    "created_by" => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            }
 
             if ($this->db->insert($table, $data)) {
                 $this->logs("Create", json_encode($data), $table);
