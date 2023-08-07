@@ -51,7 +51,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Description</span>
-                <input style="width:60%;" name="description" class="easyui-textbox">
+                <input style="width:60%; height: 60px;" name="description" multiline="true" class="easyui-textbox">
             </div>
         </fieldset>
     </form>
