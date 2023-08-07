@@ -3,7 +3,7 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'code',width:80,align:'center'">ID</th>
+            <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
             <th rowspan="2" data-options="field:'number',width:80,halign:'center'">Code</th>
             <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Name</th>
             <th rowspan="2" data-options="field:'item_category_name',width:200,halign:'center'">Category</th>
@@ -30,7 +30,7 @@
             <legend><b>Form Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">ID</span>
-                <input style="width:30%;" name="code" id="code" required="" readonly class="easyui-textbox">
+                <input style="width:30%;" name="id" id="id" required="" readonly class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Code</span>
@@ -65,7 +65,7 @@
             url: '<?= base_url('master/item_familys/autoid') ?>',
             dataType: "html",
             success: function (response) {
-                $('#code').textbox('setValue', response);
+                $('#id').textbox('setValue', response);
             }
         });
     }

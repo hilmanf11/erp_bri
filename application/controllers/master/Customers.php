@@ -37,7 +37,7 @@ class Customers extends CI_Controller
     }
     //CODE OTOMATIS
     public function autoid(){
-        $sql = $this->db->query("SELECT max(`code`) as kode From customers");
+        $sql = $this->db->query("SELECT max(`id`) as kode From customers");
         $row = $sql->row();
         $kode = substr($row->kode, 1);
         $autoid = "C". sprintf("%03s", $kode + 1);
@@ -64,7 +64,7 @@ class Customers extends CI_Controller
                     $this->db->like("b.".$filter->field, $filter->value);
                 }
             }
-            $this->db->order_by('code', 'ASC');
+            $this->db->order_by('id', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -186,7 +186,7 @@ class Customers extends CI_Controller
             //Cek Process Number
             $customers = $this->crud->read('customers', [], ["number" => $data['number']]);
 
-            $sql = $this->db->query("SELECT max(`code`) as kode From customers");
+            $sql = $this->db->query("SELECT max(`id`) as kode From customers");
             $row = $sql->row();
             $kode = substr($row->kode, 1);
             $autoid = "C". sprintf("%03s", $kode + 1);
@@ -196,7 +196,7 @@ class Customers extends CI_Controller
             } else {
                 $dataFinal = array(
                     //field
-                    "code" => $autoid,
+                    "id" => $autoid,
                     "number" => $data['number'],
                     "name" => $data['name'],
                     "type" => $data['type'],
@@ -235,7 +235,7 @@ class Customers extends CI_Controller
         $this->db->select('*');
         $this->db->from('customers');
         $this->db->where('deleted', 0);
-        $this->db->order_by('name', 'ASC');
+        $this->db->order_by('id', 'ASC');
         $records = $this->db->get()->result_array();
         
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
@@ -282,7 +282,7 @@ class Customers extends CI_Controller
         foreach ($records as $data) {
             $html .= '<tr>
                         <td>' . $no . '</td>
-                        <td>' . $data['code'] . '</td>
+                        <td>' . $data['id'] . '</td>
                         <td>' . $data['number'] . '</td>
                         <td>' . $data['name'] . '</td>
                         <td>' . $data['type'] . '</td>

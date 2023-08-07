@@ -36,7 +36,7 @@ class Suppliers extends CI_Controller
     }
     //CODE OTOMATIS
     public function autoid(){
-        $sql = $this->db->query("SELECT max(`code`) as kode From suppliers");
+        $sql = $this->db->query("SELECT max(`id`) as kode From suppliers");
         $row = $sql->row();
         $kode = substr($row->kode, 1);
         $autoid = "S". sprintf("%03s", $kode + 1);
@@ -64,7 +64,7 @@ class Suppliers extends CI_Controller
                     $this->db->like("b.".$filter->field, $filter->value);
                 }
             }
-            $this->db->order_by('code', 'ASC');
+            $this->db->order_by('id', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -188,7 +188,7 @@ class Suppliers extends CI_Controller
             //Cek Process Number
             $suppliers = $this->crud->read('suppliers', [], ["number" => $data['number']]);
 
-            $sql = $this->db->query("SELECT max(`code`) as kode From suppliers");
+            $sql = $this->db->query("SELECT max(`id`) as kode From suppliers");
             $row = $sql->row();
             $kode = substr($row->kode, 1);
             $autoid = "S". sprintf("%03s", $kode + 1);
@@ -198,7 +198,7 @@ class Suppliers extends CI_Controller
             } else {
                 $dataFinal = array(
                     // field      //excel
-                    "code" => $autoid,
+                    "id" => $autoid,
                     "name" => $data['name'],
                     "number" => $data['number'],
                     "type" => $data['type'],
@@ -238,7 +238,7 @@ class Suppliers extends CI_Controller
         $this->db->select('*');
         $this->db->from('suppliers');
         $this->db->where('deleted', 0);
-        $this->db->order_by('name', 'ASC');
+        $this->db->order_by('id', 'ASC');
         $records = $this->db->get()->result_array();
 
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#suppliers {border-collapse: collapse;width: 100%;font-size: 12px;}#suppliers td, #suppliers th {border: 1px solid #ddd;padding: 2px;}#suppliers tr:nth-child(even){background-color: #f2f2f2;}#suppliers tr:hover {background-color: #ddd;}#suppliers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
@@ -279,8 +279,6 @@ class Suppliers extends CI_Controller
                 <th>Vat Status</th>
                 <th>Vat</th>
                 <th>Tax No</th>
-                <th>Account No</th>
-                <th>Account Name</th>
                 <th>Bank Account</th>
                 <th>Bank Name</th>
             </tr>';
@@ -301,8 +299,6 @@ class Suppliers extends CI_Controller
                     <td>' . $data['vat_status'] . '</td>
                     <td>' . $data['vat'] . '</td>
                     <td>' . $data['tax'] . '</td>
-                    <td>' . $data['account_number'] . '</td>
-                    <td>' . $data['account_name'] . '</td>
                     <td>' . $data['bank_account'] . '</td>
                     <td>' . $data['bank_name'] . '</td>';
             $no++;

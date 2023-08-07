@@ -12,7 +12,7 @@ class Item_familys extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('code', 'Code', 'required|min_length[1]|max_length[20]|is_unique[item_familys.code]');
+        $this->form_validation->set_rules('id', 'Code', 'required|min_length[1]|max_length[20]|is_unique[item_familys.id]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -37,7 +37,7 @@ class Item_familys extends CI_Controller
 
      //CODE OTOMATIS
      public function autoid(){
-        $sql = $this->db->query("SELECT max(`code`) as kode From item_familys");
+        $sql = $this->db->query("SELECT max(`id`) as kode From item_familys");
         $row = $sql->row();
         $kode = substr($row->kode, 1);
         $autoid = "P". sprintf("%02s", $kode + 1);
@@ -71,7 +71,7 @@ class Item_familys extends CI_Controller
                     }
                 }
             }
-            $this->db->order_by('a.code', 'ASC');
+            $this->db->order_by('a.id', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -135,7 +135,7 @@ class Item_familys extends CI_Controller
         $this->db->from('item_familys a');
         $this->db->join('item_categories b', 'a.item_category_number = b.number');
         $this->db->where('a.deleted', 0);
-        $this->db->order_by('a.code', 'ASC');
+        $this->db->order_by('a.name', 'ASC');
         $records = $this->db->get()->result_array();
 
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
@@ -173,7 +173,7 @@ class Item_familys extends CI_Controller
         foreach ($records as $data) {
             $html .= '<tr>
                     <td>' . $no . '</td>
-                    <td>' . $data['code'] . '</td>
+                    <td>' . $data['id'] . '</td>
                     <td>' . $data['number'] . '</td>
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['item_category_name'] . '</td>
