@@ -41,7 +41,7 @@ class Items extends CI_Controller
          $sql = $this->db->query("SELECT max(`code`) as kode From items where code like '%$code%'");
          $row = $sql->row();
          $kode = substr($row->kode, 6);
-         $autoid = $code."NA". sprintf("%04s", $kode + 1);
+         $autoid = $code."NA". "-". sprintf("%04s", $kode + 1);
          echo $autoid;
      }
 
