@@ -37,10 +37,10 @@ class Items extends CI_Controller
      }
      //CODE OTOMATIS
      public function autoid($item_category_number, $item_family_number){
-        $code = $item_category_number.$item_family_number;
-         $sql = $this->db->query("SELECT max(`code`) as kode From items where code like '%$code%'");
+        $code = $item_category_number.$item_family_number; 
+         $sql = $this->db->query("SELECT max(`id`) as kode From items where id like '%$code%'");
          $row = $sql->row();
-         $kode = substr($row->kode, 6);
+         $kode = substr($row->kode, 7);
          $autoid = $code."NA". "-". sprintf("%04s", $kode + 1);
          echo $autoid;
      }
@@ -80,7 +80,7 @@ class Items extends CI_Controller
                     }
                 }
             }
-             $this->db->order_by('a.code', 'ASC');
+             $this->db->order_by('a.id', 'ASC');
              //Total Data
              $totalRows = $this->db->count_all_results('', false);
              //Limit 1 - 10
@@ -108,6 +108,8 @@ class Items extends CI_Controller
              show_error("Cannot Process your request");
          }
      }
+    
+
       //UPDATE DATA
       public function update()
       {
@@ -204,10 +206,10 @@ class Items extends CI_Controller
          if ($this->input->post()) {
              $data = $this->input->post('data');
              //Cek Process Number                                      Excel
-             $items = $this->crud->read('items', [], ["code" => $data['part_no']]);
+             $items = $this->crud->read('items', [], ["id" => $data['part_no']]);
              
              $code = $data['category'].$data['product_family'];
-             $sql = $this->db->query("SELECT max(`code`) as kode From items where code like '%$code%'");
+             $sql = $this->db->query("SELECT max(`id`) as kode From items where id like '%$code%'");
              $row = $sql->row();
              $kode = substr($row->kode, 6);
              $autoid = $code."NA". sprintf("%04s", $kode + 1);
@@ -217,7 +219,7 @@ class Items extends CI_Controller
              } else {
                  $dataFinal = array(
                      //field        //excel
-                     "code" => $autoid,
+                     "id" => $autoid,
                      "number" => $data['part_no'],
                      "name" => $data['part_name'],
                      "specification" => $data['specification'],
@@ -256,10 +258,13 @@ class Items extends CI_Controller
          $config = $this->db->get()->row();
          $config_iso = $this->db->get('config_iso')->row();
  
-         $this->db->select('*');
-         $this->db->from('items');
-         $this->db->where('deleted', 0);
-         $this->db->order_by('name', 'ASC');
+         $this->db->select('a.*, b.name as item_category_name , c.name as item_familys_name, d.name as item_uom_name');
+         $this->db->from('items a');
+         $this->db->join('item_categories b', 'a.item_category_number = b.number');
+         $this->db->join('item_familys c', 'a.item_family_number = c.number');
+         $this->db->join('uom d', 'a.uom_number = d.number');
+         $this->db->where('a.deleted', 0);
+         $this->db->order_by('id', 'ASC');
          $records = $this->db->get()->result_array();
          
          $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#items {border-collapse: collapse;width: 100%;font-size: 12px;}#items td, #items th {border: 1px solid #ddd;padding: 2px;}#items tr:nth-child(even){background-color: #f2f2f2;}#items tr:hover {background-color: #ddd;}#items th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
@@ -330,14 +335,14 @@ class Items extends CI_Controller
          foreach ($records as $data) {
              $html .= '<tr>
                          <td>' . $no . '</td>
-                         <td>' . $data['code'] . '</td>
+                         <td>' . $data['id'] . '</td>
                          <td>' . $data['number'] . '</td>
                          <td>' . $data['name'] . '</td>
                          <td>' . $data['specification'] . '</td>
                          <td>' . $data['type'] . '</td>
-                         <td>' . $data['uom_number'] . '</td>
-                         <td>' . $data['item_category_number'] . '</td>
-                         <td>' . $data['item_family_number'] . '</td>
+                         <td>' . $data['item_uom_name'] . '</td>
+                         <td>' . $data['item_category_name'] . '</td>
+                         <td>' . $data['item_familys_name'] . '</td>
                          <td>' . $data['leadtime'] . '</td>
                          <td>' . $data['weight'] . '</td>
                          <td>' . $data['mpq'] . '</td>
