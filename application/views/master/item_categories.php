@@ -49,7 +49,6 @@
 <!-- PDF -->
 <iframe id="printout" src="<?= base_url('master/item_categories/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
-
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
