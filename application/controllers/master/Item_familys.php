@@ -12,7 +12,7 @@ class Item_familys extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('id', 'Code', 'required|min_length[1]|max_length[20]|is_unique[item_familys.id]');
+        $this->form_validation->set_rules('id', 'Code', 'required|min_length[1]|max_length[30]|is_unique[item_familys.id]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -27,11 +27,12 @@ class Item_familys extends CI_Controller
             redirect('error_access');
         }
     }
+
     //GET DATA
-    public function reads()
+    public function reads($category_number)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_familys', ["name" => $post]);
+        $send = $this->crud->reads('item_familys', ["name" => $post], ["item_category_number" => $category_number]);
         echo json_encode($send);
     }
 

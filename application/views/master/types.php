@@ -3,11 +3,8 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
-            <th rowspan="2" data-options="field:'item_category_name',width:200,halign:'center'">Category</th>
-            <th rowspan="2" data-options="field:'item_family_name',halign:'center',width:200">Product Family</th>
-            <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Code</th>
-            <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Name</th>
+            <th rowspan="2" data-options="field:'id',width:80,align:'center'">Id</th>
+            <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Name</th>
             <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -34,41 +31,29 @@
                 <input style="width:30%;" name="id" id="id" required="" readonly class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Category</span>
-                <input style="width:60%;" name="item_category_number" id="item_category_number" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product Family</span>
-                <input style="width:60%;" name="item_family_number" id="item_family_number" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Code</span>
-                <input style="width:30%;" name="number" required=""  class="easyui-textbox">
-            </div>
-            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Name</span>
                 <input style="width:60%;" name="name" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Description</span>
-                <input style="width:60%; height: 60px;" name="description" multiline="true" class="easyui-textbox">
+                <input style="width:60%; height:60px;" name="description" multiline:"true" class="easyui-textbox">
             </div>
         </fieldset>
     </form>
 </div>
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/item_family_subs/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/types/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/item_family_subs/create') ?>';
+        url_save = '<?= base_url('master/types/create') ?>';
         $('#frm_insert').form('clear');
-        //auto id
+        // auto id
         $.ajax({
-            type: "post",
-            url: '<?= base_url('master/item_family_subs/autoid') ?>',
-            dataType: "html",
+            types: "post",
+            url: '<?= base_url('master/types/autoid') ?>',
+            datatypes: "html",
             success: function (response) {
                 $('#id').textbox('setValue', response);
             }
@@ -80,7 +65,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/item_family_subs/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('master/types/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -95,7 +80,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/item_family_subs/delete') ?>',
+                            url: '<?= base_url('master/types/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -123,7 +108,7 @@
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/item_family_subs/print/excel') ?>');
+        window.location.assign('<?= base_url('master/types/print/excel') ?>');
     }
     //RELOAD
     function reload() {
@@ -132,12 +117,13 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/item_family_subs/datatables') ?>',
+            url: '<?= base_url('master/types/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
             rownumbers: true
         }).datagrid('enableFilter');
+
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
@@ -162,24 +148,6 @@
                     });
                 }
             }]
-        });
-
-        $('#item_category_number').combobox({
-            url: '<?php echo base_url('master/item_categories/reads'); ?>',
-            valueField: 'number',
-            textField: 'name',
-            prompt: "Choose Category",
-            onSelect: function(item_categories) {
-                $('#item_family_number').combobox({
-                    url: '<?php echo base_url('master/item_familys/reads'); ?>/' + item_categories.number,
-                    valueField: 'number',
-                    textField: 'name',
-                    prompt: "Choose Family Product",
-                    onSelect: function(item_family){
-                    }
-                });
-
-            }
         });
     });
 </script>

@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Item_categories extends CI_Controller
+class Types extends CI_Controller
 {
     public function __construct()
     {
@@ -13,7 +13,7 @@ class Item_categories extends CI_Controller
         $this->load->model('crud');
 
         //VALIDASI FORM
-        $this->form_validation->set_rules('id', 'Code', 'required|min_length[1]|max_length[30]|is_unique[item_categories.id]');
+        $this->form_validation->set_rules('name', 'Code', 'required|min_length[1]|max_length[30]|is_unique[types.name]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -23,26 +23,24 @@ class Item_categories extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('master/item_categories');
+            $this->load->view('master/types');
         } else {
             redirect('error_access');
         }
     }
-    
     //GET DATA
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_categories', ["name" => $post]);
+        $send = $this->crud->reads('types', ["name" => $post]);
         echo json_encode($send);
     }
-
     //CODE OTOMATIS
     public function autoid(){
-        $sql = $this->db->query("SELECT max(`id`) as kode From item_categories");
+        $sql = $this->db->query("SELECT max(`id`) as kode From types");
         $row = $sql->row();
         $kode = substr($row->kode, 1);
-        $autoid = "C". sprintf("%02s", $kode + 1);
+        $autoid = "T". sprintf("%02s", $kode + 1);
         echo $autoid;
 
     }
@@ -60,7 +58,7 @@ class Item_categories extends CI_Controller
             $result = array();
             //Select Query
             $this->db->select('*');
-            $this->db->from('item_categories');
+            $this->db->from('types');
             $this->db->where('deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
@@ -86,7 +84,7 @@ class Item_categories extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
-                $send   = $this->crud->create('item_categories', $post);
+                $send   = $this->crud->create('types', $post);
                 echo $send;
             } else {
                 show_error(validation_errors());
@@ -101,7 +99,7 @@ class Item_categories extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_deid($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('item_categories', ["id" => $id], $post);
+            $send = $this->crud->update('types', ["id" => $id], $post);
             echo $send;
         } else {
             show_error("Cannot Process your request");
@@ -111,7 +109,7 @@ class Item_categories extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('item_categories', $data);
+        $send = $this->crud->delete('types', $data);
         echo $send;
     }
     //PRINT & EXCEL DATA
@@ -119,8 +117,8 @@ class Item_categories extends CI_Controller
     {
         if ($option == "excel") {
             $format  = date("Ymd");
-            header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=item_categories_$format.xls");
+            header("Content-types: application/vnd-ms-excel");
+            header("Content-Disposition: attachment; filename=types_$format.xls");
         }
         //Config
         $this->db->select('*');
@@ -128,7 +126,7 @@ class Item_categories extends CI_Controller
         $config = $this->db->get()->row();
 
         $this->db->select('*');
-        $this->db->from('item_categories');
+        $this->db->from('types');
         $this->db->where('deleted', 0);
         $this->db->order_by('id', 'ASC');
         $records = $this->db->get()->result_array();
@@ -159,7 +157,6 @@ class Item_categories extends CI_Controller
             <tr>
                 <th width="20">No</th>
                 <th>Id</th>
-                <th>Code</th>
                 <th>Name</th>
                 <th>Description</th>
             </tr>';
@@ -168,7 +165,6 @@ class Item_categories extends CI_Controller
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['id'] . '</td>
-                    <td>' . $data['number'] . '</td>
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['description'] . '</td>';
             $no++;

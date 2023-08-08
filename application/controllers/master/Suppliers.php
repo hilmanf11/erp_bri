@@ -12,7 +12,7 @@ class Suppliers extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[10]|is_unique[suppliers.number]');
+        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[30]|is_unique[suppliers.number]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -96,17 +96,13 @@ class Suppliers extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            if ($this->form_validation->run() == TRUE) {
                 $id   = base64_decode($this->input->get('id'));
                 $post = $this->input->post();
                 $send = $this->crud->update('suppliers', ["id" => $id], $post);
                 echo $send;
             } else {
-                show_error(validation_errors());
+                show_error("Cannot Process your request");
             }
-        } else {
-            show_error("Cannot Process your request");
-        }
     }
     //DELETE DATA
     public function delete()
