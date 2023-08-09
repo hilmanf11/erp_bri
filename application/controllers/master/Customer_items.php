@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Items extends CI_Controller
+class Customer_items extends CI_Controller
 {
     public function __construct()
     {
@@ -12,7 +12,7 @@ class Items extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[30]|is_unique[items.number]');
+        $this->form_validation->set_rules('item_id', 'Code', 'required|min_length[1]|max_length[30]|is_unique[customer_items.item_id]');
         
     }
     //HALAMAN UTAMA
@@ -23,7 +23,7 @@ class Items extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('master/items');
+            $this->load->view('master/customer_items');
         } else {
             redirect('error_access');
         }
@@ -32,18 +32,37 @@ class Items extends CI_Controller
      public function reads()
      {
          $post = isset($_POST['q']) ? $_POST['q'] : "";
-         $send = $this->crud->reads('items', ["name" => $post]);
+         $send = $this->crud->reads('customer_items', ["name" => $post]);
          echo json_encode($send);
      }
-     //CODE OTOMATIS
-     public function autoid($item_category_number, $item_family_number){
-        $code = $item_category_number.$item_family_number; 
-         $sql = $this->db->query("SELECT max(`id`) as kode From items where id like '%$code%'");
-         $row = $sql->row();
-         $kode = substr($row->kode, 7);
-         $autoid = $code."NA". "-". sprintf("%04s", $kode + 1);
-         echo $autoid;
-     }
+
+    //CODE OTOMATIS
+    public function autoid() {
+        $currentYear = date('Y');
+        $sql = $this->db->query("SELECT max(`id`) as kode From customer_items");
+        $row = $sql->row();
+        
+        // Extract year and number from the existing code
+        $existingYear = substr($row->kode, 2, 4);
+        $existingNumber = substr($row->kode, -4);
+    
+        // Check if the year has changed
+        if ($existingYear != $currentYear) {
+            // Reset the number to 1
+            $newNumber = 1;
+        } else {
+            // Increment the existing number
+            $newNumber = intval($existingNumber) + 1;
+        }
+    
+        // Format the new number with leading zeros
+        $newNumberFormatted = sprintf("%04s", $newNumber);
+    
+        // Construct the new auto-generated ID
+        $autoid = "CI" . $currentYear . $newNumberFormatted;
+        
+        echo $autoid;
+    }
 
      //GET DATATABLES
      public function datatables()
@@ -58,19 +77,20 @@ class Items extends CI_Controller
              $offset = ($page - 1) * $rows;
              $result = array();
              //Select Query
-             $this->db->select('a.*, b.name as item_category_name , c.name as item_familys_name');
-             $this->db->from('items a');
-             $this->db->join('item_categories b', 'a.item_category_number = b.number');
-             $this->db->join('item_familys c', 'a.item_family_number = c.number');
+             $this->db->select('a.*, b.name as customers_name, c.number as item_number, c.name as item_name');
+             $this->db->from('customer_items a');
+             $this->db->join('customers b', 'a.customer_id = b.id');
+             $this->db->join('items c', 'a.item_id = c.id');
              $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if($filter->field == "item_category_name"){
+                    if($filter->field == "customers_name"){
                         $this->db->like("b.name", $filter->value);
+                    }elseif($filter->field == "item_number"){
+                        $this->db->like("c.number", $filter->value);
 
-                    }elseif($filter->field == "item_familys_name"){
+                    }elseif($filter->field == "item_name"){
                         $this->db->like("c.name", $filter->value);
-
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
                     }
@@ -95,7 +115,7 @@ class Items extends CI_Controller
          if ($this->input->post()) {
              if ($this->form_validation->run() == TRUE) {
                  $post   = $this->input->post();
-                 $send   = $this->crud->create('items', $post);
+                 $send   = $this->crud->create('customer_items', $post);
                  echo $send;
              } else {
                  show_error(validation_errors());
@@ -112,18 +132,18 @@ class Items extends CI_Controller
           if ($this->input->post()) {
                   $id   = base64_decode($this->input->get('id'));
                   $post = $this->input->post();
-                  $send = $this->crud->update('items', ["id" => $id], $post);
+                  $send = $this->crud->update('customer_items', ["id" => $id], $post);
                   echo $send;
               } else {
                 show_error("Cannot Process your request");
-        
+              
           }
       }
      //DELETE DATA
      public function delete()
      {
          $data = $this->input->post();
-         $send = $this->crud->delete('items', $data);
+         $send = $this->crud->delete('customer_items', $data);
          echo $send;
      }
  
@@ -141,23 +161,13 @@ class Items extends CI_Controller
          for ($i = 3; $i <= $total_row; $i++) {
              $datas[] = array(
                  //excel
-                 'part_no' => $data->val($i, 2),
-                 'part_name' => $data->val($i, 3),
-                 'specification' => $data->val($i, 4),
-                 'product_type' => $data->val($i, 5),
-                 'category' => $data->val($i, 6),
-                 'product_family' => $data->val($i, 7),
-                 'unit_of_measure' => $data->val($i, 8),
-                 'lead_time_production' => $data->val($i, 9),
-                 'weight' => $data->val($i, 10),
-                 'mpq' => $data->val($i, 11),
-                 'moq' => $data->val($i, 12),
-                 'safety_stock' => $data->val($i, 13),
-                 'lot' => $data->val($i, 14),
-                 'lifetime' => $data->val($i, 15),
-                 'min' => $data->val($i, 16),
-                 'max' => $data->val($i, 17),
-                 'status' => $data->val($i, 18)
+                 'customer_id' => $data->val($i, 2),
+                 'product_no' => $data->val($i, 3),
+                 'product_customer' => $data->val($i, 4),
+                 'currency' => $data->val($i, 5),
+                 'price' => $data->val($i, 6),
+                 'valid_date' => $data->val($i, 7),
+                 'description' => $data->val($i, 8)
                  
              );
          }
@@ -167,13 +177,13 @@ class Items extends CI_Controller
      }
      public function uploadclearFailed()
      {
-         @unlink('excel/failed/items.txt');
+         @unlink('excel/failed/customer_items.txt');
      }
      public function uploadcreateFailed()
      {
          if ($this->input->post()) {
              $message = $this->input->post('message');
-             $textFailed = fopen('excel/failed/items.txt', 'a');
+             $textFailed = fopen('excel/failed/customer_items.txt', 'a');
              fwrite($textFailed, $message . "\n");
              fclose($textFailed);
          }
@@ -182,7 +192,7 @@ class Items extends CI_Controller
      //UPLOAD DOWNLOAD FAILED
      public function uploadDownloadFailed()
      {
-         $file = "excel/failed/items.txt";
+         $file = "excel/failed/customer_items.txt";
          header('Content-Description: File Failed');
          header('Content-Disposition: attachment; filename=' . basename($file));
          header('Expires: 0');
@@ -196,55 +206,60 @@ class Items extends CI_Controller
      //UPLOAD CREATE DATA
      public function uploadcreate()
      {
-         if ($this->input->post()) {
-             $data = $this->input->post('data');
+        if ($this->input->post()) {
+            $data       = $this->input->post('data');
+
+            $currentYear = date('Y');
+            $sql = $this->db->query("SELECT max(`id`) as kode From customer_items");
+            $row = $sql->row();
             
-             //autoid
-             $code = $data['category'].$data['product_family'];
-             $sql = $this->db->query("SELECT max(`id`) as kode From items where id like '%$code%'");
-             $row = $sql->row();
-             $kode = substr($row->kode, 7);
-             $autoid = $code."NA"."-". sprintf("%04s", $kode + 1);
+            // Extract year and number from the existing code
+            $existingYear = substr($row->kode, 2, 4);
+            $existingNumber = substr($row->kode, -4);
+        
+            // Check if the year has changed
+            if ($existingYear != $currentYear) {
+                // Reset the number to 1
+                $newNumber = 1;
+            } else {
+                // Increment the existing number
+                $newNumber = intval($existingNumber) + 1;
+            }
+        
+            // Format the new number with leading zeros
+            $newNumberFormatted = sprintf("%04s", $newNumber);
+        
+            // Construct the new auto-generated ID
+            $autoid = "CI" . $currentYear . $newNumberFormatted;
 
+             //Cek Process Number     //table        //field           //field excel
+             $item = $this->crud->read('items', [], ["number" => $data['product_no']]);
+             $customer = $this->crud->read('customers', [], ["id" => $data['customer_id']]);
+             $customer_items = $this->crud->read('customer_items', [], ["item_id" => @$item->id]);
 
-            //Cek Process Number        //table                   //field           //field excel
-            $category = $this->crud->read('item_categories', [], ["number" => $data['category']]);
-            $prod_fam = $this->crud->read('item_familys', [], ["number" => $data['product_family']]);
-            $items = $this->crud->read('items', [], ["number" => $data['part_no']]);
-
-            if (empty($category->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Category Code " . $data['category'] . " Not Found", "theme" => "error"));
-            } elseif (empty($prod_fam->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Product Family Code " . $data['product_family'] . " Not Found", "theme" => "error"));
-            } elseif (!empty($items->number)) {
-                echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['part_no'] . " Duplicate Data", "theme" => "error"));
+            if (empty($item->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Product No " . $data['product_no'] . " Not Found", "theme" => "error"));
+            } elseif (empty($customer->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Customer " . $data['customer_id'] . " Not Found", "theme" => "error"));
+            } elseif (!empty($customer_items->item_id)) {
+                echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['product_no'] . " Duplicate Data", "theme" => "error"));
             } else {
                  $dataFinal = array(
                      //field        //excel
                      "id" => $autoid,
-                     "number" => $data['part_no'],
-                     "name" => $data['part_name'],
-                     "specification" => $data['specification'],
-                     "type" => $data['product_type'],
-                     "item_category_number" => $data['category'],
-                     "item_family_number" => $data['product_family'],
-                     "uom" => $data['unit_of_measure'],
-                     "leadtime" => $data['lead_time_production'],
-                     "weight" => $data['weight'],
-                     "mpq" => $data['mpq'],
-                     "moq" => $data['moq'],
-                     "safety_stock" => $data['safety_stock'],
-                     "lot" => $data['lot'],
-                     "lifetime" => $data['lifetime'],
-                     "min" => $data['min'],
-                     "max" => $data['max'],
-                     "status" => $data['status'],
+                     "customer_id" => $data['customer_id'],
+                     "item_id" => $item->id,
+                     "item_customer" => $data['product_customer'],
+                     "currency" => $data['currency'],
+                     "price" => $data['price'],
+                     "valid_date" => $data['valid_date'],
+                     "description" => $data['description'],
                  );
-                 $send   = $this->crud->create('items', $dataFinal);
+                 $send= $this->crud->create('customer_items', $dataFinal);
                  echo $send;
              }
          }
-     }
+    }
  
      //PRINT & EXCEL DATA
      public function print($option = "")
@@ -252,7 +267,7 @@ class Items extends CI_Controller
          if ($option == "excel") {
              $format  = date("Ymd");
              header("Content-type: application/vnd-ms-excel");
-             header("Content-Disposition: attachment; filename=items_$format.xls");
+             header("Content-Disposition: attachment; filename=customer_items_$format.xls");
          }
          //Config
          $this->db->select('*');
@@ -260,15 +275,15 @@ class Items extends CI_Controller
          $config = $this->db->get()->row();
          $config_iso = $this->db->get('config_iso')->row();
  
-         $this->db->select('a.*, b.name as item_category_name , c.name as item_familys_name');
-         $this->db->from('items a');
-         $this->db->join('item_categories b', 'a.item_category_number = b.number');
-         $this->db->join('item_familys c', 'a.item_family_number = c.number');
+         $this->db->select('a.*, b.name as customers_name, c.number as item_number, c.name as item_name');
+         $this->db->from('customer_items a');
+         $this->db->join('customers b', 'a.customer_id = b.id');
+         $this->db->join('items c', 'a.item_id = c.id');
          $this->db->where('a.deleted', 0);
          $this->db->order_by('id', 'ASC');
          $records = $this->db->get()->result_array();
          
-         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#items {border-collapse: collapse;width: 100%;font-size: 12px;}#items td, #items th {border: 1px solid #ddd;padding: 2px;}#items tr:nth-child(even){background-color: #f2f2f2;}#items tr:hover {background-color: #ddd;}#items th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customer_items {border-collapse: collapse;width: 100%;font-size: 12px;}#customer_items td, #customer_items th {border: 1px solid #ddd;padding: 2px;}#customer_items tr:nth-child(even){background-color: #f2f2f2;}#customer_items tr:hover {background-color: #ddd;}#customer_items th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
          <center>
              <div style="float: left; font-size: 12px; text-align: left;">
                  <table style="width: 100%;">
@@ -278,7 +293,7 @@ class Items extends CI_Controller
                          </td>
                          <td style="font-size: 14px; text-align: left; margin:2px;">
                              <b>' . $config->name . '</b><br>
-                             <small>MASTER ITEMS</small>
+                             <small>MASTER customer_items</small>
                          </td>
                      </tr>
                  </table>
@@ -310,50 +325,32 @@ class Items extends CI_Controller
          </center>
          <br><br><br><br>
          
-         <table id="items" border="1">
+         <table id="customer_items" border="1">
              <tr>
                  <th width="20">No</th>
-                 <th>Id</th>
-                 <th>Part No</th>
-                 <th>Part Name</th>
-                 <th>Specification</th>
-                 <th>Product Type</th>
-                 <th>Category</th>
-                 <th>Product Family</th>
-                 <th>Unit Of Measure</th>
-                 <th>Lead Time Production</th>
-                 <th>Weight (gr)</th>
-                 <th>MPQ</th>
-                 <th>MOQ</th>
-                 <th>Safety Stock (%)</th>
-                 <th>Lot</th>
-                 <th>Lifetime</th>
-                 <th>Min</th>
-                 <th>Max</th>
-                 <th>Status</th>
+                 <th>ID</th>
+                 <th>Customer Name</th>
+                 <th>Product Number</th>
+                 <th>Product Name</th>
+                 <th>Product Customer</th>
+                 <th>Currency</th>
+                 <th>Price</th>
+                 <th>Valid Date</th>
+                 <th>Description</th>
              </tr>';
          $no = 1;
          foreach ($records as $data) {
              $html .= '<tr>
                          <td>' . $no . '</td>
                          <td>' . $data['id'] . '</td>
-                         <td>' . $data['number'] . '</td>
-                         <td>' . $data['name'] . '</td>
-                         <td>' . $data['specification'] . '</td>
-                         <td>' . $data['type'] . '</td>
-                         <td>' . $data['item_category_name'] . '</td>
-                         <td>' . $data['item_familys_name'] . '</td>
-                         <td>' . $data['uom'] . '</td>
-                         <td>' . $data['leadtime'] . '</td>
-                         <td>' . $data['weight'] . '</td>
-                         <td>' . $data['mpq'] . '</td>
-                         <td>' . $data['moq'] . '</td>
-                         <td>' . $data['safety_stock'] . '</td>
-                         <td>' . $data['lot'] . '</td>
-                         <td>' . $data['lifetime'] . '</td>
-                         <td>' . $data['min'] . '</td>
-                         <td>' . $data['max'] . '</td>
-                         <td>' . $data['status'] . '</td>
+                         <td>' . $data['customers_name'] . '</td>
+                         <td>' . $data['item_number'] . '</td>
+                         <td>' . $data['item_name'] . '</td>
+                         <td>' . $data['item_customer'] . '</td>
+                         <td>' . $data['currency'] . '</td>
+                         <td>' . $data['price'] . '</td>
+                         <td>' . $data['valid_date'] . '</td>
+                         <td>' . $data['description'] . '</td>
                      </tr>';
              $no++;
          }

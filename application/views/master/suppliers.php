@@ -269,7 +269,7 @@
         $('#currency').combogrid({
             url: '<?= base_url('master/currencies/reads') ?>',
             panelWidth: 420,
-            idField: 'number',
+            idField: 'name',
             textField: 'name',
             mode: 'remote',
             fitColumns: true,

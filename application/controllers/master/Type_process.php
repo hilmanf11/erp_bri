@@ -97,7 +97,7 @@ class Type_process extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_deid($this->input->get('id'));
+            $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
             $send = $this->crud->update('type_process', ["id" => $id], $post);
             echo $send;

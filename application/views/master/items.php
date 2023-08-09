@@ -8,7 +8,7 @@
             <th rowspan="2" data-options="field:'name',halign:'center',width:250">Product Name</th>
             <th rowspan="2" data-options="field:'specification',align:'center',width:100">Specification</th>
             <th rowspan="2" data-options="field:'type',align:'center',width:120">Product Type</th>
-            <th rowspan="2" data-options="field:'item_uom_name',halign:'center',width:150">Unit Of Measure</th>
+            <th rowspan="2" data-options="field:'uom',halign:'center',width:150">Unit Of Measure</th>
             <th rowspan="2" data-options="field:'item_category_name',halign:'center',width:200">Category</th>
             <th rowspan="2" data-options="field:'item_familys_name',halign:'center',width:200">Product Family</th>
             <th rowspan="2" data-options="field:'leadtime',halign:'center',width:150">Lead Time Production</th>
@@ -76,7 +76,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Uom</span>
-                <input style="width:30%;" name="uom_number" id="uom_number" required="" class="easyui-combobox">
+                <input style="width:30%;" name="uom" id="uom" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Lead Time Production</span>
@@ -279,31 +279,32 @@
                 }
             }]
         });
-        // //GET CURRENCY
-        // $('#currency').combogrid({
-        //     url: '<?= base_url('master/currencies/reads') ?>',
-        //     panelWidth: 420,
-        //     idField: 'number',
-        //     textField: 'name',
-        //     mode: 'remote',
-        //     fitColumns: true,
-        //     prompt: "Choose Currency",
-        //     columns: [
-        //         [{
-        //             field: 'symbol',
-        //             title: 'Symbol',
-        //             width: 100
-        //         }, {
-        //             field: 'number',
-        //             title: 'Currency ID',
-        //             width: 120
-        //         }, {
-        //             field: 'name',
-        //             title: 'Currency Name',
-        //             width: 250
-        //         }, ]
-        //     ]
-        // });
+
+        //GET CURRENCY
+        $('#currency').combogrid({
+            url: '<?= base_url('master/currencies/reads') ?>',
+            panelWidth: 420,
+            idField: 'name',
+            textField: 'name',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Currency",
+            columns: [
+                [{
+                    field: 'symbol',
+                    title: 'Symbol',
+                    width: 100
+                }, {
+                    field: 'number',
+                    title: 'Currency ID',
+                    width: 120
+                }, {
+                    field: 'name',
+                    title: 'Currency Name',
+                    width: 250
+                }, ]
+            ]
+        });
 
          //Upload Data
          $('#dlg_upload').dialog({
@@ -411,7 +412,7 @@
             }
         });
 
-        $('#uom_number').combobox({
+        $('#uom').combobox({
             url: '<?= base_url('master/uom/reads') ?>',
             valueField: 'number',
             textField: 'name',

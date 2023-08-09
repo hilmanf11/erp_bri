@@ -11,7 +11,7 @@ class Currencies extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[20]|is_unique[currencies.number]');
+        $this->form_validation->set_rules('name', 'Code', 'required|min_length[1]|max_length[20]|is_unique[currencies.name]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -33,6 +33,17 @@ class Currencies extends CI_Controller
         $send = $this->crud->reads('currencies', ["name" => $post]);
         echo json_encode($send);
     }
+
+     //CODE OTOMATIS
+     public function autoid(){
+        $sql = $this->db->query("SELECT max(`id`) as kode From currencies");
+        $row = $sql->row();
+        $kode = substr($row->kode, 1);
+        $autoid = "C". sprintf("%02s", $kode + 1);
+        echo $autoid;
+
+    }
+
     //GET DATATABLES
     public function datatables()
     {
@@ -145,8 +156,8 @@ class Currencies extends CI_Controller
                 <th width="20">No</th>
                 <th>Code</th>
                 <th>Name</th>
-                <th>Description</th>
                 <th>Symbol</th>
+                <th>Description</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
@@ -154,8 +165,8 @@ class Currencies extends CI_Controller
                     <td>' . $no . '</td>
                     <td>' . $data['number'] . '</td>
                     <td>' . $data['name'] . '</td>
-                    <td>' . $data['description'] . '</td>
-                    <td>' . $data['symbol'] . '</td>';
+                    <td>' . $data['symbol'] . '</td>
+                    <td>' . $data['description'] . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';

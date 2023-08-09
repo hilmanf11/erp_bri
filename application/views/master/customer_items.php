@@ -3,23 +3,18 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',align:'center',width:100">Id</th>
-            <th rowspan="2" data-options="field:'number',align:'center',width:100">Code</th>
-            <th rowspan="2" data-options="field:'name',halign:'center',width:250">Name</th>
-            <th rowspan="2" data-options="field:'type',align:'center',width:120">Type</th>
-            <th rowspan="2" data-options="field:'address',halign:'center',width:300">Address</th>
-            <th rowspan="2" data-options="field:'address_billing',halign:'center',width:300">Billing Address</th>
-            <th rowspan="2" data-options="field:'attention',halign:'center',width:150">Contact Person</th>
-            <th rowspan="2" data-options="field:'telp',halign:'center',width:150">Telp</th>
-            <th rowspan="2" data-options="field:'telp_billing',halign:'center',width:150">Billing Telp</th>
-            <th rowspan="2" data-options="field:'email',halign:'center',width:200">Email</th>
-            <th rowspan="2" data-options="field:'website',halign:'center',width:200">Website</th>
-            <th rowspan="2" data-options="field:'currency',align:'center',width:80">Currency</th>
-            <th rowspan="2" data-options="field:'payment_term',align:'center',width:100">Payment Term</th>
-            <th rowspan="2" data-options="field:'bank_account',halign:'center',width:100">Bank Account</th>
-            <th rowspan="2" data-options="field:'bank_name',halign:'center',width:200">Bank Name</th>
+            <th rowspan="2" data-options="field:'id',align:'center',width:100">ID</th>
+            <th rowspan="2" data-options="field:'customers_name',halign:'center',width:200">Customer Name</th>
+            <th rowspan="2" data-options="field:'item_number',halign:'center',width:150">Product No</th>
+            <th rowspan="2" data-options="field:'item_name',halign:'center',width:150">Product Name</th>
+            <th rowspan="2" data-options="field:'item_customer',align:'center',width:150">Product <br>Customer</th>
+            <th rowspan="2" data-options="field:'currency',align:'center',width:100">Currency</th>
+            <th rowspan="2" data-options="field:'price',halign:'center',width:100">Price</th>
+            <th rowspan="2" data-options="field:'valid_date',halign:'center',width:80">Valid Date</th>
+            <th rowspan="2" data-options="field:'description',halign:'center',width:100">Description</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
+            
         </tr>
         <tr>
             <th data-options="field:'created_by',width:100,align:'center'"> By</th>
@@ -39,72 +34,38 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Id</span>
+                <span style="width:35%; display:inline-block;">ID</span>
                 <input style="width:30%;" name="id" id="id" readonly required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Code</span>
-                <input style="width:30%;" name="number" required="" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Customer Name</span>
+                <input style="width:60%;" name="customer_id" id="customer_id" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Name</span>
-                <input style="width:60%;" name="name" required="" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Product No</span>
+                <input style="width:60%;" name="item_id" id="item_id" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Type</span>
-                <select style="width:30%;" name="type" required="" class="easyui-combobox" panelHeight="auto">
-                    <option value="EXPORT">EXPORT</option>
-                    <option value="LOCAL">LOCAL</option>
-                </select>
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Address</span>
-                <input style="width:60%; height: 60px;" name="address" required="" class="easyui-textbox" multiline="true">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Billing Address</span>
-                <input style="width:60%; height: 60px;" name="address_billing" required="" class="easyui-textbox" multiline="true">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Contact Person</span>
-                <input style="width:60%;" name="attention" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Telp</span>
-                <input style="width:60%;" name="telp" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Billing Contact</span>
-                <input style="width:60%;" name="telp_billing" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Email</span>
-                <input style="width:60%;" name="email" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Website</span>
-                <input style="width:60%;" name="website" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Product Customer</span>
+                <input style="width:60%;" name="item_customer" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Currency</span>
-                <input style="width:60%;" name="currency" id="currency" required="" class="easyui-combogrid">
+                <input style="width:60%;" name="currency" id="currency" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Payment Term (Days)</span>
-                <input style="width:30%;" name="payment_term" class="easyui-numberbox">
-            </div>
-            <!-- <div class="fitem">
-                <span style="width:35%; display:inline-block;">Account Name</span>
-                <input style="width:60%;" name="account_number" id="account_number" required="" class="easyui-combobox">
-            </div> -->
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Bank Account</span>
-                <input style="width:40%;" name="bank_account" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Price</span>
+                <input style="width:30%;" name="price" precision="2" required="" class="easyui-numberbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Bank Name</span>
-                <input style="width:60%;" name="bank_name" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Valid Date</span>
+                <input style="width:60%;" name="valid_date" data-options="formatter:myformatter,parser:myparser" required="" class="easyui-datebox">
             </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Description</span>
+                <input style="width:60%; height:60px;" name="description" multiline="true" class="easyui-textbox">
+            </div>
+            
         </fieldset>
     </form>
 </div>
@@ -129,17 +90,18 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/customers/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/customer_items/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/customers/create') ?>';
+        url_save = '<?= base_url('master/customer_items/create') ?>';
         $('#frm_insert').form('clear');
-
+        
+        // auto id
         $.ajax({
             type: "post",
-            url: '<?= base_url('master/customers/autoid') ?>',
+            url: '<?= base_url('master/customer_items/autoid') ?>',
             dataType: "html",
             success: function (response) {
                 $('#id').textbox('setValue', response);
@@ -152,7 +114,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/customers/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('master/customer_items/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -167,7 +129,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/customers/delete') ?>',
+                            url: '<?= base_url('master/customer_items/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -196,7 +158,7 @@
     }
 
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_customers.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_customer_items.xls') ?>');
     }
     //PRINT PDF
     function pdf() {
@@ -204,17 +166,55 @@
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/customers/print/excel') ?>');
+        window.location.assign('<?= base_url('master/customer_items/print/excel') ?>');
     }
     
     //RELOAD
     function reload() {
         window.location.reload();
     }
+
+     //CELLSTYLE STATUS
+     function cellStyler(value, row, index) {
+        if (value == 0) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+    //FORMATTER STATUS
+    function cellFormatter(value) {
+        if (value == 0) {
+            return 'Active';
+        } else {
+            return 'Inactive';
+        }
+    };
+
+    // FORMAT tahun-bulan-tanggal
+    function myformatter(date){
+            var y = date.getFullYear();
+            var m = date.getMonth()+1;
+            var d = date.getDate();
+            return y+'-'+(m<10?('0'+m):m)+'-'+(d<10?('0'+d):d);
+        }
+        function myparser(s){
+            if (!s) return new Date();
+            var ss = (s.split('-'));
+            var y = parseInt(ss[0],10);
+            var m = parseInt(ss[1],10);
+            var d = parseInt(ss[2],10);
+            if (!isNaN(y) && !isNaN(m) && !isNaN(d)){
+                return new Date(y,m-1,d);
+            } else {
+                return new Date();
+            }
+        }
+
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/customers/datatables') ?>',
+            url: '<?= base_url('master/customer_items/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
@@ -245,6 +245,7 @@
                 }
             }]
         });
+
         //GET CURRENCY
         $('#currency').combogrid({
             url: '<?= base_url('master/currencies/reads') ?>',
@@ -276,14 +277,14 @@
             buttons: [{
                 text: 'List Failed',
                 handler: function() {
-                    window.open('<?= base_url('master/customers/uploadDownloadFailed') ?>', '_blank');
+                    window.open('<?= base_url('master/customer_items/uploadDownloadFailed') ?>', '_blank');
                 }
             }, {
                 text: 'Upload',
                 iconCls: 'icon-ok',
                 handler: function() {
                     $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/customers/upload') ?>',
+                        url: '<?= base_url('master/customer_items/upload') ?>',
                         onSubmit: function() {
                             if ($(this).form('validate') == false) {
                                 return $(this).form('validate');
@@ -298,7 +299,7 @@
                             $.messager.progress('close');
                             //Clear File
                             $.ajax({
-                                url: "<?= base_url('master/customers/uploadclearFailed') ?>"
+                                url: "<?= base_url('master/customer_items/uploadclearFailed') ?>"
                             });
                             var json = eval('(' + result + ')');
                             requestData(json.total, json);
@@ -313,7 +314,7 @@
                                     $.ajax({
                                         type: "POST",
                                         async: true,
-                                        url: "<?= base_url('master/customers/uploadCreate') ?>",
+                                        url: "<?= base_url('master/customer_items/uploadCreate') ?>",
                                         data: {
                                             "data": json[number - 1]
                                         },
@@ -331,7 +332,7 @@
                                                 $.ajax({
                                                     type: "POST",
                                                     async: true,
-                                                    url: "<?= base_url('master/customers/uploadcreateFailed') ?>",
+                                                    url: "<?= base_url('master/customer_items/uploadcreateFailed') ?>",
                                                     data: {
                                                         data: json[number - 1],
                                                         message: result.message
@@ -350,5 +351,21 @@
                 }
             }]
         });
+
+
+        $('#customer_id').combobox({
+            url: '<?= base_url('master/customers/reads') ?>',
+            valueField: 'id',
+            textField: 'name',
+            prompt: "Choose Customer"
+        });
+
+        $('#item_id').combobox({
+            url: '<?= base_url('master/items/reads') ?>',
+            valueField: 'id',
+            textField: 'name',
+            prompt: "Choose Proudct Item"
+         });
+
     });
 </script>
