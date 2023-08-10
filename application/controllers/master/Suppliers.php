@@ -125,8 +125,8 @@ class Suppliers extends CI_Controller
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
                 //excel
-                'name' => $data->val($i, 2),
-                'number' => $data->val($i, 3),
+                'suppliers_code' => $data->val($i, 2),
+                'name' => $data->val($i, 3),
                 'type' => $data->val($i, 4),
                 'address' => $data->val($i, 5),
                 'contact_person' => $data->val($i, 6),
@@ -181,22 +181,24 @@ class Suppliers extends CI_Controller
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
-            //Cek Process Number
-            $suppliers = $this->crud->read('suppliers', [], ["number" => $data['number']]);
 
+            //autoid
             $sql = $this->db->query("SELECT max(`id`) as kode From suppliers");
             $row = $sql->row();
             $kode = substr($row->kode, 1);
             $autoid = "S". sprintf("%03s", $kode + 1);
 
-            if (!empty($main_process->id)) {
-                echo json_encode(array("title" => "Available", "message" => "Code " . $data['number'] . " has been Available", "theme" => "error"));
-            } else {
+            //Cek Process Number            //table           //field           //field excel
+           $suppliers = $this->crud->read('suppliers', [], ["number" => $data['suppliers_code']]);
+
+           if (!empty($suppliers->number)) {
+               echo json_encode(array("title" => "Duplicated", "message" => " Supplier Code " . $data['suppliers_code'] . " is Duplicate Data", "theme" => "error"));
+           } else {
                 $dataFinal = array(
                     // field      //excel
                     "id" => $autoid,
+                    "number" => $data['suppliers_code'],
                     "name" => $data['name'],
-                    "number" => $data['number'],
                     "type" => $data['type'],
                     "address" => $data['address'],
                     "attention" => $data['contact_person'],

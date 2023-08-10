@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Machines extends CI_Controller
+class Supplier_items extends CI_Controller
 {
     public function __construct()
     {
@@ -12,7 +12,7 @@ class Machines extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[30]|is_unique[machines.number]');
+        $this->form_validation->set_rules('item_id', 'Code', 'required|min_length[1]|max_length[30]|is_unique[supplier_items.item_id]');
         
     }
     //HALAMAN UTAMA
@@ -23,7 +23,7 @@ class Machines extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('master/machines');
+            $this->load->view('master/supplier_items');
         } else {
             redirect('error_access');
         }
@@ -32,16 +32,35 @@ class Machines extends CI_Controller
      public function reads()
      {
          $post = isset($_POST['q']) ? $_POST['q'] : "";
-         $send = $this->crud->reads('machines', ["name" => $post]);
+         $send = $this->crud->reads('supplier_items', ["name" => $post]);
          echo json_encode($send);
      }
 
     //CODE OTOMATIS
-    public function autoid(){
-        $sql = $this->db->query("SELECT max(`id`) as kode From machines");
+    public function autoid() {
+        $currentYear = date('Y');
+        $sql = $this->db->query("SELECT max(`id`) as kode From supplier_items");
         $row = $sql->row();
-        $kode = substr($row->kode, 2);
-        $autoid = "MC". sprintf("%03s", $kode + 1);
+        
+        // Extract year and number from the existing code
+        $existingYear = substr($row->kode, 2, 4);
+        $existingNumber = substr($row->kode, -4);
+    
+        // Check if the year has changed
+        if ($existingYear != $currentYear) {
+            // Reset the number to 1
+            $newNumber = 1;
+        } else {
+            // Increment the existing number
+            $newNumber = intval($existingNumber) + 1;
+        }
+    
+        // Format the new number with leading zeros
+        $newNumberFormatted = sprintf("%04s", $newNumber);
+    
+        // Construct the new auto-generated ID
+        $autoid = "SI" . $currentYear . $newNumberFormatted;
+        
         echo $autoid;
     }
 
@@ -58,17 +77,20 @@ class Machines extends CI_Controller
              $offset = ($page - 1) * $rows;
              $result = array();
              //Select Query
-             $this->db->select('a.*, b.name as item_type_process_name , c.name as item_type_name');
-             $this->db->from('machines a');
-             $this->db->join('type_process b', 'a.type_process_id = b.id');
-             $this->db->join('types c', 'a.type_id = c.id');
+             $this->db->select('a.*, b.name as suppliers_name, c.number as item_number, c.name as item_name, c.mpq as mpq, 
+             c.moq as moq, c.leadtime as leadtime, c.safety_stock as safety_stock');
+             $this->db->from('supplier_items a');
+             $this->db->join('suppliers b', 'a.supplier_id = b.id');
+             $this->db->join('items c', 'a.item_id = c.id');
              $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if($filter->field == "item_type_process_name"){
+                    if($filter->field == "suppliers_name"){
                         $this->db->like("b.name", $filter->value);
+                    }elseif($filter->field == "item_number"){
+                        $this->db->like("c.number", $filter->value);
 
-                    }elseif($filter->field == "item_type_name"){
+                    }elseif($filter->field == "item_name"){
                         $this->db->like("c.name", $filter->value);
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
@@ -94,7 +116,7 @@ class Machines extends CI_Controller
          if ($this->input->post()) {
              if ($this->form_validation->run() == TRUE) {
                  $post   = $this->input->post();
-                 $send   = $this->crud->create('machines', $post);
+                 $send   = $this->crud->create('supplier_items', $post);
                  echo $send;
              } else {
                  show_error(validation_errors());
@@ -111,7 +133,7 @@ class Machines extends CI_Controller
           if ($this->input->post()) {
                   $id   = base64_decode($this->input->get('id'));
                   $post = $this->input->post();
-                  $send = $this->crud->update('machines', ["id" => $id], $post);
+                  $send = $this->crud->update('supplier_items', ["id" => $id], $post);
                   echo $send;
               } else {
                 show_error("Cannot Process your request");
@@ -122,7 +144,7 @@ class Machines extends CI_Controller
      public function delete()
      {
          $data = $this->input->post();
-         $send = $this->crud->delete('machines', $data);
+         $send = $this->crud->delete('supplier_items', $data);
          echo $send;
      }
  
@@ -140,21 +162,13 @@ class Machines extends CI_Controller
          for ($i = 3; $i <= $total_row; $i++) {
              $datas[] = array(
                  //excel
-                 'asset_no' => $data->val($i, 2),
-                 'machine_no' => $data->val($i, 3),
-                 'name_of_machine' => $data->val($i, 4),
-                 'process_type' => $data->val($i, 5),
-                 'specification' => $data->val($i, 6),
-                 'purchase_date' => $data->val($i, 7),
-                 'manufacturing_date' => $data->val($i, 8),
-                 'maker' => $data->val($i, 9),
-                 'tonage_of_machine' => $data->val($i, 10),
-                 'uom' => $data->val($i, 11),
-                 'vacum' => $data->val($i, 12),
-                 'rt' => $data->val($i, 13),
-                 'type' => $data->val($i, 14),
-                 'brand' => $data->val($i, 15),
-                 'status' => $data->val($i, 16)
+                 'supplier_id' => $data->val($i, 2),
+                 'product_no' => $data->val($i, 3),
+                 'product_supplier' => $data->val($i, 4),
+                 'currency' => $data->val($i, 5),
+                 'price' => $data->val($i, 6),
+                 'calculate_mpq' => $data->val($i, 7),
+                 'description' => $data->val($i, 8)
                  
              );
          }
@@ -164,13 +178,13 @@ class Machines extends CI_Controller
      }
      public function uploadclearFailed()
      {
-         @unlink('excel/failed/machines.txt');
+         @unlink('excel/failed/supplier_items.txt');
      }
      public function uploadcreateFailed()
      {
          if ($this->input->post()) {
              $message = $this->input->post('message');
-             $textFailed = fopen('excel/failed/machines.txt', 'a');
+             $textFailed = fopen('excel/failed/supplier_items.txt', 'a');
              fwrite($textFailed, $message . "\n");
              fclose($textFailed);
          }
@@ -179,7 +193,7 @@ class Machines extends CI_Controller
      //UPLOAD DOWNLOAD FAILED
      public function uploadDownloadFailed()
      {
-         $file = "excel/failed/machines.txt";
+         $file = "excel/failed/supplier_items.txt";
          header('Content-Description: File Failed');
          header('Content-Disposition: attachment; filename=' . basename($file));
          header('Expires: 0');
@@ -193,51 +207,60 @@ class Machines extends CI_Controller
      //UPLOAD CREATE DATA
      public function uploadcreate()
      {
-         if ($this->input->post()) {
-             $data = $this->input->post('data');//field excel
+        if ($this->input->post()) {
+            $data       = $this->input->post('data');
 
-             //AUTOID
-             $sql = $this->db->query("SELECT max(`id`) as kode From machines");
-             $row = $sql->row();
-             $kode = substr($row->kode, 2);
-             $autoid = "MC". sprintf("%03s", $kode + 1);
+            $currentYear = date('Y');
+            $sql = $this->db->query("SELECT max(`id`) as kode From supplier_items");
+            $row = $sql->row();
+            
+            // Extract year and number from the existing code
+            $existingYear = substr($row->kode, 2, 4);
+            $existingNumber = substr($row->kode, -4);
+        
+            // Check if the year has changed
+            if ($existingYear != $currentYear) {
+                // Reset the number to 1
+                $newNumber = 1;
+            } else {
+                // Increment the existing number
+                $newNumber = intval($existingNumber) + 1;
+            }
+        
+            // Format the new number with leading zeros
+            $newNumberFormatted = sprintf("%04s", $newNumber);
+        
+            // Construct the new auto-generated ID
+            $autoid = "SI" . $currentYear . $newNumberFormatted;
 
-          //Cek Process Number        //table                   //field           //field excel
-          $type_process = $this->crud->read('type_process', [], ["name" => $data['process_type']]);
-          $types = $this->crud->read('types', [], ["name" => $data['type']]);
-          $machines = $this->crud->read('machines', [], ["number" => $data['machine_no']]);
+             //Cek Process Number     //table        //field           //field excel
+             $item = $this->crud->read('items', [], ["number" => $data['product_no']]);
+             $supplier = $this->crud->read('suppliers', [], ["id" => $data['supplier_id']]);
+             $supplier_items = $this->crud->read('supplier_items', [], ["item_id" => @$item->id]);
 
-          if (empty($type_process->name)) {
-              echo json_encode(array("title" => "Not Found", "message" => "Process Type " . $data['process_type'] . " is Not Found", "theme" => "error"));
-          } elseif (empty($types->name)) {
-              echo json_encode(array("title" => "Not Found", "message" => "Type " . $data['type'] . " is Not Found", "theme" => "error"));
-          } elseif (!empty($machines->number)) {
-              echo json_encode(array("title" => "Duplicated", "message" => "Machine No " . $data['machine_no'] . " Duplicate Data", "theme" => "error"));
-          } else {
+            if (empty($item->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Product No " . $data['product_no'] . " Not Found", "theme" => "error"));
+            } elseif (empty($supplier->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Customer " . $data['supplier_id'] . " Not Found", "theme" => "error"));
+            } elseif (!empty($supplier_items->item_id)) {
+                echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['product_no'] . " Duplicate Data", "theme" => "error"));
+            } else {
                  $dataFinal = array(
                      //field        //excel
                      "id" => $autoid,
-                     "asset_id" => $data['asset_no'],
-                     "number" => $data['machine_no'],
-                     "name" => $data['name_of_machine'],
-                     "type_process_id" => $type_process->id,
-                     "specification" => $data['specification'],
-                     "purchase_date" => $data['purchase_date'],
-                     "manufactur_date" => $data['manufacturing_date'],
-                     "maker" => $data['maker'],
-                     "toonage" => $data['tonage_of_machine'],
-                     "uom" => $data['uom'],
-                     "vacum" => $data['vacum'],
-                     "rt" => $data['rt'],
-                     "type_id" => $types->id,
-                     "brand" => $data['brand'],
-                     "status" => $data['status'],
+                     "supplier_id" => $data['supplier_id'],
+                     "item_id" => $item->id,
+                     "item_supplier" => $data['product_supplier'],
+                     "currency" => $data['currency'],
+                     "price" => $data['price'],
+                     "calculate" => $data['calculate_mpq'],
+                     "description" => $data['description'],
                  );
-                 $send   = $this->crud->create('machines', $dataFinal);
+                 $send= $this->crud->create('supplier_items', $dataFinal);
                  echo $send;
              }
          }
-     }
+    }
  
      //PRINT & EXCEL DATA
      public function print($option = "")
@@ -245,7 +268,7 @@ class Machines extends CI_Controller
          if ($option == "excel") {
              $format  = date("Ymd");
              header("Content-type: application/vnd-ms-excel");
-             header("Content-Disposition: attachment; filename=machines_$format.xls");
+             header("Content-Disposition: attachment; filename=supplier_items_$format.xls");
          }
          //Config
          $this->db->select('*');
@@ -253,15 +276,16 @@ class Machines extends CI_Controller
          $config = $this->db->get()->row();
          $config_iso = $this->db->get('config_iso')->row();
  
-         $this->db->select('a.*, b.name as item_type_process_name , c.name as item_type_name');
-         $this->db->from('machines a');
-         $this->db->join('type_process b', 'a.type_process_id = b.id');
-         $this->db->join('types c', 'a.type_id = c.id');
+         $this->db->select('a.*, b.name as suppliers_name, c.number as item_number, c.name as item_name, c.mpq as mpq, 
+             c.moq as moq, c.leadtime as leadtime, c.safety_stock as safety_stock');
+         $this->db->from('supplier_items a');
+         $this->db->join('suppliers b', 'a.supplier_id = b.id');
+         $this->db->join('items c', 'a.item_id = c.id');
          $this->db->where('a.deleted', 0);
          $this->db->order_by('id', 'ASC');
          $records = $this->db->get()->result_array();
          
-         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#machines {border-collapse: collapse;width: 100%;font-size: 12px;}#machines td, #machines th {border: 1px solid #ddd;padding: 2px;}#machines tr:nth-child(even){background-color: #f2f2f2;}#machines tr:hover {background-color: #ddd;}#machines th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#supplier_items {border-collapse: collapse;width: 100%;font-size: 12px;}#supplier_items td, #supplier_items th {border: 1px solid #ddd;padding: 2px;}#supplier_items tr:nth-child(even){background-color: #f2f2f2;}#supplier_items tr:hover {background-color: #ddd;}#supplier_items th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
          <center>
              <div style="float: left; font-size: 12px; text-align: left;">
                  <table style="width: 100%;">
@@ -271,7 +295,7 @@ class Machines extends CI_Controller
                          </td>
                          <td style="font-size: 14px; text-align: left; margin:2px;">
                              <b>' . $config->name . '</b><br>
-                             <small>MASTER machines</small>
+                             <small>MASTER supplier_items</small>
                          </td>
                      </tr>
                  </table>
@@ -303,46 +327,38 @@ class Machines extends CI_Controller
          </center>
          <br><br><br><br>
          
-         <table id="machines" border="1">
+         <table id="supplier_items" border="1">
              <tr>
                  <th width="20">No</th>
-                 <th>Machine Id</th>
-                 <th>Asset No</th>
-                 <th>Machine No</th>
-                 <th>Name of Machine</th>
-                 <th>Process Type</th>
-                 <th>Specification</th>
-                 <th>Purchase Date</th>
-                 <th>Manufacturing Date</th>
-                 <th>Maker</th>
-                 <th>Tonage of Machine</th>
-                 <th>Uom</th>
-                 <th>Vacum</th>
-                 <th>RT</th>
-                 <th>Type</th>
-                 <th>Brand</th>
-                 <th>Status</th>
+                 <th>ID</th>
+                 <th>Supplier Name</th>
+                 <th>Product Number</th>
+                 <th>Supplier Product</th>
+                 <th>MPQ</th>
+                 <th>MOQ</th>
+                 <th>Leadtime</th>
+                 <th>Currency</th>
+                 <th>Price</th>
+                 <th>Safety Stock</th>
+                 <th>Calculate MPQ</th>
+                 <th>Description</th>
              </tr>';
          $no = 1;
          foreach ($records as $data) {
              $html .= '<tr>
                          <td>' . $no . '</td>
                          <td>' . $data['id'] . '</td>
-                         <td>' . $data['asset_id'] . '</td>
-                         <td>' . $data['number'] . '</td>
-                         <td>' . $data['name'] . '</td>
-                         <td>' . $data['item_type_process_name'] . '</td>
-                         <td>' . $data['specification'] . '</td>
-                         <td>' . $data['purchase_date'] . '</td>
-                         <td>' . $data['manufactur_date'] . '</td>
-                         <td>' . $data['maker'] . '</td>
-                         <td>' . $data['toonage'] . '</td>
-                         <td>' . $data['uom'] . '</td>
-                         <td>' . $data['vacum'] . '</td>
-                         <td>' . $data['rt'] . '</td>
-                         <td>' . $data['item_type_name'] . '</td>
-                         <td>' . $data['brand'] . '</td>
-                         <td>' . $data['status'] . '</td>
+                         <td>' . $data['suppliers_name'] . '</td>
+                         <td>' . $data['item_name'] . '</td>
+                         <td>' . $data['item_supplier'] . '</td>
+                         <td>' . $data['mpq'] . '</td>
+                         <td>' . $data['moq'] . '</td>
+                         <td>' . $data['leadtime'] . '</td>
+                         <td>' . $data['currency'] . '</td>
+                         <td>' . $data['price'] . '</td>
+                         <td>' . $data['safety_stock'] . '</td>
+                         <td>' . $data['calculate'] . '</td>
+                         <td>' . $data['description'] . '</td>
                      </tr>';
              $no++;
          }

@@ -126,8 +126,8 @@ class Customers extends CI_Controller
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
                 //excel
-                'name' => $data->val($i, 2),
-                'number' => $data->val($i, 3),
+                'customer_code' => $data->val($i, 2),
+                'name' => $data->val($i, 3),
                 'type' => $data->val($i, 4),
                 'address' => $data->val($i, 5),
                 'billing_address' => $data->val($i, 6),
@@ -179,21 +179,23 @@ class Customers extends CI_Controller
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
-            //Cek Process Number
-            $customers = $this->crud->read('customers', [], ["number" => $data['number']]);
 
+            //AUTOID
             $sql = $this->db->query("SELECT max(`id`) as kode From customers");
             $row = $sql->row();
             $kode = substr($row->kode, 1);
             $autoid = "C". sprintf("%03s", $kode + 1);
 
-            if (!empty($main_process->id)) {
-                echo json_encode(array("title" => "Available", "message" => "Code " . $data['number'] . " has been Available", "theme" => "error"));
-            } else {
+           //Cek Process Number            //table           //field           //field excel
+           $customers = $this->crud->read('customers', [], ["number" => $data['customer_code']]);
+
+           if (!empty($customers->number)) {
+               echo json_encode(array("title" => "Duplicated", "message" => " Customer Code " . $data['customer_code'] . " is Duplicate Data", "theme" => "error"));
+           } else {
                 $dataFinal = array(
                     //field
                     "id" => $autoid,
-                    "number" => $data['number'],
+                    "number" => $data['customer_code'],
                     "name" => $data['name'],
                     "type" => $data['type'],
                     "address" => $data['address'],
