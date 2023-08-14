@@ -63,15 +63,15 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Billing Address</span>
-                <input style="width:60%; height: 60px;" name="address_billing" required="" class="easyui-textbox" multiline="true">
+                <input style="width:60%; height: 60px;" name="address_billing" class="easyui-textbox" multiline="true">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Contact Person</span>
-                <input style="width:60%;" name="attention" required="" class="easyui-textbox">
+                <input style="width:60%;" name="attention" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Telp</span>
-                <input style="width:60%;" name="telp" required="" class="easyui-textbox">
+                <input style="width:60%;" name="telp" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Billing Contact</span>
@@ -79,7 +79,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Email</span>
-                <input style="width:60%;" name="email" required="" class="easyui-textbox">
+                <input style="width:60%;" name="email" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Website</span>

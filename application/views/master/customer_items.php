@@ -9,7 +9,7 @@
             <th rowspan="2" data-options="field:'item_name',halign:'center',width:150">Product Name</th>
             <th rowspan="2" data-options="field:'item_customer',align:'center',width:150">Product <br>Customer</th>
             <th rowspan="2" data-options="field:'currency',align:'center',width:100">Currency</th>
-            <th rowspan="2" data-options="field:'price',halign:'center',width:100">Price</th>
+            <th rowspan="2" data-options="field:'price',halign:'center',width:100,formatter:formatdecimal">Price</th>
             <th rowspan="2" data-options="field:'valid_date',halign:'center',width:80">Valid Date</th>
             <th rowspan="2" data-options="field:'description',halign:'center',width:100">Description</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -191,6 +191,36 @@
         }
     };
 
+    //FORMAT decimal
+    function formatdecimal(value, row){
+       if(row.currency == "USD") {
+            var digits = 4;
+            var currency = 'USD';
+            var format = "en-IN";
+       }else if (row.currency == "JPN") {
+            var digits = 2;
+            var currency = 'JPY';
+            var format = "ja-JP";
+       }else if (row.currency == "EUR") {
+            var digits = 2;
+            var currency = 'EUR';
+            var format = "de-DE";
+       }else {
+            var digits = 0;
+            var currency = 'IDR';
+            var format = "id-ID";
+       }
+       
+       if (value != null){
+        const formatter = new Intl.NumberFormat(format, {
+            style: 'currency',
+            currency: currency,
+            minimumFractionDigits: digits   
+        });
+        return "<b>" + formatter.format(value) + "</b>";
+       }
+    }
+
     // FORMAT tahun-bulan-tanggal
     function myformatter(date){
             var y = date.getFullYear();
@@ -210,6 +240,7 @@
                 return new Date();
             }
         }
+
 
     $(function() {
         //SETTING DATAGRID EASYUI
@@ -272,6 +303,7 @@
             ]
         });
 
+      
          //Upload Data
          $('#dlg_upload').dialog({
             buttons: [{
@@ -363,8 +395,8 @@
         $('#item_id').combobox({
             url: '<?= base_url('master/items/reads') ?>',
             valueField: 'id',
-            textField: 'name',
-            prompt: "Choose Proudct Item"
+            textField: 'number',
+            prompt: "Choose Proudct No"
          });
 
     });

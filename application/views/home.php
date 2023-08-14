@@ -3,7 +3,7 @@
 	<!-- Header -->
 	<div data-options="region:'north', border:false" id="header">
 		<div style="float: left;">
-			<img src="<?= base_url('assets/image/application.png') ?>" width="100">
+			<img src="<?= base_url('assets/image/application1.png') ?>" width="100">
 		</div>
 
 		<div class="logo-company">

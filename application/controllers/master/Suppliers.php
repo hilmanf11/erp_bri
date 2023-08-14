@@ -12,7 +12,7 @@ class Suppliers extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[30]|is_unique[suppliers.number]');
+        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[3]|is_unique[suppliers.number]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -61,7 +61,7 @@ class Suppliers extends CI_Controller
             $this->db->where('deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    $this->db->like("b.".$filter->field, $filter->value);
+                    $this->db->like($filter->field, $filter->value);
                 }
             }
             $this->db->order_by('id', 'ASC');
@@ -193,7 +193,9 @@ class Suppliers extends CI_Controller
 
            if (!empty($suppliers->number)) {
                echo json_encode(array("title" => "Duplicated", "message" => " Supplier Code " . $data['suppliers_code'] . " is Duplicate Data", "theme" => "error"));
-           } else {
+            }elseif (strlen($data['customer_code']) != 3) {
+                echo json_encode(array("title" => "Error Max Lenght", "message" => " Please Input Code " . $data['customer_code'] . " with 3 character", "theme" => "error"));
+            }else {
                 $dataFinal = array(
                     // field      //excel
                     "id" => $autoid,

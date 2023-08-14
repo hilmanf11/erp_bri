@@ -349,7 +349,7 @@ class Supplier_items extends CI_Controller
                          <td>' . $no . '</td>
                          <td>' . $data['id'] . '</td>
                          <td>' . $data['suppliers_name'] . '</td>
-                         <td>' . $data['item_name'] . '</td>
+                         <td>' . $data['item_number'] . '</td>
                          <td>' . $data['item_supplier'] . '</td>
                          <td>' . $data['mpq'] . '</td>
                          <td>' . $data['moq'] . '</td>

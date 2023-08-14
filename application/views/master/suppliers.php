@@ -88,7 +88,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Currency</span>
-                <input style="width:60%;" name="currency" id="currency" class="easyui-combogrid">
+                <input style="width:60%;" name="currency" required="" id="currency" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Payment Term (Days)</span>

@@ -20,7 +20,7 @@
             <th rowspan="2" data-options="field:'lifetime',width:100,halign:'center'">Lifetime</th>
             <th rowspan="2" data-options="field:'min',halign:'center',width:80">Min</th>
             <th rowspan="2" data-options="field:'max',halign:'center',width:80">Max</th>
-            <th rowspan="2" data-options="field:'status',width:150, styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'status',width:150, styler:cellStyler, formatter:cellFormatter, align:'center'">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
             
@@ -153,6 +153,7 @@
         url_save = '<?= base_url('master/items/create') ?>';
         $('#frm_insert').form('clear');
 
+        //autoid
         $.ajax({
             type: "post",
             url: '<?= base_url('master/items/autoid') ?>',

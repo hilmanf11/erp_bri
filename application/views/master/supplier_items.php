@@ -5,13 +5,14 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'id',align:'center',width:100">ID</th>
             <th rowspan="2" data-options="field:'suppliers_name',halign:'center',width:200">Supplier Name</th>
-            <th rowspan="2" data-options="field:'item_name',halign:'center',width:150">Product No</th>
-            <th rowspan="2" data-options="field:'item_supplier',halign:'center',width:150">Supplier Product</th>
+            <th rowspan="2" data-options="field:'item_number',halign:'center',width:150">Product No</th>
+            <th rowspan="2" data-options="field:'item_name',halign:'center',width:150">Product Name</th>
+            <th rowspan="2" data-options="field:'item_supplier',halign:'center',width:150">Supplier <br>Product</th>
             <th rowspan="2" data-options="field:'mpq',halign:'center',width:80">MPQ</th>
             <th rowspan="2" data-options="field:'moq',halign:'center',width:80">MOQ</th>
             <th rowspan="2" data-options="field:'leadtime',halign:'center',width:80">Leadtime <br>(Days)</th>
             <th rowspan="2" data-options="field:'currency',align:'center',width:100">Currency</th>
-            <th rowspan="2" data-options="field:'price',halign:'center',width:100">Price</th>
+            <th rowspan="2" data-options="field:'price',halign:'center',width:100,formatter:formatdecimal">Price</th>
             <th rowspan="2" data-options="field:'safety_stock',halign:'center',width:80">Safety <br>Stock</th>
             <th rowspan="2" data-options="field:'calculate',halign:'center',width:80">Calculate <br>MPQ</th>
             <th rowspan="2" data-options="field:'description',halign:'center',width:100">Description</th>
@@ -197,6 +198,36 @@
         }
     };
 
+    //FORMAT decimal
+    function formatdecimal(value, row){
+       if(row.currency == "USD") {
+            var digits = 4;
+            var currency = 'USD';
+            var format = "en-IN";
+       }else if (row.currency == "JPN") {
+            var digits = 2;
+            var currency = 'JPY';
+            var format = "ja-JP";
+       }else if (row.currency == "EUR") {
+            var digits = 2;
+            var currency = 'EUR';
+            var format = "de-DE";
+       }else {
+            var digits = 0;
+            var currency = 'IDR';
+            var format = "id-ID";
+       }
+       
+       if (value != null){
+        const formatter = new Intl.NumberFormat(format, {
+            style: 'currency',
+            currency: currency,
+            minimumFractionDigits: digits   
+        });
+        return "<b>" + formatter.format(value) + "</b>";
+       }
+    }
+
     // FORMAT tahun-bulan-tanggal
     function myformatter(date){
             var y = date.getFullYear();
@@ -369,8 +400,8 @@
         $('#item_id').combobox({
             url: '<?= base_url('master/items/reads') ?>',
             valueField: 'id',
-            textField: 'name',
-            prompt: "Choose Proudct Item"
+            textField: 'number',
+            prompt: "Choose Proudct No"
          });
 
     });
