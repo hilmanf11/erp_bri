@@ -18,7 +18,7 @@
             <th rowspan="2" data-options="field:'rt',align:'center',width:80">RT</th>
             <th rowspan="2" data-options="field:'item_type_name',width:100,halign:'center'">Type</th>
             <th rowspan="2" data-options="field:'brand',width:100,halign:'center'">Brand</th>
-            <th rowspan="2" data-options="field:'status',width:100, styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'status',width:100, styler:cellStyler, align:'center', formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
             
