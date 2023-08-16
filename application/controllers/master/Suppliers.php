@@ -96,13 +96,17 @@ class Suppliers extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
+            if ($this->form_validation->run() == TRUE) {
                 $id   = base64_decode($this->input->get('id'));
                 $post = $this->input->post();
                 $send = $this->crud->update('suppliers', ["id" => $id], $post);
                 echo $send;
             } else {
-                show_error("Cannot Process your request");
+                show_error(validation_errors());
             }
+        } else {
+            show_error("Cannot Process your request");
+        }
     }
     //DELETE DATA
     public function delete()

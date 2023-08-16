@@ -7,13 +7,15 @@
             <th rowspan="2" data-options="field:'asset_id',halign:'center',width:150">Asset No</th>
             <th rowspan="2" data-options="field:'number',halign:'center',width:100">Machine No</th>
             <th rowspan="2" data-options="field:'name',align:'center',width:100">Name Of <br>Machine</th>
+            <th rowspan="2" data-options="field:'item_category_name',align:'center',width:100">Category</th>
+            <th rowspan="2" data-options="field:'item_familys_name',align:'center',width:100">Product Family </th>
             <th rowspan="2" data-options="field:'item_type_process_name',align:'center',width:100">Process Type</th>
             <th rowspan="2" data-options="field:'specification',halign:'center',width:100">Specification</th>
             <th rowspan="2" data-options="field:'purchase_date',halign:'center',width:80">Purchase <br>Date</th>
             <th rowspan="2" data-options="field:'manufactur_date',halign:'center',width:100">Manufacturing <br>Date</th>
             <th rowspan="2" data-options="field:'maker',halign:'center',width:100">Maker</th>
             <th rowspan="2" data-options="field:'toonage',halign:'center',width:100">Toneage Of <br>Machine</th>
-            <th rowspan="2" data-options="field:'item_uom_name',halign:'center',width:80">Uom</th>
+            <th rowspan="2" data-options="field:'uom',halign:'center',width:80">Uom</th>
             <th rowspan="2" data-options="field:'vacum',align:'center',width:100">Vacum</th>
             <th rowspan="2" data-options="field:'rt',align:'center',width:80">RT</th>
             <th rowspan="2" data-options="field:'item_type_name',width:100,halign:'center'">Type</th>
@@ -55,6 +57,14 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Machine Name</span>
                 <input style="width:60%;" name="name" required="" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Category</span>
+                <input style="width:60%;" name="item_category_number" id="item_category_number" required="" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Product Family</span>
+                <input style="width:60%;" name="item_family_number" id="item_family_number" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Process Type</span>
@@ -181,8 +191,8 @@
                                 var result = eval('(' + result + ')');
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error(jqXHR.statusText);
-                                $.messager.alert("Error", jqXHR.statusText, 'error');
+                                toastr.error("This item cannot be deleted, Please make sure it didn't have any relation");
+                                // $.messager.alert("Error", jqXHR.statusText, 'error');
                             },
                             complete: function(data) {
                                 $('#dg').datagrid('reload');
@@ -289,32 +299,7 @@
                 }
             }]
         });
-        // //GET CURRENCY
-        // $('#currency').combogrid({
-        //     url: '<?= base_url('master/currencies/reads') ?>',
-        //     panelWidth: 420,
-        //     idField: 'number',
-        //     textField: 'name',
-        //     mode: 'remote',
-        //     fitColumns: true,
-        //     prompt: "Choose Currency",
-        //     columns: [
-        //         [{
-        //             field: 'symbol',
-        //             title: 'Symbol',
-        //             width: 100
-        //         }, {
-        //             field: 'number',
-        //             title: 'Currency ID',
-        //             width: 120
-        //         }, {
-        //             field: 'name',
-        //             title: 'Currency Name',
-        //             width: 250
-        //         }, ]
-        //     ]
-        // });
-
+       
          //Upload Data
          $('#dlg_upload').dialog({
             buttons: [{
@@ -395,13 +380,40 @@
             }]
         });
 
-
-        $('#type_process_id').combobox({
-            url: '<?= base_url('master/type_process/reads') ?>',
-            valueField: 'id',
+        
+        $('#item_category_number').combobox({
+            url: '<?php echo base_url('master/item_categories/reads'); ?>',
+            valueField: 'number',
             textField: 'name',
-            prompt: "Choose Process Type"
+            prompt: "Choose Category",
+            onSelect: function(item_categories) {
+                $('#item_family_number').combobox({
+                    url: '<?php echo base_url('master/item_familys/reads'); ?>/' + item_categories.number,
+                    valueField: 'number',
+                    textField: 'name',
+                    prompt: "Choose Family Product",
+                    onSelect: function(item_family) {
+                        $('#type_process_id').combobox({
+                            url: '<?php echo base_url('master/type_process/reads'); ?>',
+                            valueField: 'id',
+                            textField: 'name',
+                            prompt: "Choose Process Type",
+                            onSelect: function(machine) {
+                                $.ajax({
+                                    type: "post",
+                                    url: '<?php echo base_url('master/machines/autoid/'); ?>' + item_categories.number + '/' + item_family.number+ '/' + machine.number,
+                                    dataType: "html",
+                                    success: function (response) {
+                                        $('#id').textbox('setValue', response);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            }
         });
+
 
         $('#type_id').combobox({
             url: '<?= base_url('master/types/reads') ?>',
@@ -412,7 +424,7 @@
 
         $('#uom').combobox({
             url: '<?= base_url('master/uom/reads') ?>',
-            valueField: 'number',
+            valueField: 'name',
             textField: 'name',
             prompt: "Choose Unit Of Measure"
         });

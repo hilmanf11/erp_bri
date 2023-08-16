@@ -157,6 +157,7 @@ class Types extends CI_Controller
             <tr>
                 <th width="20">No</th>
                 <th>Id</th>
+                <th>Code</th>
                 <th>Name</th>
                 <th>Description</th>
             </tr>';
@@ -165,6 +166,7 @@ class Types extends CI_Controller
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['id'] . '</td>
+                    <td>' . $data['number'] . '</td>
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['description'] . '</td>';
             $no++;

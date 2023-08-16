@@ -192,8 +192,8 @@
                                 var result = eval('(' + result + ')');
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error(jqXHR.statusText);
-                                $.messager.alert("Error", jqXHR.statusText, 'error');
+                                toastr.error("This item cannot be deleted, Please make sure it didn't have any relation");
+                                // $.messager.alert("Error", jqXHR.statusText, 'error');
                             },
                             complete: function(data) {
                                 $('#dg').datagrid('reload');
@@ -415,7 +415,7 @@
 
         $('#uom').combobox({
             url: '<?= base_url('master/uom/reads') ?>',
-            valueField: 'number',
+            valueField: 'name',
             textField: 'name',
             prompt: "Choose Unit Of Measure"
         });

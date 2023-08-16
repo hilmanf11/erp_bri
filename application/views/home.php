@@ -1,7 +1,7 @@
 <body class="easyui-layout">
 
 	<!-- Header -->
-	<div data-options="region:'north', border:false" style="background-image: url(<?= base_url('assets/image/cupertino.png')?>);" id="header">
+	<div data-options="region:'north', border:false" style="background-image: url(<?= base_url('assets/image/metro_blue.png')?>);" id="header">
 		<div style="float: left;">
 			<img src="<?= base_url('assets/image/application1.png') ?>" width="100">
 		</div>

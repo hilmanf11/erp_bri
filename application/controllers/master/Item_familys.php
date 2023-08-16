@@ -12,7 +12,7 @@ class Item_familys extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('id', 'Code', 'required|min_length[1]|max_length[30]|is_unique[item_familys.id]');
+        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[30]|is_unique[item_familys.number]');
     }
     //HALAMAN UTAMA
     public function index()
