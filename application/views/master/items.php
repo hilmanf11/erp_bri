@@ -4,13 +4,14 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'id',align:'center',width:100">Product ID</th>
-            <th rowspan="2" data-options="field:'number',halign:'center',width:250">Product Number</th>
-            <th rowspan="2" data-options="field:'name',halign:'center',width:250">Product Name</th>
+            <th rowspan="2" data-options="field:'number',halign:'center',width:150">Product Number</th>
+            <th rowspan="2" data-options="field:'name',halign:'center',width:150">Product Name</th>
             <th rowspan="2" data-options="field:'specification',align:'center',width:100">Specification</th>
             <th rowspan="2" data-options="field:'type',align:'center',width:120">Product Type</th>
             <th rowspan="2" data-options="field:'uom',halign:'center',width:150">Unit Of Measure</th>
-            <th rowspan="2" data-options="field:'item_category_name',halign:'center',width:200">Category</th>
-            <th rowspan="2" data-options="field:'item_familys_name',halign:'center',width:200">Product Family</th>
+            <th rowspan="2" data-options="field:'item_category_name',halign:'center',width:150">Category</th>
+            <th rowspan="2" data-options="field:'item_familys_name',halign:'center',width:150">Product Family</th>
+            <th rowspan="2" data-options="field:'item_family_sub_name',halign:'center',width:150">Sub Product Family</th>
             <th rowspan="2" data-options="field:'leadtime',halign:'center',width:150">Lead Time Production</th>
             <th rowspan="2" data-options="field:'weight',halign:'center',width:100">Weight (gr)</th>
             <th rowspan="2" data-options="field:'mpq',halign:'center',width:100">MPQ</th>
@@ -38,10 +39,11 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; padding:20px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
+            <div style="width:50%;float:left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product ID</span>
                 <input style="width:30%;" name="id" id="id" readonly class="easyui-textbox">
@@ -75,11 +77,18 @@
                 <input style="width:60%;" name="item_family_number" id="item_family_number" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Sub Product Family</span>
+                <input style="width:60%;" name="item_family_sub_number" id="item_family_sub_number" class="easyui-combobox">
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Uom</span>
                 <input style="width:30%;" name="uom" id="uom" required="" class="easyui-combobox">
             </div>
+            </div>
+
+            <div style="width:50%;float:left;">
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Lead Time Production</span>
+                <span style="width:35%; display:inline-block;">Leadtime Production</span>
                 <input style="width:30%;" name="leadtime" class="easyui-numberbox">
             </div>
             <div class="fitem">
@@ -121,6 +130,7 @@
                     <option value="1">Inactive</option>
                 </select>
             </div>
+        </div>
         </fieldset>
     </form>
 </div>
@@ -151,17 +161,7 @@
     function add() {
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/items/create') ?>';
-        $('#frm_insert').form('clear');
-
-        //autoid
-        $.ajax({
-            type: "post",
-            url: '<?= base_url('master/items/autoid') ?>',
-            dataType: "html",
-            success: function (response) {
-                $('#number').textbox('setValue', response);
-            }
-        });
+        $('#frm_insert').form('clear')
     }
     //EDIT DATA
     function update() {
@@ -399,20 +399,37 @@
                     valueField: 'number',
                     textField: 'name',
                     prompt: "Choose Family Product",
-                    onSelect: function(item_family){
+                    onSelect: function(item_family_subs){
                         $.ajax({
                             type: "post",
-                            url: '<?php echo base_url('master/items/autoid/'); ?>' + item_categories.number + '/' + item_family.number,
+                            url: '<?php echo base_url('master/items/autoid/'); ?>' + item_categories.number + '/' + item_family_subs.number,
                             dataType: "html",
                             success: function (response) {
                                 $('#id').textbox('setValue', response);
+                            }
+                        });
+
+                        $('#item_family_sub_number').combobox({
+                            url: '<?php echo base_url('master/item_family_subs/reads'); ?>/' + item_family_subs.number,
+                            valueField: 'number',
+                            textField: 'name',
+                            prompt: "Choose Sub Family Product",
+                            onSelect: function(item_family){
+                                $.ajax({
+                                    type: "post",
+                                    url: '<?php echo base_url('master/items/autoid/'); ?>' + item_categories.number + '/' + item_family_subs.number + '/' + item_family.number,
+                                    dataType: "html",
+                                    success: function (response) {
+                                        $('#id').textbox('setValue', response);
+                                    }
+                                });
                             }
                         });
                     }
                 });
             }
         });
-
+        
         $('#uom').combobox({
             url: '<?= base_url('master/uom/reads') ?>',
             valueField: 'name',

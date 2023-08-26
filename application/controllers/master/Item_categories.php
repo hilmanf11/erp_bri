@@ -13,7 +13,7 @@ class Item_categories extends CI_Controller
         $this->load->model('crud');
 
         //VALIDASI FORM
-        $this->form_validation->set_rules('id', 'Code', 'required|min_length[1]|max_length[30]|is_unique[item_categories.id]');
+        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[30]|is_unique[item_categories.number]');
     }
     //HALAMAN UTAMA
     public function index()

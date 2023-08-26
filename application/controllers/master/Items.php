@@ -36,14 +36,16 @@ class Items extends CI_Controller
          echo json_encode($send);
      }
      //CODE OTOMATIS
-     public function autoid($item_category_number, $item_family_number){
-        $code = $item_category_number.$item_family_number; 
-         $sql = $this->db->query("SELECT max(`id`) as kode From items where id like '%$code%'");
-         $row = $sql->row();
-         $kode = substr($row->kode, 7);
-         $autoid = $code."NA". "-". sprintf("%04s", $kode + 1);
-         echo $autoid;
-     }
+     public function autoid($item_category_number, $item_family_number, $item_family_sub_number = "NA"){
+    
+        $code = $item_category_number . $item_family_number . $item_family_sub_number; 
+        $sql = $this->db->query("SELECT coalesce(max(`id`), 0) as kode From items where id like '%$code%'");
+        $row = $sql->row();
+        $kode = substr($row->kode, -4);
+        $autoid = $code . "-" . sprintf("%04s", $kode + 1);
+        echo $autoid;
+    }
+    
 
      //GET DATATABLES
      public function datatables()
@@ -58,11 +60,12 @@ class Items extends CI_Controller
              $offset = ($page - 1) * $rows;
              $result = array();
              //Select Query
-             $this->db->select('a.*, b.name as item_category_name , c.name as item_familys_name');
-             $this->db->from('items a');
-             $this->db->join('item_categories b', 'a.item_category_number = b.number');
-             $this->db->join('item_familys c', 'a.item_family_number = c.number');
-             $this->db->where('a.deleted', 0);
+            $this->db->select('a.*, b.name as item_category_name , c.name as item_familys_name , d.name as item_family_sub_name');
+            $this->db->from('items a');
+            $this->db->join('item_categories b', 'a.item_category_number = b.number');
+            $this->db->join('item_familys c', 'a.item_family_number = c.number');
+            $this->db->join('item_family_subs d', 'a.item_family_sub_number = d.number','left');
+            $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
                     if($filter->field == "item_category_name"){
@@ -70,6 +73,9 @@ class Items extends CI_Controller
 
                     }elseif($filter->field == "item_familys_name"){
                         $this->db->like("c.name", $filter->value);
+
+                    }elseif($filter->field == "item_family_sub_name"){
+                        $this->db->like("d.name", $filter->value);
 
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
@@ -147,17 +153,18 @@ class Items extends CI_Controller
                  'product_type' => $data->val($i, 5),
                  'category' => $data->val($i, 6),
                  'product_family' => $data->val($i, 7),
-                 'unit_of_measure' => $data->val($i, 8),
-                 'lead_time_production' => $data->val($i, 9),
-                 'weight' => $data->val($i, 10),
-                 'mpq' => $data->val($i, 11),
-                 'moq' => $data->val($i, 12),
-                 'safety_stock' => $data->val($i, 13),
-                 'lot' => $data->val($i, 14),
-                 'lifetime' => $data->val($i, 15),
-                 'min' => $data->val($i, 16),
-                 'max' => $data->val($i, 17),
-                 'status' => $data->val($i, 18)
+                 'sub_product_family' => $data->val($i, 8),
+                 'unit_of_measure' => $data->val($i, 9),
+                 'lead_time_production' => $data->val($i, 10),
+                 'weight' => $data->val($i, 11),
+                 'mpq' => $data->val($i, 12),
+                 'moq' => $data->val($i, 13),
+                 'safety_stock' => $data->val($i, 14),
+                 'lot' => $data->val($i, 15),
+                 'lifetime' => $data->val($i, 16),
+                 'min' => $data->val($i, 17),
+                 'max' => $data->val($i, 18),
+                 'status' => $data->val($i, 19)
                  
              );
          }
@@ -167,13 +174,13 @@ class Items extends CI_Controller
      }
      public function uploadclearFailed()
      {
-         @unlink('excel/failed/items.txt');
+         @unlink('failed/items.txt');
      }
      public function uploadcreateFailed()
      {
          if ($this->input->post()) {
              $message = $this->input->post('message');
-             $textFailed = fopen('excel/failed/items.txt', 'a');
+             $textFailed = fopen('failed/items.txt', 'a');
              fwrite($textFailed, $message . "\n");
              fclose($textFailed);
          }
@@ -182,7 +189,7 @@ class Items extends CI_Controller
      //UPLOAD DOWNLOAD FAILED
      public function uploadDownloadFailed()
      {
-         $file = "excel/failed/items.txt";
+         $file = "failed/items.txt";
          header('Content-Description: File Failed');
          header('Content-Disposition: attachment; filename=' . basename($file));
          header('Expires: 0');
@@ -198,18 +205,11 @@ class Items extends CI_Controller
      {
          if ($this->input->post()) {
              $data = $this->input->post('data');
-            
-             //autoid
-             $code = $data['category'].$data['product_family'];
-             $sql = $this->db->query("SELECT max(`id`) as kode From items where id like '%$code%'");
-             $row = $sql->row();
-             $kode = substr($row->kode, 7);
-             $autoid = $code."NA"."-". sprintf("%04s", $kode + 1);
-
 
             //Cek Process Number        //table                   //field           //field excel
             $category = $this->crud->read('item_categories', [], ["number" => $data['category']]);
             $prod_fam = $this->crud->read('item_familys', [], ["number" => $data['product_family']]);
+            $prod_sub_fam = $this->crud->read('item_family_subs', [], ["number" => $data['sub_product_family']]);
             $items = $this->crud->read('items', [], ["number" => $data['part_no']]);
 
             if (empty($category->number)) {
@@ -219,6 +219,18 @@ class Items extends CI_Controller
             } elseif (!empty($items->number)) {
                 echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['part_no'] . " Duplicate Data", "theme" => "error"));
             } else {
+                //autoid
+                
+                if (empty($prod_sub_fam->number)) {
+                    $code = $data['category'] . $data['product_family']."NA";
+                }else{
+                    $code = $data['category'] . $data['product_family'].$data['sub_product_family'];
+                }
+                $sql = $this->db->query("SELECT coalesce(max(`id`), 0) as kode From items where id like '%$code%'");
+                $row = $sql->row();
+                $kode = substr($row->kode, -4);
+                $autoid = $code . "-" . sprintf("%04s", $kode + 1);
+
                  $dataFinal = array(
                      //field        //excel
                      "id" => $autoid,
@@ -228,6 +240,7 @@ class Items extends CI_Controller
                      "type" => $data['product_type'],
                      "item_category_number" => $data['category'],
                      "item_family_number" => $data['product_family'],
+                     "item_family_sub_number" => $data['sub_product_family'],
                      "uom" => $data['unit_of_measure'],
                      "leadtime" => $data['lead_time_production'],
                      "weight" => $data['weight'],
@@ -260,10 +273,11 @@ class Items extends CI_Controller
          $config = $this->db->get()->row();
          $config_iso = $this->db->get('config_iso')->row();
  
-         $this->db->select('a.*, b.name as item_category_name , c.name as item_familys_name');
+         $this->db->select('a.*, b.name as item_category_name , c.name as item_familys_name , d.name as item_family_sub_name');
          $this->db->from('items a');
          $this->db->join('item_categories b', 'a.item_category_number = b.number');
          $this->db->join('item_familys c', 'a.item_family_number = c.number');
+         $this->db->join('item_family_subs d', 'a.item_family_sub_number = d.number','left');
          $this->db->where('a.deleted', 0);
          $this->db->order_by('id', 'ASC');
          $records = $this->db->get()->result_array();
@@ -320,6 +334,7 @@ class Items extends CI_Controller
                  <th>Product Type</th>
                  <th>Category</th>
                  <th>Product Family</th>
+                 <th>Product Sub Family</th>
                  <th>Unit Of Measure</th>
                  <th>Lead Time Production</th>
                  <th>Weight (gr)</th>
@@ -343,6 +358,7 @@ class Items extends CI_Controller
                          <td>' . $data['type'] . '</td>
                          <td>' . $data['item_category_name'] . '</td>
                          <td>' . $data['item_familys_name'] . '</td>
+                         <td>' . $data['item_family_sub_name'] . '</td>
                          <td>' . $data['uom'] . '</td>
                          <td>' . $data['leadtime'] . '</td>
                          <td>' . $data['weight'] . '</td>

@@ -34,10 +34,11 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 700px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
+            <div style="width:50%;float:left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Id</span>
                 <input style="width:30%;" name="id" id="id" readonly required="" class="easyui-textbox">
@@ -69,6 +70,9 @@
                 <span style="width:35%; display:inline-block;">Contact Person</span>
                 <input style="width:60%;" name="attention" class="easyui-textbox">
             </div>
+            </div>
+
+            <div style="width:50%;float:left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Telp</span>
                 <input style="width:60%;" name="telp" class="easyui-textbox">
@@ -104,6 +108,7 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Bank Name</span>
                 <input style="width:60%;" name="bank_name" class="easyui-textbox">
+            </div>
             </div>
         </fieldset>
     </form>

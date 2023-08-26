@@ -39,10 +39,11 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 750px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
+            <div style="width:50%;float:left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Id</span>
                 <input style="width:30%;" name="id" id="id" readonly required="" class="easyui-textbox">
@@ -64,7 +65,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Address</span>
-                <input style="width:60%; height: 60px;" name="address" required="" class="easyui-textbox" multiline="true">
+                <input style="width:60%; height: 110px;" name="address" required="" class="easyui-textbox" multiline="true">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Contact Person</span>
@@ -78,6 +79,9 @@
                 <span style="width:35%; display:inline-block;">Fax</span>
                 <input style="width:60%;" name="fax" class="easyui-textbox">
             </div>
+            </div>
+
+            <div style="width:50%;float:left">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Email</span>
                 <input style="width:60%;" name="email" class="easyui-textbox">
@@ -124,6 +128,7 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Bank Name</span>
                 <input style="width:60%;" name="bank_name" class="easyui-textbox">
+            </div>
             </div>
         </fieldset>
     </form>

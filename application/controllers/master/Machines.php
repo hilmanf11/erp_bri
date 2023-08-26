@@ -37,13 +37,13 @@ class Machines extends CI_Controller
      }
 
      //CODE OTOMATIS
-     public function autoid($item_category_number, $item_family_number, $type_process_id){
-         $code = $item_category_number.$item_family_number.$type_process_id; 
-         $sql = $this->db->query("SELECT max(`id`) as kode From machines where id like '%$code%'");
+     public function autoid($type_process_id){
+         $code = $type_process_id; 
+         $sql = $this->db->query("SELECT coalesce(max(`id`),0) as kode From machines where id like '%$code%'");
          $row = $sql->row();
-         $kode = substr($row->kode, 7);
-         $autoid = $code."-". sprintf("%04s", $kode + 1);
-         echo $autoid;
+         $kode = substr($row->kode, -4);
+         $autoid = "ASMC".$code."-". sprintf("%04s", $kode + 1);
+         echo $autoid;   
      }
 
      //GET DATATABLES
@@ -59,13 +59,11 @@ class Machines extends CI_Controller
              $offset = ($page - 1) * $rows;
              $result = array();
              //Select Query
-             $this->db->select('a.*, b.name as item_type_process_name , c.name as item_type_name , d.name as item_category_name , e.name as item_familys_name');
-             $this->db->from('machines a');
-             $this->db->join('type_process b', 'a.type_process_id = b.id');
-             $this->db->join('types c', 'a.type_id = c.id');
-             $this->db->join('item_categories d', 'a.item_category_number = d.number');
-             $this->db->join('item_familys e', 'a.item_family_number = e.number');
-             $this->db->where('a.deleted', 0);
+            $this->db->select('a.*, b.name as item_type_process_name , c.name as item_type_name');
+            $this->db->from('machines a');
+            $this->db->join('type_process b', 'a.type_process_id = b.id');
+            $this->db->join('types c', 'a.type_id = c.id');
+            $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
                     if($filter->field == "item_type_process_name"){
@@ -153,20 +151,18 @@ class Machines extends CI_Controller
                  'asset_no' => $data->val($i, 2),
                  'machine_no' => $data->val($i, 3),
                  'name_of_machine' => $data->val($i, 4),
-                 'category' => $data->val($i, 5),
-                 'product_family' => $data->val($i, 6),
-                 'process_type' => $data->val($i, 7),
-                 'specification' => $data->val($i, 8),
-                 'purchase_date' => $data->val($i, 9),
-                 'manufacturing_date' => $data->val($i, 10),
-                 'maker' => $data->val($i, 11),
-                 'tonage_of_machine' => $data->val($i, 12),
-                 'uom' => $data->val($i, 13),
-                 'vacum' => $data->val($i, 14),
-                 'rt' => $data->val($i, 15),
-                 'type' => $data->val($i, 16),
-                 'brand' => $data->val($i, 17),
-                 'status' => $data->val($i, 18)
+                 'process_type' => $data->val($i, 5),
+                 'specification' => $data->val($i, 6),
+                 'purchase_date' => $data->val($i, 7),
+                 'manufacturing_date' => $data->val($i, 8),
+                 'maker' => $data->val($i, 9),
+                 'tonage_of_machine' => $data->val($i, 10),
+                 'uom' => $data->val($i, 11),
+                 'vacum' => $data->val($i, 12),
+                 'rt' => $data->val($i, 13),
+                 'type' => $data->val($i, 14),
+                 'brand' => $data->val($i, 15),
+                 'status' => $data->val($i, 16)
                  
              );
          }
@@ -209,27 +205,21 @@ class Machines extends CI_Controller
              $data = $this->input->post('data');//field excel
 
              //AUTOID
-             $code = $data['category'].$data['product_family'].$data['process_type']; 
+             $code = $data['process_type']; 
              $sql = $this->db->query("SELECT max(`id`) as kode From machines where id like '%$code%'");
              $row = $sql->row();
              $kode = substr($row->kode, 7);
-             $autoid = $code."-". sprintf("%04s", $kode + 1);
+             $autoid = "ASMC".$code."-". sprintf("%04s", $kode + 1);
 
             //Cek Process Number                //table             //field           //field excel
             $type_process = $this->crud->read('type_process', [], ["number" => $data['process_type']]);
             $types = $this->crud->read('types', [], ["number" => $data['type']]);
-            $category = $this->crud->read('item_categories', [], ["number" => $data['category']]);
-            $prod_fam = $this->crud->read('item_familys', [], ["number" => $data['product_family']]);
             $machines = $this->crud->read('machines', [], ["number" => $data['machine_no']]);
 
           if (empty($type_process->name)) {
               echo json_encode(array("title" => "Not Found", "message" => "Process Type " . $data['process_type'] . " is Not Found", "theme" => "error"));
             } elseif (empty($types->name)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Type " . $data['type'] . " is Not Found", "theme" => "error"));
-            } elseif (empty($category->name)) {
-                    echo json_encode(array("title" => "Not Found", "message" => "Category " . $data['category'] . " is Not Found", "theme" => "error"));
-            } elseif (empty($prod_fam->name)) {
-                    echo json_encode(array("title" => "Not Found", "message" => "Product Family " . $data['product_family'] . " is Not Found", "theme" => "error"));
             } elseif (!empty($machines->number)) {
                 echo json_encode(array("title" => "Duplicated", "message" => "Machine No " . $data['machine_no'] . " Duplicate Data", "theme" => "error"));
             } else {
@@ -239,8 +229,6 @@ class Machines extends CI_Controller
                      "asset_id" => $data['asset_no'],
                      "number" => $data['machine_no'],
                      "name" => $data['name_of_machine'],
-                     "item_category_number" => $data['category'],
-                     "item_family_number" => $data['product_family'],
                      "type_process_id" => $type_process->id,
                      "specification" => $data['specification'],
                      "purchase_date" => $data['purchase_date'],
@@ -274,12 +262,10 @@ class Machines extends CI_Controller
          $config = $this->db->get()->row();
          $config_iso = $this->db->get('config_iso')->row();
  
-         $this->db->select('a.*, b.name as item_type_process_name , c.name as item_type_name , d.name as item_category_name , e.name as item_familys_name');
+         $this->db->select('a.*, b.name as item_type_process_name , c.name as item_type_name');
          $this->db->from('machines a');
          $this->db->join('type_process b', 'a.type_process_id = b.id');
          $this->db->join('types c', 'a.type_id = c.id');
-         $this->db->join('item_categories d', 'a.item_category_number = d.number');
-         $this->db->join('item_familys e', 'a.item_family_number = e.number');
          $this->db->where('a.deleted', 0);
          $this->db->order_by('id', 'ASC');
          $records = $this->db->get()->result_array();
@@ -333,8 +319,6 @@ class Machines extends CI_Controller
                  <th>Asset No</th>
                  <th>Machine No</th>
                  <th>Name of Machine</th>
-                 <th>Category</th>
-                 <th>Product Family</th>
                  <th>Process Type</th>
                  <th>Specification</th>
                  <th>Purchase Date</th>
@@ -356,8 +340,6 @@ class Machines extends CI_Controller
                          <td>' . $data['asset_id'] . '</td>
                          <td>' . $data['number'] . '</td>
                          <td>' . $data['name'] . '</td>
-                         <td>' . $data['item_category_name'] . '</td>
-                         <td>' . $data['item_familys_name'] . '</td>
                          <td>' . $data['item_type_process_name'] . '</td>
                          <td>' . $data['specification'] . '</td>
                          <td>' . $data['purchase_date'] . '</td>

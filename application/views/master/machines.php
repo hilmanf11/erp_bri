@@ -7,8 +7,6 @@
             <th rowspan="2" data-options="field:'asset_id',halign:'center',width:150">Asset No</th>
             <th rowspan="2" data-options="field:'number',halign:'center',width:100">Machine No</th>
             <th rowspan="2" data-options="field:'name',align:'center',width:100">Name Of <br>Machine</th>
-            <th rowspan="2" data-options="field:'item_category_name',align:'center',width:100">Category</th>
-            <th rowspan="2" data-options="field:'item_familys_name',align:'center',width:100">Product Family </th>
             <th rowspan="2" data-options="field:'item_type_process_name',align:'center',width:100">Process Type</th>
             <th rowspan="2" data-options="field:'specification',halign:'center',width:100">Specification</th>
             <th rowspan="2" data-options="field:'purchase_date',halign:'center',width:80">Purchase <br>Date</th>
@@ -38,10 +36,11 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
+            <div style="width:50%;float:left">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">ID</span>
                 <input style="width:30%;" name="id" id="id" readonly class="easyui-textbox">
@@ -59,14 +58,6 @@
                 <input style="width:60%;" name="name" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Category</span>
-                <input style="width:60%;" name="item_category_number" id="item_category_number" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product Family</span>
-                <input style="width:60%;" name="item_family_number" id="item_family_number" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Process Type</span>
                 <input style="width:60%;" name="type_process_id" id="type_process_id" required="" class="easyui-combobox">
             </div>
@@ -82,6 +73,9 @@
                 <span style="width:35%; display:inline-block;">Manufacturing Date</span>
                 <input style="width:60%;" name="manufactur_date" data-options="formatter:myformatter,parser:myparser" required="" class="easyui-datebox">
             </div>
+            </div>
+
+            <div style="width:50%;float:left">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Maker</span>
                 <input style="width:60%;" name="maker" class="easyui-textbox">
@@ -97,8 +91,8 @@
             <div class="fitem">
             <span style="width:35%; display:inline-block;">Vacum</span>
                 <select style="width:30%;" name="vacum" class="easyui-combobox" panelHeight="auto">
-                    <option value="EXPORT">YES</option>
-                    <option value="IMPORT">NO</option>
+                    <option value="YES">YES</option>
+                    <option value="NO">NO</option>
                 </select>
             </div>
             <div class="fitem">
@@ -119,6 +113,7 @@
                     <option value="0">Active</option>
                     <option value="1">Inactive</option>
                 </select>
+            </div>
             </div>
         </fieldset>
     </form>
@@ -151,16 +146,7 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/machines/create') ?>';
         $('#frm_insert').form('clear');
-        
-        // auto id
-        $.ajax({
-            type: "post",
-            url: '<?= base_url('master/machines/autoid') ?>',
-            dataType: "html",
-            success: function (response) {
-                $('#id').textbox('setValue', response);
-            }
-        });
+
     }
     //EDIT DATA
     function update() {
@@ -380,40 +366,24 @@
             }]
         });
 
-        
-        $('#item_category_number').combobox({
-            url: '<?php echo base_url('master/item_categories/reads'); ?>',
-            valueField: 'number',
+    
+        $('#type_process_id').combobox({
+            url: '<?php echo base_url('master/type_process/reads'); ?>',
+            valueField: 'id',
             textField: 'name',
-            prompt: "Choose Category",
-            onSelect: function(item_categories) {
-                $('#item_family_number').combobox({
-                    url: '<?php echo base_url('master/item_familys/reads'); ?>/' + item_categories.number,
-                    valueField: 'number',
-                    textField: 'name',
-                    prompt: "Choose Family Product",
-                    onSelect: function(item_family) {
-                        $('#type_process_id').combobox({
-                            url: '<?php echo base_url('master/type_process/reads'); ?>',
-                            valueField: 'id',
-                            textField: 'name',
-                            prompt: "Choose Process Type",
-                            onSelect: function(machine) {
-                                $.ajax({
-                                    type: "post",
-                                    url: '<?php echo base_url('master/machines/autoid/'); ?>' + item_categories.number + '/' + item_family.number+ '/' + machine.number,
-                                    dataType: "html",
-                                    success: function (response) {
-                                        $('#id').textbox('setValue', response);
-                                    }
-                                });
-                            }
-                        });
+            prompt: "Choose Process Type",
+            onSelect: function(machine) {
+                $.ajax({
+                    type: "post",
+                    url: '<?php echo base_url('master/machines/autoid/'); ?>' + machine.number,
+                    dataType: "html",
+                    success: function (response) {
+                        $('#id').textbox('setValue', response);
                     }
                 });
             }
         });
-
+    
 
         $('#type_id').combobox({
             url: '<?= base_url('master/types/reads') ?>',
