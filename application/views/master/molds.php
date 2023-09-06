@@ -3,25 +3,14 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',align:'center',width:100">Id</th>
-            <th rowspan="2" data-options="field:'number',align:'center',width:100">Code</th>
-            <th rowspan="2" data-options="field:'name',halign:'center',width:250">Name</th>
-            <th rowspan="2" data-options="field:'type',align:'center',width:100">Type</th>
-            <th rowspan="2" data-options="field:'address',halign:'center',width:300">Address</th>
-            <th rowspan="2" data-options="field:'attention',halign:'center',width:150">Contact Person</th>
-            <th rowspan="2" data-options="field:'telp',halign:'center',width:150">Telp</th>
-            <th rowspan="2" data-options="field:'fax',halign:'center',width:150">Fax</th>
-            <th rowspan="2" data-options="field:'email',halign:'center',width:200">Email</th>
-            <th rowspan="2" data-options="field:'website',halign:'center',width:150">Website</th>
-            <th rowspan="2" data-options="field:'currency',align:'center',width:80">Currency</th>
-            <th rowspan="2" data-options="field:'payment_term',align:'center',width:100">Payment Term</th>
-            <th rowspan="2" data-options="field:'incoterm',align:'center',width:80">Incoterm</th>
-            <th rowspan="2" data-options="field:'vat_status',align:'center',width:80">Vat Status</th>
-            <th rowspan="2" data-options="field:'vat',align:'center',width:80">Vat</th>
-            <th rowspan="2" data-options="field:'tax',halign:'center',width:120">Tax No</th>
-            <th rowspan="2" data-options="field:'bank_account',halign:'center',width:120">Bank Account</th>
-            <th rowspan="2" data-options="field:'bank_name',halign:'center',width:200">Bank Name</th>
-            <th rowspan="2" data-options="field:'status',width:80, styler:cellStyler, formatter:cellFormatter, align:'center'">Status</th>
+            <th rowspan="2" data-options="field:'id',width:100,align:'center'">ID</th>
+            <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Mold Name</th>
+            <th rowspan="2" data-options="field:'type',width:100,halign:'center',formatter:formatType">Type</th>
+            <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
+            <th rowspan="2" data-options="field:'model',width:100,halign:'center',formatter:formatModel">Model</th>
+            <th rowspan="2" data-options="field:'project_year',width:100,halign:'center',align:'center'">Project Year</th>
+            <th rowspan="2" data-options="field:'standard',width:100,halign:'center',align:'center'">Standard <br>Cavity</th>
+            <th rowspan="2" data-options="field:'actual',width:100,halign:'center',align:'center'">Actual Cavity</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -38,103 +27,53 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
-            <div style="width:50%;float:left;">
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Id</span>
-                <input style="width:30%;" name="id" id="id" readonly required="" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">ID</span>
+                <input style="width:30%;" name="id" id="id" required="" readonly class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Code</span>
-                <input style="width:30%;" name="number" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Name</span>
+                <span style="width:35%; display:inline-block;">Mold Name</span>
                 <input style="width:60%;" name="name" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Type</span>
-                <select style="width:30%;" name="type" class="easyui-combobox" panelHeight="auto">
-                    <option value="IMPORT">IMPORT</option>
-                    <option value="LOCAL">LOCAL</option>
+                <select style="width:60%;" name="type" id="type" required="" panelHeight="auto" class="easyui-combobox">
+                    <option value="EX">EXTERNAL</option>
+                    <option value="IN">INTERNAL</option>
                 </select>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Address</span>
-                <input style="width:60%; height: 115px;" name="address" required="" class="easyui-textbox" multiline="true">
+                <span style="width:35%; display:inline-block;">Customer Name</span>
+                <input style="width:60%;" name="customer_id" id="customer_id" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Contact Person</span>
-                <input style="width:60%;" name="attention" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Telp</span>
-                <input style="width:60%;" name="telp" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Fax</span>
-                <input style="width:60%;" name="fax" class="easyui-textbox">
-            </div>
-            </div>
-
-            <div style="width:50%;float:left">
-            <div class="fitem">
-                <span style="width:30%; display:inline-block;">Email</span>
-                <input style="width:60%;" name="email" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:30%; display:inline-block;">Website</span>
-                <input style="width:60%;" name="website" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:30%; display:inline-block;">Currency</span>
-                <input style="width:60%;" name="currency" required="" id="currency" class="easyui-combogrid">
-            </div>
-            <div class="fitem">
-                <span style="width:30%; display:inline-block;">Payment Term (Days)</span>
-                <input style="width:30%;height: 30px;" name="payment_term" class="easyui-numberbox" multiline="ture">
-            </div>
-            <div class="fitem">
-                <span style="width:30%; display:inline-block;">Incoterm</span>
-                <input style="width:60%;" name="incoterm" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:30%; display:inline-block;">Vat Status</span>
-                <select style="width:30%;" name="vat_status" class="easyui-combobox" panelHeight="auto">
-                    <option value="VAT">VAT</option>
-                    <option value="NON VAT">NON VAT</option>
+                <span style="width:35%; display:inline-block;">Model</span>
+                <select style="width:60%;" name="model" id="model" required="" panelHeight="auto" class="easyui-combobox">
+                    <option value="COM">COMPRESSION</option>
+                    <option value="INJ">INJECTION</option>
+                    <option value="TRF">TRANSFER</option>
                 </select>
             </div>
             <div class="fitem">
-                <span style="width:30%; display:inline-block;">VAT (%)</span>
-                <input style="width:30%;" name="vat" class="easyui-numberbox">
+                <span style="width:35%; display:inline-block;">Project Year</span>
+                <input style="width:60%;" name="project_year" data-options="formatter:myformatter,parser:myparser" required="" class="easyui-datebox">
             </div>
             <div class="fitem">
-                <span style="width:30%; display:inline-block;">Tax No</span>
-                <input style="width:60%;" name="tax" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Standard Cavity</span>
+                <input style="width:60%;" name="standard" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:30%; display:inline-block;">Bank Account</span>
-                <input style="width:60%;" name="bank_account" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:30%; display:inline-block;">Bank Name</span>
-                <input style="width:60%;" name="bank_name" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:30%; display:inline-block;">Status</span>
-                <select style="width:30%;" name="status" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="0">Active</option>
-                    <option value="1">Inactive</option>
-                </select>
-            </div>
+                <span style="width:35%; display:inline-block;">Actual Cavity</span>
+                <input style="width:60%;" name="actual" required="" class="easyui-textbox">
             </div>
         </fieldset>
     </form>
 </div>
+
 <!-- Upload -->
 <div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
     <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
@@ -156,17 +95,17 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/suppliers/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/molds/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/suppliers/create') ?>';
+        url_save = '<?= base_url('master/molds/create') ?>';
         $('#frm_insert').form('clear');
 
         $.ajax({
             type: "post",
-            url: '<?= base_url('master/suppliers/autoid') ?>',
+            url: '<?= base_url('master/molds/autoid') ?>',
             dataType: "html",
             success: function (response) {
                 $('#id').textbox('setValue', response);
@@ -179,11 +118,39 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/suppliers/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('master/molds/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
+
+    // Formatter function untuk kolom 'Type'
+    function formatType(value, row, index) {
+        if (value === 'EX') {
+            return 'EXTERNAL';
+        } else if (value === 'IN') {
+            return 'INTERNAL';
+        }
+        return value; // Nilai lainnya tetap seperti aslinya
+    }
+
+    // Formatter function untuk kolom 'Type'
+    function formatModel(value, row, index) {
+        if (value === 'COM') {
+            return 'COMPRESSION';
+        } else if (value === 'INJ'){
+            return 'INJECTION';
+        } else if (value === 'TRF') {
+            return 'TRANSFER';
+        }
+        return value; // Nilai lainnya tetap seperti aslinya
+    }
+
+        // Inisialisasi datagrid
+    $('#dg').datagrid({
+        
+    });
+
     //DELETE DATA
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
@@ -194,7 +161,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/suppliers/delete') ?>',
+                            url: '<?= base_url('master/molds/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -223,47 +190,135 @@
     }
 
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_suppliers.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_molds.xls') ?>');
     }
-
     //PRINT PDF
     function pdf() {
         $("#printout").get(0).contentWindow.print();
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/suppliers/print/excel') ?>');
+        window.location.assign('<?= base_url('master/molds/print/excel') ?>');
     }
     //RELOAD
     function reload() {
         window.location.reload();
     }
-   //CELLSTYLE STATUS
-   function cellStyler(value, row, index) {
-        if (value == 0) {
-            return 'background: #53D636; color:white;';
-        } else {
-            return 'background: #FF5F5F; color:white;';
-        }
+
+     // FORMAT tahun-bulan-tanggal
+    function myformatter(date) {
+        var y = date.getFullYear();
+        var m = date.getMonth(); // Mengambil indeks bulan (0 - Januari, 11 - Desember)
+        var monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+        return monthNames[m] + ' ' + y;
     }
-    //FORMATTER STATUS
-    function cellFormatter(value) {
-        if (value == 0) {
-            return 'Active';
-        } else {
-            return 'Inactive';
+
+    function myparser(s) {
+        if (!s) return new Date();
+        var parts = s.split(' ');
+        if (parts.length === 2) {
+            var monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+            var m = monthNames.indexOf(parts[0]); // Mencari indeks bulan dari nama bulan
+            var y = parseInt(parts[1]);
+            if (m !== -1 && !isNaN(y)) {
+                return new Date(y, m);
+            }
         }
-    };
+        return new Date();
+    }
+
+
 
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/suppliers/datatables') ?>',
+            url: '<?= base_url('master/molds/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
             rownumbers: true
         }).datagrid('enableFilter');
+
+        //Upload Data
+        $('#dlg_upload').dialog({
+            buttons: [{
+                text: 'List Failed',
+                handler: function() {
+                    window.open('<?= base_url('master/molds/uploadDownloadFailed') ?>', '_blank');
+                }
+            }, {
+                text: 'Upload',
+                iconCls: 'icon-ok',
+                handler: function() {
+                    $('#frm_upload').form('submit', {
+                        url: '<?= base_url('master/molds/upload') ?>',
+                        onSubmit: function() {
+                            if ($(this).form('validate') == false) {
+                                return $(this).form('validate');
+                            } else {
+                                $.messager.progress({
+                                    title: 'Please Wait',
+                                    msg: 'Importing Excel to Database'
+                                });
+                            }
+                        },
+                        success: function(result) {
+                            $.messager.progress('close');
+                            //Clear File
+                            $.ajax({
+                                url: "<?= base_url('master/molds/uploadclearFailed') ?>"
+                            });
+                            var json = eval('(' + result + ')');
+                            requestData(json.total, json);
+
+                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                                if (value < 100) {
+                                    value = Math.floor((number / total) * 100);
+                                    $('#p_upload').progressbar('setValue', value);
+                                    $('#p_start').html(number);
+                                    $('#p_finish').html(total);
+
+                                    $.ajax({
+                                        type: "POST",
+                                        async: true,
+                                        url: "<?= base_url('master/molds/uploadCreate') ?>",
+                                        data: {
+                                            "data": json[number - 1]
+                                        },
+                                        cache: false,
+                                        dataType: "json",
+                                        success: function(result) {
+                                            if (result.theme == "success") {
+                                                $('#p_success').html(success);
+                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                            } else {
+                                                $('#p_failed').html(failed);
+                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                                //Json Failed
+                                                $.ajax({
+                                                    type: "POST",
+                                                    async: true,
+                                                    url: "<?= base_url('master/molds/uploadcreateFailed') ?>",
+                                                    data: {
+                                                        data: json[number - 1],
+                                                        message: result.message
+                                                    },
+                                                    cache: false
+                                                });
+                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                            }
+                                            $("#p_remarks").append(title + "<br>");
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    });
+                }
+            }]
+        });
+
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
@@ -289,109 +344,50 @@
                 }
             }]
         });
-        //GET CURRENCY
-        $('#currency').combogrid({
-            url: '<?= base_url('master/currencies/reads') ?>',
-            panelWidth: 420,
-            idField: 'name',
-            textField: 'name',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Choose Currency",
-            columns: [
-                [{
-                    field: 'symbol',
-                    title: 'Symbol',
-                    width: 100
-                }, {
-                    field: 'number',
-                    title: 'Currency ID',
-                    width: 120
-                }, {
-                    field: 'name',
-                    title: 'Currency Name',
-                    width: 250
-                }, ]
-            ]
-        });
-        //Upload Data
-        $('#dlg_upload').dialog({
-            buttons: [{
-                text: 'List Failed',
-                handler: function() {
-                    window.open('<?= base_url('master/suppliers/uploadDownloadFailed') ?>', '_blank');
-                }
-            }, {
-                text: 'Upload',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/suppliers/upload') ?>',
-                        onSubmit: function() {
-                            if ($(this).form('validate') == false) {
-                                return $(this).form('validate');
-                            } else {
-                                $.messager.progress({
-                                    title: 'Please Wait',
-                                    msg: 'Importing Excel to Database'
-                                });
-                            }
-                        },
-                        success: function(result) {
-                            $.messager.progress('close');
-                            //Clear File
-                            $.ajax({
-                                url: "<?= base_url('master/suppliers/uploadclearFailed') ?>"
-                            });
-                            var json = eval('(' + result + ')');
-                            requestData(json.total, json);
-
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
-
-                                    $.ajax({
-                                        type: "POST",
-                                        async: true,
-                                        url: "<?= base_url('master/suppliers/uploadCreate') ?>",
-                                        data: {
-                                            "data": json[number - 1]
-                                        },
-                                        cache: false,
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (result.theme == "success") {
-                                                $('#p_success').html(success);
-                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                //Json Failed
-                                                $.ajax({
-                                                    type: "POST",
-                                                    async: true,
-                                                    url: "<?= base_url('master/suppliers/uploadcreateFailed') ?>",
-                                                    data: {
-                                                        data: json[number - 1],
-                                                        message: result.message
-                                                    },
-                                                    cache: false
-                                                });
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                            }
-                                            $("#p_remarks").append(title + "<br>");
-                                        }
-                                    });
-                                }
-                            }
-                        }
-                    });
-                }
-            }]
-        });
     });
+
+        $('#type').combobox({
+        url: '<?php echo base_url('master/molds/type'); ?>',
+        valueField: 'value',
+        textField: 'name',
+        prompt: "Choose Type",
+        onSelect: function(selectedOption_type) {
+            // Ambil nilai yang dipilih dari combobox
+            var selectedValue_type = selectedOption_type.value;
+            var selectedName_type = selectedOption_type.name;
+
+                $('#model').combobox({
+                    url: '<?php echo base_url('master/molds/model'); ?>',
+                    valueField: 'value',
+                    textField: 'name',
+                    prompt: "Choose Model",
+                    onSelect: function(selectedOption_model) {
+                        // Ambil nilai yang dipilih dari combobox
+                        var selectedValue_model = selectedOption_model.value;
+                        var selectedName_model = selectedOption_model.name;
+
+                        // Lakukan permintaan AJAX untuk mendapatkan ID berdasarkan nilai yang dipilih
+                        $.ajax({
+                            type: "post",
+                            url: '<?php echo base_url('master/molds/autoid/'); ?>' + selectedValue_type + '/' + selectedValue_model,
+                            dataType: "html",
+                            success: function (response) {
+                                // Set nilai response ke elemen dengan ID '#id'
+                                $('#id').textbox('setValue', response);
+                            }
+                        });
+                    }
+                });
+           }
+        });
+
+
+
+
+    $('#customer_id').combobox({
+            url: '<?= base_url('master/customers/reads') ?>',
+            valueField: 'id',
+            textField: 'name',
+            prompt: "Choose Customers"
+         });
 </script>

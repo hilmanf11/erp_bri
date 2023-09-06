@@ -12,6 +12,7 @@ class Customer_items extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
+        $this->form_validation->set_rules('customer_id', 'Customer', 'required|min_length[1]|max_length[20]|is_unique[customer_items.customer_id]');
         $this->form_validation->set_rules('item_id', 'Code', 'required|min_length[1]|max_length[30]|is_unique[customer_items.item_id]');
         
     }
@@ -32,98 +33,134 @@ class Customer_items extends CI_Controller
      public function reads()
      {
          $post = isset($_POST['q']) ? $_POST['q'] : "";
-         $send = $this->crud->reads('customer_items', ["name" => $post]);
+         $send = $this->crud->reads('customer_items', ["customer_id" => $post]);
          echo json_encode($send);
      }
-
-    //CODE OTOMATIS
-    public function autoid() {
-        $currentYear = date('Y');
-        $sql = $this->db->query("SELECT max(`id`) as kode From customer_items");
-        $row = $sql->row();
-        
-        // Extract year and number from the existing code
-        $existingYear = substr($row->kode, 2, 4);
-        $existingNumber = substr($row->kode, -4);
-    
-        // Check if the year has changed
-        if ($existingYear != $currentYear) {
-            // Reset the number to 1
-            $newNumber = 1;
-        } else {
-            // Increment the existing number
-            $newNumber = intval($existingNumber) + 1;
-        }
-    
-        // Format the new number with leading zeros
-        $newNumberFormatted = sprintf("%04s", $newNumber);
-    
-        // Construct the new auto-generated ID
-        $autoid = "CI" . $currentYear . $newNumberFormatted;
-        
-        echo $autoid;
-    }
 
      //GET DATATABLES
      public function datatables()
      {
          if ($this->input->post()) {
-             $filters = json_decode($this->input->post('filterRules'));
-             $page = $this->input->post('page');
-             $rows = $this->input->post('rows');
-             //Pagination 1-10
-             $page   = isset($page) ? intval($page) : 1;
-             $rows   = isset($rows) ? intval($rows) : 10;
-             $offset = ($page - 1) * $rows;
-             $result = array();
-             //Select Query
-             $this->db->select('a.*, b.name as customers_name, c.number as item_number, c.name as item_name');
-             $this->db->from('customer_items a');
-             $this->db->join('customers b', 'a.customer_id = b.id');
-             $this->db->join('items c', 'a.item_id = c.id');
-             $this->db->where('a.deleted', 0);
-            if (@count($filters) > 0) {
-                foreach ($filters as $filter) {
-                    if($filter->field == "customers_name"){
-                        $this->db->like("b.name", $filter->value);
-                    }elseif($filter->field == "item_number"){
-                        $this->db->like("c.number", $filter->value);
+            $get = $this->input->get();
+            $filter_customer_id = @base64_decode($get['filter_customer_id']);
+            $filter_item_id = @base64_decode($get['filter_item_id']);
 
-                    }elseif($filter->field == "item_name"){
-                        $this->db->like("c.name", $filter->value);
-                    }else{
-                        $this->db->like("a.".$filter->field, $filter->value);
-                    }
-                }
-            }
-             $this->db->order_by('a.id', 'ASC');
-             //Total Data
-             $totalRows = $this->db->count_all_results('', false);
-             //Limit 1 - 10
-             $this->db->limit($rows, $offset);
-             //Get Data Array
-             $records = $this->db->get()->result_array();
-             //Mapping Data
-             $result['total'] = $totalRows;
-             $result = array_merge($result, ['rows' => $records]);
-             echo json_encode($result);
+            $page = $this->input->post('page');
+            $rows = $this->input->post('rows');
+             //Pagination 1-10
+            $page   = isset($page) ? intval($page) : 1;
+            $rows   = isset($rows) ? intval($rows) : 10;
+            $offset = ($page - 1) * $rows;
+            $result = array();
+             //Select Query
+            $this->db->select('b.number as customers_number, b.name as customer_name, b.type, b.id as customer_id, b.status, a.created_by, a.created_date, a.updated_by, a.updated_date');
+            $this->db->from('customer_items a');
+            $this->db->join('customers b', 'a.customer_id = b.id');
+            $this->db->like('a.customer_id', $filter_customer_id);
+            $this->db->like('a.item_id', $filter_item_id);
+            $this->db->group_by('b.name');
+            $this->db->order_by('b.id', 'ASC');
+            //Total Data
+            $totalRows = $this->db->count_all_results('', false);
+            //Limit 1 - 10
+            $this->db->limit($rows, $offset);
+            //Get Data Array
+            $records = $this->db->get()->result_array();
+            //Mapping Data
+            $result['total'] = $totalRows;
+            $result = array_merge($result, ['rows' => $records]);
+            echo json_encode($result);
          }
      }
-     //CREATE DATA
-     public function create()
+
+     //GET DATATABLES DETAILS
+    public function datatableDetails()
+    {
+        if ($this->input->get()) {
+            $number = base64_decode($this->input->get('number'));
+            $filter_customer_id = base64_decode($this->input->get('filter_customer_id'));
+
+            $this->db->select('a.*, b.currency, c.number as item_number, c.name as item_name, c.moq as item_moq, c.mpq as item_mpq, c.leadtime as item_leadtime, c.safety_stock as item_safety_stock');
+            $this->db->from('customer_items a');
+            $this->db->join('customers b', 'a.customer_id = b.id');
+            $this->db->join('item_fg c', 'a.item_id = c.id');
+            $this->db->where('b.number', $number);
+            $this->db->like('a.customer_id', $filter_customer_id);
+            $this->db->group_by('a.id');
+            $this->db->order_by('a.id', 'ASC');
+            $records = $this->db->get()->result_array();
+
+            echo json_encode($records);
+        }
+    }
+
+     // GET DATATABLES UPDATE
+     public function datatableUpdates()
      {
-         if ($this->input->post()) {
-             if ($this->form_validation->run() == TRUE) {
-                 $post   = $this->input->post();
-                 $send   = $this->crud->create('customer_items', $post);
-                 echo $send;
-             } else {
-                 show_error(validation_errors());
-             }
-         } else {
-             show_error("Cannot Process your request");
+         if ($this->input->get()) {
+             $customer_id = base64_decode($this->input->get('customer_id'));
+
+            $this->db->select('a.*,  c.number as item_number, c.name as item_name');
+            $this->db->from('customer_items a');
+            $this->db->join('customers b', 'a.customer_id = b.id');
+            $this->db->join('item_fg c', 'a.item_id = c.id');
+            $this->db->where('a.customer_id', $customer_id);
+            $this->db->order_by('a.id', 'ASC');
+            $records = $this->db->get()->result_array();
+ 
+             echo json_encode($records);
          }
      }
+
+      // GET DATATABLE HISTORY PRICE
+    public function datatableHistories()
+    {
+        if ($this->input->get()) {
+            $customer_id = base64_decode($this->input->get('customer_id'));
+            $item_id = base64_decode($this->input->get('item_id'));
+
+            $this->db->select('*');
+            $this->db->from('customer_item_histories');
+            $this->db->where('customer_id', $customer_id);
+            $this->db->where('item_id', $item_id);
+            $this->db->order_by('valid_date', 'DESC');
+            $records = $this->db->get()->result_array();
+
+            echo json_encode($records);
+        }
+    }
+
+    //CREATE DATA
+    public function create()
+    {
+        if ($this->input->post()) {
+            $post = $this->input->post();
+
+            $customer_items = $this->crud->read("customer_items", [], ["customer_id" => $post['customer_id'], "item_id" => $post['item_id'], "item_customer" => $post['item_customer']]);
+            $customer_item_histories = $this->crud->read("customer_item_histories", [], ["customer_id" => $post['customer_id'], "item_id" => $post['item_id'], "price" => $post['price']]);
+            if (@$customer_items->customer_id != "") {
+                $send = $this->crud->update('customer_items', ["customer_id" => $post['customer_id'], "item_id" => $post['item_id']], $post);
+                if (@$customer_item_histories->customer_id == "") {
+                    $send2 = $this->crud->create('customer_item_histories', $post);
+                }
+            } else {
+                $send = $this->crud->create('customer_items', $post);
+                $send2 = $this->crud->create('customer_item_histories', $post);
+            }
+            echo $send;
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+
+    //DELETE DATA
+    public function delete()
+    {
+        $data = $this->input->post();
+        $send = $this->crud->delete('customer_items', $data);
+        $send = $this->crud->delete('customer_item_histories', $data);
+        echo $send;
+    }
     
 
       //UPDATE DATA
@@ -139,13 +176,6 @@ class Customer_items extends CI_Controller
               
           }
       }
-     //DELETE DATA
-     public function delete()
-     {
-         $data = $this->input->post();
-         $send = $this->crud->delete('customer_items', $data);
-         echo $send;
-     }
  
      //UPLOAD DATA
      public function upload()
@@ -164,10 +194,9 @@ class Customer_items extends CI_Controller
                  'customer_id' => $data->val($i, 2),
                  'product_no' => $data->val($i, 3),
                  'product_customer' => $data->val($i, 4),
-                 'currency' => $data->val($i, 5),
-                 'price' => $data->val($i, 6),
-                 'valid_date' => $data->val($i, 7),
-                 'description' => $data->val($i, 8)
+                 'price' => $data->val($i, 5),
+                 'valid_date' => $data->val($i, 6),
+                 'description' => $data->val($i, 7)
                  
              );
          }
@@ -177,13 +206,13 @@ class Customer_items extends CI_Controller
      }
      public function uploadclearFailed()
      {
-         @unlink('excel/failed/customer_items.txt');
+         @unlink('failed/customer_items.txt');
      }
      public function uploadcreateFailed()
      {
          if ($this->input->post()) {
              $message = $this->input->post('message');
-             $textFailed = fopen('excel/failed/customer_items.txt', 'a');
+             $textFailed = fopen('failed/customer_items.txt', 'a');
              fwrite($textFailed, $message . "\n");
              fclose($textFailed);
          }
@@ -192,7 +221,7 @@ class Customer_items extends CI_Controller
      //UPLOAD DOWNLOAD FAILED
      public function uploadDownloadFailed()
      {
-         $file = "excel/failed/customer_items.txt";
+         $file = "failed/customer_items.txt";
          header('Content-Description: File Failed');
          header('Content-Disposition: attachment; filename=' . basename($file));
          header('Expires: 0');
@@ -209,33 +238,10 @@ class Customer_items extends CI_Controller
         if ($this->input->post()) {
             $data       = $this->input->post('data');
 
-            $currentYear = date('Y');
-            $sql = $this->db->query("SELECT max(`id`) as kode From customer_items");
-            $row = $sql->row();
-            
-            // Extract year and number from the existing code
-            $existingYear = substr($row->kode, 2, 4);
-            $existingNumber = substr($row->kode, -4);
-        
-            // Check if the year has changed
-            if ($existingYear != $currentYear) {
-                // Reset the number to 1
-                $newNumber = 1;
-            } else {
-                // Increment the existing number
-                $newNumber = intval($existingNumber) + 1;
-            }
-        
-            // Format the new number with leading zeros
-            $newNumberFormatted = sprintf("%04s", $newNumber);
-        
-            // Construct the new auto-generated ID
-            $autoid = "CI" . $currentYear . $newNumberFormatted;
-
              //Cek Process Number     //table        //field           //field excel
-             $item = $this->crud->read('items', [], ["number" => $data['product_no']]);
+             $item = $this->crud->read('item_fg', [], ["number" => $data['product_no']]);
              $customer = $this->crud->read('customers', [], ["id" => $data['customer_id']]);
-             $customer_items = $this->crud->read('customer_items', [], ["item_id" => @$item->id]);
+             $customer_items = $this->crud->read('customer_items', [], ["item_id" => @$item->id, "customer_id" => $data['customer_id']] );
 
             if (empty($item->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Product No " . $data['product_no'] . " Not Found", "theme" => "error"));
@@ -246,11 +252,9 @@ class Customer_items extends CI_Controller
             } else {
                  $dataFinal = array(
                      //field        //excel
-                     "id" => $autoid,
                      "customer_id" => $data['customer_id'],
                      "item_id" => $item->id,
                      "item_customer" => $data['product_customer'],
-                     "currency" => $data['currency'],
                      "price" => $data['price'],
                      "valid_date" => $data['valid_date'],
                      "description" => $data['description'],
@@ -269,20 +273,24 @@ class Customer_items extends CI_Controller
              header("Content-type: application/vnd-ms-excel");
              header("Content-Disposition: attachment; filename=customer_items_$format.xls");
          }
+
+         $get = $this->input->get();
+         $filter_customer_id = @base64_decode($get['filter_customer_id']);
+         $filter_item_id = @base64_decode($get['filter_item_id']);
+
          //Config
          $this->db->select('*');
          $this->db->from('config');
          $config = $this->db->get()->row();
-         $config_iso = $this->db->get('config_iso')->row();
  
-         $this->db->select('a.*, b.name as customers_name, c.number as item_number, c.name as item_name');
+         $this->db->select('a.*, b.name as customer_name, b.currency, b.id as customer_id, c.number as item_number, c.name as item_name');
          $this->db->from('customer_items a');
          $this->db->join('customers b', 'a.customer_id = b.id');
-         $this->db->join('items c', 'a.item_id = c.id');
-         $this->db->where('a.deleted', 0);
-         $this->db->order_by('id', 'ASC');
+         $this->db->join('item_fg c', 'a.item_id = c.id');
+         $this->db->like('a.customer_id', $filter_customer_id);
+         $this->db->like('a.item_id', $filter_item_id);
+         $this->db->order_by('a.customer_id', 'ASC');
          $records = $this->db->get()->result_array();
-         
          $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customer_items {border-collapse: collapse;width: 100%;font-size: 12px;}#customer_items td, #customer_items th {border: 1px solid #ddd;padding: 2px;}#customer_items tr:nth-child(even){background-color: #f2f2f2;}#customer_items tr:hover {background-color: #ddd;}#customer_items th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
          <center>
              <div style="float: left; font-size: 12px; text-align: left;">
@@ -292,45 +300,27 @@ class Customer_items extends CI_Controller
                              <img src="' . $config->favicon . '" width="30">
                          </td>
                          <td style="font-size: 14px; text-align: left; margin:2px;">
-                             <b>' . $config->name . '</b><br>
-                             <small>MASTER customer_items</small>
+                             <b>' . $config->name . '</b>
                          </td>
                      </tr>
                  </table>
              </div>
              <div style="float: right; font-size: 12px; text-align: right;">
-                 <table style="width:100%; font-size:10px;">
-                     <tr>
-                         <td width="60">Doc No</td>
-                         <td width="5">:</td>
-                         <td width="100">' . $config_iso->doc_customer . '</td>
-                     </tr>
-                     <tr>
-                         <td>Form</td>
-                         <td>:</td>
-                         <td>' . $config_iso->form_customer . '</td>
-                     </tr>
-                     <tr>
-                         <td>Print Date</td>
-                         <td>:</td>
-                         <td>' . date("Y-m-d H:i") . '</td>
-                     </tr>
-                     <tr>
-                         <td>Print By</td>
-                         <td>:</td>
-                         <td>' . $this->session->name . '</td>
-                     </tr>
-                 </table> 
+                 Print Date ' . date("d M Y H:m:s") . ' <br>
+                 Print By ' . $this->session->username . '  
+             </div>
+             <br><br>
+             <div style="float: centet; font-size: 16px; text-align: center;">
+                 <h3>MASTER CUSTOMER ITEM</h3>
              </div>
          </center>
-         <br><br><br><br>
          
          <table id="customer_items" border="1">
              <tr>
                  <th width="20">No</th>
                  <th>ID</th>
                  <th>Customer Name</th>
-                 <th>Product Number</th>
+                 <th>Product No</th>
                  <th>Product Name</th>
                  <th>Product Customer</th>
                  <th>Currency</th>
@@ -342,13 +332,13 @@ class Customer_items extends CI_Controller
          foreach ($records as $data) {
              $html .= '<tr>
                          <td>' . $no . '</td>
-                         <td>' . $data['id'] . '</td>
-                         <td>' . $data['customers_name'] . '</td>
+                         <td>' . $data['customer_id'] . '</td>
+                         <td>' . $data['customer_name'] . '</td>
                          <td>' . $data['item_number'] . '</td>
                          <td>' . $data['item_name'] . '</td>
                          <td>' . $data['item_customer'] . '</td>
                          <td>' . $data['currency'] . '</td>
-                         <td>' . $data['price'] . '</td>
+                         <td>'. number_format($data['price']) . '</td>s
                          <td>' . $data['valid_date'] . '</td>
                          <td>' . $data['description'] . '</td>
                      </tr>';

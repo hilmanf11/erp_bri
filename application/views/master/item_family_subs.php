@@ -4,9 +4,9 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
-            <th rowspan="2" data-options="field:'item_category_name',width:200,halign:'center'">Category</th>
-            <th rowspan="2" data-options="field:'item_family_name',halign:'center',width:200">Product Family</th>
-            <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Code</th>
+            <th rowspan="2" data-options="field:'item_category_name',width:120,halign:'center'">Category</th>
+            <th rowspan="2" data-options="field:'item_family_name',halign:'center',width:120">Product Family</th>
+            <th rowspan="2" data-options="field:'number',width:100,halign:'center'">Code</th>
             <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Name</th>
             <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>

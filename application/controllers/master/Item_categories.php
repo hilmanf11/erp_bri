@@ -37,6 +37,21 @@ class Item_categories extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readsfg()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->reads('item_categories', [], ["number"=>"FG"]);
+        echo json_encode($send);
+    }
+
+    public function readsnotfg()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("select * from item_categories where number != 'FG'");
+        echo json_encode($send);
+    }
+
+
     //CODE OTOMATIS
     public function autoid(){
         $sql = $this->db->query("SELECT max(`id`) as kode From item_categories");

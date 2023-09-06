@@ -1,0 +1,3 @@
+ Supplier Code TES is Duplicate Data
+ Please Input Code TEST1 with 3 character
+ Please Input Code TEST2 with 3 character

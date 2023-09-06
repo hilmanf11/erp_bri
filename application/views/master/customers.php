@@ -5,7 +5,7 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'id',align:'center',width:100">Id</th>
             <th rowspan="2" data-options="field:'number',align:'center',width:100">Code</th>
-            <th rowspan="2" data-options="field:'name',halign:'center',width:250">Name</th>
+            <th rowspan="2" data-options="field:'name',halign:'center',width:260">Name</th>
             <th rowspan="2" data-options="field:'type',align:'center',width:120">Type</th>
             <th rowspan="2" data-options="field:'address',halign:'center',width:300">Address</th>
             <th rowspan="2" data-options="field:'address_billing',halign:'center',width:300">Billing Address</th>
@@ -18,6 +18,7 @@
             <th rowspan="2" data-options="field:'payment_term',align:'center',width:100">Payment Term</th>
             <th rowspan="2" data-options="field:'bank_account',halign:'center',width:100">Bank Account</th>
             <th rowspan="2" data-options="field:'bank_name',halign:'center',width:200">Bank Name</th>
+            <th rowspan="2" data-options="field:'status',width:80, styler:cellStyler, formatter:cellFormatter, align:'center'">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -34,7 +35,7 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 700px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 720px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -70,13 +71,13 @@
                 <span style="width:35%; display:inline-block;">Contact Person</span>
                 <input style="width:60%;" name="attention" class="easyui-textbox">
             </div>
-            </div>
-
-            <div style="width:50%;float:left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Telp</span>
                 <input style="width:60%;" name="telp" class="easyui-textbox">
             </div>
+            </div>
+
+            <div style="width:50%;float:left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Billing Contact</span>
                 <input style="width:60%;" name="telp_billing" class="easyui-textbox">
@@ -95,19 +96,22 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Payment Term (Days)</span>
-                <input style="width:30%;" name="payment_term" class="easyui-numberbox">
+                <input style="width:30%; height: 35px;" name="payment_term" class="easyui-numberbox" multiline="true">
             </div>
-            <!-- <div class="fitem">
-                <span style="width:35%; display:inline-block;">Account Name</span>
-                <input style="width:60%;" name="account_number" id="account_number" required="" class="easyui-combobox">
-            </div> -->
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Bank Account</span>
-                <input style="width:40%;" name="bank_account" class="easyui-textbox">
+                <input style="width:60%;height: 35px;" name="bank_account" class="easyui-textbox" multiline="true">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Bank Name</span>
-                <input style="width:60%;" name="bank_name" class="easyui-textbox">
+                <input style="width:60%;height: 35px;" name="bank_name" class="easyui-textbox" multiline="true">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Status</span>
+                <select style="width:30%;" name="status" required="" panelHeight="auto" class="easyui-combobox">
+                    <option value="0">Active</option>
+                    <option value="1">Inactive</option>
+                </select>
             </div>
             </div>
         </fieldset>
@@ -216,6 +220,22 @@
     function reload() {
         window.location.reload();
     }
+    //CELLSTYLE STATUS
+    function cellStyler(value, row, index) {
+        if (value == 0) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+    //FORMATTER STATUS
+    function cellFormatter(value) {
+        if (value == 0) {
+            return 'Active';
+        } else {
+            return 'Inactive';
+        }
+    };
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({

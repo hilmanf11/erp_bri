@@ -3,19 +3,19 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',align:'center',width:100">Machine ID</th>
-            <th rowspan="2" data-options="field:'asset_id',halign:'center',width:150">Asset No</th>
+            <th rowspan="2" data-options="field:'id',align:'center',width:120">Machine ID</th>
+            <!-- <th rowspan="2" data-options="field:'asset_id',halign:'center',width:150">Asset No</th> -->
             <th rowspan="2" data-options="field:'number',halign:'center',width:100">Machine No</th>
-            <th rowspan="2" data-options="field:'name',align:'center',width:100">Name Of <br>Machine</th>
-            <th rowspan="2" data-options="field:'item_type_process_name',align:'center',width:100">Process Type</th>
+            <th rowspan="2" data-options="field:'name',halign:'center',width:150">Name Of Machine</th>
+            <th rowspan="2" data-options="field:'item_type_process_name',halign:'center',width:100">Process Type</th>
             <th rowspan="2" data-options="field:'specification',halign:'center',width:100">Specification</th>
-            <th rowspan="2" data-options="field:'purchase_date',halign:'center',width:80">Purchase <br>Date</th>
+            <th rowspan="2" data-options="field:'purchase_date',halign:'center',width:100">Purchase <br>Date</th>
             <th rowspan="2" data-options="field:'manufactur_date',halign:'center',width:100">Manufacturing <br>Date</th>
             <th rowspan="2" data-options="field:'maker',halign:'center',width:100">Maker</th>
             <th rowspan="2" data-options="field:'toonage',halign:'center',width:100">Toneage Of <br>Machine</th>
             <th rowspan="2" data-options="field:'uom',halign:'center',width:80">Uom</th>
-            <th rowspan="2" data-options="field:'vacum',align:'center',width:100">Vacum</th>
-            <th rowspan="2" data-options="field:'rt',align:'center',width:80">RT</th>
+            <th rowspan="2" data-options="field:'vacum',halign:'center',width:100">Vacum</th>
+            <th rowspan="2" data-options="field:'rt',halign:'center',width:80">RT</th>
             <th rowspan="2" data-options="field:'item_type_name',width:100,halign:'center'">Type</th>
             <th rowspan="2" data-options="field:'brand',width:100,halign:'center'">Brand</th>
             <th rowspan="2" data-options="field:'status',width:100, styler:cellStyler, align:'center', formatter:cellFormatter">Status</th>
@@ -45,10 +45,10 @@
                 <span style="width:35%; display:inline-block;">ID</span>
                 <input style="width:30%;" name="id" id="id" readonly class="easyui-textbox">
             </div>
-            <div class="fitem">
+            <!-- <div class="fitem">
                 <span style="width:35%; display:inline-block;">Asset No</span>
                 <input style="width:60%;" name="asset_id" required="" class="easyui-textbox">
-            </div>
+            </div> -->
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Machine No</span>
                 <input style="width:60%;" name="number" required="" class="easyui-textbox">
@@ -232,24 +232,27 @@
     };
 
     // FORMAT tahun-bulan-tanggal
-    function myformatter(date){
-            var y = date.getFullYear();
-            var m = date.getMonth()+1;
-            var d = date.getDate();
-            return y+'-'+(m<10?('0'+m):m)+'-'+(d<10?('0'+d):d);
-        }
-        function myparser(s){
-            if (!s) return new Date();
-            var ss = (s.split('-'));
-            var y = parseInt(ss[0],10);
-            var m = parseInt(ss[1],10);
-            var d = parseInt(ss[2],10);
-            if (!isNaN(y) && !isNaN(m) && !isNaN(d)){
-                return new Date(y,m-1,d);
-            } else {
-                return new Date();
+    function myformatter(date) {
+        var y = date.getFullYear();
+        var m = date.getMonth(); // Mengambil indeks bulan (0 - Januari, 11 - Desember)
+        var monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+        return monthNames[m] + ' ' + y;
+    }
+
+    function myparser(s) {
+        if (!s) return new Date();
+        var parts = s.split(' ');
+        if (parts.length === 2) {
+            var monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+            var m = monthNames.indexOf(parts[0]); // Mencari indeks bulan dari nama bulan
+            var y = parseInt(parts[1]);
+            if (m !== -1 && !isNaN(y)) {
+                return new Date(y, m);
             }
         }
+        return new Date();
+    }
+
 
     $(function() {
         //SETTING DATAGRID EASYUI

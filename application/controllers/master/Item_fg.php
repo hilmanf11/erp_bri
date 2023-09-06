@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Machines extends CI_Controller
+class Item_fg extends CI_Controller
 {
     public function __construct()
     {
@@ -12,7 +12,7 @@ class Machines extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[30]|is_unique[machines.number]');
+        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[30]|is_unique[item_fg.number]');
         
     }
     //HALAMAN UTAMA
@@ -23,7 +23,7 @@ class Machines extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('master/machines');
+            $this->load->view('master/item_fg');
         } else {
             redirect('error_access');
         }
@@ -32,19 +32,20 @@ class Machines extends CI_Controller
      public function reads()
      {
          $post = isset($_POST['q']) ? $_POST['q'] : "";
-         $send = $this->crud->reads('machines', ["number" => $post]);
+         $send = $this->crud->reads('item_fg', ["number" => $post]);
          echo json_encode($send);
      }
-
      //CODE OTOMATIS
-     public function autoid($type_process_id){
-         $code = $type_process_id; 
-         $sql = $this->db->query("SELECT coalesce(max(`id`),0) as kode From machines where id like '%$code%'");
-         $row = $sql->row();
-         $kode = substr($row->kode, -4);
-         $autoid = "ASMC".$code."-". sprintf("%04s", $kode + 1);
-         echo $autoid;   
-     }
+     public function autoid($item_category_number, $item_family_number, $item_family_sub_number = "NA"){
+    
+        $code = $item_category_number . $item_family_number . $item_family_sub_number; 
+        $sql = $this->db->query("SELECT coalesce(max(`id`), 0) as kode From item_fg where id like '%$code%'");
+        $row = $sql->row();
+        $kode = substr($row->kode, -4);
+        $autoid = $code . "-" . sprintf("%04s", $kode + 1);
+        echo $autoid;
+    }
+    
 
      //GET DATATABLES
      public function datatables()
@@ -59,25 +60,23 @@ class Machines extends CI_Controller
              $offset = ($page - 1) * $rows;
              $result = array();
              //Select Query
-            $this->db->select('a.*, b.name as item_type_process_name , c.name as item_type_name');
-            $this->db->from('machines a');
-            $this->db->join('type_process b', 'a.type_process_id = b.id');
-            $this->db->join('types c', 'a.type_id = c.id');
+            $this->db->select('a.*, b.name as item_category_name , c.name as item_familys_name , d.name as item_family_sub_name');
+            $this->db->from('item_fg a');
+            $this->db->join('item_categories b', 'a.item_category_number = b.number');
+            $this->db->join('item_familys c', 'a.item_family_number = c.number');
+            $this->db->join('item_family_subs d', 'a.item_family_sub_number = d.number','left');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if($filter->field == "item_type_process_name"){
+                    if($filter->field == "item_category_name"){
                         $this->db->like("b.name", $filter->value);
 
-                    }elseif($filter->field == "item_type_name"){
+                    }elseif($filter->field == "item_familys_name"){
                         $this->db->like("c.name", $filter->value);
 
-                    }elseif($filter->field == "item_category_name"){
-                            $this->db->like("d.name", $filter->value);
-    
-                    }elseif($filter->field == "item_familys_name"){
-                            $this->db->like("e.name", $filter->value);
-    
+                    }elseif($filter->field == "item_family_sub_name"){
+                        $this->db->like("d.name", $filter->value);
+
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
                     }
@@ -102,7 +101,7 @@ class Machines extends CI_Controller
          if ($this->input->post()) {
              if ($this->form_validation->run() == TRUE) {
                  $post   = $this->input->post();
-                 $send   = $this->crud->create('machines', $post);
+                 $send   = $this->crud->create('item_fg', $post);
                  echo $send;
              } else {
                  show_error(validation_errors());
@@ -119,18 +118,18 @@ class Machines extends CI_Controller
           if ($this->input->post()) {
                   $id   = base64_decode($this->input->get('id'));
                   $post = $this->input->post();
-                  $send = $this->crud->update('machines', ["id" => $id], $post);
+                  $send = $this->crud->update('item_fg', ["id" => $id], $post);
                   echo $send;
               } else {
                 show_error("Cannot Process your request");
-              
+        
           }
       }
      //DELETE DATA
      public function delete()
      {
          $data = $this->input->post();
-         $send = $this->crud->delete('machines', $data);
+         $send = $this->crud->delete('item_fg', $data);
          echo $send;
      }
  
@@ -148,20 +147,24 @@ class Machines extends CI_Controller
          for ($i = 3; $i <= $total_row; $i++) {
              $datas[] = array(
                  //excel
-                 'machine_no' => $data->val($i, 2),
-                 'name_of_machine' => $data->val($i, 3),
-                 'process_type' => $data->val($i, 4),
-                 'specification' => $data->val($i, 5),
-                 'purchase_date' => $data->val($i, 6),
-                 'manufacturing_date' => $data->val($i, 7),
-                 'maker' => $data->val($i, 8),
-                 'tonage_of_machine' => $data->val($i, 9),
-                 'uom' => $data->val($i, 10),
-                 'vacum' => $data->val($i, 11),
-                 'rt' => $data->val($i, 12),
-                 'type' => $data->val($i, 13),
-                 'brand' => $data->val($i, 14),
-                 'status' => $data->val($i, 15)
+                 'product_no' => $data->val($i, 2),
+                 'product_name' => $data->val($i, 3),
+                 'specification' => $data->val($i, 4),
+                 'product_type' => $data->val($i, 5),
+                 'category' => $data->val($i, 6),
+                 'product_family' => $data->val($i, 7),
+                 'sub_product_family' => $data->val($i, 8),
+                 'unit_of_measure' => $data->val($i, 9),
+                 'weight' => $data->val($i, 10),
+                 'lead_time_production' => $data->val($i, 11),
+                 'lifetime' => $data->val($i, 12),
+                 'mpq' => $data->val($i, 13),
+                 'moq' => $data->val($i, 14),
+                 'safety_stock' => $data->val($i, 15),
+                 'min' => $data->val($i, 16),
+                 'max' => $data->val($i, 17),
+                 'lot' => $data->val($i, 18),
+                 'status' => $data->val($i, 19)
                  
              );
          }
@@ -171,13 +174,13 @@ class Machines extends CI_Controller
      }
      public function uploadclearFailed()
      {
-         @unlink('failed/machines.txt');
+         @unlink('failed/item_fg.txt');
      }
      public function uploadcreateFailed()
      {
          if ($this->input->post()) {
              $message = $this->input->post('message');
-             $textFailed = fopen('failed/machines.txt', 'a');
+             $textFailed = fopen('failed/item_fg.txt', 'a');
              fwrite($textFailed, $message . "\n");
              fclose($textFailed);
          }
@@ -186,7 +189,7 @@ class Machines extends CI_Controller
      //UPLOAD DOWNLOAD FAILED
      public function uploadDownloadFailed()
      {
-         $file = "failed/machines.txt";
+         $file = "failed/item_fg.txt";
          header('Content-Description: File Failed');
          header('Content-Disposition: attachment; filename=' . basename($file));
          header('Expires: 0');
@@ -201,46 +204,58 @@ class Machines extends CI_Controller
      public function uploadcreate()
      {
          if ($this->input->post()) {
-             $data = $this->input->post('data');//field excel
+             $data = $this->input->post('data');
 
-             //AUTOID
-             $code = $data['process_type']; 
-             $sql = $this->db->query("SELECT coalesce(max(`id`),0) as kode From machines where id like '%$code%'");
-             $row = $sql->row();
-             $kode = substr($row->kode, -4);
-             $autoid = "ASMC".$code."-". sprintf("%04s", $kode + 1);
+            //Cek Process Number        //table                   //field           //field excel
+            $category = $this->crud->read('item_categories', [], ["number" => $data['category']]);
+            $prod_fam = $this->crud->read('item_familys', [], ["number" => $data['product_family']]);
+            // $prod_sub_fam = $this->crud->read('item_family_subs', [], ["number" => $data['sub_product_family']]);
+            $item_fg = $this->crud->read('item_fg', [], ["number" => $data['product_no']]);
 
-            //Cek Process Number                //table             //field           //field excel
-            $type_process = $this->crud->read('type_process', [], ["number" => $data['process_type']]);
-            $types = $this->crud->read('types', [], ["number" => $data['type']]);
-            $machines = $this->crud->read('machines', [], ["number" => $data['machine_no']]);
-
-          if (empty($type_process->number)) {
-              echo json_encode(array("title" => "Not Found", "message" => "Process Type " . $data['process_type'] ." with Machine No " . $data['machine_no'] ." is Not Found", "theme" => "error"));
-            } elseif (empty($types->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Type " . $data['type'] ." with Machine No " . $data['machine_no'] . " is Not Found", "theme" => "error"));
-            } elseif (!empty($machines->number)) {
-                echo json_encode(array("title" => "Duplicated", "message" => "Machine No " . $data['machine_no'] . " Duplicate Data", "theme" => "error"));
+            if (empty($category->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Category Code " . $data['category'] . " Not Found", "theme" => "error"));
+            } elseif (empty($prod_fam->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Product Family Code " . $data['product_family'] . " Not Found", "theme" => "error"));
+            // } elseif (empty($prod_sub_fam->number)) {
+            //     echo json_encode(array("title" => "Not Found", "message" => "Sub Product Family Code " . $data['sub_product_family'] . " Not Found", "theme" => "error"));
+            } elseif (!empty($item_fg->number)) {
+                echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['product_no'] . " Duplicate Data", "theme" => "error"));
             } else {
+                //autoid
+                
+                if (empty($prod_sub_fam->number)) {
+                    $code = $data['category'] . $data['product_family']."NA";
+                }else{
+                    $code = $data['category'] . $data['product_family'].$data['sub_product_family'];
+                }
+                $sql = $this->db->query("SELECT coalesce(max(`id`), 0) as kode From item_fg where id like '%$code%'");
+                $row = $sql->row();
+                $kode = substr($row->kode, -4);
+                $autoid = $code . "-" . sprintf("%04s", $kode + 1);
+
                  $dataFinal = array(
                      //field        //excel
                      "id" => $autoid,
-                     "number" => $data['machine_no'],
-                     "name" => $data['name_of_machine'],
-                     "type_process_id" => $type_process->id,
+                     "number" => $data['product_no'],
+                     "name" => $data['product_name'],
                      "specification" => $data['specification'],
-                     "purchase_date" => $data['purchase_date'],
-                     "manufactur_date" => $data['manufacturing_date'],
-                     "maker" => $data['maker'],
-                     "toonage" => $data['tonage_of_machine'],
-                     "uom" => $data['uom'],
-                     "vacum" => $data['vacum'],
-                     "rt" => $data['rt'],
-                     "type_id" => $types->id,
-                     "brand" => $data['brand'],
+                     "type" => $data['product_type'],
+                     "item_category_number" => $data['category'],
+                     "item_family_number" => $data['product_family'],
+                     "item_family_sub_number" => $data['sub_product_family'],
+                     "uom" => $data['unit_of_measure'],
+                     "weight" => $data['weight'],
+                     "leadtime" => $data['lead_time_production'],
+                     "lifetime" => $data['lifetime'],
+                     "mpq" => $data['mpq'],
+                     "moq" => $data['moq'],
+                     "safety_stock" => $data['safety_stock'],
+                     "min" => $data['min'],
+                     "max" => $data['max'],
+                     "lot" => $data['lot'],
                      "status" => $data['status'],
                  );
-                 $send   = $this->crud->create('machines', $dataFinal);
+                 $send   = $this->crud->create('item_fg', $dataFinal);
                  echo $send;
              }
          }
@@ -252,7 +267,7 @@ class Machines extends CI_Controller
          if ($option == "excel") {
              $format  = date("Ymd");
              header("Content-type: application/vnd-ms-excel");
-             header("Content-Disposition: attachment; filename=machines_$format.xls");
+             header("Content-Disposition: attachment; filename=item_fg_$format.xls");
          }
          //Config
          $this->db->select('*');
@@ -260,15 +275,16 @@ class Machines extends CI_Controller
          $config = $this->db->get()->row();
          $config_iso = $this->db->get('config_iso')->row();
  
-         $this->db->select('a.*, b.name as item_type_process_name , c.name as item_type_name');
-         $this->db->from('machines a');
-         $this->db->join('type_process b', 'a.type_process_id = b.id');
-         $this->db->join('types c', 'a.type_id = c.id');
+         $this->db->select('a.*, b.name as item_category_name , c.name as item_familys_name , d.name as item_family_sub_name');
+         $this->db->from('item_fg a');
+         $this->db->join('item_categories b', 'a.item_category_number = b.number');
+         $this->db->join('item_familys c', 'a.item_family_number = c.number');
+         $this->db->join('item_family_subs d', 'a.item_family_sub_number = d.number','left');
          $this->db->where('a.deleted', 0);
          $this->db->order_by('id', 'ASC');
          $records = $this->db->get()->result_array();
          
-         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#machines {border-collapse: collapse;width: 100%;font-size: 12px;}#machines td, #machines th {border: 1px solid #ddd;padding: 2px;}#machines tr:nth-child(even){background-color: #f2f2f2;}#machines tr:hover {background-color: #ddd;}#machines th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#item_fg {border-collapse: collapse;width: 100%;font-size: 12px;}#item_fg td, #item_fg th {border: 1px solid #ddd;padding: 2px;}#item_fg tr:nth-child(even){background-color: #f2f2f2;}#item_fg tr:hover {background-color: #ddd;}#item_fg th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
          <center>
              <div style="float: left; font-size: 12px; text-align: left;">
                  <table style="width: 100%;">
@@ -278,7 +294,7 @@ class Machines extends CI_Controller
                          </td>
                          <td style="font-size: 14px; text-align: left; margin:2px;">
                              <b>' . $config->name . '</b><br>
-                             <small>MASTER machines</small>
+                             <small>MASTER FINISH GOOD</small>
                          </td>
                      </tr>
                  </table>
@@ -310,23 +326,27 @@ class Machines extends CI_Controller
          </center>
          <br><br><br><br>
          
-         <table id="machines" border="1">
+         <table id="item_fg" border="1">
              <tr>
                  <th width="20">No</th>
-                 <th>Machine Id</th>
-                 <th>Machine No</th>
-                 <th>Name of Machine</th>
-                 <th>Process Type</th>
+                 <th>Id</th>
+                 <th>Product No</th>
+                 <th>Product Name</th>
                  <th>Specification</th>
-                 <th>Purchase Date</th>
-                 <th>Manufacturing Date</th>
-                 <th>Maker</th>
-                 <th>Tonage of Machine</th>
-                 <th>Uom</th>
-                 <th>Vacum</th>
-                 <th>RT</th>
-                 <th>Type</th>
-                 <th>Brand</th>
+                 <th>Product Type</th>
+                 <th>Category</th>
+                 <th>Product Family</th>
+                 <th>Product Sub Family</th>
+                 <th>Unit Of Measure</th>
+                 <th>Weight (gr)</th>
+                 <th>Lead Time Production</th>
+                 <th>Lifetime</th>
+                 <th>MPQ</th>
+                 <th>MOQ</th>
+                 <th>Safety Stock (%)</th>
+                 <th>Min</th>
+                 <th>Max</th>
+                 <th>Lot</th>
                  <th>Status</th>
              </tr>';
          $no = 1;
@@ -336,17 +356,21 @@ class Machines extends CI_Controller
                          <td>' . $data['id'] . '</td>
                          <td>' . $data['number'] . '</td>
                          <td>' . $data['name'] . '</td>
-                         <td>' . $data['item_type_process_name'] . '</td>
                          <td>' . $data['specification'] . '</td>
-                         <td>' . $data['purchase_date'] . '</td>
-                         <td>' . $data['manufactur_date'] . '</td>
-                         <td>' . $data['maker'] . '</td>
-                         <td>' . $data['toonage'] . '</td>
+                         <td>' . $data['type'] . '</td>
+                         <td>' . $data['item_category_name'] . '</td>
+                         <td>' . $data['item_familys_name'] . '</td>
+                         <td>' . $data['item_family_sub_name'] . '</td>
                          <td>' . $data['uom'] . '</td>
-                         <td>' . $data['vacum'] . '</td>
-                         <td>' . $data['rt'] . '</td>
-                         <td>' . $data['item_type_name'] . '</td>
-                         <td>' . $data['brand'] . '</td>
+                         <td>' . $data['weight'] . '</td>
+                         <td>' . $data['leadtime'] . '</td>
+                         <td>' . $data['lifetime'] . '</td>
+                         <td>' . $data['mpq'] . '</td>
+                         <td>' . $data['moq'] . '</td>
+                         <td>' . $data['safety_stock'] . '</td>
+                         <td>' . $data['min'] . '</td>
+                         <td>' . $data['max'] . '</td>
+                         <td>' . $data['lot'] . '</td>
                          <td>' . $data['status'] . '</td>
                      </tr>';
              $no++;

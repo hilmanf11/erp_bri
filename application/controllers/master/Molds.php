@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Customers extends CI_Controller
+class Molds extends CI_Controller
 {
     public function __construct()
     {
@@ -11,9 +11,9 @@ class Customers extends CI_Controller
         $this->load->library('form_validation');
         $this->load->library('session');
         $this->load->model('crud');
+
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[3]|is_unique[customers.number]');
-        
+        $this->form_validation->set_rules('name', 'Code', 'required|min_length[1]|max_length[30]|is_unique[molds.name]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -23,25 +23,30 @@ class Customers extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('master/customers');
+            $this->load->view('master/molds');
         } else {
             redirect('error_access');
         }
     }
+    
     //GET DATA
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('customers', ["name" => $post]);
+        $send = $this->crud->reads('molds', ["name" => $post]);
         echo json_encode($send);
     }
+
+
     //CODE OTOMATIS
-    public function autoid(){
-        $sql = $this->db->query("SELECT max(`id`) as kode From customers");
+    public function autoid($type, $model){
+        $code = $type. $model;
+        $sql = $this->db->query("SELECT coalesce(max(`id`),0) as kode From molds where id like '%$code%'");
         $row = $sql->row();
-        $kode = substr($row->kode, 1);
-        $autoid = "C". sprintf("%03s", $kode + 1);
+        $kode = substr($row->kode, -3);
+        $autoid = "MD".$code."-".sprintf("%03s", $kode + 1);
         echo $autoid;
+
     }
     //GET DATATABLES
     public function datatables()
@@ -56,12 +61,17 @@ class Customers extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('*');
-            $this->db->from('customers');
-            $this->db->where('deleted', 0);
+            $this->db->select('a.*, b.name as customer_name');
+            $this->db->from('molds a');
+            $this->db->join('customers b', 'a.customer_id  = b.id');
+            $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    $this->db->like($filter->field, $filter->value);
+                    if($filter->field == "customer_name"){
+                        $this->db->like("b.name", $filter->value);    
+                    }else{
+                        $this->db->like("a.".$filter->field, $filter->value);
+                    }
                 }
             }
             $this->db->order_by('id', 'ASC');
@@ -83,7 +93,7 @@ class Customers extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
-                $send   = $this->crud->create('customers', $post);
+                $send   = $this->crud->create('molds', $post);
                 echo $send;
             } else {
                 show_error(validation_errors());
@@ -92,23 +102,23 @@ class Customers extends CI_Controller
             show_error("Cannot Process your request");
         }
     }
-     //UPDATE DATA
-     public function update()
-     {
-         if ($this->input->post()) {
-                 $id   = base64_decode($this->input->get('id'));
-                 $post = $this->input->post();
-                 $send = $this->crud->update('customers', ["id" => $id], $post);
-                 echo $send;
+    //UPDATE DATA
+    public function update()
+    {
+        if ($this->input->post()) {
+            $id   = base64_decode($this->input->get('id'));
+            $post = $this->input->post();
+            $send = $this->crud->update('molds', ["id" => $id], $post);
+            echo $send;
         } else {
-                show_error("Cannot Process your request");
-            }
-     }
+            show_error("Cannot Process your request");
+        }
+    }
     //DELETE DATA
     public function delete()
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('customers', $data);
+        $send = $this->crud->delete('molds', $data);
         echo $send;
     }
 
@@ -126,20 +136,14 @@ class Customers extends CI_Controller
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
                 //excel
-                'customer_code' => $data->val($i, 2),
-                'name' => $data->val($i, 3),
-                'type' => $data->val($i, 4),
-                'address' => $data->val($i, 5),
-                'billing_address' => $data->val($i, 6),
-                'contact_person' => $data->val($i, 7),
-                'telp' => $data->val($i, 8),
-                'billing_telp' => $data->val($i, 9),
-                'email' => $data->val($i, 10),
-                'website' => $data->val($i, 11),
-                'currency' => $data->val($i, 12),
-                'payment_term' => $data->val($i, 13),
-                'bank_account' => $data->val($i, 14),
-                'bank_name' => $data->val($i, 15)
+                'mold_name' => $data->val($i, 2),
+                'type' => $data->val($i, 3),
+                'customer_number' => $data->val($i, 4),
+                'model' => $data->val($i, 5),
+                'project_year' => $data->val($i, 6),
+                'standard_cavity' => $data->val($i, 7),
+                'actual_cavity' => $data->val($i, 8),
+                
             );
         }
         $datas['total'] = count($datas);
@@ -148,13 +152,13 @@ class Customers extends CI_Controller
     }
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/customers.txt');
+        @unlink('failed/molds.txt');
     }
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/customers.txt', 'a');
+            $textFailed = fopen('failed/molds.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -163,7 +167,7 @@ class Customers extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/customers.txt";
+        $file = "failed/molds.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -178,66 +182,67 @@ class Customers extends CI_Controller
     public function uploadcreate()
     {
         if ($this->input->post()) {
-            $data = $this->input->post('data');
+            $data = $this->input->post('data');//field excel
 
             //AUTOID
-            $sql = $this->db->query("SELECT max(`id`) as kode From customers");
+            $code = $data['type'].$data['model']; 
+            $sql = $this->db->query("SELECT coalesce(max(`id`),0) as kode From molds where id like '%$code%'");
             $row = $sql->row();
-            $kode = substr($row->kode, 1);
-            $autoid = "C". sprintf("%03s", $kode + 1);
+            $kode = substr($row->kode, -3);
+            $autoid = "MD".$code."-".sprintf("%03s", $kode + 1);
 
-           //Cek Process Number            //table           //field           //field excel
-           $customers = $this->crud->read('customers', [], ["number" => $data['customer_code']]);
+           //Cek Process Number                //table       //field           //field excel
+           $customers = $this->crud->read('customers', [], ["number" => $data['customer_number']]);
+           $molds = $this->crud->read('molds', [], ["name" => $data['mold_name']]);
+           $type = array('IN','EX');
+           $model = array('INJ','TRF','COM');
 
-           if (!empty($customers->number)) {
-               echo json_encode(array("title" => "Duplicated", "message" => " Customer Code " . $data['customer_code'] . " is Duplicate Data", "theme" => "error"));
-            }elseif (strlen($data['customer_code']) != 3) {
-                echo json_encode(array("title" => "Error Max Lenght", "message" => " Please Input Code " . $data['customer_code'] . " with 3 character", "theme" => "error"));
+
+         if (empty($customers->name)) {
+             echo json_encode(array("title" => "Not Found", "message" => "Customer No " . $data['customer_number'] . " is Not Found", "theme" => "error"));
+            } elseif (!in_array($data['type'], $type)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Mold Type " . $data['type'] . " is Not Found", "theme" => "error"));
+            } elseif (!in_array($data['model'], $model)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Mold Model " . $data['model'] . " is Not Found", "theme" => "error"));
+            } elseif (!empty($molds->name)) {
+               echo json_encode(array("title" => "Duplicated", "message" => "Mold Name " . $data['mold_name'] . " Duplicate Data", "theme" => "error"));
             } else {
                 $dataFinal = array(
-                    //field
+                    //field        //excel
                     "id" => $autoid,
-                    "number" => $data['customer_code'],
-                    "name" => $data['name'],
+                    "name" => $data['mold_name'],
                     "type" => $data['type'],
-                    "address" => $data['address'],
-                    "address_billing" => $data['billing_address'],
-                    "attention" => $data['contact_person'],
-                    "telp" => $data['telp'],
-                    "telp_billing" => $data['billing_telp'],
-                    "email" => $data['email'],
-                    "website" => $data['website'],
-                    "currency" => $data['currency'],
-                    "payment_term" => $data['payment_term'],
-                    "bank_account" => $data['bank_account'],
-                    "bank_name" => $data['bank_name'],
+                    "customer_id" => $customers->id,//membaca parameter $customers dengan inputan number berdasarkan data inputan dari excel 
+                    "model" => $data['model'],
+                    "project_year" => $data['project_year'],
+                    "standard" => $data['standard_cavity'],
+                    "actual" => $data['actual_cavity'],
                 );
-                $send   = $this->crud->create('customers', $dataFinal);
+                $send   = $this->crud->create('molds', $dataFinal);
                 echo $send;
             }
         }
     }
-
     //PRINT & EXCEL DATA
     public function print($option = "")
     {
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=customers_$format.xls");
+            header("Content-Disposition: attachment; filename=molds_$format.xls");
         }
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        $config_iso = $this->db->get('config_iso')->row();
 
-        $this->db->select('*');
-        $this->db->from('customers');
-        $this->db->where('deleted', 0);
+        $this->db->select('a.*, b.name as customer_name');
+        $this->db->from('molds a');
+        $this->db->join('customers b', 'a.customer_id  = b.id');
+        $this->db->where('a.deleted', 0);
         $this->db->order_by('id', 'ASC');
         $records = $this->db->get()->result_array();
-        
+
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">
@@ -248,55 +253,59 @@ class Customers extends CI_Controller
                         </td>
                         <td style="font-size: 14px; text-align: left; margin:2px;">
                             <b>' . $config->name . '</b><br>
-                            <small>MASTER CUSTOMER</small>
+                            <small>MASTER MOLDS</small>
                         </td>
                     </tr>
                 </table>
             </div>
             <div style="float: right; font-size: 12px; text-align: right;">
-                Print Date ' . date("d M Y H:m:s") . ' <br>
+                Print Date ' . date("d M Y H:i:s") . ' <br>
                 Print By ' . $this->session->username . '  
             </div>
         </center>
-        <br><br><br><br>
+        <br><br><br>
         
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
                 <th>Id</th>
-                <th>Code</th>
-                <th>Name</th>
+                <th>Mold Name</th>
                 <th>Type</th>
-                <th>Address</th>
-                <th>Billing Address</th>
-                <th>Contact Person</th>
-                <th>Billing Telp</th>
-                <th>Email</th>
-                <th>Website</th>
-                <th>Currency</th>
-                <th>Payment Term</th>
-                <th>Bank Account</th>
-                <th>Bank Name</th>
+                <th>Customer Name</th>
+                <th>Model</th>
+                <th>Project Year</th>
+                <th>Standard Cavity</th>
+                <th>Actual Cavity</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
+            if ($data['type']=="EX"){
+                $type="EXTERNAL";
+            }else if ($data['type']=="IN"){
+                $type="INTERNAL";
+            }else{
+                $type="ERROR!";
+            }
+
+            if ($data['model']=="COM"){
+                $model="COMPRESS";
+            }else if ($data['type']=="INJ"){
+                $type="INJECTION";
+            }else if ($data['type']=="TRF"){
+                $type="TRANSFER";
+            }else{
+                $type="ERROR!";
+            }
             $html .= '<tr>
-                        <td>' . $no . '</td>
-                        <td>' . $data['id'] . '</td>
-                        <td>' . $data['number'] . '</td>
-                        <td>' . $data['name'] . '</td>
-                        <td>' . $data['type'] . '</td>
-                        <td>' . $data['address'] . '</td>
-                        <td>' . $data['address_billing'] . '</td>
-                        <td>' . $data['telp'] . '</td>
-                        <td>' . $data['telp_billing'] . '</td>
-                        <td>' . $data['email'] . '</td>
-                        <td>' . $data['website'] . '</td>
-                        <td>' . $data['currency'] . '</td>
-                        <td>' . $data['payment_term'] . '</td>
-                        <td>' . $data['bank_account'] . '</td>
-                        <td>' . $data['bank_name'] . '</td>
-                    </tr>';
+                    <td>' . $no . '</td>
+                    <td>' . $data['id'] . '</td>
+                    <td>' . $data['name'] . '</td>
+                    <td>' . $type . '</td>
+                    <td>' . $data['customer_name'] . '</td>
+                    <td>' . $model . '</td>
+                    <td>' . $data['project_year'] . '</td>
+                    <td>' . $data['standard'] . '</td>
+                    <td>' . $data['actual'] . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';

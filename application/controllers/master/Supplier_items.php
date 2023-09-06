@@ -12,7 +12,9 @@ class Supplier_items extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
+        $this->form_validation->set_rules('supplier_id', 'Code', 'required|min_length[1]|max_length[20]|is_unique[supplier_items.supplier_id]');
         $this->form_validation->set_rules('item_id', 'Code', 'required|min_length[1]|max_length[30]|is_unique[supplier_items.item_id]');
+
         
     }
     //HALAMAN UTAMA
@@ -32,99 +34,134 @@ class Supplier_items extends CI_Controller
      public function reads()
      {
          $post = isset($_POST['q']) ? $_POST['q'] : "";
-         $send = $this->crud->reads('supplier_items', ["name" => $post]);
+         $send = $this->crud->reads('supplier_items', ["supplier_id" => $post]);
          echo json_encode($send);
      }
-
-    //CODE OTOMATIS
-    public function autoid() {
-        $currentYear = date('Y');
-        $sql = $this->db->query("SELECT max(`id`) as kode From supplier_items");
-        $row = $sql->row();
-        
-        // Extract year and number from the existing code
-        $existingYear = substr($row->kode, 2, 4);
-        $existingNumber = substr($row->kode, -4);
-    
-        // Check if the year has changed
-        if ($existingYear != $currentYear) {
-            // Reset the number to 1
-            $newNumber = 1;
-        } else {
-            // Increment the existing number
-            $newNumber = intval($existingNumber) + 1;
-        }
-    
-        // Format the new number with leading zeros
-        $newNumberFormatted = sprintf("%04s", $newNumber);
-    
-        // Construct the new auto-generated ID
-        $autoid = "SI" . $currentYear . $newNumberFormatted;
-        
-        echo $autoid;
-    }
 
      //GET DATATABLES
      public function datatables()
      {
          if ($this->input->post()) {
-             $filters = json_decode($this->input->post('filterRules'));
-             $page = $this->input->post('page');
-             $rows = $this->input->post('rows');
-             //Pagination 1-10
-             $page   = isset($page) ? intval($page) : 1;
-             $rows   = isset($rows) ? intval($rows) : 10;
-             $offset = ($page - 1) * $rows;
-             $result = array();
-             //Select Query
-             $this->db->select('a.*, b.name as suppliers_name, c.number as item_number, c.name as item_name, c.mpq as mpq, 
-             c.moq as moq, c.leadtime as leadtime, c.safety_stock as safety_stock');
-             $this->db->from('supplier_items a');
-             $this->db->join('suppliers b', 'a.supplier_id = b.id');
-             $this->db->join('items c', 'a.item_id = c.id');
-             $this->db->where('a.deleted', 0);
-            if (@count($filters) > 0) {
-                foreach ($filters as $filter) {
-                    if($filter->field == "suppliers_name"){
-                        $this->db->like("b.name", $filter->value);
-                    }elseif($filter->field == "item_number"){
-                        $this->db->like("c.number", $filter->value);
+            $get = $this->input->get();
+            $filter_supplier_id = @base64_decode($get['filter_supplier_id']);
+            $filter_item_id = @base64_decode($get['filter_item_id']);
 
-                    }elseif($filter->field == "item_name"){
-                        $this->db->like("c.name", $filter->value);
-                    }else{
-                        $this->db->like("a.".$filter->field, $filter->value);
-                    }
-                }
-            }
-             $this->db->order_by('a.id', 'ASC');
-             //Total Data
-             $totalRows = $this->db->count_all_results('', false);
-             //Limit 1 - 10
-             $this->db->limit($rows, $offset);
-             //Get Data Array
-             $records = $this->db->get()->result_array();
-             //Mapping Data
-             $result['total'] = $totalRows;
-             $result = array_merge($result, ['rows' => $records]);
-             echo json_encode($result);
+            $page = $this->input->post('page');
+            $rows = $this->input->post('rows');
+             //Pagination 1-10
+            $page   = isset($page) ? intval($page) : 1;
+            $rows   = isset($rows) ? intval($rows) : 10;
+            $offset = ($page - 1) * $rows;
+            $result = array();
+             //Select Query
+            $this->db->select('b.number as supplier_number, b.name as supplier_name, b.type, b.status, b.id as supplier_id, a.created_by, a.created_date, a.updated_by, a.updated_date');
+            $this->db->from('supplier_items a');
+            $this->db->join('suppliers b', 'a.supplier_id = b.id');
+            $this->db->like('a.supplier_id', $filter_supplier_id);
+            $this->db->like('a.item_id', $filter_item_id);
+            $this->db->group_by('b.name');
+            $this->db->order_by('b.id', 'ASC');
+            //Total Data
+            $totalRows = $this->db->count_all_results('', false);
+            //Limit 1 - 10
+            $this->db->limit($rows, $offset);
+            //Get Data Array
+            $records = $this->db->get()->result_array();
+            //Mapping Data
+            $result['total'] = $totalRows;
+            $result = array_merge($result, ['rows' => $records]);
+            echo json_encode($result);
          }
      }
-     //CREATE DATA
-     public function create()
+
+     //GET DATATABLES DETAILS
+    public function datatableDetails()
+    {
+        if ($this->input->get()) {
+            $number = base64_decode($this->input->get('number'));
+            $filter_supplier_id = base64_decode($this->input->get('filter_supplier_id'));
+
+            $this->db->select('a.*, b.currency, c.number as item_number, c.name as item_name');
+            $this->db->from('supplier_items a');
+            $this->db->join('suppliers b', 'a.supplier_id = b.id');
+            $this->db->join('item_rm c', 'a.item_id = c.id');
+            $this->db->where('b.number', $number);
+            $this->db->like('a.supplier_id', $filter_supplier_id);
+            $this->db->group_by('a.id');
+            $this->db->order_by('a.id', 'ASC');
+            $records = $this->db->get()->result_array();
+
+            echo json_encode($records);
+        }
+    }
+
+     // GET DATATABLES UPDATE
+     public function datatableUpdates()
      {
-         if ($this->input->post()) {
-             if ($this->form_validation->run() == TRUE) {
-                 $post   = $this->input->post();
-                 $send   = $this->crud->create('supplier_items', $post);
-                 echo $send;
-             } else {
-                 show_error(validation_errors());
-             }
-         } else {
-             show_error("Cannot Process your request");
+         if ($this->input->get()) {
+             $supplier_id = base64_decode($this->input->get('supplier_id'));
+
+            $this->db->select('a.*,  c.number as item_number, c.name as item_name');
+            $this->db->from('supplier_items a');
+            $this->db->join('suppliers b', 'a.supplier_id = b.id');
+            $this->db->join('item_rm c', 'a.item_id = c.id');
+            $this->db->where('a.supplier_id', $supplier_id);
+            $this->db->order_by('a.id', 'ASC');
+            $records = $this->db->get()->result_array();
+ 
+             echo json_encode($records);
          }
      }
+
+      // GET DATATABLE HISTORY PRICE
+    public function datatableHistories()
+    {
+        if ($this->input->get()) {
+            $supplier_id = base64_decode($this->input->get('supplier_id'));
+            $item_id = base64_decode($this->input->get('item_id'));
+
+            $this->db->select('*');
+            $this->db->from('supplier_item_histories');
+            $this->db->where('supplier_id', $supplier_id);
+            $this->db->where('item_id', $item_id);
+            $this->db->order_by('valid_date', 'DESC');
+            $records = $this->db->get()->result_array();
+
+            echo json_encode($records);
+        }
+    }
+
+    //CREATE DATA
+    public function create()
+    {
+        if ($this->input->post()) {
+            $post = $this->input->post();
+
+            $supplier_items = $this->crud->read("supplier_items", [], ["supplier_id" => $post['supplier_id'], "item_id" => $post['item_id'], "item_supplier" => $post['item_supplier']]);
+            $supplier_item_histories = $this->crud->read("supplier_item_histories", [], ["supplier_id" => $post['supplier_id'], "item_id" => $post['item_id'], "price" => $post['price']]);
+            if (@$supplier_items->supplier_id != "") {
+                $send = $this->crud->update('supplier_items', ["supplier_id" => $post['supplier_id'], "item_id" => $post['item_id']], $post);
+                if (@$supplier_item_histories->supplier_id == "") {
+                    $send2 = $this->crud->create('supplier_item_histories', $post);
+                }
+            } else {
+                $send = $this->crud->create('supplier_items', $post);
+                $send2 = $this->crud->create('supplier_item_histories', $post);
+            }
+            echo $send;
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+
+    //DELETE DATA
+    public function delete()
+    {
+        $data = $this->input->post();
+        $send = $this->crud->delete('supplier_items', $data);
+        $send = $this->crud->delete('supplier_item_histories', $data);
+        echo $send;
+    }
     
 
       //UPDATE DATA
@@ -140,13 +177,6 @@ class Supplier_items extends CI_Controller
               
           }
       }
-     //DELETE DATA
-     public function delete()
-     {
-         $data = $this->input->post();
-         $send = $this->crud->delete('supplier_items', $data);
-         echo $send;
-     }
  
      //UPLOAD DATA
      public function upload()
@@ -163,12 +193,16 @@ class Supplier_items extends CI_Controller
              $datas[] = array(
                  //excel
                  'supplier_id' => $data->val($i, 2),
-                 'product_no' => $data->val($i, 3),
-                 'product_supplier' => $data->val($i, 4),
-                 'currency' => $data->val($i, 5),
-                 'price' => $data->val($i, 6),
-                 'calculate_mpq' => $data->val($i, 7),
-                 'description' => $data->val($i, 8)
+                 'part_no' => $data->val($i, 3),
+                 'part_supplier' => $data->val($i, 4),
+                 'mpq' => $data->val($i, 5),
+                 'moq' => $data->val($i, 6),
+                 'leadtime' => $data->val($i, 7),
+                 'price' => $data->val($i, 8),
+                 'safety_stock' => $data->val($i, 9),
+                 'calculate_mpq' => $data->val($i, 10),
+                 'valid_date' => $data->val($i, 11),
+                 'description' => $data->val($i, 12)
                  
              );
          }
@@ -178,13 +212,13 @@ class Supplier_items extends CI_Controller
      }
      public function uploadclearFailed()
      {
-         @unlink('excel/failed/supplier_items.txt');
+         @unlink('failed/supplier_items.txt');
      }
      public function uploadcreateFailed()
      {
          if ($this->input->post()) {
              $message = $this->input->post('message');
-             $textFailed = fopen('excel/failed/supplier_items.txt', 'a');
+             $textFailed = fopen('failed/supplier_items.txt', 'a');
              fwrite($textFailed, $message . "\n");
              fclose($textFailed);
          }
@@ -193,7 +227,7 @@ class Supplier_items extends CI_Controller
      //UPLOAD DOWNLOAD FAILED
      public function uploadDownloadFailed()
      {
-         $file = "excel/failed/supplier_items.txt";
+         $file = "failed/supplier_items.txt";
          header('Content-Description: File Failed');
          header('Content-Disposition: attachment; filename=' . basename($file));
          header('Expires: 0');
@@ -210,50 +244,30 @@ class Supplier_items extends CI_Controller
         if ($this->input->post()) {
             $data       = $this->input->post('data');
 
-            $currentYear = date('Y');
-            $sql = $this->db->query("SELECT max(`id`) as kode From supplier_items");
-            $row = $sql->row();
-            
-            // Extract year and number from the existing code
-            $existingYear = substr($row->kode, 2, 4);
-            $existingNumber = substr($row->kode, -4);
-        
-            // Check if the year has changed
-            if ($existingYear != $currentYear) {
-                // Reset the number to 1
-                $newNumber = 1;
-            } else {
-                // Increment the existing number
-                $newNumber = intval($existingNumber) + 1;
-            }
-        
-            // Format the new number with leading zeros
-            $newNumberFormatted = sprintf("%04s", $newNumber);
-        
-            // Construct the new auto-generated ID
-            $autoid = "SI" . $currentYear . $newNumberFormatted;
-
              //Cek Process Number     //table        //field           //field excel
-             $item = $this->crud->read('items', [], ["number" => $data['product_no']]);
+             $item = $this->crud->read('item_rm', [], ["number" => $data['part_no']]);
              $supplier = $this->crud->read('suppliers', [], ["id" => $data['supplier_id']]);
-             $supplier_items = $this->crud->read('supplier_items', [], ["item_id" => @$item->id]);
+             $supplier_items = $this->crud->read('supplier_items', [], ["item_id" => @$item->id, "supplier_id" => $data['supplier_id']] );
 
             if (empty($item->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Product No " . $data['product_no'] . " Not Found", "theme" => "error"));
+                echo json_encode(array("title" => "Not Found", "message" => "Product No " . $data['part_no'] . " Not Found", "theme" => "error"));
             } elseif (empty($supplier->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Customer " . $data['supplier_id'] . " Not Found", "theme" => "error"));
+                echo json_encode(array("title" => "Not Found", "message" => "Supplier " . $data['supplier_id'] . " Not Found", "theme" => "error"));
             } elseif (!empty($supplier_items->item_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['product_no'] . " Duplicate Data", "theme" => "error"));
+                echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['part_no'] . " Duplicate Data", "theme" => "error"));
             } else {
                  $dataFinal = array(
                      //field        //excel
-                     "id" => $autoid,
                      "supplier_id" => $data['supplier_id'],
                      "item_id" => $item->id,
-                     "item_supplier" => $data['product_supplier'],
-                     "currency" => $data['currency'],
+                     "item_supplier" => $data['part_supplier'],
+                     "mpq" => $data['mpq'],
+                     "moq" => $data['moq'],
+                     "leadtime" => $data['leadtime'],
                      "price" => $data['price'],
+                     "safety_stock" => $data['safety_stock'],
                      "calculate" => $data['calculate_mpq'],
+                     "valid_date" => $data['valid_date'],
                      "description" => $data['description'],
                  );
                  $send= $this->crud->create('supplier_items', $dataFinal);
@@ -270,21 +284,24 @@ class Supplier_items extends CI_Controller
              header("Content-type: application/vnd-ms-excel");
              header("Content-Disposition: attachment; filename=supplier_items_$format.xls");
          }
+
+         $get = $this->input->get();
+         $filter_supplier_id = @base64_decode($get['filter_supplier_id']);
+         $filter_item_id = @base64_decode($get['filter_item_id']);
+
          //Config
          $this->db->select('*');
          $this->db->from('config');
          $config = $this->db->get()->row();
-         $config_iso = $this->db->get('config_iso')->row();
  
-         $this->db->select('a.*, b.name as suppliers_name, c.number as item_number, c.name as item_name, c.mpq as mpq, 
-             c.moq as moq, c.leadtime as leadtime, c.safety_stock as safety_stock');
+         $this->db->select('a.*, b.name as supplier_name, b.currency, b.id as supplier_id, c.number as item_number, c.name as item_name');
          $this->db->from('supplier_items a');
          $this->db->join('suppliers b', 'a.supplier_id = b.id');
-         $this->db->join('items c', 'a.item_id = c.id');
-         $this->db->where('a.deleted', 0);
-         $this->db->order_by('id', 'ASC');
+         $this->db->join('item_rm c', 'a.item_id = c.id');
+         $this->db->like('a.supplier_id', $filter_supplier_id);
+         $this->db->like('a.item_id', $filter_item_id);
+         $this->db->order_by('a.supplier_id', 'ASC');
          $records = $this->db->get()->result_array();
-         
          $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#supplier_items {border-collapse: collapse;width: 100%;font-size: 12px;}#supplier_items td, #supplier_items th {border: 1px solid #ddd;padding: 2px;}#supplier_items tr:nth-child(even){background-color: #f2f2f2;}#supplier_items tr:hover {background-color: #ddd;}#supplier_items th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
          <center>
              <div style="float: left; font-size: 12px; text-align: left;">
@@ -294,70 +311,56 @@ class Supplier_items extends CI_Controller
                              <img src="' . $config->favicon . '" width="30">
                          </td>
                          <td style="font-size: 14px; text-align: left; margin:2px;">
-                             <b>' . $config->name . '</b><br>
-                             <small>MASTER supplier_items</small>
+                             <b>' . $config->name . '</b>
                          </td>
                      </tr>
                  </table>
              </div>
              <div style="float: right; font-size: 12px; text-align: right;">
-                 <table style="width:100%; font-size:10px;">
-                     <tr>
-                         <td width="60">Doc No</td>
-                         <td width="5">:</td>
-                         <td width="100">' . $config_iso->doc_customer . '</td>
-                     </tr>
-                     <tr>
-                         <td>Form</td>
-                         <td>:</td>
-                         <td>' . $config_iso->form_customer . '</td>
-                     </tr>
-                     <tr>
-                         <td>Print Date</td>
-                         <td>:</td>
-                         <td>' . date("Y-m-d H:i") . '</td>
-                     </tr>
-                     <tr>
-                         <td>Print By</td>
-                         <td>:</td>
-                         <td>' . $this->session->name . '</td>
-                     </tr>
-                 </table> 
+                 Print Date ' . date("d M Y H:m:s") . ' <br>
+                 Print By ' . $this->session->username . '  
+             </div>
+             <br><br>
+             <div style="float: centet; font-size: 16px; text-align: center;">
+                 <h3>MASTER SUPPLIER ITEM</h3>
              </div>
          </center>
-         <br><br><br><br>
          
          <table id="supplier_items" border="1">
              <tr>
                  <th width="20">No</th>
                  <th>ID</th>
                  <th>Supplier Name</th>
-                 <th>Product Number</th>
-                 <th>Supplier Product</th>
+                 <th>Part No</th>
+                 <th>Part Name</th>
+                 <th>Part Supplier</th>
                  <th>MPQ</th>
                  <th>MOQ</th>
                  <th>Leadtime</th>
                  <th>Currency</th>
                  <th>Price</th>
                  <th>Safety Stock</th>
-                 <th>Calculate MPQ</th>
+                 <th>Calculate</th>
+                 <th>Valid Date</th>
                  <th>Description</th>
              </tr>';
          $no = 1;
          foreach ($records as $data) {
              $html .= '<tr>
                          <td>' . $no . '</td>
-                         <td>' . $data['id'] . '</td>
-                         <td>' . $data['suppliers_name'] . '</td>
+                         <td>' . $data['supplier_id'] . '</td>
+                         <td>' . $data['supplier_name'] . '</td>
                          <td>' . $data['item_number'] . '</td>
+                         <td>' . $data['item_name'] . '</td>
                          <td>' . $data['item_supplier'] . '</td>
                          <td>' . $data['mpq'] . '</td>
                          <td>' . $data['moq'] . '</td>
                          <td>' . $data['leadtime'] . '</td>
                          <td>' . $data['currency'] . '</td>
-                         <td>' . $data['price'] . '</td>
+                         <td>'. number_format($data['price']) . '</td>
                          <td>' . $data['safety_stock'] . '</td>
                          <td>' . $data['calculate'] . '</td>
+                         <td>' . $data['valid_date'] . '</td>
                          <td>' . $data['description'] . '</td>
                      </tr>';
              $no++;

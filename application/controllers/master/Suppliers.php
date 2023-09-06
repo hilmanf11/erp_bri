@@ -96,14 +96,10 @@ class Suppliers extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            if ($this->form_validation->run() == TRUE) {
                 $id   = base64_decode($this->input->get('id'));
                 $post = $this->input->post();
                 $send = $this->crud->update('suppliers', ["id" => $id], $post);
                 echo $send;
-            } else {
-                show_error(validation_errors());
-            }
         } else {
             show_error("Cannot Process your request");
         }
@@ -154,13 +150,13 @@ class Suppliers extends CI_Controller
     }
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/suppliers.txt');
+        @unlink('failed/suppliers.txt');
     }
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/suppliers.txt', 'a');
+            $textFailed = fopen('failed/suppliers.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -169,7 +165,7 @@ class Suppliers extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/suppliers.txt";
+        $file = "failed/suppliers.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -197,8 +193,8 @@ class Suppliers extends CI_Controller
 
            if (!empty($suppliers->number)) {
                echo json_encode(array("title" => "Duplicated", "message" => " Supplier Code " . $data['suppliers_code'] . " is Duplicate Data", "theme" => "error"));
-            }elseif (strlen($data['customer_code']) != 3) {
-                echo json_encode(array("title" => "Error Max Lenght", "message" => " Please Input Code " . $data['customer_code'] . " with 3 character", "theme" => "error"));
+            }elseif (strlen($data['suppliers_code']) != 3) {
+                echo json_encode(array("title" => "Error Max Lenght", "message" => " Please Input Code " . $data['suppliers_code'] . " with 3 character", "theme" => "error"));
             }else {
                 $dataFinal = array(
                     // field      //excel
