@@ -39,14 +39,14 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 700px; padding:20px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; padding:20px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div style="width:50%;float:left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product ID</span>
-                <input style="width:30%;" name="id" id="id" readonly class="easyui-textbox">
+                <input style="width:60%;" name="id" id="id" readonly class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
@@ -62,7 +62,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product Type</span>
-                <select style="width:30%;" name="type" class="easyui-combobox" panelHeight="auto">
+                <select style="width:60%;" name="type" class="easyui-combobox" panelHeight="auto">
                     <option value="EXPORT">EXPORT</option>
                     <option value="IMPORT">IMPORT</option>
                     <option value="LOCAL">LOCAL</option>
@@ -78,15 +78,15 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Sub Product Family</span>
-                <input style="width:60%;" name="item_family_sub_number" id="item_family_sub_number" class="easyui-textbox">
+                <input style="width:60%;" name="item_family_sub_number" id="item_family_sub_number" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Uom</span>
-                <input style="width:30%;" name="uom" id="uom" required="" class="easyui-combobox">
+                <input style="width:60%;" name="uom" id="uom" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Weight (gr)</span>
-                <input style="width:30%;" name="weight" class="easyui-numberbox">
+                <input style="width:60%;" name="weight" class="easyui-numberbox">
             </div>
             </div>
 
@@ -159,16 +159,26 @@
 <script>
     //ADD DATA
     function add() {
-        onclick= $('#item_family_sub_number').combobox('enable');
+        $('#item_family_sub_number').combobox('enable');
+        $('#item_family_number').combobox('enable');
+
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/item_fg/create') ?>';
         $('#frm_insert').form('clear');
         $('#item_category_number').textbox('setValue', "FG");
     }
+
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
-        onclick= $('#item_family_sub_number').combobox('disable');
+
+        setTimeout(function() { 
+            $('#id').textbox('setValue', row.id);
+        }, 1000);
+
+        $('#item_family_sub_number').combobox('disable');
+        $('#item_family_number').combobox('disable');
+
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
@@ -177,6 +187,7 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
+
     //DELETE DATA
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
@@ -390,8 +401,6 @@
             }]
         });
 
-
-        
         $('#item_family_number').combobox({
             url: '<?php echo base_url('master/item_familys/reads'); ?>/FG',
             valueField: 'number',
@@ -415,7 +424,7 @@
                     onSelect: function(item_family){
                         $.ajax({
                             type: "post",
-                            url: '<?php echo base_url('master/item_fg/autoid/'); ?> FG/' + item_family_subs.number + '/' + item_family.number,
+                            url: '<?php echo base_url('master/item_fg/autoid/'); ?>FG/' + item_family_subs.number + '/' + item_family.number,
                             dataType: "html",
                             success: function (response) {
                                 $('#id').textbox('setValue', response);

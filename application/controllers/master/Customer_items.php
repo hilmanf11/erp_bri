@@ -170,6 +170,7 @@ class Customer_items extends CI_Controller
                   $id   = base64_decode($this->input->get('id'));
                   $post = $this->input->post();
                   $send = $this->crud->update('customer_items', ["id" => $id], $post);
+                  $send = $this->crud->update('customer_item_histories', ["id" => $id], $post);
                   echo $send;
               } else {
                 show_error("Cannot Process your request");
@@ -239,12 +240,12 @@ class Customer_items extends CI_Controller
             $data       = $this->input->post('data');
 
              //Cek Process Number     //table        //field           //field excel
-             $item = $this->crud->read('item_fg', [], ["number" => $data['product_no']]);
-             $customer = $this->crud->read('customers', [], ["id" => $data['customer_id']]);
+             $item = $this->crud->read('item_fg', [], ["id" => $data['product_no']]);
+             $customer = $this->crud->read('customers', [], ["number" => $data['customer_id']]);
              $customer_items = $this->crud->read('customer_items', [], ["item_id" => @$item->id, "customer_id" => $data['customer_id']] );
 
             if (empty($item->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Product No " . $data['product_no'] . " Not Found", "theme" => "error"));
+                echo json_encode(array("title" => "Not Found", "message" => "Product ID " . $data['product_no'] . " Not Found", "theme" => "error"));
             } elseif (empty($customer->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Customer " . $data['customer_id'] . " Not Found", "theme" => "error"));
             } elseif (!empty($customer_items->item_id)) {
@@ -252,8 +253,8 @@ class Customer_items extends CI_Controller
             } else {
                  $dataFinal = array(
                      //field        //excel
-                     "customer_id" => $data['customer_id'],
-                     "item_id" => $item->id,
+                     "customer_id" => $customer->id,
+                     "item_id" => $data['product_no'],
                      "item_customer" => $data['product_customer'],
                      "price" => $data['price'],
                      "valid_date" => $data['valid_date'],
@@ -268,10 +269,10 @@ class Customer_items extends CI_Controller
      //PRINT & EXCEL DATA
      public function print($option = "")
      {
-         if ($option == "excel") {
-             $format  = date("Ymd");
-             header("Content-type: application/vnd-ms-excel");
-             header("Content-Disposition: attachment; filename=customer_items_$format.xls");
+        if ($option == "excel") {
+            $format = date("Ymd");
+            header("Content-type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            header("Content-Disposition: attachment; filename=customer_items_$format.xls");
          }
 
          $get = $this->input->get();
@@ -330,15 +331,22 @@ class Customer_items extends CI_Controller
              </tr>';
          $no = 1;
          foreach ($records as $data) {
+            $number = $data['item_number'];
+            if (strpos($data['item_number'], '0') === 0 || strpos($data['item_number'], '+') === 0) {
+                $number = "'" . $data['item_number'];
+            } else {
+                // Leave the data unchanged
+                $number = $data['item_number'];
+            }
              $html .= '<tr>
                          <td>' . $no . '</td>
                          <td>' . $data['customer_id'] . '</td>
                          <td>' . $data['customer_name'] . '</td>
-                         <td>' . $data['item_number'] . '</td>
+                         <td>' . $number . '</td>
                          <td>' . $data['item_name'] . '</td>
                          <td>' . $data['item_customer'] . '</td>
                          <td>' . $data['currency'] . '</td>
-                         <td>'. number_format($data['price']) . '</td>s
+                         <td>'. number_format($data['price']) . '</td>
                          <td>' . $data['valid_date'] . '</td>
                          <td>' . $data['description'] . '</td>
                      </tr>';

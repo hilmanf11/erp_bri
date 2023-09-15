@@ -47,7 +47,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; height: 600px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 850px; height: 600px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -81,7 +81,7 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/bom/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/setting_non_molds/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
 
@@ -90,7 +90,7 @@
     function add() {
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
-        url_save = '<?= base_url('master/bom/create') ?>';
+        url_save = '<?= base_url('master/setting_non_molds/create') ?>';
         $('#frm_insert').form('clear');
     }
 
@@ -107,7 +107,7 @@
                     editor: {
                         type: 'combogrid',
                         options: {
-                            url: '<?= base_url('master/item_rm/reads'); ?>',
+                            url: '<?= base_url('master/item_rm/readsC'); ?>',
                             required: true,
                             panelWidth: 400,
                             idField: 'id',
@@ -139,13 +139,8 @@
                                     index: rowIndex,
                                     field: 'item_rm_number'
                                 });
-                                var ed2 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'uom'
-                                });
 
                                 $(ed.target).textbox('setValue', rows.number);
-                                $(ed2.target).textbox('setValue', rows.uom);
                             }
                         }
                     }
@@ -161,53 +156,67 @@
                         }
                     }
                 }, {
-                    field: 'product_family_name',
+                    field: 'machine_id',
                     width: 150,
-                    hidden:true,
                     halign: 'center',
-                    title: "Product Family",
+                    title: "Machine ID",
+                    editor: {
+                        type: 'combogrid',
+                        options: {
+                            url: '<?= base_url('master/machines/reads'); ?>',
+                            required: true,
+                            panelWidth: 400,
+                            idField: 'id',
+                            textField: 'id',
+                            mode: 'remote',
+                            fitColumns: true,
+                            prompt: 'Choose Machine ID',
+                            columns: [
+                                [{
+                                    field: 'number',
+                                    title: 'Machine No',
+                                    width: 100
+                                },{
+                                    field: 'name',
+                                    title: 'Machine Name',
+                                    width: 100
+                                }]
+                            ],
+                            onSelect: function(value, rows) {
+                                var dg = $('#dg2');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
+
+                                var ed = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'machine_no'
+                                });
+
+                                $(ed.target).textbox('setValue', rows.number);
+                            }
+                        }
+                    }
+                }, {
+                    field: 'machine_no',
+                    width: 150,
+                    halign: 'center',
+                    title: "Machine No",
                     editor: {
                         type: 'textbox',
                         options: {
                             readonly: true
                         }
                     }
-                },  {
-                    field: 'process_id',
-                    width: 150,
-                    halign: 'center',
-                    title: "Process Name",
-                    editor: {
-                        type: 'combobox',
-                        options: {
-                            url: '<?= base_url('master/process/reads'); ?>',
-                            required: true,
-                            valueField: 'id',
-                            textField: 'name',
-                            prompt: 'Choose Process'
-                        }        
-                    }
                 }, {
-                    field: 'composition',
+                    field: 'cycle_time',
                     width: 100,
                     halign: 'center',
                     align: 'right',
-                    title: "Composition",
+                    title: "Cycle time<br>(lot/second)",
                     editor: {
                         type: 'numberbox',
                         options: {
                             precision: 2
-                        }
-                    }
-                }, {
-                    field: 'uom',
-                    width: 80,
-                    halign: 'center',
-                    title: "Uom",
-                    editor: {
-                        type: 'textbox',
-                        options: {
-                            readonly: true
                         }
                     }
                 }, {
@@ -288,7 +297,7 @@
 
         $.ajax({
             method: 'post',
-            url: '<?= base_url('master/bom/delete') ?>',
+            url: '<?= base_url('master/setting_non_molds/delete') ?>',
             data: {
                 item_fg_id: row.item_fg_id,
                 item_rm_id: item_rm_id
@@ -318,7 +327,7 @@
             $('#frm_insert').form('load', row);
             $("#item_fg_id").combogrid('disable');
 
-            addTable('<?= base_url('master/bom/datatableUpdates?item_fg_id=') ?>' + window.btoa(row.item_fg_id));
+            addTable('<?= base_url('master/setting_non_molds/datatableUpdates?item_fg_id=') ?>' + window.btoa(row.item_fg_id));
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -334,7 +343,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/bom/delete') ?>',
+                            url: '<?= base_url('master/setting_non_molds/delete') ?>',
                             data: {
                                 item_fg_id: row.item_fg_id
                             },
@@ -362,7 +371,7 @@
     }
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_bom.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_setting_non_molds.xls') ?>');
     }
 
     //FILTER DATA
@@ -374,11 +383,11 @@
             "&filter_item_rm_id=" + window.btoa(filter_item_rm_id);
 
         $('#dg').datagrid({
-            url: '<?= base_url('master/bom/datatables') ?>' + url
+            url: '<?= base_url('master/setting_non_molds/datatables') ?>' + url
         });
 
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('master/bom/print') ?>' + url);
+        $("#printout").attr('src', '<?= base_url('master/setting_non_molds/print') ?>' + url);
     }
 
     //PRINT PDF
@@ -394,7 +403,7 @@
         var url = "?filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
             "&filter_item_rm_id=" + window.btoa(filter_item_rm_id);
 
-        window.location.assign('<?= base_url('master/bom/print/excel') ?>' + url);
+        window.location.assign('<?= base_url('master/setting_non_molds/print/excel') ?>' + url);
     }
 
     //RELOAD
@@ -408,7 +417,7 @@
 
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/bom/datatables') ?>',
+            url: '<?= base_url('master/setting_non_molds/datatables') ?>',
             pagination: true,
             rownumbers: true,
             height: '645px',
@@ -421,16 +430,11 @@
                 var filter_item_rm_id = $("#filter_item_rm_id").combogrid('getValue');
 
                 ddv.datagrid({
-                    url: '<?= base_url('master/bom/datatableDetails?number=') ?>' + window.btoa(row.item_fg_number) + "&filter_item_rm_id=" + window.btoa(filter_item_rm_id),
+                    url: '<?= base_url('master/setting_non_molds/datatableDetails?number=') ?>' + window.btoa(row.item_fg_number) + "&filter_item_rm_id=" + window.btoa(filter_item_rm_id),
                     singleSelect: true,
                     rownumbers: true,
                     columns: [
                         [{
-                            field: 'process_name',
-                            title: 'Prosess Name',
-                            halign: 'center',
-                            width: 150
-                        }, {
                             field: 'item_rm_id',
                             title: 'Part ID',
                             halign: 'center',
@@ -451,21 +455,25 @@
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'composition',
-                            title: 'Composition',
+                            field: 'machine_id',
+                            title: 'Machine ID',
                             width: 100,
-                            halign: 'center',
-                            align: 'right',
-                        }, {
-                            field: 'uom',
-                            title: 'UoM',
                             align: 'center',
-                            width: 80
+                        }, {
+                            field: 'machine_no',
+                            title: 'Machine No',
+                            width: 100,
+                            align: 'center',
+                        }, {
+                            field: 'cycle_time',
+                            title: 'Cycle time <br>(lot/second)',
+                            width: 100,
+                            align: 'center',
                         }, {
                             field: 'priority',
                             title: 'Priority',
                             width: 80,
-                            halign: 'center',
+                            align: 'center',
                         }]
                     ],
                     onResize: function() {
@@ -497,12 +505,12 @@
                         if (rows[i].item_rm_id) {
                             $.ajax({
                                 type: "post",
-                                url: '<?= base_url('master/bom/create') ?>',
+                                url: '<?= base_url('master/setting_non_molds/create') ?>',
                                 data: {
                                     item_fg_id: item_fg_id,
                                     item_rm_id: rows[i].item_rm_id,
-                                    process_id: rows[i].process_id,
-                                    composition: rows[i].composition,
+                                    machine_id: rows[i].machine_id,
+                                    cycle_time: rows[i].cycle_time,
                                     priority: rows[i].priority
                                 },
                                 dataType: "json",
@@ -591,7 +599,7 @@
 
     // filter item RM
     $('#filter_item_rm_id').combogrid({
-        url: '<?= base_url('master/item_rm/reads'); ?>',
+        url: '<?= base_url('master/item_rm/readsC'); ?>',
         panelWidth: 500,
         idField: 'id',
         textField: 'number',
@@ -626,14 +634,14 @@
         buttons: [{
             text: 'List Failed',
             handler: function() {
-                window.open('<?= base_url('master/bom/uploadDownloadFailed') ?>', '_blank');
+                window.open('<?= base_url('master/setting_non_molds/uploadDownloadFailed') ?>', '_blank');
             }
         }, {
             text: 'Upload',
             iconCls: 'icon-ok',
             handler: function() {
                 $('#frm_upload').form('submit', {
-                    url: '<?= base_url('master/bom/upload') ?>',
+                    url: '<?= base_url('master/setting_non_molds/upload') ?>',
                     onSubmit: function() {
                         if ($(this).form('validate') == false) {
                             return $(this).form('validate');
@@ -648,7 +656,7 @@
                         $.messager.progress('close');
                         //Clear File
                         $.ajax({
-                            url: "<?= base_url('master/bom/uploadclearFailed') ?>"
+                            url: "<?= base_url('master/setting_non_molds/uploadclearFailed') ?>"
                         });
                         var json = eval('(' + result + ')');
                         requestData(json.total, json);
@@ -663,7 +671,7 @@
                                 $.ajax({
                                     type: "POST",
                                     async: true,
-                                    url: "<?= base_url('master/bom/uploadCreate') ?>",
+                                    url: "<?= base_url('master/setting_non_molds/uploadCreate') ?>",
                                     data: {
                                         "data": json[number - 1]
                                     },
@@ -681,7 +689,7 @@
                                             $.ajax({
                                                 type: "POST",
                                                 async: true,
-                                                url: "<?= base_url('master/bom/uploadcreateFailed') ?>",
+                                                url: "<?= base_url('master/setting_non_molds/uploadcreateFailed') ?>",
                                                 data: {
                                                     data: json[number - 1],
                                                     message: result.message

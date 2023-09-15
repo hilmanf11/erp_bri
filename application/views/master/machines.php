@@ -73,16 +73,17 @@
                 <span style="width:35%; display:inline-block;">Manufacturing Date</span>
                 <input style="width:60%;" name="manufactur_date" data-options="formatter:myformatter,parser:myparser" required="" class="easyui-datebox">
             </div>
-            </div>
-
-            <div style="width:50%;float:left">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Maker</span>
                 <input style="width:60%;" name="maker" class="easyui-textbox">
             </div>
+            </div>
+
+            <div style="width:50%;float:left">
+            
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Tonage of Machine</span>
-                <input style="width:30%;" name="toonage" class="easyui-numberbox">
+                <input style="width:60%;" name="toonage" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Unit of Measure</span>
@@ -90,14 +91,14 @@
             </div>
             <div class="fitem">
             <span style="width:35%; display:inline-block;">Vacum</span>
-                <select style="width:30%;" name="vacum" class="easyui-combobox" panelHeight="auto">
+                <select style="width:60%;" name="vacum" class="easyui-combobox" panelHeight="auto">
                     <option value="YES">YES</option>
                     <option value="NO">NO</option>
                 </select>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">RT</span>
-                <input style="width:30%;" name="rt" class="easyui-numberbox">
+                <input style="width:60%;" name="rt" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Type</span>
@@ -109,7 +110,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Status</span>
-                <select style="width:30%;" name="status" required="" panelHeight="auto" class="easyui-combobox">
+                <select style="width:60%;" name="status" required="" panelHeight="auto" class="easyui-combobox">
                     <option value="0">Active</option>
                     <option value="1">Inactive</option>
                 </select>

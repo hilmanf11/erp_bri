@@ -35,6 +35,13 @@ class Item_rm extends CI_Controller
          $send = $this->crud->reads('item_rm', ["name" => $post]);
          echo json_encode($send);
      }
+
+     public function readsC()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->reads('item_rm', [], ["item_family_number"=>"CP"]);
+        echo json_encode($send);
+    }
      //CODE OTOMATIS
      public function autoid($item_category_number, $item_family_number, $item_family_sub_number = "NA"){
     
@@ -333,10 +340,17 @@ class Item_rm extends CI_Controller
              </tr>';
          $no = 1;
          foreach ($records as $data) {
+            $number = $data['number'];
+            if (strpos($data['number'], '0') === 0 || strpos($data['number'], '+') === 0) {
+                $number = "'" . $data['number'];
+            } else {
+                // Leave the data unchanged
+                $number = $data['number'];
+            }
              $html .= '<tr>
                          <td>' . $no . '</td>
                          <td>' . $data['id'] . '</td>
-                         <td>' . $data['number'] . '</td>
+                         <td>' . $number . '</td>
                          <td>' . $data['name'] . '</td>
                          <td>' . $data['specification'] . '</td>
                          <td>' . $data['type'] . '</td>

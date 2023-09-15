@@ -99,7 +99,7 @@ class Item_family_subs extends CI_Controller
      public function autoid(){
         $sql = $this->db->query("SELECT max(`id`) as kode From item_family_subs");
         $row = $sql->row();
-        $kode = substr($row->kode, 2);
+        $kode = substr($row->kode, -3);
         $autoid = "PS". sprintf("%03s", $kode + 1);
         echo $autoid;
     }

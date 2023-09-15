@@ -3,16 +3,19 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:100,align:'center'">ID</th>
-            <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Mold Name</th>
-            <th rowspan="2" data-options="field:'type',width:100,halign:'center',formatter:formatType">Type</th>
-            <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
-            <th rowspan="2" data-options="field:'model',width:100,halign:'center',formatter:formatModel">Model</th>
-            <th rowspan="2" data-options="field:'project_year',width:100,halign:'center',align:'center'">Project Year</th>
-            <th rowspan="2" data-options="field:'standard',width:100,halign:'center',align:'center'">Standard <br>Cavity</th>
-            <th rowspan="2" data-options="field:'actual',width:100,halign:'center',align:'center'">Actual Cavity</th>
+            <th rowspan="2" data-options="field:'item_fg_id',align:'center',width:100">Product ID</th>
+            <th rowspan="2" data-options="field:'item_fg_no',align:'center',width:100">Product No</th>
+            <th rowspan="2" data-options="field:'item_fg_name',align:'center',width:100">Product Name</th>
+            <th rowspan="2" data-options="field:'item_rm_id',align:'center',width:100">Part ID</th>
+            <th rowspan="2" data-options="field:'item_rm_no',align:'center',width:100">Part No</th>
+            <th rowspan="2" data-options="field:'item_rm_name',align:'center',width:100">Part Name</th>
+            <th rowspan="2" data-options="field:'machine_id',halign:'center',width:100">Machine ID</th>
+            <th rowspan="2" data-options="field:'machine_no',halign:'center',width:100">Machine No</th>
+            <th rowspan="2" data-options="field:'cycle_time',align:'center',width:100">Cycle Time <br>(lot/second)</th>
+            <th rowspan="2" data-options="field:'priority',align:'center',width:100">Priority</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
+            
         </tr>
         <tr>
             <th data-options="field:'created_by',width:100,align:'center'"> By</th>
@@ -32,48 +35,29 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">ID</span>
-                <input style="width:30%;" name="id" id="id" required="" readonly class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Product No</span>
+                <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combogrid">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Mold Name</span>
-                <input style="width:60%;" name="name" required="" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Part No</span>
+                <input style="width:60%;" name="item_rm_id" id="item_rm_id" required="" class="easyui-combogrid">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Type</span>
-                <select style="width:60%;" name="type" id="type" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="EX">EXTERNAL</option>
-                    <option value="IN">INTERNAL</option>
-                </select>
+                <span style="width:35%; display:inline-block;">Machine No</span>
+                <input style="width:60%;" name="machine_id" id="machine_id" required="" class="easyui-combogrid">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Customer Name</span>
-                <input style="width:60%;" name="customer_id" id="customer_id" required="" class="easyui-combobox">
+                <span style="width:35%; display:inline-block;">Cycle Time</span>
+                <input style="width:60%;" name="cycle_time" class="easyui-numberbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Model</span>
-                <select style="width:60%;" name="model" id="model" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="COM">COMPRESSION</option>
-                    <option value="INJ">INJECTION</option>
-                    <option value="TRF">TRANSFER</option>
-                </select>
+                <span style="width:35%; display:inline-block;">Priority</span>
+                <input style="width:60%;" name="priority" class="easyui-numberbox">
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Project Year</span>
-                <input style="width:60%;" name="project_year" data-options="formatter:myformatter,parser:myparser" required="" class="easyui-datebox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Standard Cavity</span>
-                <input style="width:60%;" name="standard" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Actual Cavity</span>
-                <input style="width:60%;" name="actual" required="" class="easyui-textbox">
-            </div>
+        </div>
         </fieldset>
     </form>
 </div>
-
 <!-- Upload -->
 <div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
     <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
@@ -95,66 +79,44 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/molds/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/setting_non_molds/print') ?>" style="width: 100%;" hidden></iframe>
+
 <script>
+
     //ADD DATA
     function add() {
-        $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/molds/create') ?>';
-        $('#frm_insert').form('clear');
+        $('#item_fg_id').combobox('enable');
+        $('#item_rm_id').combobox('enable');
 
-        $.ajax({
-            type: "post",
-            url: '<?= base_url('master/molds/autoid') ?>',
-            dataType: "html",
-            success: function (response) {
-                $('#id').textbox('setValue', response);
-            }
-        });
+        $('#dlg_insert').dialog('open');
+        url_save = '<?= base_url('master/setting_non_molds/create') ?>';
+        $('#frm_insert').form('clear')
     }
+
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
-
-        setTimeout(function() { 
-            $('#id').textbox('setValue', row.id);
-        }, 1000);
-
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/molds/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('master/setting_non_molds/update') ?>?id=' + btoa(row.id);
+
+            // Mengatur disable atau enable sesuai pemilihan
+            if (row.item_fg_id) {
+                $('#item_rm_id').combobox('disable');
+                $('#item_fg_id').combobox('enable');
+            } else if (row.item_rm_id) {
+                $('#item_fg_id').combobox('disable');
+                $('#item_rm_id').combobox('enable');
+            } else {
+                // Jika tidak ada pemilihan, nonaktifkan keduanya
+                $('#item_fg_id').combobox('disable');
+                $('#item_rm_id').combobox('disable');
+            }
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
-
-    // Formatter function untuk kolom 'Type'
-    function formatType(value, row, index) {
-        if (value === 'EX') {
-            return 'EXTERNAL';
-        } else if (value === 'IN') {
-            return 'INTERNAL';
-        }
-        return value; // Nilai lainnya tetap seperti aslinya
-    }
-
-    // Formatter function untuk kolom 'Type'
-    function formatModel(value, row, index) {
-        if (value === 'COM') {
-            return 'COMPRESSION';
-        } else if (value === 'INJ'){
-            return 'INJECTION';
-        } else if (value === 'TRF') {
-            return 'TRANSFER';
-        }
-        return value; // Nilai lainnya tetap seperti aslinya
-    }
-
-        // Inisialisasi datagrid
-    $('#dg').datagrid({
-        
-    });
 
     //DELETE DATA
     function deleted() {
@@ -166,7 +128,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/molds/delete') ?>',
+                            url: '<?= base_url('master/setting_non_molds/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -189,13 +151,107 @@
         }
     }
 
-    //Upload Data
+    $(document).ready(function() {
+        // Fungsi untuk mengaktifkan/menonaktifkan item_rm_id
+        function onSelectItemFg(index, row) {
+            var $item_rm = $('#item_rm_id');
+            
+            if (row) {
+                // Jika item_fg_id dipilih, nonaktifkan item_rm_id
+                $item_rm.combogrid('disable');
+            } else {
+                // Jika tidak ada pemilihan, aktifkan item_rm_id
+                $item_rm.combogrid('enable');
+            }
+        }
+
+        // Fungsi untuk mengaktifkan/menonaktifkan item_fg_id
+        function onSelectItemRm(index, row) {
+            var $item_fg = $('#item_fg_id');
+            
+            if (row) {
+                // Jika item_rm_id dipilih, nonaktifkan item_fg_id
+                $item_fg.combogrid('disable');
+            } else {
+                // Jika tidak ada pemilihan, aktifkan item_fg_id
+                $item_fg.combogrid('enable');
+            }
+        }
+
+        $('#item_fg_id').combogrid({
+            onSelect: onSelectItemFg,
+            url: '<?= base_url('master/item_fg/reads') ?>',
+            panelWidth: 420,
+            idField: 'id',
+            textField: 'number',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Product No",
+            columns: [
+                [{
+                    field: 'number',
+                    title: 'Product No',
+                    width: 100
+                }, {
+                    field: 'name',
+                    title: 'Product Name',
+                    width: 100
+                }, ]
+            ]
+        });
+
+        $('#item_rm_id').combogrid({
+            onSelect: onSelectItemRm,
+            url: '<?= base_url('master/item_rm/readsC') ?>',
+            panelWidth: 420,
+            idField: 'id',
+            textField: 'number',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Product No",
+            columns: [
+                [{
+                    field: 'number',
+                    title: 'Part No',
+                    width: 100
+                }, {
+                    field: 'name',
+                    title: 'Part Name',
+                    width: 100
+                }, ]
+            ]
+        });
+    });
+
+
+        $('#machine_id').combogrid({
+            url: '<?= base_url('master/machines/reads') ?>',
+            panelWidth: 420,
+            idField: 'id',
+            textField: 'number',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Machine No",
+            columns: [
+                [{
+                    field: 'number',
+                    title: 'Machine No',
+                    width: 100
+                },{
+                    field: 'name',
+                    title: 'Machine Name',
+                    width: 100
+                },]
+            ]
+        });
+
+   //Upload Data
     function upload() {
         $('#dlg_upload').dialog('open');
     }
 
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_molds.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_setting_non_molds.xls') ?>');
     }
     //PRINT PDF
     function pdf() {
@@ -203,127 +259,40 @@
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/molds/print/excel') ?>');
+        window.location.assign('<?= base_url('master/setting_non_molds/print/excel') ?>');
     }
+    
     //RELOAD
     function reload() {
         window.location.reload();
     }
 
-     // FORMAT tahun-bulan-tanggal
-    function myformatter(date) {
-        var y = date.getFullYear();
-        var m = date.getMonth(); // Mengambil indeks bulan (0 - Januari, 11 - Desember)
-        var monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-        return monthNames[m] + ' ' + y;
-    }
-
-    function myparser(s) {
-        if (!s) return new Date();
-        var parts = s.split(' ');
-        if (parts.length === 2) {
-            var monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-            var m = monthNames.indexOf(parts[0]); // Mencari indeks bulan dari nama bulan
-            var y = parseInt(parts[1]);
-            if (m !== -1 && !isNaN(y)) {
-                return new Date(y, m);
-            }
+    //CELLSTYLE STATUS
+    function cellStyler(value, row, index) {
+        if (value == 0) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
         }
-        return new Date();
     }
-
-
+    //FORMATTER STATUS
+    function cellFormatter(value) {
+        if (value == 0) {
+            return 'Active';
+        } else {
+            return 'Inactive';
+        }
+    };
 
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/molds/datatables') ?>',
+            url: '<?= base_url('master/setting_non_molds/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
             rownumbers: true
         }).datagrid('enableFilter');
-
-        //Upload Data
-        $('#dlg_upload').dialog({
-            buttons: [{
-                text: 'List Failed',
-                handler: function() {
-                    window.open('<?= base_url('master/molds/uploadDownloadFailed') ?>', '_blank');
-                }
-            }, {
-                text: 'Upload',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/molds/upload') ?>',
-                        onSubmit: function() {
-                            if ($(this).form('validate') == false) {
-                                return $(this).form('validate');
-                            } else {
-                                $.messager.progress({
-                                    title: 'Please Wait',
-                                    msg: 'Importing Excel to Database'
-                                });
-                            }
-                        },
-                        success: function(result) {
-                            $.messager.progress('close');
-                            //Clear File
-                            $.ajax({
-                                url: "<?= base_url('master/molds/uploadclearFailed') ?>"
-                            });
-                            var json = eval('(' + result + ')');
-                            requestData(json.total, json);
-
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
-
-                                    $.ajax({
-                                        type: "POST",
-                                        async: true,
-                                        url: "<?= base_url('master/molds/uploadCreate') ?>",
-                                        data: {
-                                            "data": json[number - 1]
-                                        },
-                                        cache: false,
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (result.theme == "success") {
-                                                $('#p_success').html(success);
-                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                //Json Failed
-                                                $.ajax({
-                                                    type: "POST",
-                                                    async: true,
-                                                    url: "<?= base_url('master/molds/uploadcreateFailed') ?>",
-                                                    data: {
-                                                        data: json[number - 1],
-                                                        message: result.message
-                                                    },
-                                                    cache: false
-                                                });
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                            }
-                                            $("#p_remarks").append(title + "<br>");
-                                        }
-                                    });
-                                }
-                            }
-                        }
-                    });
-                }
-            }]
-        });
-
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
@@ -349,50 +318,116 @@
                 }
             }]
         });
-    });
 
-        $('#type').combobox({
-        url: '<?php echo base_url('master/molds/type'); ?>',
-        valueField: 'value',
-        textField: 'name',
-        prompt: "Choose Type",
-        onSelect: function(selectedOption_type) {
-            // Ambil nilai yang dipilih dari combobox
-            var selectedValue_type = selectedOption_type.value;
-            var selectedName_type = selectedOption_type.name;
-
-                $('#model').combobox({
-                    url: '<?php echo base_url('master/molds/model'); ?>',
-                    valueField: 'value',
-                    textField: 'name',
-                    prompt: "Choose Model",
-                    onSelect: function(selectedOption_model) {
-                        // Ambil nilai yang dipilih dari combobox
-                        var selectedValue_model = selectedOption_model.value;
-                        var selectedName_model = selectedOption_model.name;
-
-                        // Lakukan permintaan AJAX untuk mendapatkan ID berdasarkan nilai yang dipilih
-                        $.ajax({
-                            type: "post",
-                            url: '<?php echo base_url('master/molds/autoid/'); ?>' + selectedValue_type + '/' + selectedValue_model,
-                            dataType: "html",
-                            success: function (response) {
-                                // Set nilai response ke elemen dengan ID '#id'
-                                $('#id').textbox('setValue', response);
-                            }
-                        });
-                    }
-                });
-           }
+        //GET CURRENCY
+        $('#currency').combogrid({
+            url: '<?= base_url('master/currencies/reads') ?>',
+            panelWidth: 420,
+            idField: 'name',
+            textField: 'name',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Currency",
+            columns: [
+                [{
+                    field: 'symbol',
+                    title: 'Symbol',
+                    width: 100
+                }, {
+                    field: 'number',
+                    title: 'Currency ID',
+                    width: 120
+                }, {
+                    field: 'name',
+                    title: 'Currency Name',
+                    width: 250
+                }, ]
+            ]
         });
 
+         //Upload Data
+         $('#dlg_upload').dialog({
+            buttons: [{
+                text: 'List Failed',
+                handler: function() {
+                    window.open('<?= base_url('master/setting_non_molds/uploadDownloadFailed') ?>', '_blank');
+                }
+            }, {
+                text: 'Upload',
+                iconCls: 'icon-ok',
+                handler: function() {
+                    $('#frm_upload').form('submit', {
+                        url: '<?= base_url('master/setting_non_molds/upload') ?>',
+                        onSubmit: function() {
+                            if ($(this).form('validate') == false) {
+                                return $(this).form('validate');
+                            } else {
+                                $.messager.progress({
+                                    title: 'Please Wait',
+                                    msg: 'Importing Excel to Database'
+                                });
+                            }
+                        },
+                        success: function(result) {
+                            $.messager.progress('close');
+                            //Clear File
+                            $.ajax({
+                                url: "<?= base_url('master/setting_non_molds/uploadclearFailed') ?>"
+                            });
+                            var json = eval('(' + result + ')');
+                            requestData(json.total, json);
+
+                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                                if (value < 100) {
+                                    value = Math.floor((number / total) * 100);
+                                    $('#p_upload').progressbar('setValue', value);
+                                    $('#p_start').html(number);
+                                    $('#p_finish').html(total);
+
+                                    $.ajax({
+                                        type: "POST",
+                                        async: true,
+                                        url: "<?= base_url('master/setting_non_molds/uploadCreate') ?>",
+                                        data: {
+                                            "data": json[number - 1]
+                                        },
+                                        cache: false,
+                                        dataType: "json",
+                                        success: function(result) {
+                                            if (result.theme == "success") {
+                                                $('#p_success').html(success);
+                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                            } else {
+                                                $('#p_failed').html(failed);
+                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                                //Json Failed
+                                                $.ajax({
+                                                    type: "POST",
+                                                    async: true,
+                                                    url: "<?= base_url('master/setting_non_molds/uploadcreateFailed') ?>",
+                                                    data: {
+                                                        data: json[number - 1],
+                                                        message: result.message
+                                                    },
+                                                    cache: false
+                                                });
+                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                            }
+                                            $("#p_remarks").append(title + "<br>");
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    });
+                }
+            }]
+        });
+    });
 
 
 
-    $('#customer_id').combobox({
-            url: '<?= base_url('master/customers/reads') ?>',
-            valueField: 'id',
-            textField: 'name',
-            prompt: "Choose Customers"
-         });
+    
+
 </script>

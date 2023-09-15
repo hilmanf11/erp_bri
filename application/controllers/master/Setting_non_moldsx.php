@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Bom extends CI_Controller
+class Setting_non_molds extends CI_Controller
 {
     public function __construct()
     {
@@ -12,7 +12,7 @@ class Bom extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('item_rm_id', 'Code', 'required|min_length[1]|max_length[20]|is_unique[bom.item_rm_id]');
+        $this->form_validation->set_rules('item_rm_id', 'Code', 'required|min_length[1]|max_length[20]|is_unique[setting_non_molds.item_rm_id]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -22,7 +22,7 @@ class Bom extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('master/bom');
+            $this->load->view('master/setting_non_molds');
         } else {
             redirect('error_access');
         }
@@ -31,7 +31,7 @@ class Bom extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('bom', ["item_fg_id" => $post]);
+        $send = $this->crud->reads('setting_non_molds', ["item_fg_id" => $post]);
         echo json_encode($send);
     }
 
@@ -52,7 +52,7 @@ class Bom extends CI_Controller
             $result = array();
             //Select Query
             $this->db->select('b.id as item_fg_id, b.number as item_fg_number, b.name as item_fg_name, a.created_by, a.created_date, a.updated_by, a.updated_date');
-            $this->db->from('bom a');
+            $this->db->from('setting_non_molds a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->like('a.item_fg_id', $filter_item_fg_id);
             $this->db->like('a.item_rm_id', $filter_item_rm_id);
@@ -78,12 +78,12 @@ class Bom extends CI_Controller
             $number = base64_decode($this->input->get('number'));
             $filter_item_rm_id = base64_decode($this->input->get('filter_item_rm_id'));
 
-            $this->db->select('a.*, b.name as item_fg_name, c.number as item_rm_number, c.name as item_rm_name, c.uom as uom, c.item_family_number as product_family, d.name as product_family_name, e.name as process_name, e.id as process_id');
-            $this->db->from('bom a');
+            $this->db->select('a.*, b.name as item_fg_name, c.number as item_rm_number, c.name as item_rm_name, c.uom as uom, c.item_family_number as product_family, d.number as machine_no, e.name as product_family_name');
+            $this->db->from('setting_non_molds a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-            $this->db->join('item_familys d', 'c.item_family_number = d.number');
-            $this->db->join('process e', 'a.process_id = e.id');
+            $this->db->join('machines d', 'a.machine_id = d.id');
+            $this->db->join('item_familys e', 'c.item_family_number = e.number');
             $this->db->where('b.number', $number);
             $this->db->like('a.item_rm_id', $filter_item_rm_id);
             $this->db->group_by('a.id');
@@ -99,12 +99,12 @@ class Bom extends CI_Controller
         if ($this->input->get()) {
             $item_fg_id = base64_decode($this->input->get('item_fg_id'));
 
-            $this->db->select('a.*, b.number as item_fg_number, c.number as item_rm_number, c.uom, d.name as item_rm_name, e.name as process_name, e.id as process_id, d.name as product_family_name');
-            $this->db->from('bom a');
+            $this->db->select('a.*, b.number as item_fg_number, c.number as item_rm_number, d.number as machine_no, e.name as product_family_name');
+            $this->db->from('setting_non_molds a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-            $this->db->join('item_familys d', 'c.item_family_number = d.number');
-            $this->db->join('process e', 'a.process_id = e.id');
+            $this->db->join('machines d', 'a.machine_id = d.id');
+            $this->db->join('item_familys e', 'c.item_family_number = e.number');
             $this->db->where('a.item_fg_id', $item_fg_id);
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
@@ -119,11 +119,11 @@ class Bom extends CI_Controller
         if ($this->input->post()) {
 
                 $post = $this->input->post();
-                $bom = $this->crud->read("bom", [], ["item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']]);
-                if (@$bom->item_fg_id != "") {
-                    $send = $this->crud->update('bom', ["item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']], $post);
+                $setting_non_molds = $this->crud->read("setting_non_molds", [], ["item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']]);
+                if (@$setting_non_molds->item_fg_id != "") {
+                    $send = $this->crud->update('setting_non_molds', ["item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']], $post);
                 } else {
-                    $send = $this->crud->create('bom', $post);
+                    $send = $this->crud->create('setting_non_molds', $post);
                 }
                 echo $send;
            
@@ -136,7 +136,7 @@ class Bom extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('bom', $data);
+        $send = $this->crud->delete('setting_non_molds', $data);
         echo $send;
     }
 
@@ -155,9 +155,9 @@ class Bom extends CI_Controller
             $datas[] = array(
                 //excel
                 'item_fg_id' => $data->val($i, 2),
-                'process_id' => $data->val($i, 3),
-                'item_rm_id' => $data->val($i, 4),
-                'composition' => $data->val($i, 5),
+                'item_rm_id' => $data->val($i, 3),
+                'machine_id' => $data->val($i, 4),
+                'cycle_time' => $data->val($i, 5),
                 'priority' => $data->val($i, 6)
             );
         }
@@ -168,14 +168,14 @@ class Bom extends CI_Controller
 
     public function uploadclearFailed()
     {
-        @unlink('failed/bom.txt');
+        @unlink('failed/setting_non_molds.txt');
     }
 
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('failed/bom.txt', 'a');
+            $textFailed = fopen('failed/setting_non_molds.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -184,7 +184,7 @@ class Bom extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "failed/bom.txt";
+        $file = "failed/setting_non_molds.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -204,17 +204,20 @@ class Bom extends CI_Controller
             //Cek Process Number          //table       //field        //field excel
             $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
             $item_rm = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
-            $bom = $this->crud->read("bom", [], ["item_fg_id" => $data['item_fg_id'], "item_rm_id" => $data['item_rm_id']]);
+            $machine = $this->crud->read('machines', [], ["id" => $data['machine_id']]);
+            $setting_non_molds = $this->crud->read("setting_non_molds", [], ["item_fg_id" => $data['item_fg_id'], "item_rm_id" => $data['item_rm_id']]);
 
             if (empty($item_fg->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => " Product No. " . $data['item_fg_id'] . " is Not Found", "theme" => "error"));
+                echo json_encode(array("title" => "Not Found", "message" => " Product ID. " . $data['item_fg_id'] . " is Not Found", "theme" => "error"));
             } elseif (empty($item_rm->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => " Part No. " . $data['item_rm_id'] . " is Not Found", "theme" => "error"));
-            } elseif (!empty($bom->item_fg_id)) {
+                echo json_encode(array("title" => "Not Found", "message" => " Part ID. " . $data['item_rm_id'] . " is Not Found", "theme" => "error"));
+            } elseif (empty($machine->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => " Machine ID. " . $data['machine_id'] . " is Not Found", "theme" => "error"));
+            } elseif (!empty($setting_non_molds->item_fg_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['item_fg_id'] . " & Part No. " . $data['item_rm_id']." is Duplicate Data", "theme" => "error"));
             } else {
                 
-                $send   = $this->crud->create('bom', $data);
+                $send   = $this->crud->create('setting_non_molds', $data);
                 echo $send;
             }
         }
@@ -226,7 +229,7 @@ class Bom extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=bom_$format.xls");
+            header("Content-Disposition: attachment; filename=setting_non_molds_$format.xls");
         }
 
         $get = $this->input->get();
@@ -238,17 +241,17 @@ class Bom extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.name as item_fg_name, b.number as item_fg_number, c.number as item_rm_number, c.name as item_rm_name, c.uom as uom, c.item_family_number as product_family, d.name as product_family_name, e.name as process_name, e.id as process_id');
-        $this->db->from('bom a');
+        $this->db->select('a.*, b.name as item_fg_name, b.number as item_fg_number, c.number as item_rm_number, c.name as item_rm_name, c.uom as uom, c.item_family_number as product_family, d.number as machine_no, e.name as product_family_name');
+        $this->db->from('setting_non_molds a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-        $this->db->join('item_familys d', 'c.item_family_number = d.number');
-        $this->db->join('process e', 'a.process_id = e.id');
+        $this->db->join('machines d', 'a.machine_id = d.id');
+        $this->db->join('item_familys e', 'c.item_family_number = e.number');
         $this->db->like('a.item_fg_id', $filter_item_fg_id);
         $this->db->like('a.item_rm_id', $filter_item_rm_id);
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#bom {border-collapse: collapse;width: 100%;font-size: 12px;}#bom td, #bom th {border: 1px solid #ddd;padding: 2px;}#bom tr:nth-child(even){background-color: #f2f2f2;}#bom tr:hover {background-color: #ddd;}#bom th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#setting_non_molds {border-collapse: collapse;width: 100%;font-size: 12px;}#setting_non_molds td, #setting_non_molds th {border: 1px solid #ddd;padding: 2px;}#setting_non_molds tr:nth-child(even){background-color: #f2f2f2;}#setting_non_molds tr:hover {background-color: #ddd;}#setting_non_molds th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">
                 <table style="width: 100%;">
@@ -272,19 +275,18 @@ class Bom extends CI_Controller
             </div>
         </center>
         
-        <table id="bom" border="1">
+        <table id="setting_non_molds" border="1">
             <tr>
                 <th width="20">No</th>
                 <th>Product ID</th>
                 <th>Product No</th>
-                <th>Process Code</th>
-                <th>Process Name</th>
                 <th>Part ID</th>
                 <th>Part No</th>
                 <th>Part Name</th>
                 <th>Product Family</th>
-                <th>Unit Of Measure</th>
-                <th>Composition</th>
+                <th>Machine ID</th>
+                <th>Machine No</th>
+                <th>Cycle Time (Shot/Second)</th>
                 <th>Priority</th>
             </tr>';
         $no = 1;
@@ -307,18 +309,18 @@ class Bom extends CI_Controller
             }
             
             $html .= '<tr>
-                    <td>' . $no . '</td>
-                    <td>' . $data['item_fg_id'] . '</td>
-                    <td>' . $numberfg . '</td>
-                    <td>' . $data['process_id'] . '</td>
-                    <td>' . $data['process_name'] . '</td>
-                    <td>' . $data['item_rm_id'] . '</td>
-                    <td>' . $numberrm . '</td>
-                    <td>' . $data['item_rm_name'] . '</td>
-                    <td>' . $data['product_family_name'] . '</td>
-                    <td>' . $data['uom'] . '</td>
-                    <td>' . $data['composition'] . '</td>
-                    <td>' . $data['priority'] . '</td>';
+                        <td>' . $no . '</td>
+                        <td>' . $data['item_fg_id'] . '</td>
+                        <td>' . $numberfg . '</td>
+                        <td>' . $data['item_rm_id'] . '</td>
+                        <td>' . $numberrm . '</td>
+                        <td>' . $data['item_rm_name'] . '</td>
+                        <td>' . $data['product_family_name'] . '</td>
+                        <td>' . $data['machine_id'] . '</td>
+                        <td>' . $data['machine_no'] . '</td>
+                        <td>' . $data['cycle_time'] . '</td>
+                        <td>' . $data['priority'] . '</td>
+                    </tr>';
             $no++;
         }
         $html .= '</table></body></html>';

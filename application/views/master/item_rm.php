@@ -40,7 +40,7 @@
             <div style="width:50%;float:left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Part ID</span>
-                    <input style="width:30%;" name="id" id="id" readonly class="easyui-textbox">
+                    <input style="width:60%;" name="id" id="id" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Part No</span>
@@ -56,7 +56,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Part Type</span>
-                    <select style="width:30%;" name="type" class="easyui-combobox" panelHeight="auto">
+                    <select style="width:60%;" name="type" class="easyui-combobox" panelHeight="auto">
                         <option value="IMPORT">IMPORT</option>
                         <option value="LOCAL">LOCAL</option>
                     </select>
@@ -128,7 +128,9 @@
 <script>
     //ADD DATA
     function add() {
-        onclick= $('#item_family_sub_number').combobox('enable');
+        $('#item_family_sub_number').combobox('enable');
+        $('#item_family_number').combobox('enable');
+
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/item_rm/create') ?>';
         $('#frm_insert').form('clear')
@@ -136,7 +138,14 @@
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
-        onclick= $('#item_family_sub_number').combobox('disable');
+
+        setTimeout(function() { 
+            $('#id').textbox('setValue', row.id);
+        }, 2000);
+
+        $('#item_family_sub_number').combobox('disable');
+        $('#item_family_number').combobox('disable');
+
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);

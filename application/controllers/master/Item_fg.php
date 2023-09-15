@@ -35,6 +35,7 @@ class Item_fg extends CI_Controller
          $send = $this->crud->reads('item_fg', ["number" => $post]);
          echo json_encode($send);
      }
+     
      //CODE OTOMATIS
      public function autoid($item_category_number, $item_family_number, $item_family_sub_number = "NA"){
     
@@ -116,15 +117,15 @@ class Item_fg extends CI_Controller
       public function update()
       {
           if ($this->input->post()) {
-                  $id   = base64_decode($this->input->get('id'));
-                  $post = $this->input->post();
-                  $send = $this->crud->update('item_fg', ["id" => $id], $post);
-                  echo $send;
-              } else {
+                $id   = base64_decode($this->input->get('id'));
+                $post = $this->input->post();
+                $send = $this->crud->update('item_fg', ["id" => $id], $post);
+                echo $send;
+            } else {
                 show_error("Cannot Process your request");
-        
-          }
+            }
       }
+      
      //DELETE DATA
      public function delete()
      {
@@ -351,10 +352,17 @@ class Item_fg extends CI_Controller
              </tr>';
          $no = 1;
          foreach ($records as $data) {
+            $number = $data['number'];
+            if (strpos($data['number'], '0') === 0 || strpos($data['number'], '+') === 0) {
+                $number = "'" . $data['number'];
+            } else {
+                // Leave the data unchanged
+                $number = $data['number'];
+            }
              $html .= '<tr>
                          <td>' . $no . '</td>
                          <td>' . $data['id'] . '</td>
-                         <td>' . $data['number'] . '</td>
+                         <td>' . $number . '</td>
                          <td>' . $data['name'] . '</td>
                          <td>' . $data['specification'] . '</td>
                          <td>' . $data['type'] . '</td>

@@ -171,6 +171,7 @@ class Supplier_items extends CI_Controller
                   $id   = base64_decode($this->input->get('id'));
                   $post = $this->input->post();
                   $send = $this->crud->update('supplier_items', ["id" => $id], $post);
+                  $send = $this->crud->update('supplier_item_histories', ["id" => $id], $post);
                   echo $send;
               } else {
                 show_error("Cannot Process your request");
@@ -246,7 +247,7 @@ class Supplier_items extends CI_Controller
 
              //Cek Process Number     //table        //field           //field excel
              $item = $this->crud->read('item_rm', [], ["number" => $data['part_no']]);
-             $supplier = $this->crud->read('suppliers', [], ["id" => $data['supplier_id']]);
+             $supplier = $this->crud->read('suppliers', [], ["number" => $data['supplier_id']]);
              $supplier_items = $this->crud->read('supplier_items', [], ["item_id" => @$item->id, "supplier_id" => $data['supplier_id']] );
 
             if (empty($item->number)) {
@@ -258,7 +259,7 @@ class Supplier_items extends CI_Controller
             } else {
                  $dataFinal = array(
                      //field        //excel
-                     "supplier_id" => $data['supplier_id'],
+                     "supplier_id" => $supplier->id,
                      "item_id" => $item->id,
                      "item_supplier" => $data['part_supplier'],
                      "mpq" => $data['mpq'],
@@ -346,11 +347,18 @@ class Supplier_items extends CI_Controller
              </tr>';
          $no = 1;
          foreach ($records as $data) {
+            $number = $data['item_number'];
+            if (strpos($data['item_number'], '0') === 0 || strpos($data['item_number'], '+') === 0) {
+                $number = "'" . $data['item_number'];
+            } else {
+                // Leave the data unchanged
+                $number = $data['item_number'];
+            }
              $html .= '<tr>
                          <td>' . $no . '</td>
                          <td>' . $data['supplier_id'] . '</td>
                          <td>' . $data['supplier_name'] . '</td>
-                         <td>' . $data['item_number'] . '</td>
+                         <td>' . $number . '</td>
                          <td>' . $data['item_name'] . '</td>
                          <td>' . $data['item_supplier'] . '</td>
                          <td>' . $data['mpq'] . '</td>
