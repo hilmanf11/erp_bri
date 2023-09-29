@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class setting_non_molds extends CI_Controller
+class Compound_alias extends CI_Controller
 {
     public function __construct()
     {
@@ -13,7 +13,7 @@ class setting_non_molds extends CI_Controller
         $this->load->model('crud');
         //VALIDASI FORM
 
-        // $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[30]|is_unique[setting_non_molds.number]');
+        // $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[30]|is_unique[compound_alias.number]');
         
     }
     //HALAMAN UTAMA
@@ -24,7 +24,7 @@ class setting_non_molds extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('master/setting_non_molds');
+            $this->load->view('master/compound_alias');
         } else {
             redirect('error_access');
         }
@@ -33,7 +33,7 @@ class setting_non_molds extends CI_Controller
      public function reads()
      {
          $post = isset($_POST['q']) ? $_POST['q'] : "";
-         $send = $this->crud->reads('setting_non_molds', ["name" => $post]);
+         $send = $this->crud->reads('compound_alias', ["name" => $post]);
          echo json_encode($send);
      }
 
@@ -50,10 +50,10 @@ class setting_non_molds extends CI_Controller
              $offset = ($page - 1) * $rows;
              $result = array();
              //Select Query
-             $this->db->select('a.*, b.number as item_fg_no, b.name as item_fg_name, c.number as machine_no');
-             $this->db->from('setting_non_molds a');
-             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-             $this->db->join('machines c', 'a.machine_id = c.id');
+             $this->db->select('a.*, b.number as item_fg_no, b.name as item_fg_name, c.number as item_rm_no, c.name as item_rm_name');
+             $this->db->from('compound_alias a');
+             $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
+             $this->db->join('item_rm c', 'a.item_rm_id = c.id', 'left');       
              $this->db->where('a.deleted', 0);
              if (@count($filters) > 0) {
                  foreach ($filters as $filter) {
@@ -62,16 +62,13 @@ class setting_non_molds extends CI_Controller
  
                      }elseif($filter->field == "item_fg_name"){
                          $this->db->like("b.name", $filter->value);
- 
-                     }elseif($filter->field == "machine_no"){
-                         $this->db->like("c.number", $filter->value);
    
                      }else{
                          $this->db->like("a.".$filter->field, $filter->value);
                     }
                  }
              }
-             $this->db->order_by('a.id', 'ASC');
+             $this->db->order_by('a.item_fg_id', 'DESC');
              //Total Data
              $totalRows = $this->db->count_all_results('', false);
              //Limit 1 - 10
@@ -88,13 +85,14 @@ class setting_non_molds extends CI_Controller
      public function create()
      {
          if ($this->input->post()) {
-                 $post   = $this->input->post();
-                 $setting_non_molds = $this->crud->read('setting_non_molds', [], ["item_fg_id" => $post['item_fg_id'],"machine_id" => $post['machine_id']]);
+                $data = $this->input->post();
+
+                $compound_alias = $this->crud->read('compound_alias', [], ["item_fg_id" => @$data['item_fg_id'],"item_rm_id" => @$data['item_rm_id']]);
                 
-                if (!empty($setting_non_molds->item_fg_id)) {
-                    echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . $post['item_fg_id'] ." & Machine Id " . $post['machine_id'] . " Duplicate Data", "theme" => "error"));
+                if (!empty($compound_alias->item_fg_id)) {
+                    echo json_encode(array("title" => "Duplicated", "message" => "Product No " . @$data['item_fg_id'] . " & Part Id " . @$data['item_rm_id'] . " Duplicate Data", "theme" => "error"));
                 } else {
-                    $send   = $this->crud->create('setting_non_molds', $post);
+                    $send   = $this->crud->create('compound_alias', $data);
                     echo $send;
                 }
             } else {
@@ -106,40 +104,29 @@ class setting_non_molds extends CI_Controller
       //UPDATE DATA
       public function update()
       {
-        if ($this->input->post()) {
-            
-            $id = base64_decode($this->input->get('id'));
-            $post = $this->input->post();
-            $existing_data = $this->crud->read('setting_non_molds', [], ["id" => $id]); // Membaca data yang ada
+          if ($this->input->post()) {
+                $id   = base64_decode($this->input->get('id'));
+                $post = $this->input->post();
 
-            // Periksa apakah item_fg_id dan machine_id tetap sama
-            if (
-                ($existing_data->item_fg_id == $post['item_fg_id']) &&
-                ($existing_data->machine_id == $post['machine_id'])
-            ) {
-                // Item_fg_id dan machine_id tetap sama, lanjutkan dengan pembaruan
-                $send = $this->crud->update('setting_non_molds', ["id" => $id], $post);
-                echo $send;
-            } else {
-                // Item_fg_id atau machine_id telah berubah, lakukan validasi duplikasi
-                $setting_non_molds = $this->crud->read('setting_non_molds', [], ["item_fg_id" => $post['item_fg_id'], "machine_id" => $post['machine_id']]);
-                if (!empty($setting_non_molds->item_fg_id)) {
-                    echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . $post['item_fg_id'] . " & Machine Id " . $post['machine_id'] . " Duplicate Data", "theme" => "error"));
-                } else {
-                    // Tidak ada duplikasi, lanjutkan dengan pembaruan
-                    $send = $this->crud->update('setting_non_molds', ["id" => $id], $post);
-                    echo $send;
+                $compound_alias = $this->crud->read('compound_alias', [], ["item_fg_id" => @$post['item_fg_id'],"item_rm_id" => @$post['item_rm_id']]);
+                
+                if (!empty($compound_alias->item_fg_id)) {
+                    echo json_encode(array("title" => "Duplicated", "message" => "Product No " . @$data['item_fg_id'] . " & Part Id " . @$data['item_rm_id'] . " Duplicate Data", "theme" => "error"));
+                }else{  
+                    $send = $this->crud->update('compound_alias', ["id" => $id], $post);
+                  echo $send;
                 }
-            }
-        } else {
+
+            } else {
             show_error("Cannot Process your request");
-        }
-    }
+        
+          }
+      }
      //DELETE DATA
      public function delete()
      {
          $data = $this->input->post();
-         $send = $this->crud->delete('setting_non_molds', $data);
+         $send = $this->crud->delete('compound_alias', $data);
          echo $send;
      }
  
@@ -158,9 +145,7 @@ class setting_non_molds extends CI_Controller
              $datas[] = array(
                  //excel
                  'item_fg_id' => $data->val($i, 2),
-                 'machine_id' => $data->val($i, 3),
-                 'cycle_time' => $data->val($i, 4),
-                 'priority' => $data->val($i, 5),
+                 'item_rm_id' => $data->val($i, 3),
              );
          }
          $datas['total'] = count($datas);
@@ -169,13 +154,13 @@ class setting_non_molds extends CI_Controller
      }
      public function uploadclearFailed()
      {
-         @unlink('failed/setting_non_molds.txt');
+         @unlink('failed/compound_alias.txt');
      }
      public function uploadcreateFailed()
      {
          if ($this->input->post()) {
              $message = $this->input->post('message');
-             $textFailed = fopen('failed/setting_non_molds.txt', 'a');
+             $textFailed = fopen('failed/compound_alias.txt', 'a');
              fwrite($textFailed, $message . "\n");
              fclose($textFailed);
          }
@@ -184,7 +169,7 @@ class setting_non_molds extends CI_Controller
      //UPLOAD DOWNLOAD FAILED
      public function uploadDownloadFailed()
      {
-         $file = "failed/setting_non_molds.txt";
+         $file = "failed/compound_alias.txt";
          header('Content-Description: File Failed');
          header('Content-Disposition: attachment; filename=' . basename($file));
          header('Expires: 0');
@@ -202,18 +187,19 @@ class setting_non_molds extends CI_Controller
              $data = $this->input->post('data');
 
             //Cek Process Number        //table          //field          //field excel
-            $product = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
-            $machine = $this->crud->read('machines', [], ["id" => $data['machine_id']]);
-            $setting_non_molds = $this->crud->read('setting_non_molds', [], ["item_fg_id" => $data['item_fg_id'],"machine_id" => $data['machine_id']]);
+            $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
+            $item_rm = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
 
-            if (empty($product->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Product Id " . $data['item_fg_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty($machine->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Machine Id " . $data['machine_id'] . " Not Found", "theme" => "error"));
-            } elseif (!empty($setting_non_molds->item_fg_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . $data['item_fg_id'] . " Duplicate Data", "theme" => "error"));
+            $compound_alias = $this->crud->read('compound_alias', [], ["item_fg_id" => @$data['item_fg_id'],"item_rm_id" => @$data['item_rm_id']]);
+
+            if (empty($item_fg->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Product No " . $data['item_fg_id'] . " Not Found", "theme" => "error"));
+            } elseif (empty($item_rm->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Part Id " . $data['item_rm_id'] . " Not Found", "theme" => "error"));
+            } elseif (!empty($compound_alias->item_fg_id)) {
+                echo json_encode(array("title" => "Duplicated", "message" => "Product No " . @$data['item_fg_id'] . " & Part Id " . @$data['item_rm_id'] . " Duplicate Data", "theme" => "error"));
             } else {
-                 $send   = $this->crud->create('setting_non_molds', $data);
+                 $send   = $this->crud->create('compound_alias', $data);
                  echo $send;
              }
          }
@@ -225,7 +211,7 @@ class setting_non_molds extends CI_Controller
          if ($option == "excel") {
              $format  = date("Ymd");
              header("Content-type: application/vnd-ms-excel");
-             header("Content-Disposition: attachment; filename=setting_non_molds_$format.xls");
+             header("Content-Disposition: attachment; filename=compound_alias_$format.xls");
          }
          //Config
         $this->db->select('*');
@@ -233,15 +219,17 @@ class setting_non_molds extends CI_Controller
         $config = $this->db->get()->row();
         $config_iso = $this->db->get('config_iso')->row();
 
-        $this->db->select('a.*, b.number as item_fg_no, b.name as item_fg_name , c.number as machine_no');
-        $this->db->from('setting_non_molds a');
-        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-        $this->db->join('machines c', 'a.machine_id = c.id');
+        $this->db->select('a.*, b.number as item_fg_no, b.name as item_fg_name, c.number as item_rm_no, c.name as item_rm_name');
+        $this->db->from('compound_alias a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
+        $this->db->join('item_rm c', 'a.item_rm_id = c.id', 'left');
         $this->db->where('a.deleted', 0);
-         $this->db->order_by('id', 'ASC');
-         $records = $this->db->get()->result_array();
+        $this->db->order_by('a.item_fg_id', 'DESC');
+        $records = $this->db->get()->result_array();
+
          
-         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#setting_non_molds {border-collapse: collapse;width: 100%;font-size: 12px;}#setting_non_molds td, #setting_non_molds th {border: 1px solid #ddd;padding: 2px;}#setting_non_molds tr:nth-child(even){background-color: #f2f2f2;}#setting_non_molds tr:hover {background-color: #ddd;}#setting_non_molds th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+         
+         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#compound_alias {border-collapse: collapse;width: 100%;font-size: 12px;}#compound_alias td, #compound_alias th {border: 1px solid #ddd;padding: 2px;}#compound_alias tr:nth-child(even){background-color: #f2f2f2;}#compound_alias tr:hover {background-color: #ddd;}#compound_alias th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
          <center>
              <div style="float: left; font-size: 12px; text-align: left;">
                  <table style="width: 100%;">
@@ -251,7 +239,7 @@ class setting_non_molds extends CI_Controller
                          </td>
                          <td style="font-size: 14px; text-align: left; margin:2px;">
                              <b>' . $config->name . '</b><br>
-                             <small>MASTER SETTING MOLDS</small>
+                             <small>MASTER COMPOUND ALIAS</small>
                          </td>
                      </tr>
                  </table>
@@ -283,37 +271,23 @@ class setting_non_molds extends CI_Controller
          </center>
          <br><br><br><br>
          
-         <table id="setting_non_molds" border="1">
+         <table id="compound_alias" border="1">
              <tr>
                  <th width="20">No</th>
-                 <th>Product ID</th>
+                 <th>Product Id</th>
                  <th>Product No</th>
-                 <th>Product Name</th>
-                 <th>Machine ID</th>
-                 <th>Machine No</th>
-                 <th>Cycle Time (Shot/Second)</th>
-                 <th>Priority</th>
+                 <th>Part Id</th>
+                 <th>Part No</th>
              </tr>';
          $no = 1;
+         
          foreach ($records as $data) {
-            $numberfg = $data['item_fg_no'];
-
-            if (strpos($data['item_fg_no'], '0') === 0 || strpos($data['item_fg_no'], '+') === 0) {
-                $number = "'" . $data['item_fg_no'];
-            } else {
-                // Leave the data unchanged
-                $number = $data['item_fg_no'];
-            }
-
              $html .= '<tr>
                          <td>' . $no . '</td>
                          <td>' . $data['item_fg_id'] . '</td>
-                         <td>' . $number . '</td>
-                         <td>' . $data['item_fg_name'] . '</td>
-                         <td>' . $data['machine_id'] . '</td>
-                         <td>' . $data['machine_no'] . '</td>
-                         <td>' . $data['cycle_time'] . '</td>
-                         <td>' . $data['priority'] . '</td>
+                         <td>' . $data['item_fg_no'] . '</td>
+                         <td>' . $data['item_rm_id'] . '</td>
+                         <td>' . $data['item_rm_no'] . '</td>
                      </tr>';
              $no++;
          }

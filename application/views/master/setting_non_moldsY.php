@@ -6,9 +6,12 @@
             <th rowspan="2" data-options="field:'item_fg_id',align:'center',width:100">Product ID</th>
             <th rowspan="2" data-options="field:'item_fg_no',halign:'center',width:150">Product No</th>
             <th rowspan="2" data-options="field:'item_fg_name',align:'center',width:100">Product Name</th>
+            <th rowspan="2" data-options="field:'item_rm_id',align:'center',width:100">Part ID</th>
+            <th rowspan="2" data-options="field:'item_rm_no',halign:'center',width:150">Part No</th>
+            <th rowspan="2" data-options="field:'item_rm_name',align:'center',width:100">Part Name</th>
             <th rowspan="2" data-options="field:'machine_id',halign:'center',width:100">Machine ID</th>
             <th rowspan="2" data-options="field:'machine_no',halign:'center',width:100">Machine No</th>
-            <th rowspan="2" data-options="field:'cycle_time',align:'center',width:100">Cycle Time <br>(shot/second)</th>
+            <th rowspan="2" data-options="field:'cycle_time',align:'center',width:100">Cycle Time <br>(lot/second)</th>
             <th rowspan="2" data-options="field:'priority',align:'center',width:100">Priority</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -34,6 +37,10 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
                 <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combogrid">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Part No</span>
+                <input style="width:60%;" name="item_rm_id" id="item_rm_id" required="" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Machine No</span>
@@ -72,25 +79,46 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/setting_non_moldsFG/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/setting_non_molds/print') ?>" style="width: 100%;" hidden></iframe>
+
 <script>
+
     //ADD DATA
     function add() {
+        $('#item_fg_id').combobox('enable');
+        $('#item_rm_id').combobox('enable');
+
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/setting_non_moldsFG/create') ?>';
+        url_save = '<?= base_url('master/setting_non_molds/create') ?>';
         $('#frm_insert').form('clear')
     }
+
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/setting_non_moldsFG/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('master/setting_non_molds/update') ?>?id=' + btoa(row.id);
+
+            // Mengatur disable atau enable sesuai pemilihan
+            if (row.item_fg_id) {
+                $('#item_rm_id').combobox('disable');
+                $('#item_fg_id').combobox('disable');
+            } else if (row.item_rm_id) {
+                $('#item_fg_id').combobox('disable');
+                $('#item_rm_id').combobox('disable');
+            } else {
+                // Jika tidak ada pemilihan, nonaktifkan keduanya
+                $('#item_fg_id').combobox('disable');
+                $('#item_rm_id').combobox('disable');
+            }
+
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
+
     //DELETE DATA
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
@@ -101,7 +129,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/setting_non_moldsFG/delete') ?>',
+                            url: '<?= base_url('master/setting_non_molds/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -124,7 +152,35 @@
         }
     }
 
-    $('#item_fg_id').combogrid({
+    $(document).ready(function() {
+        // Fungsi untuk mengaktifkan/menonaktifkan item_rm_id
+        function onSelectItemFg(index, row) {
+            var $item_rm = $('#item_rm_id');
+            
+            if (row) {
+                // Jika item_fg_id dipilih, nonaktifkan item_rm_id
+                $item_rm.combogrid('disable');
+            } else {
+                // Jika tidak ada pemilihan, aktifkan item_rm_id
+                $item_rm.combogrid('enable');
+            }
+        }
+
+        // Fungsi untuk mengaktifkan/menonaktifkan item_fg_id
+        function onSelectItemRm(index, row) {
+            var $item_fg = $('#item_fg_id');
+            
+            if (row) {
+                // Jika item_rm_id dipilih, nonaktifkan item_fg_id
+                $item_fg.combogrid('disable');
+            } else {
+                // Jika tidak ada pemilihan, aktifkan item_fg_id
+                $item_fg.combogrid('enable');
+            }
+        }
+
+        $('#item_fg_id').combogrid({
+            onSelect: onSelectItemFg,
             url: '<?= base_url('master/item_fg/reads') ?>',
             panelWidth: 420,
             idField: 'id',
@@ -142,8 +198,46 @@
                     title: 'Product Name',
                     width: 100
                 }, ]
-            ]
+            ],
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                    $('#item_rm_id').combobox('enable');
+                }
+            }],
         });
+
+        $('#item_rm_id').combogrid({
+            onSelect: onSelectItemRm,
+            url: '<?= base_url('master/item_rm/readsC') ?>',
+            panelWidth: 420,
+            idField: 'id',
+            textField: 'number',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Product No",
+            columns: [
+                [{
+                    field: 'number',
+                    title: 'Part No',
+                    width: 100
+                }, {
+                    field: 'name',
+                    title: 'Part Name',
+                    width: 100
+                }, ]
+            ],
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                    $('#item_fg_id').combobox('enable');
+                }
+            }],
+        });
+    });
+
 
         $('#machine_id').combogrid({
             url: '<?= base_url('master/machines/reads') ?>',
@@ -172,7 +266,7 @@
     }
 
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_setting_non_moldsFG.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_setting_non_molds.xls') ?>');
     }
     //PRINT PDF
     function pdf() {
@@ -180,7 +274,7 @@
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/setting_non_moldsFG/print/excel') ?>');
+        window.location.assign('<?= base_url('master/setting_non_molds/print/excel') ?>');
     }
     
     //RELOAD
@@ -208,7 +302,7 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/setting_non_moldsFG/datatables') ?>',
+            url: '<?= base_url('master/setting_non_molds/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
@@ -271,14 +365,14 @@
             buttons: [{
                 text: 'List Failed',
                 handler: function() {
-                    window.open('<?= base_url('master/setting_non_moldsFG/uploadDownloadFailed') ?>', '_blank');
+                    window.open('<?= base_url('master/setting_non_molds/uploadDownloadFailed') ?>', '_blank');
                 }
             }, {
                 text: 'Upload',
                 iconCls: 'icon-ok',
                 handler: function() {
                     $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/setting_non_moldsFG/upload') ?>',
+                        url: '<?= base_url('master/setting_non_molds/upload') ?>',
                         onSubmit: function() {
                             if ($(this).form('validate') == false) {
                                 return $(this).form('validate');
@@ -293,7 +387,7 @@
                             $.messager.progress('close');
                             //Clear File
                             $.ajax({
-                                url: "<?= base_url('master/setting_non_moldsFG/uploadclearFailed') ?>"
+                                url: "<?= base_url('master/setting_non_molds/uploadclearFailed') ?>"
                             });
                             var json = eval('(' + result + ')');
                             requestData(json.total, json);
@@ -308,7 +402,7 @@
                                     $.ajax({
                                         type: "POST",
                                         async: true,
-                                        url: "<?= base_url('master/setting_non_moldsFG/uploadCreate') ?>",
+                                        url: "<?= base_url('master/setting_non_molds/uploadCreate') ?>",
                                         data: {
                                             "data": json[number - 1]
                                         },
@@ -326,7 +420,7 @@
                                                 $.ajax({
                                                     type: "POST",
                                                     async: true,
-                                                    url: "<?= base_url('master/setting_non_moldsFG/uploadcreateFailed') ?>",
+                                                    url: "<?= base_url('master/setting_non_molds/uploadcreateFailed') ?>",
                                                     data: {
                                                         data: json[number - 1],
                                                         message: result.message
@@ -346,4 +440,9 @@
             }]
         });
     });
+
+
+
+    
+
 </script>

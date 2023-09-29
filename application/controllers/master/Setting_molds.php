@@ -101,8 +101,8 @@ class Setting_molds extends CI_Controller
                  $post   = $this->input->post();
                  $setting_molds = $this->crud->read('setting_molds', [], ["item_fg_id" => $post['item_fg_id'],"machine_id" => $post['machine_id'],"mold_id" => $post['mold_id']]);
                 
-                 if (!empty($setting_molds->item_fg_id)) {
-                    echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . $post['item_fg_id'] . " Duplicate Data", "theme" => "error"));
+                if (!empty($setting_molds->item_fg_id)) {
+                    echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . $post['item_fg_id'] ." & Machine Id " . $post['machine_id'] . " Duplicate Data", "theme" => "error"));
                 } else {
                     $send   = $this->crud->create('setting_molds', $post);
                     echo $send;
@@ -116,24 +116,37 @@ class Setting_molds extends CI_Controller
       //UPDATE DATA
       public function update()
       {
-          if ($this->input->post()) {
-                  $id   = base64_decode($this->input->get('id'));
-                  $post = $this->input->post();
+        if ($this->input->post()) {
+            
+            $id = base64_decode($this->input->get('id'));
+            $post = $this->input->post();
+            $existing_data = $this->crud->read('setting_molds', [], ["id" => $id]); // Membaca data yang ada
 
-                  $setting_molds = $this->crud->read('setting_molds', [], ["item_fg_id" => $post['item_fg_id'],"machine_id" => $post['machine_id'],"mold_id" => $post['mold_id']]);
-                
-                 if (!empty($setting_molds->item_fg_id)) {
-                    echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . $post['item_fg_id'] . " Duplicate Data", "theme" => "error"));
-                } else {
-                  $send = $this->crud->update('setting_molds', ["id" => $id], $post);
-                  echo $send;
-                }
-
+            // Periksa apakah item_fg_id dan machine_id tetap sama
+            if (
+                ($existing_data->item_fg_id == $post['item_fg_id']) &&
+                ($existing_data->machine_id == $post['machine_id']) &&
+                ($existing_data->mold_id == $post['mold_id'])
+            ) {
+                // Item_fg_id dan machine_id tetap sama, lanjutkan dengan pembaruan
+                $send = $this->crud->update('setting_molds', ["id" => $id], $post);
+                echo $send;
             } else {
+                // Item_fg_id atau machine_id telah berubah, lakukan validasi duplikasi
+                $setting_molds = $this->crud->read('setting_molds', [], ["item_fg_id" => $post['item_fg_id'], "machine_id" => $post['machine_id'], "mold_id" => $post['mold_id']]);
+                if (!empty($setting_molds->item_fg_id)) {
+                    echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . $post['item_fg_id'] . " & Machine Id " . $post['machine_id'] . " Duplicate Data", "theme" => "error"));
+                } else {
+                    // Tidak ada duplikasi, lanjutkan dengan pembaruan
+                    $send = $this->crud->update('setting_molds', ["id" => $id], $post);
+                    echo $send;
+                }
+            }
+        } else {
             show_error("Cannot Process your request");
-        
-          }
-      }
+        }
+    }
+
      //DELETE DATA
      public function delete()
      {

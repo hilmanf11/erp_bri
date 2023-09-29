@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Setting_non_moldsFG extends CI_Controller
+class Setting_non_molds extends CI_Controller
 {
     public function __construct()
     {
@@ -24,7 +24,7 @@ class Setting_non_moldsFG extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('master/setting_non_moldsFG');
+            $this->load->view('master/setting_non_molds');
         } else {
             redirect('error_access');
         }
@@ -50,10 +50,11 @@ class Setting_non_moldsFG extends CI_Controller
              $offset = ($page - 1) * $rows;
              $result = array();
              //Select Query
-             $this->db->select('a.*, b.number as item_fg_no, b.name as item_fg_name, c.number as machine_no');
+             $this->db->select('a.*, b.number as item_fg_no, b.name as item_fg_name, c.number as machine_no, d.number as item_rm_no, d.name as item_rm_name');
              $this->db->from('setting_non_molds a');
-             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+             $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
              $this->db->join('machines c', 'a.machine_id = c.id');
+             $this->db->join('item_rm d', 'a.item_rm_id = d.id', 'left');       
              $this->db->where('a.deleted', 0);
              if (@count($filters) > 0) {
                  foreach ($filters as $filter) {
@@ -71,7 +72,7 @@ class Setting_non_moldsFG extends CI_Controller
                     }
                  }
              }
-             $this->db->order_by('a.id', 'ASC');
+             $this->db->order_by('a.item_fg_id', 'DESC');
              //Total Data
              $totalRows = $this->db->count_all_results('', false);
              //Limit 1 - 10
@@ -88,13 +89,16 @@ class Setting_non_moldsFG extends CI_Controller
      public function create()
      {
          if ($this->input->post()) {
-                 $post   = $this->input->post();
-                 $setting_non_molds = $this->crud->read('setting_non_molds', [], ["item_fg_id" => $post['item_fg_id'],"machine_id" => $post['machine_id']]);
+                $data = $this->input->post();
+
+                $setting_non_molds = $this->crud->read('setting_non_molds', [], ["item_fg_id" => @$data['item_fg_id'],"item_rm_id" => @$data['item_rm_id'],"machine_id" => $data['machine_id']]);
                 
-                 if (!empty($setting_non_molds->item_fg_id)) {
-                    echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . $post['item_fg_id'] . " Duplicate Data", "theme" => "error"));
+                if (!empty($setting_non_molds->item_fg_id)) {
+                    echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . @$data['item_fg_id'] . " Duplicate Data", "theme" => "error"));
+                } elseif (!empty($setting_non_molds->item_rm_id)) {
+                    echo json_encode(array("title" => "Duplicated", "message" => "Part Id " . @$data['item_rm_id'] . " Duplicate Data", "theme" => "error"));
                 } else {
-                    $send   = $this->crud->create('setting_non_molds', $post);
+                    $send   = $this->crud->create('setting_non_molds', $data);
                     echo $send;
                 }
             } else {
@@ -107,12 +111,12 @@ class Setting_non_moldsFG extends CI_Controller
       public function update()
       {
           if ($this->input->post()) {
-                  $id   = base64_decode($this->input->get('id'));
-                  $post = $this->input->post();
+                $id   = base64_decode($this->input->get('id'));
+                $post = $this->input->post();
 
-                  $setting_non_molds = $this->crud->read('setting_non_molds', [], ["item_fg_id" => $post['item_fg_id'],"machine_id" => $post['machine_id']]);
+                $setting_non_molds = $this->crud->read('setting_non_molds', [], ["item_fg_id" => @$post['item_fg_id'],"item_rm_id" => @$post['item_rm_id'],"machine_id" => $post['machine_id']]);
                 
-                 if (!empty($setting_non_molds->item_fg_id)) {
+                if (!empty($setting_non_molds->item_fg_id)) {
                     echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . $post['item_fg_id'] . " Duplicate Data", "theme" => "error"));
                 } else {
                   $send = $this->crud->update('setting_non_molds', ["id" => $id], $post);
@@ -147,9 +151,10 @@ class Setting_non_moldsFG extends CI_Controller
              $datas[] = array(
                  //excel
                  'item_fg_id' => $data->val($i, 2),
-                 'machine_id' => $data->val($i, 3),
-                 'cycle_time' => $data->val($i, 4),
-                 'priority' => $data->val($i, 5),
+                 'item_rm_id' => $data->val($i, 3),
+                 'machine_id' => $data->val($i, 4),
+                 'cycle_time' => $data->val($i, 5),
+                 'priority' => $data->val($i, 6),
              );
          }
          $datas['total'] = count($datas);
@@ -191,18 +196,46 @@ class Setting_non_moldsFG extends CI_Controller
              $data = $this->input->post('data');
 
             //Cek Process Number        //table          //field          //field excel
-            $product = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
+            $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
+            $item_rm = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
             $machine = $this->crud->read('machines', [], ["id" => $data['machine_id']]);
-            $setting_non_molds = $this->crud->read('setting_non_molds', [], ["item_fg_id" => $data['item_fg_id'],"machine_id" => $data['machine_id']]);
+            $setting_non_moldsfg = $this->crud->read('setting_non_molds', [], ["item_fg_id" => $data['item_fg_id'],"machine_id" => $data['machine_id']]);
+            $setting_non_moldsrm = $this->crud->read('setting_non_molds', [], ["item_rm_id" => $data['item_rm_id'],"machine_id" => $data['machine_id']]);
 
-            if (empty($product->number)) {
+            if (empty($item_fg->number) && $item_rm->number == "") {
                 echo json_encode(array("title" => "Not Found", "message" => "Product Id " . $data['item_fg_id'] . " Not Found", "theme" => "error"));
+            } elseif (empty($item_rm->number) && $item_fg->number == "") {
+                echo json_encode(array("title" => "Not Found", "message" => "Part Id " . $data['item_rm_id'] . " Not Found", "theme" => "error"));
+            } elseif (!empty($item_rm->number) && $item_fg->number) {
+                echo json_encode(array("title" => "ERROR", "message" => "Please Input Product Id or Part Id Only ", "theme" => "error"));
             } elseif (empty($machine->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Machine Id " . $data['machine_id'] . " Not Found", "theme" => "error"));
-            } elseif (!empty($setting_non_molds->item_fg_id)) {
+            } elseif (!empty($setting_non_moldsfg->item_fg_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . $data['item_fg_id'] . " Duplicate Data", "theme" => "error"));
+            } elseif (!empty($setting_non_moldsrm->item_rm_id)) {
+                echo json_encode(array("title" => "Duplicated", "message" => "Part Id " . $data['item_rm_id'] . " Duplicate Data", "theme" => "error"));
             } else {
-                 $send   = $this->crud->create('setting_non_molds', $data);
+
+                if (empty($item_fg->number)){
+                    $datas = array(
+                        //excel
+                        'item_rm_id' => $data['item_rm_id'],
+                        'machine_id' => $data['machine_id'],
+                        'cycle_time' => $data['cycle_time'],
+                        'priority' => $data['priority'],
+                    );
+
+                } else {    
+                    $datas = array(
+                        //excel
+                        'item_fg_id' => $data['item_fg_id'],
+                        'machine_id' => $data['machine_id'],
+                        'cycle_time' => $data['cycle_time'],
+                        'priority' => $data['priority'],
+                    );
+                }    
+
+                 $send   = $this->crud->create('setting_non_molds', $datas);
                  echo $send;
              }
          }
@@ -222,13 +255,16 @@ class Setting_non_moldsFG extends CI_Controller
         $config = $this->db->get()->row();
         $config_iso = $this->db->get('config_iso')->row();
 
-        $this->db->select('a.*, b.number as item_fg_no, b.name as item_fg_name , c.number as machine_no');
+        $this->db->select('a.*, b.number as item_fg_no, b.name as item_fg_name, c.number as machine_no, d.number as item_rm_no, d.name as item_rm_name');
         $this->db->from('setting_non_molds a');
-        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
         $this->db->join('machines c', 'a.machine_id = c.id');
+        $this->db->join('item_rm d', 'a.item_rm_id = d.id', 'left');
         $this->db->where('a.deleted', 0);
-         $this->db->order_by('id', 'ASC');
-         $records = $this->db->get()->result_array();
+        $this->db->order_by('a.item_fg_id', 'DESC');
+        $records = $this->db->get()->result_array();
+
+         
          
          $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#setting_non_molds {border-collapse: collapse;width: 100%;font-size: 12px;}#setting_non_molds td, #setting_non_molds th {border: 1px solid #ddd;padding: 2px;}#setting_non_molds tr:nth-child(even){background-color: #f2f2f2;}#setting_non_molds tr:hover {background-color: #ddd;}#setting_non_molds th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
          <center>
@@ -240,7 +276,7 @@ class Setting_non_moldsFG extends CI_Controller
                          </td>
                          <td style="font-size: 14px; text-align: left; margin:2px;">
                              <b>' . $config->name . '</b><br>
-                             <small>MASTER SETTING MOLDS</small>
+                             <small>MASTER SETTING NON MOLDS</small>
                          </td>
                      </tr>
                  </table>
@@ -278,27 +314,41 @@ class Setting_non_moldsFG extends CI_Controller
                  <th>Product ID</th>
                  <th>Product No</th>
                  <th>Product Name</th>
+                 <th>Part ID</th>
+                 <th>Part No</th>
+                 <th>Part Name</th>
                  <th>Machine ID</th>
                  <th>Machine No</th>
                  <th>Cycle Time (Shot/Second)</th>
                  <th>Priority</th>
              </tr>';
          $no = 1;
+         
          foreach ($records as $data) {
             $numberfg = $data['item_fg_no'];
-
+            $numberrm = $data['item_rm_no'];
+    
             if (strpos($data['item_fg_no'], '0') === 0 || strpos($data['item_fg_no'], '+') === 0) {
                 $number = "'" . $data['item_fg_no'];
             } else {
                 // Leave the data unchanged
                 $number = $data['item_fg_no'];
             }
-
+            
+            if (strpos($data['item_rm_no'], '0') === 0 || strpos($data['item_rm_no'], '+') === 0) {
+                $number = "'" . $data['item_rm_no'];
+            } else {
+                // Leave the data unchanged
+                $number = $data['item_rm_no'];
+            }
              $html .= '<tr>
                          <td>' . $no . '</td>
                          <td>' . $data['item_fg_id'] . '</td>
-                         <td>' . $number . '</td>
+                         <td>' . $numberfg . '</td>
                          <td>' . $data['item_fg_name'] . '</td>
+                         <td>' . $data['item_rm_id'] . '</td>
+                         <td>' . $numberrm . '</td>
+                         <td>' . $data['item_rm_name'] . '</td>
                          <td>' . $data['machine_id'] . '</td>
                          <td>' . $data['machine_no'] . '</td>
                          <td>' . $data['cycle_time'] . '</td>

@@ -3,13 +3,10 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'item_fg_id',align:'center',width:100">Product ID</th>
-            <th rowspan="2" data-options="field:'item_fg_no',halign:'center',width:150">Product No</th>
-            <th rowspan="2" data-options="field:'item_fg_name',align:'center',width:100">Product Name</th>
-            <th rowspan="2" data-options="field:'machine_id',halign:'center',width:100">Machine ID</th>
-            <th rowspan="2" data-options="field:'machine_no',halign:'center',width:100">Machine No</th>
-            <th rowspan="2" data-options="field:'cycle_time',align:'center',width:100">Cycle Time <br>(shot/second)</th>
-            <th rowspan="2" data-options="field:'priority',align:'center',width:100">Priority</th>
+            <th rowspan="2" data-options="field:'item_fg_id',align:'center',width:100">Product No</th>
+            <th rowspan="2" data-options="field:'item_fg_no',align:'center',width:100">Product Name</th>
+            <th rowspan="2" data-options="field:'item_rm_id',align:'center',width:100">Part ID</th>
+            <th rowspan="2" data-options="field:'item_rm_no',align:'center',width:100">Part Name</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
             
@@ -36,16 +33,8 @@
                 <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combogrid">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Machine No</span>
-                <input style="width:60%;" name="machine_id" id="machine_id" required="" class="easyui-combogrid">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Cycle Time</span>
-                <input style="width:60%;" name="cycle_time" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Priority</span>
-                <input style="width:60%;" name="priority" class="easyui-numberbox">
+                <span style="width:35%; display:inline-block;">Part ID</span>
+                <input style="width:60%;" name="item_rm_id" id="item_rm_id" required="" class="easyui-combogrid">
             </div>
         </div>
         </fieldset>
@@ -72,25 +61,29 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/setting_non_molds/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/compound_alias/print') ?>" style="width: 100%;" hidden></iframe>
+
 <script>
+
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/setting_non_molds/create') ?>';
+        url_save = '<?= base_url('master/compound_alias/create') ?>';
         $('#frm_insert').form('clear')
     }
+
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/setting_non_molds/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('master/compound_alias/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
+
     //DELETE DATA
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
@@ -101,7 +94,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/setting_non_molds/delete') ?>',
+                            url: '<?= base_url('master/compound_alias/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -124,7 +117,8 @@
         }
     }
 
-    $('#item_fg_id').combogrid({
+
+        $('#item_fg_id').combogrid({
             url: '<?= base_url('master/item_fg/reads') ?>',
             panelWidth: 420,
             idField: 'id',
@@ -134,6 +128,10 @@
             prompt: "Choose Product No",
             columns: [
                 [{
+                    field: 'id',
+                    title: 'Product ID',
+                    width: 100
+                }, {
                     field: 'number',
                     title: 'Product No',
                     width: 100
@@ -142,29 +140,34 @@
                     title: 'Product Name',
                     width: 100
                 }, ]
-            ]
+            ],
         });
 
-        $('#machine_id').combogrid({
-            url: '<?= base_url('master/machines/reads') ?>',
+        $('#item_rm_id').combogrid({
+            url: '<?= base_url('master/item_rm/readsC') ?>',
             panelWidth: 420,
             idField: 'id',
             textField: 'number',
             mode: 'remote',
             fitColumns: true,
-            prompt: "Choose Machine No",
+            prompt: "Choose Product No",
             columns: [
                 [{
+                    field: 'id',
+                    title: 'Part ID',
+                    width: 100
+                }, {
                     field: 'number',
-                    title: 'Machine No',
+                    title: 'Part No',
                     width: 100
-                },{
+                }, {
                     field: 'name',
-                    title: 'Machine Name',
+                    title: 'Part Name',
                     width: 100
-                },]
-            ]
+                }, ]
+            ],
         });
+
 
    //Upload Data
     function upload() {
@@ -172,7 +175,7 @@
     }
 
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_setting_non_molds.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_compound_alias.xls') ?>');
     }
     //PRINT PDF
     function pdf() {
@@ -180,7 +183,7 @@
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/setting_non_molds/print/excel') ?>');
+        window.location.assign('<?= base_url('master/compound_alias/print/excel') ?>');
     }
     
     //RELOAD
@@ -208,7 +211,7 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/setting_non_molds/datatables') ?>',
+            url: '<?= base_url('master/compound_alias/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
@@ -240,45 +243,19 @@
             }]
         });
 
-        //GET CURRENCY
-        $('#currency').combogrid({
-            url: '<?= base_url('master/currencies/reads') ?>',
-            panelWidth: 420,
-            idField: 'name',
-            textField: 'name',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Choose Currency",
-            columns: [
-                [{
-                    field: 'symbol',
-                    title: 'Symbol',
-                    width: 100
-                }, {
-                    field: 'number',
-                    title: 'Currency ID',
-                    width: 120
-                }, {
-                    field: 'name',
-                    title: 'Currency Name',
-                    width: 250
-                }, ]
-            ]
-        });
-
          //Upload Data
          $('#dlg_upload').dialog({
             buttons: [{
                 text: 'List Failed',
                 handler: function() {
-                    window.open('<?= base_url('master/setting_non_molds/uploadDownloadFailed') ?>', '_blank');
+                    window.open('<?= base_url('master/compound_alias/uploadDownloadFailed') ?>', '_blank');
                 }
             }, {
                 text: 'Upload',
                 iconCls: 'icon-ok',
                 handler: function() {
                     $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/setting_non_molds/upload') ?>',
+                        url: '<?= base_url('master/compound_alias/upload') ?>',
                         onSubmit: function() {
                             if ($(this).form('validate') == false) {
                                 return $(this).form('validate');
@@ -293,7 +270,7 @@
                             $.messager.progress('close');
                             //Clear File
                             $.ajax({
-                                url: "<?= base_url('master/setting_non_molds/uploadclearFailed') ?>"
+                                url: "<?= base_url('master/compound_alias/uploadclearFailed') ?>"
                             });
                             var json = eval('(' + result + ')');
                             requestData(json.total, json);
@@ -308,7 +285,7 @@
                                     $.ajax({
                                         type: "POST",
                                         async: true,
-                                        url: "<?= base_url('master/setting_non_molds/uploadCreate') ?>",
+                                        url: "<?= base_url('master/compound_alias/uploadCreate') ?>",
                                         data: {
                                             "data": json[number - 1]
                                         },
@@ -326,7 +303,7 @@
                                                 $.ajax({
                                                     type: "POST",
                                                     async: true,
-                                                    url: "<?= base_url('master/setting_non_molds/uploadcreateFailed') ?>",
+                                                    url: "<?= base_url('master/compound_alias/uploadcreateFailed') ?>",
                                                     data: {
                                                         data: json[number - 1],
                                                         message: result.message

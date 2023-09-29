@@ -76,6 +76,7 @@
 <script>
     //ADD DATA
     function add() {
+
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/setting_non_moldsRM/create') ?>';
         $('#frm_insert').form('clear')
@@ -141,9 +142,13 @@
                     field: 'name',
                     title: 'Product Name',
                     width: 100
+                }, {
+                    field: 'item_family_number',
+                    title: 'Product Family',
+                    width: 100
                 }, ]
             ]
-        });
+    });
 
         $('#machine_id').combogrid({
             url: '<?= base_url('master/machines/reads') ?>',

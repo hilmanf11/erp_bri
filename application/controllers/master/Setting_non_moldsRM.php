@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Setting_non_moldsRM extends CI_Controller
+class setting_non_moldsRM extends CI_Controller
 {
     public function __construct()
     {
@@ -13,7 +13,7 @@ class Setting_non_moldsRM extends CI_Controller
         $this->load->model('crud');
         //VALIDASI FORM
 
-        // $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[30]|is_unique[setting_non_molds.number]');
+        // $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[30]|is_unique[setting_non_moldsrm.number]');
         
     }
     //HALAMAN UTAMA
@@ -33,7 +33,7 @@ class Setting_non_moldsRM extends CI_Controller
      public function reads()
      {
          $post = isset($_POST['q']) ? $_POST['q'] : "";
-         $send = $this->crud->reads('setting_non_molds', ["name" => $post]);
+         $send = $this->crud->reads('setting_non_moldsrm', ["name" => $post]);
          echo json_encode($send);
      }
 
@@ -51,7 +51,7 @@ class Setting_non_moldsRM extends CI_Controller
              $result = array();
              //Select Query
              $this->db->select('a.*, b.number as item_rm_no, b.name as item_rm_name, c.number as machine_no');
-             $this->db->from('setting_non_molds a');
+             $this->db->from('setting_non_moldsrm a');
              $this->db->join('item_rm b', 'a.item_rm_id = b.id');
              $this->db->join('machines c', 'a.machine_id = c.id');
              $this->db->where('a.deleted', 0);
@@ -89,12 +89,12 @@ class Setting_non_moldsRM extends CI_Controller
      {
          if ($this->input->post()) {
                  $post   = $this->input->post();
-                 $setting_non_molds = $this->crud->read('setting_non_molds', [], ["item_rm_id" => $post['item_rm_id'],"machine_id" => $post['machine_id']]);
+                 $setting_non_moldsrm = $this->crud->read('setting_non_moldsrm', [], ["item_rm_id" => $post['item_rm_id'],"machine_id" => $post['machine_id']]);
                 
-                 if (!empty($setting_non_molds->item_rm_id)) {
-                    echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . $post['item_rm_id'] . " Duplicate Data", "theme" => "error"));
+                 if (!empty($setting_non_moldsrm->item_rm_id)) {
+                    echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . $post['item_rm_id'] ." & Machine Id " . $post['machine_id'] . " Duplicate Data", "theme" => "error"));
                 } else {
-                    $send   = $this->crud->create('setting_non_molds', $post);
+                    $send   = $this->crud->create('setting_non_moldsrm', $post);
                     echo $send;
                 }
             } else {
@@ -105,30 +105,42 @@ class Setting_non_moldsRM extends CI_Controller
 
       //UPDATE DATA
       public function update()
-      {
-          if ($this->input->post()) {
-                  $id   = base64_decode($this->input->get('id'));
-                  $post = $this->input->post();
-
-                  $setting_non_molds = $this->crud->read('setting_non_molds', [], ["item_rm_id" => $post['item_rm_id'],"machine_id" => $post['machine_id']]);
+        {
+            if ($this->input->post()) {
                 
-                 if (!empty($setting_non_molds->item_rm_id)) {
-                    echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . $post['item_rm_id'] . " Duplicate Data", "theme" => "error"));
-                } else {
-                  $send = $this->crud->update('setting_non_molds', ["id" => $id], $post);
-                  echo $send;
-                }
+                $id = base64_decode($this->input->get('id'));
+                $post = $this->input->post();
+                $existing_data = $this->crud->read('setting_non_moldsrm', [], ["id" => $id]); // Membaca data yang ada
 
+                // Periksa apakah item_rm_id dan machine_id tetap sama
+                if (
+                    ($existing_data->item_rm_id == $post['item_rm_id']) &&
+                    ($existing_data->machine_id == $post['machine_id'])
+                ) {
+                    // Item_rm_id dan machine_id tetap sama, lanjutkan dengan pembaruan
+                    $send = $this->crud->update('setting_non_moldsrm', ["id" => $id], $post);
+                    echo $send;
+                } else {
+                    // Item_rm_id atau machine_id telah berubah, lakukan validasi duplikasi
+                    $setting_non_moldsrm = $this->crud->read('setting_non_moldsrm', [], ["item_rm_id" => $post['item_rm_id'], "machine_id" => $post['machine_id']]);
+                    if (!empty($setting_non_moldsrm->item_rm_id)) {
+                        echo json_encode(array("title" => "Duplicated", "message" => "Part Id " . $post['item_rm_id'] . " & Machine Id " . $post['machine_id'] . " Duplicate Data", "theme" => "error"));
+                    } else {
+                        // Tidak ada duplikasi, lanjutkan dengan pembaruan
+                        $send = $this->crud->update('setting_non_moldsrm', ["id" => $id], $post);
+                        echo $send;
+                    }
+                }
             } else {
-            show_error("Cannot Process your request");
-        
-          }
-      }
+                show_error("Cannot Process your request");
+            }
+        }
+
      //DELETE DATA
      public function delete()
      {
          $data = $this->input->post();
-         $send = $this->crud->delete('setting_non_molds', $data);
+         $send = $this->crud->delete('setting_non_moldsrm', $data);
          echo $send;
      }
  
@@ -158,13 +170,13 @@ class Setting_non_moldsRM extends CI_Controller
      }
      public function uploadclearFailed()
      {
-         @unlink('failed/setting_non_molds.txt');
+         @unlink('failed/setting_non_moldsrm.txt');
      }
      public function uploadcreateFailed()
      {
          if ($this->input->post()) {
              $message = $this->input->post('message');
-             $textFailed = fopen('failed/setting_non_molds.txt', 'a');
+             $textFailed = fopen('failed/setting_non_moldsrm.txt', 'a');
              fwrite($textFailed, $message . "\n");
              fclose($textFailed);
          }
@@ -173,7 +185,7 @@ class Setting_non_moldsRM extends CI_Controller
      //UPLOAD DOWNLOAD FAILED
      public function uploadDownloadFailed()
      {
-         $file = "failed/setting_non_molds.txt";
+         $file = "failed/setting_non_moldsrm.txt";
          header('Content-Description: File Failed');
          header('Content-Disposition: attachment; filename=' . basename($file));
          header('Expires: 0');
@@ -193,16 +205,16 @@ class Setting_non_moldsRM extends CI_Controller
             //Cek Process Number        //table          //field          //field excel
             $product = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
             $machine = $this->crud->read('machines', [], ["id" => $data['machine_id']]);
-            $setting_non_molds = $this->crud->read('setting_non_molds', [], ["item_rm_id" => $data['item_rm_id'],"machine_id" => $data['machine_id']]);
+            $setting_non_moldsrm = $this->crud->read('setting_non_moldsrm', [], ["item_rm_id" => $data['item_rm_id'],"machine_id" => $data['machine_id']]);
 
             if (empty($product->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Part Id " . $data['item_rm_id'] . " Not Found", "theme" => "error"));
             } elseif (empty($machine->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Machine Id " . $data['machine_id'] . " Not Found", "theme" => "error"));
-            } elseif (!empty($setting_non_molds->item_rm_id)) {
+            } elseif (!empty($setting_non_moldsrm->item_rm_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . $data['item_rm_id'] . " Duplicate Data", "theme" => "error"));
             } else {
-                 $send   = $this->crud->create('setting_non_molds', $data);
+                 $send   = $this->crud->create('setting_non_moldsrm', $data);
                  echo $send;
              }
          }
@@ -214,7 +226,7 @@ class Setting_non_moldsRM extends CI_Controller
          if ($option == "excel") {
              $format  = date("Ymd");
              header("Content-type: application/vnd-ms-excel");
-             header("Content-Disposition: attachment; filename=setting_non_molds_$format.xls");
+             header("Content-Disposition: attachment; filename=setting_non_moldsrm_$format.xls");
          }
          //Config
         $this->db->select('*');
@@ -223,14 +235,14 @@ class Setting_non_moldsRM extends CI_Controller
         $config_iso = $this->db->get('config_iso')->row();
 
         $this->db->select('a.*, b.number as item_rm_no, b.name as item_rm_name , c.number as machine_no');
-        $this->db->from('setting_non_molds a');
+        $this->db->from('setting_non_moldsrm a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('machines c', 'a.machine_id = c.id');
         $this->db->where('a.deleted', 0);
          $this->db->order_by('id', 'ASC');
          $records = $this->db->get()->result_array();
          
-         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#setting_non_molds {border-collapse: collapse;width: 100%;font-size: 12px;}#setting_non_molds td, #setting_non_molds th {border: 1px solid #ddd;padding: 2px;}#setting_non_molds tr:nth-child(even){background-color: #f2f2f2;}#setting_non_molds tr:hover {background-color: #ddd;}#setting_non_molds th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#setting_non_moldsrm {border-collapse: collapse;width: 100%;font-size: 12px;}#setting_non_moldsrm td, #setting_non_moldsrm th {border: 1px solid #ddd;padding: 2px;}#setting_non_moldsrm tr:nth-child(even){background-color: #f2f2f2;}#setting_non_moldsrm tr:hover {background-color: #ddd;}#setting_non_moldsrm th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
          <center>
              <div style="float: left; font-size: 12px; text-align: left;">
                  <table style="width: 100%;">
@@ -272,12 +284,12 @@ class Setting_non_moldsRM extends CI_Controller
          </center>
          <br><br><br><br>
          
-         <table id="setting_non_molds" border="1">
+         <table id="setting_non_moldsrm" border="1">
              <tr>
                  <th width="20">No</th>
-                 <th>Product ID</th>
-                 <th>Product No</th>
-                 <th>Product Name</th>
+                 <th>Part ID</th>
+                 <th>Part No</th>
+                 <th>Part Name</th>
                  <th>Machine ID</th>
                  <th>Machine No</th>
                  <th>Cycle Time (Shot/Second)</th>

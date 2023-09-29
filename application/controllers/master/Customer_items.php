@@ -30,12 +30,15 @@ class Customer_items extends CI_Controller
         }
     }
      //GET DATA
-     public function reads()
-     {
-         $post = isset($_POST['q']) ? $_POST['q'] : "";
-         $send = $this->crud->reads('customer_items', ["customer_id" => $post]);
-         echo json_encode($send);
-     }
+    public function reads($customer_id)
+    {
+        $customer_id = base64_decode($customer_id);
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT b.id, b.number, b.name, a.price FROM customer_items a 
+            JOIN item_fg b ON a.item_id = b.id 
+            WHERE a.customer_id = '$customer_id' and (b.number LIKE '%$post%' or b.name LIKE '%$post%')");
+        echo json_encode($send);
+    }
 
      //GET DATATABLES
      public function datatables()

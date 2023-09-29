@@ -39,7 +39,7 @@ class Item_rm extends CI_Controller
      public function readsC()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_rm', [], ["item_family_number"=>"CP"]);
+        $send = $this->crud->reads('item_rm', ["number" => $post], ["item_family_number"=>"CP"]);
         echo json_encode($send);
     }
      //CODE OTOMATIS
