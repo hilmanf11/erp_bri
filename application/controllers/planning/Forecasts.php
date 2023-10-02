@@ -24,7 +24,7 @@ class Forecasts extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('master/forecasts');
+            $this->load->view('planning/forecasts');
         } else {
             redirect('error_access');
         }
@@ -307,6 +307,7 @@ class Forecasts extends CI_Controller
             );
         }
         $datas['total'] = count($datas);
+        
         echo json_encode($datas);
         unlink($_FILES['file_upload']['name']);
     }
@@ -346,11 +347,7 @@ class Forecasts extends CI_Controller
         if ($this->input->post()) {
             $data = $this->input->post('data');
 
-            //Cek Process Number          //table       //field        //field excel
-            $forecasts = $this->crud->read('forecasts', [], ["customer_id" => $data['customer_id'], "item_fg_id" => $data['item_fg_id']]);
-
-            $post = $this->input->post();
-            $issued_date = $post["issued_date"];
+            $issued_date = $data['issued_date'];
             $month = date('ym',strtotime($issued_date));
             $format = "FC".$month;
             $sql = $this->db->query("SELECT max(document_no) as kode FROM forecasts WHERE document_no LIKE '%$format%'");
@@ -361,6 +358,10 @@ class Forecasts extends CI_Controller
                 $kode = substr($row->kode,-3);
             }
             $autoid =$format. sprintf("%03s", $kode + 1);
+
+            //Cek Process Number          //table       //field        //field excel
+            $forecasts = $this->crud->read('forecasts', [], ["customer_id" => $data['customer_id'], "item_fg_id" => $data['item_fg_id']]);
+
 
             if (!empty($forecasts->customer_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Customer " . $data['customer_id'] . " is Duplicate Data", "theme" => "error"));
@@ -390,6 +391,7 @@ class Forecasts extends CI_Controller
                     "month_12" => $data['month_12'],
                     "remark" => $data['remark'],
                 );
+                
                 $send   = $this->crud->create('forecasts', $dataFinal);
                 $send2  = $this->crud->create('forecast_histories', $dataFinal);
                 echo $send;

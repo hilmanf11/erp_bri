@@ -145,14 +145,14 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/forecasts/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('planning/forecasts/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
-        url_save = '<?= base_url('master/forecasts/create') ?>';
+        url_save = '<?= base_url('planning/forecasts/create') ?>';
         $('#frm_insert').form('clear');
         $("#customer_id").combogrid('enable');
         $("#p_month").combobox('enable');
@@ -171,7 +171,7 @@
 
         $.ajax({
             type: "post",
-            url: "<?= base_url('master/forecasts/readPeriodLists') ?>",
+            url: "<?= base_url('planning/forecasts/readPeriodLists') ?>",
             data: "p_month=" + p_month + "&p_year=" + p_year,
             dataType: "json",
             success: function(result) {
@@ -433,7 +433,7 @@
 
         $.ajax({
             method: 'post',
-            url: '<?= base_url('master/forecasts/delete') ?>',
+            url: '<?= base_url('planning/forecasts/delete') ?>',
             data: {
                 customer_id: row.customer_id,
                 // p_month: row.p_month,
@@ -468,7 +468,7 @@
             $("#p_month").combobox('disable');
             $("#p_year").combobox('disable');
 
-            addTable(row.customer_id, '<?= base_url('master/forecasts/datatableUpdates?customer_id=') ?>' + btoa(row.customer_id) + "&p_month=" + btoa(row.p_month) + "&p_year=" + btoa(row.p_year) + "&revision=" + btoa(row.revision));
+            addTable(row.customer_id, '<?= base_url('planning/forecasts/datatableUpdates?customer_id=') ?>' + btoa(row.customer_id) + "&p_month=" + btoa(row.p_month) + "&p_year=" + btoa(row.p_year) + "&revision=" + btoa(row.revision));
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -484,7 +484,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/forecasts/delete') ?>',
+                            url: '<?= base_url('planning/forecasts/delete') ?>',
                             data: {
                                 customer_id: row.customer_id,
                                 p_month: row.p_month,
@@ -536,11 +536,11 @@
             "&filter_revision=" + window.btoa(filter_revision);
 
         $('#dg').datagrid({
-            url: '<?= base_url('master/forecasts/datatables') ?>' + url
+            url: '<?= base_url('planning/forecasts/datatables') ?>' + url
         });
 
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('master/forecasts/print') ?>' + url);
+        $("#printout").attr('src', '<?= base_url('planning/forecasts/print') ?>' + url);
     }
 
     //PRINT PDF
@@ -564,7 +564,7 @@
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
             "&filter_revision=" + window.btoa(filter_revision);
 
-        window.location.assign('<?= base_url('master/forecasts/print/excel') ?>' + url);
+        window.location.assign('<?= base_url('planning/forecasts/print/excel') ?>' + url);
     }
 
     //RELOAD
@@ -575,7 +575,7 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/forecasts/datatables') ?>',
+            url: '<?= base_url('planning/forecasts/datatables') ?>',
             pagination: true,
             rownumbers: true,
             height: '645px',
@@ -588,12 +588,12 @@
 
                 $.ajax({
                     type: "post",
-                    url: "<?= base_url('master/forecasts/readPeriodLists') ?>",
+                    url: "<?= base_url('planning/forecasts/readPeriodLists') ?>",
                     data: "p_month=" + row.p_month + "&p_year=" + row.p_year,
                     dataType: "json",
                     success: function(result) {
                         ddv.datagrid({
-                            url: '<?= base_url('master/forecasts/datatableDetails?customer_id=') ?>' + window.btoa(row.customer_id) + "&p_month=" + window.btoa(row.p_month) + "&p_year=" + window.btoa(row.p_year) + "&revision=" + window.btoa(row.revision),
+                            url: '<?= base_url('planning/forecasts/datatableDetails?customer_id=') ?>' + window.btoa(row.customer_id) + "&p_month=" + window.btoa(row.p_month) + "&p_year=" + window.btoa(row.p_year) + "&revision=" + window.btoa(row.revision),
                             singleSelect: true,
                             rownumbers: true,
                             columns: [
@@ -741,7 +741,7 @@
                         if (rows[i].item_fg_id) {
                             $.ajax({
                                 type: "post",
-                                url: '<?= base_url('master/forecasts/create') ?>',
+                                url: '<?= base_url('planning/forecasts/create') ?>',
                                 data: {
                                     p_month: p_month,
                                     p_year: p_year,
@@ -820,14 +820,14 @@
     });
 
     $('#p_month').combobox({
-        url: '<?= base_url('master/forecasts/readPeriod/month'); ?>',
+        url: '<?= base_url('planning/forecasts/readPeriod/month'); ?>',
         valueField: 'id',
         textField: 'name',
         prompt: 'Choose Months',
     });
 
     $('#p_year').combobox({
-        url: '<?= base_url('master/forecasts/readPeriod/year'); ?>',
+        url: '<?= base_url('planning/forecasts/readPeriod/year'); ?>',
         valueField: 'id',
         textField: 'name',
         prompt: 'Choose Years',
@@ -837,7 +837,7 @@
         onChange: function(value){
             $.ajax({
                 type: "post",
-                url: "<?= base_url('master/forecasts/autoid') ?>",
+                url: "<?= base_url('planning/forecasts/autoid') ?>",
                 data: "issued_date="+value,
                 dataType: "html",
                 success: function(response) {
@@ -879,7 +879,7 @@
     });
 
     $('#filter_period_month').combobox({
-        url: '<?= base_url('master/forecasts/readPeriod/month'); ?>',
+        url: '<?= base_url('planning/forecasts/readPeriod/month'); ?>',
         valueField: 'id',
         textField: 'name',
         prompt: 'Choose Months',
@@ -892,7 +892,7 @@
     });
 
     $('#filter_period_year').combobox({
-        url: '<?= base_url('master/forecasts/readPeriod/year'); ?>',
+        url: '<?= base_url('planning/forecasts/readPeriod/year'); ?>',
         valueField: 'id',
         textField: 'name',
         prompt: 'Choose Years',
@@ -942,12 +942,12 @@
 
         $.ajax({
             type: "post",
-            url: "<?= base_url('master/forecasts/readPeriodLists') ?>",
+            url: "<?= base_url('planning/forecasts/readPeriodLists') ?>",
             data: "p_month=" + p_month + "&p_year=" + p_year,
             dataType: "json",
             success: function(result) {
                 $("#dg_history").datagrid({
-                    url: '<?= base_url('master/forecasts/datatableHistories?customer_id=') ?>' + btoa(customer_id) + "&item_fg_id=" + btoa(item_fg_id) + "&p_month=" + btoa(p_month) + "&p_year=" + btoa(p_year),
+                    url: '<?= base_url('planning/forecasts/datatableHistories?customer_id=') ?>' + btoa(customer_id) + "&item_fg_id=" + btoa(item_fg_id) + "&p_month=" + btoa(p_month) + "&p_year=" + btoa(p_year),
                     singleSelect: true,
                     rownumbers: true,
                     columns: [
@@ -1062,14 +1062,14 @@
         buttons: [{
             text: 'List Failed',
             handler: function() {
-                window.open('<?= base_url('master/forecasts/uploadDownloadFailed') ?>', '_blank');
+                window.open('<?= base_url('planning/forecasts/uploadDownloadFailed') ?>', '_blank');
             }
         }, {
             text: 'Upload',
             iconCls: 'icon-ok',
             handler: function() {
                 $('#frm_upload').form('submit', {
-                    url: '<?= base_url('master/forecasts/upload') ?>',
+                    url: '<?= base_url('planning/forecasts/upload') ?>',
                     onSubmit: function() {
                         if ($(this).form('validate') == false) {
                             return $(this).form('validate');
@@ -1084,7 +1084,7 @@
                         $.messager.progress('close');
                         //Clear File
                         $.ajax({
-                            url: "<?= base_url('master/forecasts/uploadclearFailed') ?>"
+                            url: "<?= base_url('planning/forecasts/uploadclearFailed') ?>"
                         });
                         var json = eval('(' + result + ')');
                         requestData(json.total, json);
@@ -1099,7 +1099,7 @@
                                 $.ajax({
                                     type: "POST",
                                     async: true,
-                                    url: "<?= base_url('master/forecasts/uploadCreate') ?>",
+                                    url: "<?= base_url('planning/forecasts/uploadCreate') ?>",
                                     data: {
                                         "data": json[number - 1]
                                     },
@@ -1117,7 +1117,7 @@
                                             $.ajax({
                                                 type: "POST",
                                                 async: true,
-                                                url: "<?= base_url('master/forecasts/uploadcreateFailed') ?>",
+                                                url: "<?= base_url('planning/forecasts/uploadcreateFailed') ?>",
                                                 data: {
                                                     data: json[number - 1],
                                                     message: result.message
