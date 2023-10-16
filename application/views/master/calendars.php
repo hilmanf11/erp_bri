@@ -42,7 +42,7 @@
         var filter_year = $("#filter_year").textbox('getValue');
 
         $('#frm_insert').form('submit', {
-            url: '<?= base_url('master/working_calendar/create') ?>',
+            url: '<?= base_url('master/calendars/create') ?>',
             method: 'POST',
             onSubmit: function() {
                 return $(this).form('validate');
@@ -76,7 +76,7 @@
     function calendars(month = "", year = "") {
         $.ajax({
             type: "post",
-            url: "<?= base_url('master/working_calendar/calendars') ?>",
+            url: "<?= base_url('master/calendars/calendars') ?>",
             data: "month=" + month + "&year=" + year,
             dataType: "html",
             success: function(response) {
@@ -88,7 +88,7 @@
     function hkw(month = "", year = "") {
         $.ajax({
             type: "post",
-            url: "<?= base_url('master/working_calendar/hkw') ?>",
+            url: "<?= base_url('master/calendars/hkw') ?>",
             data: "month=" + month + "&year=" + year,
             dataType: "html",
             success: function(response) {

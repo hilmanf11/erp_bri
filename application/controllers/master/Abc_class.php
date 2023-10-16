@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Item_categories extends CI_Controller
+class Abc_class extends CI_Controller
 {
     public function __construct()
     {
@@ -13,7 +13,7 @@ class Item_categories extends CI_Controller
         $this->load->model('crud');
 
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[30]|is_unique[item_categories.number]');
+        $this->form_validation->set_rules('class', 'Code', 'required|min_length[1]|max_length[30]|is_unique[abc_class.class]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -23,7 +23,7 @@ class Item_categories extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('master/item_categories');
+            $this->load->view('master/abc_class');
         } else {
             redirect('error_access');
         }
@@ -33,34 +33,11 @@ class Item_categories extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_categories', ["name" => $post]);
-        echo json_encode($send);
-    }
-
-    public function readsfg()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_categories', [], ["number"=>"FG"]);
-        echo json_encode($send);
-    }
-
-    public function readsnotfg()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("select * from item_categories where number != 'FG'");
+        $send = $this->crud->reads('abc_class', ["class" => $post]);
         echo json_encode($send);
     }
 
 
-    //CODE OTOMATIS
-    public function autoid(){
-        $sql = $this->db->query("SELECT max(`id`) as kode From item_categories");
-        $row = $sql->row();
-        $kode = substr($row->kode, 1);
-        $autoid = "C". sprintf("%02s", $kode + 1);
-        echo $autoid;
-
-    }
     //GET DATATABLES
     public function datatables()
     {
@@ -75,7 +52,7 @@ class Item_categories extends CI_Controller
             $result = array();
             //Select Query
             $this->db->select('*');
-            $this->db->from('item_categories');
+            $this->db->from('abc_class');
             $this->db->where('deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
@@ -101,7 +78,7 @@ class Item_categories extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
-                $send   = $this->crud->create('item_categories', $post);
+                $send   = $this->crud->create('abc_class', $post);
                 echo $send;
             } else {
                 show_error(validation_errors());
@@ -116,7 +93,7 @@ class Item_categories extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('item_categories', ["id" => $id], $post);
+            $send = $this->crud->update('abc_class', ["id" => $id], $post);
             echo $send;
         } else {
             show_error("Cannot Process your request");
@@ -126,7 +103,7 @@ class Item_categories extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('item_categories', $data);
+        $send = $this->crud->delete('abc_class', $data);
         echo $send;
     }
     //PRINT & EXCEL DATA
@@ -135,7 +112,7 @@ class Item_categories extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=item_categories_$format.xls");
+            header("Content-Disposition: attachment; filename=abc_class_$format.xls");
         }
         //Config
         $this->db->select('*');
@@ -143,7 +120,7 @@ class Item_categories extends CI_Controller
         $config = $this->db->get()->row();
 
         $this->db->select('*');
-        $this->db->from('item_categories');
+        $this->db->from('abc_class');
         $this->db->where('deleted', 0);
         $this->db->order_by('id', 'ASC');
         $records = $this->db->get()->result_array();
@@ -173,21 +150,22 @@ class Item_categories extends CI_Controller
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
-                <th>Id</th>
-                <th>Code</th>
-                <th>Name</th>
-                <th>Description</th>
+                <th>Class</th>
+                <th>% Safety Stock</th>
+                <th>Formula</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
+            $safety_stock_percent = number_format($data['safety_stock'],) . ' %';
+            $formula = htmlspecialchars($data['formula']); // Hindari tanda < dianggap sebagai tag HTML
             $html .= '<tr>
                     <td>' . $no . '</td>
-                    <td>' . $data['id'] . '</td>
-                    <td>' . $data['number'] . '</td>
-                    <td>' . $data['name'] . '</td>
-                    <td>' . $data['description'] . '</td>';
+                    <td>' . $data['class'] . '</td>
+                    <td>' . $safety_stock_percent . '</td>
+                    <td>' . $formula . '</td>';
             $no++;
         }
+        
         $html .= '</table></body></html>';
         echo $html;
     }

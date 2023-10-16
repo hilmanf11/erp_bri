@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class Working_calendar extends CI_Controller
+class Calendars extends CI_Controller
 {
     public function __construct()
     {
@@ -25,7 +25,7 @@ class Working_calendar extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('master/working_calendar');
+            $this->load->view('master/calendars');
         } else {
             redirect('error_access');
         }
@@ -49,7 +49,7 @@ class Working_calendar extends CI_Controller
         for ($d = 1; $d <= $jumlahhari; $d++) {
             $tanggal = $tahun . "-" . $bulan . "-" . $d;
             $this->db->select('remarks');
-            $this->db->from('working_calendar');
+            $this->db->from('calendars');
             $this->db->where('deleted', 0);
             $this->db->where('working_date', $tanggal);
             $data = $this->db->get()->result_array();
@@ -140,7 +140,7 @@ class Working_calendar extends CI_Controller
 
             $tanggal = $tahun . "-" . $bulan . "-" . $d;
             $this->db->select('remarks');
-            $this->db->from('working_calendar');
+            $this->db->from('calendars');
             $this->db->where('deleted', 0);
             $this->db->where('working_date', $tanggal);
             $data = $this->db->get()->result_array();
@@ -189,7 +189,7 @@ class Working_calendar extends CI_Controller
 
 
                 $this->db->select('*');
-                $this->db->from('working_calendar');
+                $this->db->from('calendars');
                 $this->db->where('deleted', 0);
                 $this->db->where('working_date', $date);
                 $records = $this->db->get()->num_rows();
@@ -197,13 +197,13 @@ class Working_calendar extends CI_Controller
                 if ($remark != "") {
                     if ($records > 0) {
                         $this->db->where('working_date', $date);
-                        $this->db->update('working_calendar', ["remarks" => $remark]);
+                        $this->db->update('calendars', ["remarks" => $remark]);
                     } else {
-                        $send = $this->crud->create('working_calendar', ["working_date" => $date, "remarks" => $remark], "WORK", "WORK");
+                        $send = $this->crud->create('calendars', ["working_date" => $date, "remarks" => $remark], "WORK", "WORK");
                     }
                 } else {
                     if ($records > 0) {
-                        $this->db->delete('working_calendar', ['working_date' => $date]);
+                        $this->db->delete('calendars', ['working_date' => $date]);
                     }
                 }
             }
