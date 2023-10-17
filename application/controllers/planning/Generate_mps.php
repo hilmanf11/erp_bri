@@ -101,7 +101,7 @@ class Generate_mps extends CI_Controller
             $this->db->join('os_mpp e', "a.id = e.item_fg_id and b.customer_id = e.customer_id and e.p_month = '" . $filter_month . "' and e.p_year = '" . $filter_year . "' and e.revision = '" . $filter_revision . "'", "left");
             $this->db->join('os_so f', "a.id = f.item_fg_id and b.customer_id = f.customer_id and f.p_month = '" . $filter_month . "' and f.p_year = '" . $filter_year . "' and f.revision = '" . $filter_revision . "'", "left");
             if ($filter_customer != "") {
-                $this->db->where('b.id', $filter_customer);
+                $this->db->where('b.customer_id', $filter_customer);
             }
             if ($filter_product_no != "") {
                 $this->db->where('a.id', $filter_product_no);
