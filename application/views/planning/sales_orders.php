@@ -99,16 +99,16 @@
                     <span style="width:35%; display:inline-block;">Sales Order No</span>
                     <input style="width:60%;" name="sales_order_no" id="sales_order_no" readonly class="easyui-textbox">
                 </div>
-                <div class="fitem">
+                <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">Division</span>
                     <input style="width:60%;" name="division" id="division" required="" class="easyui-combobox">
-                </div>
-            </div>
-            <div style="width: 50%; float: left;">
+                </div> -->
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Delivery Date</span>
                     <input style="width:40%;" name="delivery_date" id="delivery_date" required data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
                 </div>
+            </div>
+            <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Shipping Address</span>
                     <input style="width:60%;" name="customer_address_id" id="customer_address_id" required="" class="easyui-combobox">
@@ -741,7 +741,7 @@
                     var customer_order_no = $("#customer_order_no").textbox('getValue');
                     var sales_order_date = $("#sales_order_date").datebox('getValue');
                     var sales_order_no = $("#sales_order_no").textbox('getValue');
-                    var division = $("#division").combobox('getValue');
+                    // var division = $("#division").combobox('getValue');
                     var delivery_date = $("#delivery_date").datebox('getValue');
                     var customer_address_id = $("#customer_address_id").combobox('getValue');
                     var remarks = $("#remarks").textbox('getValue');
@@ -768,7 +768,7 @@
                                         customer_order_no: customer_order_no,
                                         sales_order_date: sales_order_date,
                                         sales_order_no: sales_order_no,
-                                        division: division,
+                                        // division: division,
                                         delivery_date: delivery_date,
                                         customer_address_id: customer_address_id,
                                         remarks: remarks,
@@ -856,13 +856,13 @@
         }
     });
 
-    $('#division').combobox({
-        url: '<?= base_url('master/divisions/reads'); ?>',
-        valueField: 'name',
-        textField: 'name',
-        panelHeight: 'panelHeight',
-        prompt: 'Choose Division',
-    });
+    // $('#division').combobox({
+    //     url: '<?= base_url('master/divisions/reads'); ?>',
+    //     valueField: 'name',
+    //     textField: 'name',
+    //     panelHeight: 'panelHeight',
+    //     prompt: 'Choose Division',
+    // });
 
     //CELLSTYLE STATUS
     function cellStyler(value, row, index) {

@@ -242,7 +242,6 @@ class Sales_orders extends CI_Controller
                 <th>Customer Order No</th>
                 <th>Sales Order No</th>
                 <th>Sales Order Date</th>
-                <th>Division</th>
                 <th>Delivery Date</th>
                 <th>Remarks</th>
                 <th>Product ID</th>
@@ -264,7 +263,6 @@ class Sales_orders extends CI_Controller
                         <td>' . $data['customer_order_no'] . '</td>
                         <td>' . $data['sales_order_no'] . '</td>
                         <td>' . $data['sales_order_date'] . '</td>
-                        <td>' . $data['division'] . '</td>
                         <td>' . $data['delivery_date'] . '</td>
                         <td>' . $data['remarks'] . '</td>
                         <td>' . $data['item_fg_id'] . '</td>
