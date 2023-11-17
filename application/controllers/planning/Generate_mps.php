@@ -78,6 +78,7 @@ class Generate_mps extends CI_Controller
             $monthBack = date('F Y', strtotime('-1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
             $varBackYear = date('Y', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
             $varBackMonth = date('m', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
+            $period = $filter_year . "-" . $filter_month;
 
             //Configuration Planning
             $this->db->select('*');
@@ -86,20 +87,20 @@ class Generate_mps extends CI_Controller
 
             //Select Query
             $this->db->select('a.id, a.number, a.name, a.leadtime, b.customer_id,
-            COALESCE(c.pp, 0) as pp, 
-            COALESCE(c.p1, 0) as p1, 
-            COALESCE(c.p2, 0) as p2, 
-            COALESCE(c.p3, 0) as p3,
-            COALESCE(c.pp + c.p1 + c.p2 + c.p3, 0) as total_wip, 
-            COALESCE(d.qty, 0) as fg, 
-            COALESCE(e.qty, 0) as os_mpp, 
-            COALESCE(f.qty, 0) as os_so');
+                COALESCE(c.pp, 0) as pp, 
+                COALESCE(c.p1, 0) as p1, 
+                COALESCE(c.p2, 0) as p2, 
+                COALESCE(c.p3, 0) as p3,
+                COALESCE(c.pp + c.p1 + c.p2 + c.p3, 0) as total_wip, 
+                COALESCE(d.qty, 0) as fg, 
+                COALESCE(e.qty, 0) as os_mpp, 
+                COALESCE(SUM(f.qty), 0) as os_so');
             $this->db->from('item_fg a');
             $this->db->join('customer_items b', 'a.id = b.item_id');
             $this->db->join('stock_wip c', "a.id = c.item_fg_id and c.p_month = '" . $filter_month . "' and c.p_year = '" . $filter_year . "' and c.revision = '" . $filter_revision . "'", "left");
             $this->db->join('stock_fg d', "a.id = d.item_fg_id and d.p_month = '" . $filter_month . "' and d.p_year = '" . $filter_year . "' and d.revision = '" . $filter_revision . "'", "left");
             $this->db->join('os_mpp e', "a.id = e.item_fg_id and b.customer_id = e.customer_id and e.p_month = '" . $filter_month . "' and e.p_year = '" . $filter_year . "' and e.revision = '" . $filter_revision . "'", "left");
-            $this->db->join('os_so f', "a.id = f.item_fg_id and b.customer_id = f.customer_id and f.p_month = '" . $filter_month . "' and f.p_year = '" . $filter_year . "' and f.revision = '" . $filter_revision . "'", "left");
+            $this->db->join('sales_orders f', "a.id = f.item_fg_id and b.customer_id = f.customer_id and f.sales_order_date LIKE '%$period%'", "left");
             if ($filter_customer != "") {
                 $this->db->where('b.customer_id', $filter_customer);
             }
@@ -677,13 +678,14 @@ class Generate_mps extends CI_Controller
         $filter_revision = base64_decode($this->input->get('filter_revision'));
 
         //Select Customer
-        $this->db->select('a.*, b.name as customer_name');
+        $this->db->select('a.customer_id, b.name as customer_name');
         $this->db->from('generate_mps a');
         $this->db->join('customers b', 'a.customer_id = b.id');
         if ($filter_month != "" or $filter_year != "") {
             $this->db->where('a.p_month', $filter_month);
             $this->db->where('a.p_year', $filter_year);
         }
+        $this->db->where('a.balance >', 0);
         $this->db->like('a.customer_id', $filter_customer);
         $this->db->like('a.revision', $filter_revision);
         $this->db->like('a.item_fg_id', $filter_product_no);
