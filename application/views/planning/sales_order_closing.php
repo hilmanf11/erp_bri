@@ -16,6 +16,7 @@
             <th rowspan="2" data-options="field:'total_grand',width:100,halign:'center',align:'right',formatter: numberFormat">Grand Total</th>
             <th rowspan="2" data-options="field:'remarks',width:150,halign:'center'">Remarks</th>
             <th rowspan="2" data-options="field:'attachment',width:150,halign:'center'">Attachment</th>
+            <th rowspan="2" data-options="field:'closing_reason',width:150,halign:'center'">Reason</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -72,135 +73,43 @@
     </div>
 </div>
 
-
 <!-- Insert & Update -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Sales Order No</span>
-                    <input style="width:60%;" name="sales_order_no" id="sales_order_no" readonly class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Status</span>
-                    <select style="width:60%;" id="status" name="status" panelHeight="auto" class="easyui-combobox">
-                        <option value="">Choose All</option>
-                        <option value="0">OPEN</option>
-                        <option value="1">CLOSE</option>
-                    </select>
-                </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Sales Order No</span>
+                <input style="width:60%;" name="sales_order_no" id="sales_order_no" readonly class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Status</span>
+                <select style="width:60%;" id="status" name="status" panelHeight="auto" class="easyui-combobox">
+                    <option value="0">OPEN</option>
+                    <option value="1">CLOSE</option>
+                </select>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Reason</span>
+                <input style="width:60%; height: 80px;" name="closing_reason" id="closing_reason" class="easyui-textbox" multiline="true">
             </div>
         </fieldset>
-        
     </form>
 </div>
 
-<!-- PDF -->
-<iframe id="printout" src="<?= base_url('planning/sales_orders/print') ?>" style="width: 100%;" hidden></iframe>
-
 <script>
-    //ADD DATA
-    function add() {
-        $('#dlg_insert').dialog('open');
-        $('#dg2').datagrid('loadData', []);
-        url_save = '<?= base_url('planning/sales_orders/create') ?>';
-        $('#frm_insert').form('clear');
-
-        $("#customer_id").combobox('enable');
-        $("#sales_order_no").textbox('enable');
-        $("#sales_order_date").datebox('enable');
-        $("#customer_address_id").datebox('enable');
-        $("#pph").numberbox('setValue', 0);
-
-        $("#sales_order_date").datebox({
-            onChange: function(sales_order_date) {
-                var customer_id = $("#customer_id").combobox('getValue');
-                if (customer_id == "") {
-                    toastr.error("Please Choose Customer Name");
-                    $("#sales_order_date").datebox('clear');
-                } else {
-                    number(customer_id, sales_order_date);
-                    addTable(customer_id);
-                }
-            }
-        });
-
-        $('#customer_id').combobox({
-            url: '<?= base_url('master/customers/reads/'); ?>',
-            valueField: 'id',
-            textField: 'name',
-            prompt: 'Choose Customer Name',
-            onSelect: function(customer) {
-                var sales_order_date = $("#sales_order_date").datebox('getValue');
-                $("#taxes").numberbox('setValue', customer.taxes);
-
-                if (sales_order_date != "") {
-                    number(customer.id, sales_order_date);
-                }
-
-                $('#customer_address_id').combobox({
-                    url: '<?= base_url('master/customers/readAddress/'); ?>' + customer.id,
-                    valueField: 'id',
-                    textField: 'address',
-                    panelHeight: 'panelHeight',
-                    prompt: 'Choose Shipping Address',
-                    onSelect: function(address) {
-                        $("#attention_to").textbox('setValue', address.contact_person);
-                    }
-                });
-            }
-        });
-    }
-
-   
-    var editIndex = undefined;
-
-    function endEditing() {
-        if (editIndex == undefined) {
-            return true
-        }
-        if ($('#dg2').datagrid('validateRow', editIndex)) {
-            $('#dg2').datagrid('endEdit', editIndex);
-            editIndex = undefined;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    function onClickCell(index, field) {
-        if (editIndex != index) {
-            if (endEditing()) {
-                $('#dg2').datagrid('selectRow', index).datagrid('beginEdit', index);
-                editIndex = index;
-            } else {
-                setTimeout(function() {
-                    $('#dg2').datagrid('selectRow', editIndex);
-                }, 0);
-            }
-        }
-    }
-
-    
-
     //EDIT DATA
     function update() {
         var row = $('#dg').treegrid('getSelected');
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            $("#customer_id").combobox('disable');
-            $("#sales_order_no").textbox('disable');
-            $("#sales_order_date").datebox('disable');
-            $("#customer_address_id").datebox('disable');
 
-            addTable(row.customer_id, '<?= base_url('planning/closing_sales_order/datatableUpdates?sales_order_no=') ?>' + window.btoa(row.sales_order_no));
+            $("#sales_order_no").textbox('disable');
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
-
 
     //FILTER DATA
     function filter() {
@@ -217,13 +126,9 @@
             "&filter_status=" + window.btoa(filter_status);
 
         $('#dg').datagrid({
-            url: '<?= base_url('planning/sales_orders/datatables') ?>' + url
+            url: '<?= base_url('planning/sales_order_closing/datatables') ?>' + url
         });
-
-        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('planning/sales_orders/print') ?>' + url);
     }
-
 
     //RELOAD
     function reload() {
@@ -233,87 +138,9 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('planning/sales_orders/datatables') ?>',
+            url: '<?= base_url('planning/sales_order_closing/datatables') ?>',
             pagination: true,
             rownumbers: true,
-            view: detailview,
-            detailFormatter: function(index, row) {
-                return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.sales_order_no + '"></table></div>';
-            },
-            onExpandRow: function(index, row) {
-                var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
-
-                ddv.datagrid({
-                    url: '<?= base_url('planning/sales_orders/datatableDetails?sales_order_no=') ?>' + window.btoa(row.sales_order_no),
-                    singleSelect: true,
-                    rownumbers: true,
-                    columns: [
-                        [{
-                            field: 'item_fg_id',
-                            title: 'Product ID',
-                            halign: 'center',
-                            width: 200
-                        }, {
-                            field: 'item_fg_number',
-                            title: 'Product No.',
-                            halign: 'center',
-                            width: 200
-                        }, {
-                            field: 'item_fg_name',
-                            title: 'Product Name',
-                            halign: 'center',
-                            width: 200
-                        }, {
-                            field: 'uom',
-                            title: 'UoM',
-                            align: 'center',
-                            width: 80
-                        }, {
-                            field: 'qty',
-                            title: 'Qty',
-                            halign: 'center',
-                            align: 'right',
-                            width: 80,
-                            formatter: numberFormat
-                        }, {
-                            field: 'delivery',
-                            title: 'Delivery',
-                            halign: 'center',
-                            align: 'right',
-                            width: 80,
-                            formatter: numberFormat
-                        }, {
-                            field: 'outstanding',
-                            title: 'OS SO',
-                            halign: 'center',
-                            align: 'right',
-                            width: 80,
-                            formatter: numberFormat
-                        }, {
-                            field: 'currency',
-                            title: 'Currency',
-                            align: 'center',
-                            width: 80
-                        }, {
-                            field: 'total',
-                            title: 'Total',
-                            halign: 'center',
-                            align: 'right',
-                            width: 100,
-                            formatter: numberFormat
-                        }]
-                    ],
-                    onResize: function() {
-                        $('#dg').datagrid('fixDetailRowHeight', index);
-                    },
-                    onLoadSuccess: function() {
-                        setTimeout(function() {
-                            $('#dg').datagrid('fixDetailRowHeight', index);
-                        }, 0);
-                    }
-                });
-                $('#dg').datagrid('fixDetailRowHeight', index);
-            }
         });
 
         //SAVE DATA
@@ -324,13 +151,16 @@
                 handler: function() {
                     var sales_order_no = $("#sales_order_no").textbox('getValue');
                     var status = $("#status").combobox('getValue');
+                    var closing_reason = $("#closing_reason").textbox('getValue');
 
                     $.ajax({
                         type: "post",
-                        url: '<?= base_url('planning/closing_sales_order/create') ?>',
+                        url: '<?= base_url('planning/sales_order_closing/create') ?>',
                         data: {
                             sales_order_no: sales_order_no,
                             status: status,
+                            closing_reason: closing_reason,
+
                         },
                         dataType: "json",
                         success: function(result) {
@@ -344,7 +174,7 @@
                             }).then((result) => {
                                 if (result.isConfirmed) {
                                     $('#dg').datagrid('reload');
-                    
+
                                 }
                             });
                         }
@@ -367,7 +197,7 @@
         }],
         onSelect: function(customer) {
             $('#filter_sales_order_no').combobox({
-                url: '<?= base_url('planning/sales_orders/readSalesOrder/'); ?>' + customer.id,
+                url: '<?= base_url('planning/sales_order_closing/readSalesOrder/'); ?>' + customer.id,
                 valueField: 'sales_order_no',
                 textField: 'sales_order_no',
                 prompt: 'Choose All',
@@ -380,7 +210,7 @@
             });
 
             $('#filter_customer_order_no').combobox({
-                url: '<?= base_url('planning/sales_orders/readCustomerOrder/'); ?>' + customer.id,
+                url: '<?= base_url('planning/sales_order_closing/readCustomerOrder/'); ?>' + customer.id,
                 valueField: 'customer_order_no',
                 textField: 'customer_order_no',
                 prompt: 'Choose All',
@@ -392,14 +222,6 @@
                 }],
             });
         }
-    });
-
-    $('#division').combobox({
-        url: '<?= base_url('master/divisions/reads'); ?>',
-        valueField: 'name',
-        textField: 'name',
-        panelHeight: 'panelHeight',
-        prompt: 'Choose Division',
     });
 
     //CELLSTYLE STATUS

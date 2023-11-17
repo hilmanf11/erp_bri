@@ -3,7 +3,6 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th rowspan="2" data-options="field:'sales_order_no',width:150,halign:'center'">Sales Order No</th>
             <th rowspan="2" data-options="field:'customer_order_no',width:150,halign:'center'">Customer Order No</th>
             <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
@@ -30,7 +29,7 @@
 
 <!-- DIALOG DELIVERY -->
 <div id="dlg_delivery" class="easyui-dialog" title="Sales Delivery Order" data-options="closed: true,modal:true" style="width: 800px; height: 500px; top: 20px; left: 10px;">
-    <table id="dg3" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar3">
+    <table id="dg2" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar3">
         <thead>
             <tr>
                 <th rowspan="2" field="ck" checkbox="true"></th>
@@ -38,20 +37,21 @@
                 <th rowspan="2" data-options="field:'so_qty',width:100,align:'center'">Order Qty</th>
                 <th rowspan="2" data-options="field:'qty',width:100,align:'center'">Delivery Qty</th>
                 <th rowspan="2" data-options="field:'remain_qty',width:100,align:'center'">Remain Qty</th>
+                <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
                 <th colspan="2" data-options="field:'',width:100,align:'center'"> Created</th>
             </tr>
             <tr>
                 <th data-options="field:'created_by',width:100,align:'center'"> By</th>
                 <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-                
+
             </tr>
         </thead>
     </table>
 </div>
 
 <!-- DIALOG SAVE AND UPDATE CUSTOMER ADDRESS -->
-<div id="dlg_insert2" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
-    <form id="frm_insert2" method="post" novalidate>
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+    <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Customer Id</span>
@@ -73,14 +73,13 @@
                 <span style="width:35%; display:inline-block;">Qty</span>
                 <input style="width:30%;" name="qty" id="qty" class="easyui-textbox">
             </div>
-           
+
         </fieldset>
     </form>
 </div>
 
 <!-- TOOLBAR DATAGRID -->
-<div id="toolbar" style="height: 250px; padding: 10px;">
-    <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
+<div id="toolbar" style="height: 235px; padding: 10px;">
     <div style="width: 100%;">
         <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
@@ -110,11 +109,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No</span>
-                    <input style="width:60%;" id="filter_product_no" class="easyui-combobox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product Name</span>
-                    <input style="width:60%;" id="filter_product_name" class="easyui-combobox">
+                    <input style="width:60%;" id="filter_item_fg" class="easyui-combogrid">
                 </div>
             </div>
         </fieldset>
@@ -130,24 +125,24 @@
 
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('planning/sales_orders/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('planning/sales_order_deliveries/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
     //ADD DATA
-     function add() {
-            $('#dlg_insert2').dialog('open');
-            var customer_id = $("#customer_id").textbox('getValue');
-            var sales_order_no = $("#sales_order_no").textbox('getValue');
-            var item_fg_id = $("#item_fg_id").textbox('getValue');
+    function add() {
+        $('#dlg_insert').dialog('open');
+        var customer_id = $("#customer_id").textbox('getValue');
+        var sales_order_no = $("#sales_order_no").textbox('getValue');
+        var item_fg_id = $("#item_fg_id").textbox('getValue');
 
-            url_save2 = '<?= base_url('planning/sales_order_deliveries/create2') ?>';
-            $('#frm_insert2').form('clear');
+        url_save = '<?= base_url('planning/sales_order_deliveries/create') ?>';
+        $('#frm_insert').form('clear');
 
-            $("#customer_id").textbox('setValue', customer_id);
-            $("#sales_order_no").textbox('setValue', sales_order_no);
-            $("#item_fg_id").textbox('setValue', item_fg_id);
-            $("#trans_date").datebox('setValue', '<?= date("Y-m-d") ?>');
-        }
+        $("#customer_id").textbox('setValue', customer_id);
+        $("#sales_order_no").textbox('setValue', sales_order_no);
+        $("#item_fg_id").textbox('setValue', item_fg_id);
+        $("#trans_date").datebox('setValue', '<?= date("Y-m-d") ?>');
+    }
 
 
     function btnDelivery(val, row) {
@@ -160,21 +155,21 @@
         $("#customer_id").textbox('setValue', customer_id); // id customer di simpan di textbox customer_id sekaligus saat add id tersimpan
         $("#sales_order_no").textbox('setValue', sales_order_no);
         $("#item_fg_id").textbox('setValue', item_fg_id);
-        
-        $('#dg3').datagrid({
-            url: '<?= base_url("planning/sales_order_deliveries/datatables2/") ?>' + customer_id + '/' + sales_order_no + '/' + item_fg_id,
-            rownumbers: true
+
+        $('#dg2').datagrid({
+            url: '<?= base_url("planning/sales_order_deliveries/datatables2/") ?>' + btoa(customer_id) + '/' + btoa(sales_order_no) + '/' + btoa(item_fg_id)
         });
     }
 
     //DELETE DATA
     function deleted() {
-        var rows = $('#dg3').datagrid('getSelections');
+        var rows = $('#dg2').datagrid('getSelections');
         if (rows.length > 0) {
             $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
                 if (r) {
                     for (var i = 0; i < rows.length; i++) {
                         var row = rows[i];
+
                         $.ajax({
                             method: 'post',
                             url: '<?= base_url('planning/sales_order_deliveries/delete') ?>',
@@ -188,7 +183,7 @@
                                 toastr.error(jqXHR.statusText);
                             },
                             complete: function(data) {
-                                $('#dg3').datagrid('reload');
+                                $('#dg2').datagrid('reload');
                             }
                         });
                     }
@@ -204,23 +199,23 @@
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_customer_id = $("#filter_customer_id").combobox('getValue');
+        var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
         var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
-        var filter_product_no = $("#filter_product_no").combobox('getValue');
-        var filter_product_name = $("#filter_product_name").combobox('getValue');
+        var filter_item_fg = $("#filter_item_fg").combobox('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
+            "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
-            "&filter_product_no=" + window.btoa(filter_product_no) +
-            "&filter_product_name=" + window.btoa(filter_product_name);
+            "&filter_item_fg=" + window.btoa(filter_item_fg);
 
         $('#dg').datagrid({
-            url: '<?= base_url('planning/sales_orders/datatables') ?>' + url
+            url: '<?= base_url('planning/sales_order_deliveries/datatables') ?>' + url
         });
 
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('planning/sales_orders/print') ?>' + url);
+        $("#printout").attr('src', '<?= base_url('planning/sales_order_deliveries/print') ?>' + url);
     }
 
     //PRINT PDF
@@ -233,19 +228,18 @@
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_customer_id = $("#filter_customer_id").combobox('getValue');
+        var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
         var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
-        var filter_product_no = $("#filter_product_no").combobox('getValue');
-        var filter_product_name = $("#filter_product_name").combobox('getValue');
-
+        var filter_item_fg = $("#filter_item_fg").combobox('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
+            "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
-            "&filter_product_no=" + window.btoa(filter_product_no) +
-            "&filter_product_name=" + window.btoa(filter_product_name);
+            "&filter_item_fg=" + window.btoa(filter_item_fg);
 
-        window.location.assign('<?= base_url('planning/sales_orders/print/excel') ?>' + url);
+        window.location.assign('<?= base_url('planning/sales_order_deliveries/print/excel') ?>' + url);
     }
 
     //RELOAD
@@ -256,7 +250,7 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('planning/sales_orders/datatables') ?>',
+            url: '<?= base_url('planning/sales_order_deliveries/datatables') ?>',
             pagination: true,
             rownumbers: true,
             view: detailview,
@@ -267,16 +261,15 @@
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
 
                 ddv.datagrid({
-                    url: '<?= base_url('planning/sales_orders/datatableDetails?sales_order_no=') ?>' + window.btoa(row.sales_order_no),
+                    url: '<?= base_url('planning/sales_order_deliveries/datatableDetails?sales_order_no=') ?>' + window.btoa(row.sales_order_no),
                     singleSelect: true,
                     rownumbers: true,
-                    height: '100',
                     columns: [
                         [{
                             field: 'btn',
                             title: 'Delivery',
                             halign: 'center',
-                            formatter : btnDelivery,
+                            formatter: btnDelivery,
                             width: 80
                         }, {
                             field: 'item_fg_id',
@@ -306,14 +299,14 @@
                             width: 80,
                             formatter: numberFormat
                         }, {
-                            field: 'delivery',
+                            field: 'qty_del',
                             title: 'Delivery',
                             halign: 'center',
                             align: 'right',
                             width: 80,
                             formatter: numberFormat
                         }, {
-                            field: 'outstanding',
+                            field: 'qty_os',
                             title: 'OS SO',
                             halign: 'center',
                             align: 'right',
@@ -324,13 +317,6 @@
                             title: 'Currency',
                             align: 'center',
                             width: 80
-                        }, {
-                            field: 'total',
-                            title: 'Total',
-                            halign: 'center',
-                            align: 'right',
-                            width: 100,
-                            formatter: numberFormat
                         }]
                     ],
                     onResize: function() {
@@ -347,13 +333,13 @@
         });
 
         //SAVE DATA
-        $('#dlg_insert2').dialog({
+        $('#dlg_insert').dialog({
             buttons: [{
                 text: 'Save',
                 iconCls: 'icon-ok',
                 handler: function() {
-                    $('#frm_insert2').form('submit', {
-                        url: url_save2,
+                    $('#frm_insert').form('submit', {
+                        url: url_save,
                         onSubmit: function() {
                             return $(this).form('validate');
                         },
@@ -361,8 +347,8 @@
                             var result = eval('(' + result + ')');
                             if (result.theme == "success") {
                                 toastr.success(result.message, result.title);
-                                $('#dlg_insert2').dialog('close');
-                                $('#dg3').datagrid('reload');
+                                $('#dlg_insert').dialog('close');
+                                $('#dg2').datagrid('reload');
                             } else {
                                 toastr.error(result.message, result.title);
                             }
@@ -411,30 +397,31 @@
                 }],
             });
 
-            $('#filter_product_no').combobox({
+            $('#filter_item_fg').combogrid({
                 url: '<?= base_url('planning/sales_order_deliveries/readProductNo/'); ?>' + customer.id,
-                valueField: 'item_fg_number',
-                textField: 'item_fg_number',
-                prompt: 'Choose All',
+                panelWidth: 400,
+                idField: 'id',
+                textField: 'number',
+                mode: 'remote',
+                fitColumns: true,
+                prompt: "Choose All",
                 icons: [{
                     iconCls: 'icon-clear',
                     handler: function(e) {
-                        $(e.data.target).combobox('clear').combobox('textbox').focus();
+                        $(e.data.target).combogrid('clear').combogrid('textbox').focus();
                     }
                 }],
-            });
-
-            $('#filter_product_name').combobox({
-                url: '<?= base_url('planning/sales_order_deliveries/readProductName/'); ?>' + customer.id,
-                valueField: 'item_fg_name',
-                textField: 'item_fg_name',
-                prompt: 'Choose All',
-                icons: [{
-                    iconCls: 'icon-clear',
-                    handler: function(e) {
-                        $(e.data.target).combobox('clear').combobox('textbox').focus();
-                    }
-                }],
+                columns: [
+                    [{
+                        field: 'number',
+                        title: 'Product No',
+                        width: 200
+                    }, {
+                        field: 'name',
+                        title: 'Product Name',
+                        width: 200
+                    }]
+                ],
             });
         }
     });

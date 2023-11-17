@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Closing_sales_order extends CI_Controller
+class Sales_order_closing extends CI_Controller
 {
     public function __construct()
     {
@@ -25,7 +25,7 @@ class Closing_sales_order extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('planning/closing_sales_order');
+            $this->load->view('planning/sales_order_closing');
         } else {
             redirect('error_access');
         }
@@ -53,8 +53,6 @@ class Closing_sales_order extends CI_Controller
         $send = $this->crud->query("SELECT DISTINCT customer_order_no FROM sales_orders WHERE customer_id = '$customer_id'");
         echo json_encode($send);
     }
-
-   
 
     //GET DATATABLES
     public function datatables()
@@ -100,40 +98,6 @@ class Closing_sales_order extends CI_Controller
         }
     }
 
-    //GET DATATABLES DETAILS
-    public function datatableDetails()
-    {
-        if ($this->input->get()) {
-            $sales_order_no = base64_decode($this->input->get('sales_order_no'));
-
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
-            $this->db->from('sales_orders a');
-            $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-            $this->db->where('a.sales_order_no', $sales_order_no);
-            $this->db->order_by('b.number', 'ASC');
-            $records = $this->db->get()->result_array();
-
-            echo json_encode($records);
-        }
-    }
-
-    // GET DATATABLES UPDATE
-    public function datatableUpdates()
-    {
-        if ($this->input->get()) {
-            $sales_order_no = base64_decode($this->input->get('sales_order_no'));
-
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
-            $this->db->from('sales_orders a');
-            $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-            $this->db->where('a.sales_order_no', $sales_order_no);
-            $this->db->order_by('b.number', 'ASC');
-            $records = $this->db->get()->result_array();
-
-            echo json_encode($records);
-        }
-    }
-
     //CREATE DATA
     public function create()
     {
@@ -152,5 +116,4 @@ class Closing_sales_order extends CI_Controller
             show_error("Cannot Process your request");
         }
     }
-
 }
