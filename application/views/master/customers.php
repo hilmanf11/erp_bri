@@ -103,6 +103,7 @@
         <thead>
             <tr>
                 <th rowspan="2" field="ck" checkbox="true"></th>
+                <th rowspan="2" data-options="field:'id',width:150,halign:'center'">ID</th>
                 <th rowspan="2" data-options="field:'address',width:150,halign:'center'">Address</th>
                 <th rowspan="2" data-options="field:'address_billing',width:150,halign:'center'">Billing Address</th>
                 <th rowspan="2" data-options="field:'contact_person',width:150,halign:'center'">Contact Person</th>
