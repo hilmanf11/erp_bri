@@ -122,17 +122,57 @@ class Customer_items extends CI_Controller
             $customer_id = base64_decode($this->input->get('customer_id'));
             $item_id = base64_decode($this->input->get('item_id'));
 
-            $this->db->select('*');
-            $this->db->from('customer_item_histories');
-            $this->db->where('customer_id', $customer_id);
-            $this->db->where('item_id', $item_id);
-            $this->db->order_by('valid_date', 'DESC');
+            $this->db->select('a.*,  c.number as item_number');
+            $this->db->from('customer_item_histories a');
+            $this->db->join('item_fg c', 'a.item_id = c.id');
+            $this->db->where('a.customer_id', $customer_id);
+            $this->db->where('a.item_id', $item_id);
+            $this->db->order_by('a.valid_date', 'DESC');
             $records = $this->db->get()->result_array();
 
             echo json_encode($records);
         }
     }
 
+    public function uploadatt()
+    {
+        // Pastikan file disimpan dalam direktori yang diinginkan
+        $uploadDir = 'assets/image/customer_items/';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Pastikan ada file yang diunggah dari permintaan
+            if (isset($_FILES['file'])) {
+                $file = $_FILES['file'];
+
+                // Pastikan tidak ada error dalam proses upload
+                if ($file['error'] === UPLOAD_ERR_OK) {
+                    // Buat nama unik untuk file yang diunggah
+                    $fileName = uniqid() . '_' . $file['name'];
+                    $uploadPath = $uploadDir . $fileName;
+
+                    // Pindahkan file dari temporary directory ke lokasi yang diinginkan
+                    if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+                        // File berhasil diunggah
+                        echo json_encode(['success' => true, 'message' => 'File Upload Success.', 'filename' => $fileName]);
+                    } else {
+                        // Gagal menyimpan file
+                        echo json_encode(['success' => false, 'message' => 'File Upload Failed.']);
+                    }
+                } else {
+                    // Ada error dalam proses upload
+                    echo json_encode(['success' => false, 'message' => 'Error while Upload.']);
+                }
+            } else {
+                // File tidak ditemukan dalam permintaan
+                echo json_encode(['success' => false, 'message' => 'File Not Found.']);
+            }
+        } else {
+            // Metode request yang diperlukan adalah POST
+            echo json_encode(['success' => false, 'message' => 'Metode request yang diperlukan adalah POST.']);
+        }
+    }
+
+    
     //CREATE DATA
     public function create()
     {
@@ -142,7 +182,7 @@ class Customer_items extends CI_Controller
             $customer_items = $this->crud->read("customer_items", [], ["customer_id" => $post['customer_id'], "item_id" => $post['item_id'], "item_customer" => $post['item_customer']]);
             $customer_item_histories = $this->crud->read("customer_item_histories", [], ["customer_id" => $post['customer_id'], "item_id" => $post['item_id'], "price" => $post['price']]);
             if (@$customer_items->customer_id != "") {
-                $send = $this->crud->update('customer_items', ["customer_id" => $post['customer_id'], "item_id" => $post['item_id']], $post);
+                $send = $this->crud->update('customer_items', ["customer_id" => $post['customer_id'], "item_id" => $post['item_id'], "item_id" => $post['item_id']], $post);
                 if (@$customer_item_histories->customer_id == "") {
                     $send2 = $this->crud->create('customer_item_histories', $post);
                 }

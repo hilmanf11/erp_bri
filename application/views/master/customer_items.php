@@ -27,12 +27,11 @@
             <legend><b>Form Filter Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Customer</span>
-                <input style="width:60%;" id="filter_customer_id" class="easyui-combogrid"><!-- ingat untuk edit script pencarian dan datatable -->
+                <input style="width:60%;" id="filter_customer_id" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
-                <input style="width:60%;" id="filter_item_id" class="easyui-combogrid"><!-- ingat untuk edit script pencarian dan datatable -->
-            </div>
+                <input style="width:60%;" id="filter_item_id" class="easyui-combogrid">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
@@ -62,12 +61,16 @@
 </div>
 
 <!-- Detail Histories -->
-<div id="dlg_history" class="easyui-dialog" title="Price Histories" data-options="closed: true,modal:true" style="width: 400px; height: 300px; top: 20px;">
+<div id="dlg_history" class="easyui-dialog" title="Price Histories"  data-options="closed: true,modal:true" style="width: 700px; height: 300px; top: 20px;">
     <table id="dg_history" class="easyui-datagrid" style="width:100%;">
         <thead>
             <tr>
+                <th data-options="field:'item_number',width:100,halign:'center'">Product No</th>
                 <th data-options="field:'price',width:100,halign:'center',formatter: priceformat">Price</th>
                 <th data-options="field:'valid_date',width:100,halign:'center'">Valid Date</th>
+                <th data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>
+                <th data-options="field:'created_date',width:100,halign:'center'">Input Date</th>
+                <th data-options="field:'created_by',width:100,halign:'center'">Input By</th>
             </tr>
         </thead>
     </table>
@@ -209,10 +212,64 @@
                         }
                     }
                 }, {
+                    field: 'attachment_upload',
+                    width: 200,
+                    halign: 'center',
+                    title: "Attachment",
+                    editor:{
+                        type:'filebox',
+                        options:{
+                            buttonText:'Browse File',
+                            accept:'.jpg, .png, .pdf',
+                            onChange: function(){
+                                var dg = $('#dg2');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
+
+                                var ed = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'attachment'
+                                });
+
+                                var files = $(this).filebox('files')
+                                var formData = new FormData();
+                                for(var i=0; i<files.length; i++){
+                                    var file = files[i];
+                                    formData.append('file',file,file.name);
+                                }
+                                $.ajax({
+                                    url: '<?= base_url('master/customer_items/uploadatt') ?>',
+                                    type:'post',
+                                    data: formData,
+                                    contentType:false,
+                                    processData:false,
+                                    dataType: 'json',
+                                    success:function(data){
+                                        if(data.success == true){
+                                            toastr.success(data.message);
+                                            $(ed.target).textbox('setValue', data.filename);
+                                        }else{
+                                            toastr.error(data.message);
+                                        }
+                                    }
+                                })
+                            }
+                        }
+                    }
+                }, {
                     field: 'description',
                     width: 200,
                     halign: 'center',
                     title: "Description",
+                    editor: {
+                        type: 'textbox'
+                    }
+                }, {
+                    field: 'attachment',
+                    width: 200,
+                    hidden: true,
+                    halign: 'center',
+                    title: "Attachment",
                     editor: {
                         type: 'textbox'
                     }
@@ -407,7 +464,8 @@
             url: '<?= base_url('master/customer_items/datatables') ?>',
             pagination: true,
             rownumbers: true,
-            height: '645px',
+            // height: '645px',
+            fit: true,
             view: detailview,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.customer_name + '"></table></div>';
@@ -502,6 +560,7 @@
                                     item_customer: rows[i].item_customer,
                                     price: rows[i].price,
                                     valid_date: rows[i].valid_date,
+                                    attachment: rows[i].attachment,
                                     description: rows[i].description
                                 },
                                 dataType: "json",
@@ -694,6 +753,17 @@
             return "<b>" + formatter.format(value) + "</b>";
         }
     }
+
+    function btnDetails(val, row, index) {
+        var attachment = row.attachment;
+        
+        if (attachment != null) {
+            return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/customer_items/') ?>'+row.attachment+'" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+        } else {
+            return '-';
+        }
+    }
+
 
     function btnHistories(val, row) {
         var history = "viewHistories('" + row.customer_id + "','" + row.item_id + "')";

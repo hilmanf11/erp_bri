@@ -693,6 +693,8 @@
             url: '<?= base_url('planning/sales_orders/datatables') ?>',
             pagination: true,
             rownumbers: true,
+            // height: '645px',
+            fit: true,
             view: detailview,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.sales_order_no + '"></table></div>';
