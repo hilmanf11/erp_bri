@@ -78,7 +78,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; height: 700px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; height: 600px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -133,8 +133,8 @@
         </fieldset>
         <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Sales Order Lists" toolbar="#toolbar2"></table>
         <div style="width: 30%; float: right; margin-top: 10px;">
-            <!-- <a style="width: 100%;" class="easyui-linkbutton c8" onclick="calculate()">Calculate</a> -->
-            <a href="javascript:;" class="easyui-linkbutton" style="width: 100%" onclick="calculate()"><i class="fa fa-calculator"></i> Calculate</a>
+            <!-- <a style="width: 100%;" class="easyui-linkbutton c8" onclick="calculate()">Calculate</a>
+            <a href="javascript:;" class="easyui-linkbutton" style="width: 100%" onclick="calculate()"><i class="fa fa-calculator"></i> Calculate</a> -->
             <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; margin-top: 10px; border-radius:4px;">
                 <div style="width: 100%; float: left;">
                     <div class="fitem">
@@ -431,6 +431,7 @@
 
                                 $(ed3.target).numberbox('setValue', outstanding);
                                 $(ed.target).numberbox('setValue', total);
+                                calculate();
                             }
                         }
                     }
@@ -693,7 +694,6 @@
             url: '<?= base_url('planning/sales_orders/datatables') ?>',
             pagination: true,
             rownumbers: true,
-            // height: '645px',
             fit: true,
             view: detailview,
             detailFormatter: function(index, row) {
@@ -825,7 +825,8 @@
                                         async: true,
                                         url: "<?= base_url('planning/sales_orders/uploadCreate') ?>",
                                         data: {
-                                            "data": json[number - 1]
+                                            "data": json[number - 1],
+                                            "total_sub": json.total_sub,
                                         },
                                         cache: false,
                                         dataType: "json",
