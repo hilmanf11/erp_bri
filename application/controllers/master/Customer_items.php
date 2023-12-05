@@ -61,6 +61,7 @@ class Customer_items extends CI_Controller
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->like('a.item_id', $filter_item_id);
+            $this->db->where('b.status', "0");
             $this->db->group_by('b.name');
             $this->db->order_by('b.id', 'ASC');
             //Total Data
@@ -181,6 +182,7 @@ class Customer_items extends CI_Controller
 
             $customer_items = $this->crud->read("customer_items", [], ["customer_id" => $post['customer_id'], "item_id" => $post['item_id'], "item_customer" => $post['item_customer']]);
             $customer_item_histories = $this->crud->read("customer_item_histories", [], ["customer_id" => $post['customer_id'], "item_id" => $post['item_id'], "price" => $post['price']]);
+            
             if (@$customer_items->customer_id != "") {
                 $send = $this->crud->update('customer_items', ["customer_id" => $post['customer_id'], "item_id" => $post['item_id'], "item_id" => $post['item_id']], $post);
                 if (@$customer_item_histories->customer_id == "") {

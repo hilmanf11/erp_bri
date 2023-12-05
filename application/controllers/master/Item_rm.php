@@ -108,11 +108,19 @@ class Item_rm extends CI_Controller
          if ($this->input->post()) {
              if ($this->form_validation->run() == TRUE) {
                  $post   = $this->input->post();
-                 $send   = $this->crud->create('item_rm', $post);
-                 echo $send;
-             } else {
-                 show_error(validation_errors());
-             }
+                 $attachment = $this->crud->upload('attachment', 
+                    ["jpg", "png", "jpeg", "pdf"], 
+                    'assets/image/item_rm/', 
+                    [], 
+                    "item_rm", "attachment");
+                
+                $postFinal = array_merge($post, ["attachment" => $attachment]);
+                $item_rm = $this->crud->create('item_rm', $postFinal);
+                //$email = $this->emails->emailRegistration($post['email'], $post['name'], $post['username'], $post['password']);
+                echo $item_rm;
+            } else {
+                show_error(validation_errors());
+            }
          } else {
              show_error("Cannot Process your request");
          }

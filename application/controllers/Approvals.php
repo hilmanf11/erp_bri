@@ -130,8 +130,12 @@ class Approvals extends CI_Controller
         $stock_wip = $this->crud->reads('stock_wip', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $os_so = $this->crud->reads('os_so', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $os_mpp = $this->crud->reads('os_mpp', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $supplier_items = $this->crud->reads('supplier_items', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $customer_items = $this->crud->reads('customer_items', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $customers = $this->crud->reads('customers', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $suppliers = $this->crud->reads('suppliers', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
 
-        $totalRows = (count($users) + count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp));
+        $totalRows = (count($users) + count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) + count($supplier_items) + count($customer_items) + count($customers) + count($suppliers));
         if ($totalRows > 0) {
             echo '<span class="badge">' . $totalRows . '</span>';
         } else {
@@ -148,6 +152,10 @@ class Approvals extends CI_Controller
         $stock_wip = $this->crud->reads('stock_wip', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $os_so = $this->crud->reads('os_so', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $os_mpp = $this->crud->reads('os_mpp', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $supplier_items = $this->crud->reads('supplier_items', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $customer_items = $this->crud->reads('customer_items', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $customers = $this->crud->reads('customers', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $suppliers = $this->crud->reads('suppliers', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
 
         foreach ($users as $user) {
             $this->approvalMessage($user->approved_by, $user->approved_to, $user->created_by, "users");
@@ -171,6 +179,22 @@ class Approvals extends CI_Controller
 
         foreach ($os_mpp as $mpp) {
             $this->approvalMessage($mpp->approved_by, $mpp->approved_to, $mpp->created_by, "os_mpp");
+        }
+
+        foreach ($supplier_items as $supplier_item) {
+            $this->approvalMessage($supplier_item->approved_by, $supplier_item->approved_to, $supplier_item->created_by, "supplier_items");
+        }
+
+        foreach ($customer_items as $customer_item) {
+            $this->approvalMessage($customer_item->approved_by, $customer_item->approved_to, $customer_item->created_by, "customer_items");
+        }
+
+        foreach ($customers as $customer) {
+            $this->approvalMessage($customer->approved_by, $customer->approved_to, $customer->created_by, "customers");
+        }
+
+        foreach ($suppliers as $supplier) {
+            $this->approvalMessage($supplier->approved_by, $supplier->approved_to, $supplier->created_by, "suppliers");
         }
     }
 
@@ -280,6 +304,54 @@ class Approvals extends CI_Controller
         $this->db->where('a.approved_to', $approved_to);
         $this->db->where('a.created_by', $created_by);
         $this->db->order_by('a.created_date', 'DESC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalSupplierItems($approved_to, $created_by){
+        $this->db->select('a.*, b.name as supplier_name, b.currency, b.id as supplier_id, c.number as item_number, c.name as item_name');
+        $this->db->from('supplier_items a');
+        $this->db->join('suppliers b', 'a.supplier_id = b.id');
+        $this->db->join('item_rm c', 'a.item_id = c.id');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.created_by', $created_by);
+        $this->db->order_by('a.supplier_id', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalCustomerItems($approved_to, $created_by){
+        $this->db->select('a.*, b.name as customer_name, b.currency, b.id as customer_id, c.number as item_number, c.name as item_name');
+        $this->db->from('customer_items a');
+        $this->db->join('customers b', 'a.customer_id = b.id');
+        $this->db->join('item_fg c', 'a.item_id = c.id');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.created_by', $created_by);
+        $this->db->order_by('a.customer_id', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalCustomers($approved_to, $created_by){
+        $this->db->select('a.*');
+        $this->db->from('customers a');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.created_by', $created_by);
+        $this->db->order_by('a.id', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalSuppliers($approved_to, $created_by){
+        $this->db->select('*');
+        $this->db->from('suppliers');
+        $this->db->where('approved_to', $approved_to);
+        $this->db->where('created_by', $created_by);
+        $this->db->order_by('id', 'ASC');
         $records = $this->db->get()->result_array();
 
         die(json_encode($records));

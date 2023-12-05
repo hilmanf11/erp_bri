@@ -453,7 +453,8 @@
             url: '<?= base_url('master/supplier_items/datatables') ?>',
             pagination: true,
             rownumbers: true,
-            height: '645px',
+            fitColumns: true,
+            fit: true,
             view: detailview,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.supplier_name + '"></table></div>';
@@ -486,17 +487,17 @@
                             field: 'mpq',
                             title: 'MPQ',
                             halign: 'center',
-                            width: 80
+                            width: 50
                         }, {
                             field: 'moq',
                             title: 'MOQ',
                             halign: 'center',
-                            width: 80
+                            width: 50
                         }, {
                             field: 'leadtime',
                             title: 'Leadtime',
                             halign: 'center',
-                            width: 80
+                            width: 70
                         }, {
                             field: 'currency',
                             title: 'Currency',
@@ -516,24 +517,41 @@
                             formatter: btnHistories
                         }, {
                             field: 'safety_stock',
-                            title: 'Safety Stock',
+                            title: 'Safety<br>Stock',
                             halign: 'center',
-                            width: 100,
+                            width: 60,
                         }, {
                             field: 'calculate',
-                            title: 'Calculate MPQ',
+                            title: 'Calculate <br> MPQ',
                             halign: 'center',
-                            width: 100
+                            width: 70
                         }, {
                             field: 'valid_date',
                             title: 'Valid Date',
                             halign: 'center',
-                            width: 150
+                            width: 80
                         }, {
                             field: 'description',
                             title: 'Description',
-                            width: 200,
                             halign: 'center',
+                            width: 220
+                        }, {
+                            field: 'approved_to',
+                            title: 'Approved',
+                            align: 'center',
+                            width: 100,
+                            styler: styleApproved, 
+                            formatter: formatApproved
+                        }, {
+                            field: 'approved_by',
+                            title: 'Approved By',
+                            halign: 'center',
+                            width: 100
+                        }, {
+                            field: 'approved_date',
+                            title: 'Approved Date',
+                            halign: 'center',
+                            width: 150
                         }]
                     ],
                     onResize: function() {
@@ -608,7 +626,7 @@
 
 
     $('#supplier_id').combogrid({
-        url: '<?= base_url('master/suppliers/reads/'); ?>',
+        url: '<?= base_url('master/suppliers/readsA/'); ?>',
         panelWidth: 420,
         idField: 'id',
         textField: 'name',
@@ -634,7 +652,7 @@
 
     // combogrid filter suppliers
     $('#filter_supplier_id').combogrid({
-        url: '<?= base_url('master/suppliers/reads'); ?>',
+        url: '<?= base_url('master/suppliers/readsA'); ?>',
         panelWidth: 750,
         idField: 'id',
         textField: 'name',
@@ -718,6 +736,23 @@
             return 'Active';
         } else {
             return 'Not Active';
+        }
+    };
+
+    //CELLSTYLE APPROVE
+    function styleApproved(value, row, index) {
+        if (value == "") {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+    //FORMATTER APPROVE
+    function formatApproved(value) {
+        if (value == "") {
+            return 'Approved';
+        } else {
+            return 'Checking';
         }
     };
 

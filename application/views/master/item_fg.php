@@ -22,6 +22,7 @@
             <th rowspan="2" data-options="field:'max',halign:'center',width:80">Max</th>
             <th rowspan="2" data-options="field:'lot',width:100,halign:'center'">Lot</th>
             <th rowspan="2" data-options="field:'status',width:150, styler:cellStyler, formatter:cellFormatter, align:'center'">Status</th>
+            <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
             
@@ -40,7 +41,7 @@
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; padding:20px; top: 20px;">
-    <form id="frm_insert" method="post" novalidate>
+    <form id="frm_insert" method="post" enctype="multipart/form-data" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div style="width:50%;float:left;">
@@ -93,43 +94,47 @@
             <div style="width:50%;float:left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Leadtime Production</span>
-                <input style="width:30%;" name="leadtime" class="easyui-numberbox">
+                <input style="width:60%;" name="leadtime" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Lifetime</span>
-                <input style="width:30%;" name="lifetime" class="easyui-numberbox">
+                <input style="width:60%;" name="lifetime" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">MPQ</span>
-                <input style="width:30%;" name="mpq" class="easyui-numberbox">
+                <input style="width:60%;" name="mpq" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">MOQ</span>
-                <input style="width:30%;" name="moq" class="easyui-numberbox">
+                <input style="width:60%;" name="moq" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Safety Stock (%)</span>
-                <input style="width:30%;" name="safety_stock" class="easyui-numberbox">
+                <input style="width:60%;" name="safety_stock" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Min</span>
-                <input style="width:30%;" name="min" class="easyui-numberbox">
+                <input style="width:60%;" name="min" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Max</span>
-                <input style="width:30%;" name="max" class="easyui-numberbox">
+                <input style="width:60%;" name="max" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Lot</span>
-                <input style="width:30%;" name="lot" class="easyui-numberbox">
+                <input style="width:60%;" name="lot" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Status</span>
-                <select style="width:30%;" name="status" required="" panelHeight="auto" class="easyui-combobox">
+                <select style="width:60%;" name="status" required="" panelHeight="auto" class="easyui-combobox">
                     <option value="0">Active</option>
                     <option value="1">Inactive</option>
                 </select>
             </div>
+            <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Attachment</span>
+                    <input style="width:60%;" name="attachment" id="attachment" class="easyui-filebox" accept=".jpg, .png, .jpeg, .pdf">
+                </div>
         </div>
         </fieldset>
     </form>
@@ -243,6 +248,16 @@
         window.location.reload();
     }
 
+    function btnDetails(val, row, index) {
+        var attachment = row.attachment;
+        
+        if (attachment != null) {
+            return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/item_fg/') ?>'+row.attachment+'" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+        } else {
+            return '-';
+        }
+    }
+
     //CELLSTYLE STATUS
     function cellStyler(value, row, index) {
         if (value == 0) {
@@ -267,6 +282,7 @@
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
+            fit: true,
             rownumbers: true
         }).datagrid('enableFilter');
         //SAVE DATA

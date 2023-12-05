@@ -69,8 +69,8 @@
                 <th data-options="field:'price',width:100,halign:'center',formatter: priceformat">Price</th>
                 <th data-options="field:'valid_date',width:100,halign:'center'">Valid Date</th>
                 <th data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>
-                <th data-options="field:'created_date',width:100,halign:'center'">Input Date</th>
-                <th data-options="field:'created_by',width:100,halign:'center'">Input By</th>
+                <th data-options="field:'created_date',width:100,halign:'center'">Update Date</th>
+                <th data-options="field:'created_by',width:100,halign:'center'">Update By</th>
             </tr>
         </thead>
     </table>
@@ -465,6 +465,7 @@
             pagination: true,
             rownumbers: true,
             // height: '645px',
+            fitColumns: true,
             fit: true,
             view: detailview,
             detailFormatter: function(index, row) {
@@ -521,6 +522,23 @@
                             title: 'Description',
                             width: 200,
                             halign: 'center',
+                        }, {
+                            field: 'approved_to',
+                            title: 'Approved',
+                            align: 'center',
+                            width: 100,
+                            styler: styleApproved, 
+                            formatter: formatApproved
+                        }, {
+                            field: 'approved_by',
+                            title: 'Approved By',
+                            halign: 'center',
+                            width: 100
+                        }, {
+                            field: 'approved_date',
+                            title: 'Approved Date',
+                            halign: 'center',
+                            width: 150
                         }]
                     ],
                     onResize: function() {
@@ -591,7 +609,7 @@
 
 
     $('#customer_id').combogrid({
-        url: '<?= base_url('master/customers/reads/'); ?>',
+        url: '<?= base_url('master/customers/readsA/'); ?>',
         panelWidth: 420,
         idField: 'id',
         textField: 'name',
@@ -617,7 +635,7 @@
 
     // combogrid filter customers
     $('#filter_customer_id').combogrid({
-        url: '<?= base_url('master/customers/reads'); ?>',
+        url: '<?= base_url('master/customers/readsA'); ?>',
         panelWidth: 750,
         idField: 'id',
         textField: 'name',
@@ -686,6 +704,23 @@
             }
         }],
     });
+
+    //CELLSTYLE APPROVE
+    function styleApproved(value, row, index) {
+        if (value == "") {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+    //FORMATTER APPROVE
+    function formatApproved(value) {
+        if (value == "") {
+            return 'Approved';
+        } else {
+            return 'Checking';
+        }
+    };
 
     //CELLSTYLE STATUS
     function cellStyler(value, row, index) {
@@ -757,7 +792,7 @@
     function btnDetails(val, row, index) {
         var attachment = row.attachment;
         
-        if (attachment != null) {
+        if (attachment != null && attachment != "") {
             return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/customer_items/') ?>'+row.attachment+'" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
         } else {
             return '-';

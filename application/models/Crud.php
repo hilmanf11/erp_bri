@@ -94,7 +94,11 @@ class Crud extends CI_Model
     function create($table, $values)
     {
         if ($this->session->username != "") {
-            $id = $this->autoid($table);
+            if(empty($values['id'])){
+                $id = $this->autoid($table);
+            }else{
+                $id = $values['id'];
+            }
 
             if (@$values['id'] != "") {
                 $data = array_merge($values, [
@@ -173,7 +177,8 @@ class Crud extends CI_Model
         $size = $_FILES[$filename]['size'];
         $temporary = $_FILES[$filename]['tmp_name'];
         $newname  = round(microtime(true)) . '.' . $extension_final;
-        $fileSave  = base_url($path) . round(microtime(true)) . '.' . $extension_final;
+        //$fileSave  = base_url($path) . round(microtime(true)) . '.' . $extension_final;
+        $fileSave  = round(microtime(true)) . '.' . $extension_final;
 
         if (in_array($extension_final, $extension) === true || $file == "") {
             if ($size < 2097152) {

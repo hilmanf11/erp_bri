@@ -101,12 +101,20 @@ class Item_fg extends CI_Controller
      {
          if ($this->input->post()) {
              if ($this->form_validation->run() == TRUE) {
-                 $post   = $this->input->post();
-                 $send   = $this->crud->create('item_fg', $post);
-                 echo $send;
-             } else {
-                 show_error(validation_errors());
-             }
+                $post   = $this->input->post();
+                $attachment = $this->crud->upload('attachment', 
+                   ["jpg", "png", "jpeg", "pdf"], 
+                   'assets/image/item_fg/', 
+                   [], 
+                   "item_fg", "attachment");
+               
+               $postFinal = array_merge($post, ["attachment" => $attachment]);
+               $item_fg = $this->crud->create('item_fg', $postFinal);
+               //$email = $this->emails->emailRegistration($post['email'], $post['name'], $post['username'], $post['password']);
+               echo $item_fg;
+           } else {
+               show_error(validation_errors());
+           }
          } else {
              show_error("Cannot Process your request");
          }

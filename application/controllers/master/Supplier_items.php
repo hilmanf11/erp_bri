@@ -59,6 +59,7 @@ class Supplier_items extends CI_Controller
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
             $this->db->like('a.supplier_id', $filter_supplier_id);
             $this->db->like('a.item_id', $filter_item_id);
+            $this->db->where('b.status', "0");
             $this->db->group_by('b.name');
             $this->db->order_by('b.id', 'ASC');
             //Total Data
@@ -139,6 +140,7 @@ class Supplier_items extends CI_Controller
 
             $supplier_items = $this->crud->read("supplier_items", [], ["supplier_id" => $post['supplier_id'], "item_id" => $post['item_id'], "item_supplier" => $post['item_supplier']]);
             $supplier_item_histories = $this->crud->read("supplier_item_histories", [], ["supplier_id" => $post['supplier_id'], "item_id" => $post['item_id'], "price" => $post['price']]);
+            
             if (@$supplier_items->supplier_id != "") {
                 $send = $this->crud->update('supplier_items', ["supplier_id" => $post['supplier_id'], "item_id" => $post['item_id']], $post);
                 if (@$supplier_item_histories->supplier_id == "") {

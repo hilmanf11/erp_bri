@@ -34,6 +34,14 @@ class Suppliers extends CI_Controller
         $send = $this->crud->reads('suppliers', ["name" => $post]);
         echo json_encode($send);
     }
+
+    public function readsA()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->reads('suppliers', ["name" => $post], ["status"=>"0"]);
+        echo json_encode($send);
+    }
+
     //CODE OTOMATIS
     public function autoid(){
         $sql = $this->db->query("SELECT max(`id`) as kode From suppliers");

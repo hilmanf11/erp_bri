@@ -16,6 +16,7 @@
             <th rowspan="2" data-options="field:'lifetime',width:100,halign:'center'">Lifetime (days)</th>
             <th rowspan="2" data-options="field:'safety_stock',halign:'center',width:130">Safety Stock (%)</th>
             <th rowspan="2" data-options="field:'status',width:150, styler:cellStyler, formatter:cellFormatter, align:'center'">Status</th>
+            <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
             
@@ -34,7 +35,7 @@
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; padding:20px; top: 20px;">
-    <form id="frm_insert" method="post" novalidate>
+    <form id="frm_insert" method="post" enctype="multipart/form-data" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div style="width:50%;float:left;">
@@ -78,26 +79,30 @@
             <div style="width:50%;float:left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Uom</span>
-                    <input style="width:30%;" name="uom" id="uom" required="" class="easyui-combobox">
+                    <input style="width:60%;" name="uom" id="uom" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Leadtime Production</span>
-                    <input style="width:30%;" name="leadtime" class="easyui-numberbox">
+                    <input style="width:60%;" name="leadtime" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Lifetime</span>
-                    <input style="width:30%;" name="lifetime" class="easyui-numberbox">
+                    <input style="width:60%;" name="lifetime" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Safety Stock (%)</span>
-                    <input style="width:30%;" name="safety_stock" class="easyui-numberbox">
+                    <input style="width:60%;" name="safety_stock" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status</span>
-                    <select style="width:30%;" name="status" required="" panelHeight="auto" class="easyui-combobox">
+                    <select style="width:60%;" name="status" required="" panelHeight="auto" class="easyui-combobox">
                         <option value="0">Active</option>
                         <option value="1">Inactive</option>
                     </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Attachment</span>
+                    <input style="width:60%;" name="attachment" id="attachment" class="easyui-filebox" accept=".jpg, .png, .jpeg, .pdf">
                 </div>
             </div>
         </fieldset>
@@ -226,6 +231,16 @@
         }
     };
 
+    function btnDetails(val, row, index) {
+        var attachment = row.attachment;
+        
+        if (attachment != null) {
+            return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/item_rm/') ?>'+row.attachment+'" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+        } else {
+            return '-';
+        }
+    }
+
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
@@ -233,6 +248,7 @@
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
+            fit: true,
             rownumbers: true
         }).datagrid('enableFilter');
         //SAVE DATA
