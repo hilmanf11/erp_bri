@@ -153,6 +153,15 @@ class Sales_orders extends CI_Controller
     {
         if ($this->input->post()) {
             $post = $this->input->post();
+            // $attachment = $this->crud->upload('attachment', 
+            //        ["jpg", "png", "jpeg", "pdf"], 
+            //        'assets/image/sales_orders/', 
+            //        [], 
+            //        "sales_orders", "attachment");
+               
+            //    $postFinal = array_merge($post, ["attachment" => $attachment]);
+            //    $sales_order = $this->crud->create('sales_orders', $postFinal);
+            //    echo $sales_order;
 
             $sales_orders = $this->crud->read("sales_orders", [], ["sales_order_no" => $post['sales_order_no'], "item_fg_id" => $post['item_fg_id']]);
             if (@$sales_orders->sales_order_no != "") {

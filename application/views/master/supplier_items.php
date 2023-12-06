@@ -739,9 +739,9 @@
         }
     };
 
-    //CELLSTYLE APPROVE
-    function styleApproved(value, row, index) {
-        if (value == "") {
+     //CELLSTYLE APPROVE
+     function styleApproved(value, row, index) {
+        if (value == "" || value === null ) {
             return 'background: #53D636; color:white;';
         } else {
             return 'background: #FF5F5F; color:white;';
@@ -749,13 +749,14 @@
     }
     //FORMATTER APPROVE
     function formatApproved(value) {
-        if (value == "") {
+        if (value == "" || value === null ) {
             return 'Approved';
         } else {
             return 'Checking';
         }
     };
 
+    
     // FORMAT tahun-bulan-tanggal
     function myformatter(date) {
         var y = date.getFullYear();

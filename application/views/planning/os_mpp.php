@@ -304,7 +304,7 @@
     });
 
     $('#customer_id').combobox({
-        url: '<?= base_url('master/customers/reads'); ?>',
+        url: '<?= base_url('master/customers/readsA'); ?>',
         valueField: 'id',
         textField: 'name',
         prompt: 'Choose Customer',
@@ -333,7 +333,7 @@
     });
 
     $('#filter_customer_id').combobox({
-        url: '<?= base_url('master/customers/reads'); ?>',
+        url: '<?= base_url('master/customers/readsA'); ?>',
         valueField: 'id',
         textField: 'name',
         prompt: 'Choose Customer',

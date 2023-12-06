@@ -879,7 +879,7 @@
     });
 
     $('#customer_id').combogrid({
-        url: '<?= base_url('master/customers/reads/'); ?>',
+        url: '<?= base_url('master/customers/readsA/'); ?>',
         panelWidth: 550,
         idField: 'id',
         textField: 'name',
@@ -936,7 +936,7 @@
     });
 
     $('#filter_customer_id').combogrid({
-        url: '<?= base_url('master/customers/reads'); ?>',
+        url: '<?= base_url('master/customers/readsA'); ?>',
         panelWidth: 550,
         idField: 'id',
         textField: 'name',

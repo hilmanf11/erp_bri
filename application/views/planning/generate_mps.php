@@ -39,9 +39,9 @@
             <div style="margin:12px;">
                 <input class="easyui-checkbox" id="check_so" value="on" readonly="true"> &nbsp; Sales Order
             </div>
-            <div style="margin:12px;">
+            <!-- <div style="margin:12px;">
                 <input class="easyui-checkbox" id="check_ost_so" value="on" readonly="true"> &nbsp; OST Sales Order
-            </div>
+            </div> -->
             <div style="margin:12px;">
                 <input class="easyui-checkbox" id="check_ost_mpp" value="on" readonly="true"> &nbsp; OST MPP
             </div>
@@ -100,11 +100,11 @@
         var check_forecast = $("#check_forecast").checkbox('options');
         var check_fg = $("#check_fg").checkbox('options');
         var check_wip = $("#check_wip").checkbox('options');
-        var check_ost_so = $("#check_ost_so").checkbox('options');
+        //var check_ost_so = $("#check_ost_so").checkbox('options');
         var check_ost_mpp = $("#check_ost_mpp").checkbox('options');
         var check_so = $("#check_so").checkbox('options');
 
-        if (check_forecast.checked == true && check_fg.checked == true && check_wip.checked == true && check_ost_so.checked == true && check_ost_mpp.checked == true == check_so.checked == true) {
+        if (check_forecast.checked == true && check_fg.checked == true && check_wip.checked == true && check_ost_mpp.checked == true && check_so.checked == true) {
             $.messager.prompt('Generate MPS', 'Please input Password Generate', function(r) {
                 if (r == "GENERATEMPS") {
                     Swal.fire({
@@ -253,8 +253,8 @@
             type: "get",
             url: "<?= base_url('planning/generate_mps/checkForecast') ?>",
             data: "filter_month=" + window.btoa(filter_month) +
-                "&filter_year=" + window.btoa(filter_year) +
-                "&filter_revision=" + window.btoa(filter_revision),
+                "&filter_year=" + window.btoa(filter_year),
+                // "&filter_revision=" + window.btoa(filter_revision),
             dataType: "json",
             success: function(ost_so) {
                 if (ost_so.theme == "success") {
@@ -309,25 +309,25 @@
             }
         });
 
-        $.ajax({
-            type: "get",
-            url: "<?= base_url('planning/generate_mps/checkOstSo') ?>",
-            data: "filter_month=" + window.btoa(filter_month) +
-                "&filter_year=" + window.btoa(filter_year) +
-                "&filter_revision=" + window.btoa(filter_revision),
-            dataType: "json",
-            success: function(ost_so) {
-                if (ost_so.theme == "success") {
-                    $('#check_ost_so').checkbox({
-                        checked: true
-                    });
-                } else {
-                    $('#check_ost_so').checkbox({
-                        checked: false
-                    });
-                }
-            }
-        });
+        // $.ajax({
+        //     type: "get",
+        //     url: "<?= base_url('planning/generate_mps/checkOstSo') ?>",
+        //     data: "filter_month=" + window.btoa(filter_month) +
+        //         "&filter_year=" + window.btoa(filter_year) +
+        //         "&filter_revision=" + window.btoa(filter_revision),
+        //     dataType: "json",
+        //     success: function(ost_so) {
+        //         if (ost_so.theme == "success") {
+        //             $('#check_ost_so').checkbox({
+        //                 checked: true
+        //             });
+        //         } else {
+        //             $('#check_ost_so').checkbox({
+        //                 checked: false
+        //             });
+        //         }
+        //     }
+        // });
 
         $.ajax({
             type: "get",
@@ -508,7 +508,7 @@
         });
 
         $('#filter_customer').combobox({
-            url: '<?php echo base_url('master/customers/reads'); ?>',
+            url: '<?php echo base_url('master/customers/readsA'); ?>',
             valueField: 'id',
             textField: 'name',
             prompt: 'Choose Customer',

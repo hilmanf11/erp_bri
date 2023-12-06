@@ -15,7 +15,7 @@
             <th rowspan="2" data-options="field:'total_pph',width:100,halign:'center',align:'right',formatter: numberFormat">PPh</th>
             <th rowspan="2" data-options="field:'total_grand',width:100,halign:'center',align:'right',formatter: numberFormat">Grand Total</th>
             <th rowspan="2" data-options="field:'remarks',width:150,halign:'center'">Remarks</th>
-            <th rowspan="2" data-options="field:'attachment',width:150,halign:'center'">Attachment</th>
+            <!-- <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th> -->
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -79,7 +79,7 @@
 
 <!-- Insert & Update -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; height: 600px; padding:10px; top: 20px;">
-    <form id="frm_insert" method="post" novalidate>
+    <form id="frm_insert" method="post" enctype="multipart/form-data" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div style="width: 50%; float: left;">
@@ -125,10 +125,10 @@
                     <span style="width:35%; display:inline-block;">Remarks</span>
                     <input style="width:60%;" name="remarks" id="remarks" class="easyui-textbox">
                 </div>
-                <div class="fitem">
+                <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">Attachment</span>
                     <input style="width:60%;" name="attachment" id="attachment" class="easyui-filebox">
-                </div>
+                </div> -->
             </div>
         </fieldset>
         <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Sales Order Lists" toolbar="#toolbar2"></table>
@@ -211,7 +211,7 @@
         });
 
         $('#customer_id').combobox({
-            url: '<?= base_url('master/customers/reads/'); ?>',
+            url: '<?= base_url('master/customers/readsA/'); ?>',
             valueField: 'id',
             textField: 'name',
             prompt: 'Choose Customer Name',
@@ -876,6 +876,7 @@
                     var delivery_date = $("#delivery_date").datebox('getValue');
                     var customer_address_id = $("#customer_address_id").combobox('getValue');
                     var remarks = $("#remarks").textbox('getValue');
+                    // var attachment = $("#attachment").filebox('getValue');
                     var pph = $("#pph").numberbox('getValue');
                     var taxes = $("#taxes").numberbox('getValue');
                     var total_sub = $("#total_sub").numberbox('getValue');
@@ -903,6 +904,7 @@
                                         delivery_date: delivery_date,
                                         customer_address_id: customer_address_id,
                                         remarks: remarks,
+                                        // attachment: attachment,
                                         total_sub: total_sub,
                                         total_tax: total_tax,
                                         pph: pph,
@@ -949,7 +951,7 @@
     });
 
     $('#filter_customer_id').combobox({
-        url: '<?= base_url('master/customers/reads'); ?>',
+        url: '<?= base_url('master/customers/readsA'); ?>',
         valueField: 'id',
         textField: 'name',
         prompt: 'Choose All',
@@ -987,6 +989,16 @@
             });
         }
     });
+
+    function btnDetails(val, row, index) {
+        var attachment = row.attachment;
+        
+        if (attachment != null && attachment != "") {
+            return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/sales_orders/') ?>'+row.attachment+'" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+        } else {
+            return '-';
+        }
+    }
 
     // $('#division').combobox({
     //     url: '<?= base_url('master/divisions/reads'); ?>',

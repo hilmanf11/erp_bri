@@ -100,7 +100,7 @@ class Generate_mps extends CI_Controller
             $this->db->join('stock_wip c', "a.id = c.item_fg_id and c.p_month = '" . $filter_month . "' and c.p_year = '" . $filter_year . "' and c.revision = '" . $filter_revision . "'", "left");
             $this->db->join('stock_fg d', "a.id = d.item_fg_id and d.p_month = '" . $filter_month . "' and d.p_year = '" . $filter_year . "' and d.revision = '" . $filter_revision . "'", "left");
             $this->db->join('os_mpp e', "a.id = e.item_fg_id and b.customer_id = e.customer_id and e.p_month = '" . $filter_month . "' and e.p_year = '" . $filter_year . "' and e.revision = '" . $filter_revision . "'", "left");
-            $this->db->join('sales_orders f', "a.id = f.item_fg_id and b.customer_id = f.customer_id and f.sales_order_date LIKE '%$period%'", "left");
+            $this->db->join('sales_orders f', "a.id = f.item_fg_id and b.customer_id = f.customer_id and YEAR(f.sales_order_date) = '" . $filter_year . "' and MONTH(f.sales_order_date) = '" . $filter_month . "'", "left"); // Membandingkan tahun dan bulan terpisah dari tanggal
             if ($filter_customer != "") {
                 $this->db->where('b.customer_id', $filter_customer);
             }
@@ -318,7 +318,7 @@ class Generate_mps extends CI_Controller
     {
         $filter_month = base64_decode($this->input->get('filter_month'));
         $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
+        // $filter_revision = base64_decode($this->input->get('filter_revision'));
 
         //Select Query
         $this->db->select('*');
@@ -328,7 +328,7 @@ class Generate_mps extends CI_Controller
             $this->db->where('p_month', $filter_month);
             $this->db->where('p_year', $filter_year);
         }
-        $this->db->like('revision', $filter_revision);
+        // $this->db->like('revision', $filter_revision);
         $records = $this->db->get()->result_array();
 
         if (count($records) > 0) {
@@ -362,21 +362,21 @@ class Generate_mps extends CI_Controller
         }
     }
 
-    public function checkOs()
+    public function checkOs()//sales order
     {
         $filter_month = base64_decode($this->input->get('filter_month'));
         $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
+        // $filter_revision = base64_decode($this->input->get('filter_revision'));
 
         //Select Query
         $this->db->select('*');
-        $this->db->from('stock_so');
+        $this->db->from('sales_orders');
         //$this->db->where('approved_to', '');
         if ($filter_month != "" or $filter_year != "") {
-            $this->db->where('p_month', $filter_month);
-            $this->db->where('p_year', $filter_year);
+            $this->db->where('MONTH(sales_order_date)', $filter_month);
+            $this->db->where('YEAR(sales_order_date)', $filter_year);
         }
-        $this->db->like('revision', $filter_revision);
+        // $this->db->like('revision', $filter_revision);
         $records = $this->db->get()->result_array();
 
         if (count($records) > 0) {
@@ -386,29 +386,29 @@ class Generate_mps extends CI_Controller
         }
     }
 
-    public function checkOstSo()
-    {
-        $filter_month = base64_decode($this->input->get('filter_month'));
-        $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
+    // public function checkOstSo()
+    // {
+    //     $filter_month = base64_decode($this->input->get('filter_month'));
+    //     $filter_year = base64_decode($this->input->get('filter_year'));
+    //     $filter_revision = base64_decode($this->input->get('filter_revision'));
 
-        //Select Query
-        $this->db->select('*');
-        $this->db->from('os_so');
-        //$this->db->where('approved_to', '');
-        if ($filter_month != "" or $filter_year != "") {
-            $this->db->where('p_month', $filter_month);
-            $this->db->where('p_year', $filter_year);
-        }
-        $this->db->like('revision', $filter_revision);
-        $records = $this->db->get()->result_array();
+    //     //Select Query
+    //     $this->db->select('*');
+    //     $this->db->from('os_so');
+    //     //$this->db->where('approved_to', '');
+    //     if ($filter_month != "" or $filter_year != "") {
+    //         $this->db->where('p_month', $filter_month);
+    //         $this->db->where('p_year', $filter_year);
+    //     }
+    //     $this->db->like('revision', $filter_revision);
+    //     $records = $this->db->get()->result_array();
 
-        if (count($records) > 0) {
-            echo json_encode(array("theme" => "success"));
-        } else {
-            echo json_encode(array("theme" => "error"));
-        }
-    }
+    //     if (count($records) > 0) {
+    //         echo json_encode(array("theme" => "success"));
+    //     } else {
+    //         echo json_encode(array("theme" => "error"));
+    //     }
+    // }
 
     public function checkStockWip()
     {
@@ -793,7 +793,7 @@ class Generate_mps extends CI_Controller
                 $this->db->where('a.p_month', $filter_month);
                 $this->db->where('a.p_year', $filter_year);
             }
-            $this->db->where('a.customer_id', $customer['customer_id']);
+            $this->db->where('a.customer_id', $customer['customer_id']);                        //a.os_so field di table generate_mps
             $this->db->where("(a.pp > 0 or a.p1 > 0 or a.p2 > 0 or a.p3 > 0 or a.fg > 0 or a.os_mpp > 0 or a.os_so > 0 or a.total_stock > 0 or a.balance > 0 or b.begin_balance > 0 or b.ito > 0 or b.forecast > 0 or b.delivery_rate > 0 or b.safety_stock > 0 or b.prod_plan > 0)");
             $this->db->like('a.revision', $filter_revision);
             $this->db->like('a.item_fg_id', $filter_product_no);
