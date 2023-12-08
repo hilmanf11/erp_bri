@@ -3,6 +3,7 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
+            <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>
             <th rowspan="2" data-options="field:'id',align:'center',width:100">Part ID</th>
             <th rowspan="2" data-options="field:'number',halign:'center',width:100">Part No</th>
             <th rowspan="2" data-options="field:'name',halign:'center',width:160">Part Name</th>
@@ -16,7 +17,7 @@
             <th rowspan="2" data-options="field:'lifetime',width:100,halign:'center'">Lifetime (days)</th>
             <th rowspan="2" data-options="field:'safety_stock',halign:'center',width:130">Safety Stock (%)</th>
             <th rowspan="2" data-options="field:'status',width:150, styler:cellStyler, formatter:cellFormatter, align:'center'">Status</th>
-            <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>
+            
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
             
@@ -93,6 +94,14 @@
                     <span style="width:35%; display:inline-block;">Safety Stock (%)</span>
                     <input style="width:60%;" name="safety_stock" class="easyui-numberbox">
                 </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Attachment</span>
+                    <input style="width:60%;" name="attachment" id="attachment" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Attachment</span>
+                    <input style="width:60%;" name="attachment_upload" id="attachment_upload" class="easyui-filebox" accept=".jpg, .png, .jpeg, .pdf">
+                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status</span>
                     <select style="width:60%;" name="status" required="" panelHeight="auto" class="easyui-combobox">
@@ -100,10 +109,7 @@
                         <option value="1">Inactive</option>
                     </select>
                 </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Attachment</span>
-                    <input style="width:60%;" name="attachment" id="attachment" class="easyui-filebox" accept=".jpg, .png, .jpeg, .pdf">
-                </div>
+                
             </div>
         </fieldset>
     </form>
@@ -150,6 +156,8 @@
 
         $('#item_family_sub_number').combobox('disable');
         $('#item_family_number').combobox('disable');
+        $('#attachment_upload').filebox('clear');
+        
 
         if (row) {
             $('#dlg_insert').dialog('open');
@@ -431,6 +439,37 @@
             valueField: 'name',
             textField: 'name',
             prompt: "Choose Unit Of Measure"
+        });
+        
+        $('#attachment_upload').filebox({
+        buttonText: 'Browse File',
+        accept: '.jpg, .png, .pdf',
+            onChange: function () {
+                var files = $(this).filebox('files');
+                var formData = new FormData();
+
+                for (var i = 0; i < files.length; i++) {
+                    var file = files[i];
+                    formData.append('file', file, file.name);
+                }
+
+                $.ajax({
+                    url: '<?= base_url('master/item_rm/uploadatt') ?>',
+                    type: 'post',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.success == true) {
+                            toastr.success(data.message);
+                            $('#attachment').textbox('setValue', data.filename); // Mengatur nilai pada textbox
+                        } else {
+                            toastr.error(data.message);
+                        }
+                    }
+                });
+            }
         });
     });
 </script>

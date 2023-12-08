@@ -138,19 +138,18 @@ class Supplier_items extends CI_Controller
         if ($this->input->post()) {
             $post = $this->input->post();
 
-            $supplier_items = $this->crud->read("supplier_items", [], ["supplier_id" => $post['supplier_id'], "item_id" => $post['item_id'], "item_supplier" => $post['item_supplier']]);
-            $supplier_item_histories = $this->crud->read("supplier_item_histories", [], ["supplier_id" => $post['supplier_id'], "item_id" => $post['item_id'], "price" => $post['price']]);
-            
-            if (@$supplier_items->supplier_id != "") {
-                $send = $this->crud->update('supplier_items', ["supplier_id" => $post['supplier_id'], "item_id" => $post['item_id']], $post);
-                if (@$supplier_item_histories->supplier_id == "") {
-                    $send2 = $this->crud->create('supplier_item_histories', $post);
-                }
+            $supplier_items = $this->crud->read("supplier_items", [], ["supplier_id" => $post['supplier_id'], "item_id" => $post['item_id']]);
+            $item_rm = $this->crud->read('item_rm', [], ["id" => $post['item_id']]);
+            $suppliers = $this->crud->read('suppliers', [], ["id" => $post['supplier_id']]);
+
+            if (!empty($supplier_items)) {
+                echo json_encode(array("title" => "Duplicated", "message" => "Supplier Name " . $suppliers->name . " and Part No " . $item_rm->number . " has been inputed please Update previous Data", "theme" => "error"));
             } else {
                 $send = $this->crud->create('supplier_items', $post);
                 $send2 = $this->crud->create('supplier_item_histories', $post);
+                echo $send;
             }
-            echo $send;
+            
         } else {
             show_error("Cannot Process your request");
         }
@@ -166,20 +165,41 @@ class Supplier_items extends CI_Controller
     }
     
 
-      //UPDATE DATA
-      public function update()
-      {
-          if ($this->input->post()) {
-                  $id   = base64_decode($this->input->get('id'));
-                  $post = $this->input->post();
+    public function update()
+    {
+        if ($this->input->post()) {
+                $post = $this->input->post();
+                $id   = $post['id'];
+
+                $datas = array(
+                  'supplier_id' => $post['supplier_id'],
+                  'item_id' => $post['item_id'],
+                  'item_supplier' => $post['item_supplier'],
+                  'price' => $post['price'],
+                  'moq' => $post['moq'],
+                  'mpq' => $post['mpq'],
+                  'leadtime' => $post['leadtime'],
+                  'safety_stock' => $post['safety_stock'],
+                  'calculate' => $post['calculate'],
+                  'valid_date' => $post['valid_date'],
+                  'description' => $post['description']
+
+              );
+
+                $supplier_item = $this->crud->reads("supplier_items", [], $datas);
+  
+              if(count(@$supplier_item) > 0){
+                  show_error("Data tidak ada Perubahan");
+              }else{
                   $send = $this->crud->update('supplier_items', ["id" => $id], $post);
-                  $send = $this->crud->update('supplier_item_histories', ["id" => $id], $post);
+                  $send2 = $this->crud->create('supplier_item_histories', $datas);
                   echo $send;
-              } else {
-                show_error("Cannot Process your request");
-              
-          }
-      }
+              }
+            } else {
+              show_error("Cannot Process your request");
+            
+        }
+    }
  
      //UPLOAD DATA
      public function upload()

@@ -536,6 +536,7 @@
             $("#p_month").combobox('disable');
             $("#p_year").combobox('disable');
 
+
             addTable(row.customer_id, '<?= base_url('planning/forecasts/datatableUpdates?customer_id=') ?>' + btoa(row.customer_id) + "&p_month=" + btoa(row.p_month) + "&p_year=" + btoa(row.p_year) + "&revision=" + btoa(row.revision));
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");

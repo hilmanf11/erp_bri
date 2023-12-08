@@ -163,6 +163,15 @@
                         }
                     }
                 }, {
+                    field: 'id',
+                    width: 150,
+                    hidden: true,
+                    halign: 'center',
+                    title: "ID",
+                    editor: {
+                        type: 'textbox'
+                    }
+                }, {
                     field: 'item_id',
                     width: 150,
                     hidden: true,
@@ -369,7 +378,9 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
+            url_save = '<?= base_url('master/customer_items/update') ?>';
             $("#customer_id").combogrid('disable');
+          
 
             addTable('<?= base_url('master/customer_items/datatableUpdates?customer_id=') ?>' + window.btoa(row.customer_id));
         } else {
@@ -571,9 +582,10 @@
                         if (rows[i].item_id) {
                             $.ajax({
                                 type: "post",
-                                url: '<?= base_url('master/customer_items/create') ?>',
+                                url: url_save,
                                 data: {
                                     customer_id: customer_id,
+                                    id: rows[i].id,
                                     item_id: rows[i].item_id,
                                     item_customer: rows[i].item_customer,
                                     price: rows[i].price,

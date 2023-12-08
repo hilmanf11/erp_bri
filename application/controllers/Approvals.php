@@ -97,6 +97,21 @@ class Approvals extends CI_Controller
         }
     }
 
+    // public function disapproveall()
+    // {
+    //     $created_by = $this->input->post('created_by');
+    //     $approved_to = $this->input->post('approved_to');
+    //     $table_name = $this->input->post('table_name');
+    //     $datas = $this->crud->reads($table_name, [], ["approved_to" => $approved_to, "created_by" => $created_by]);
+
+    //     /* Default */
+    //     foreach ($datas as $data) {
+    //         $send = $this->crud->delete($table_name, ["id" => $data->id]);
+    //     }
+
+    //     echo json_encode(array("title" => "Disapproved", "message" => " All Data Disapproved Successfully", "theme" => "success"));
+    // }
+
     public function disapproveall()
     {
         $created_by = $this->input->post('created_by');
@@ -104,21 +119,37 @@ class Approvals extends CI_Controller
         $table_name = $this->input->post('table_name');
         $datas = $this->crud->reads($table_name, [], ["approved_to" => $approved_to, "created_by" => $created_by]);
 
-        /* Default */
         foreach ($datas as $data) {
-            $send = $this->crud->delete($table_name, ["id" => $data->id]);
+            $id = $data->id;
+            $read = $this->crud->read($table_name, [], ["id" => $id]);
+            $data = json_decode($read->approved_data, false);
+
+            if (empty($data)) {
+                $send = $this->crud->delete($table_name, ["id" => $id]);
+            } else {
+                $send = $this->db->update($table_name, $data, ["id" => $id]);
+            }
         }
 
-        echo json_encode(array("title" => "Disapproved", "message" => "Data Disapproved Successfully", "theme" => "success"));
+        echo json_encode(array("title" => "Disapproved", "message" => "All Data Disapproved Successfully", "theme" => "success"));
     }
+
+
 
     public function disapprove()
     {
         $id = $this->input->post('id');
         $tablename = $this->input->post('tablename');
+        $read = $this->crud->read($tablename, [], ["id" => $id]);
+        $data = json_decode($read->approved_data, false);
 
         /* Default */
-        $send = $this->crud->delete($tablename, ["id" => $id]);
+        if(empty($data)){
+            $send = $this->crud->delete($tablename, ["id" => $id]);
+        }else{
+            $send = $this->db->update($tablename, $data, ["id" => $id]);
+        }
+        
         echo json_encode(array("title" => "Disapproved", "message" => "Data Disapproved Successfully", "theme" => "success"));
     }
 

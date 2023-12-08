@@ -32,7 +32,7 @@ class Item_rm extends CI_Controller
      public function reads()
      {
          $post = isset($_POST['q']) ? $_POST['q'] : "";
-         $send = $this->crud->reads('item_rm', ["name" => $post]);
+         $send = $this->crud->reads('item_rm', ["number" => $post]);
          echo json_encode($send);
      }
 
@@ -105,41 +105,87 @@ class Item_rm extends CI_Controller
      //CREATE DATA
      public function create()
      {
-         if ($this->input->post()) {
-             if ($this->form_validation->run() == TRUE) {
-                 $post   = $this->input->post();
-                 $attachment = $this->crud->upload('attachment', 
-                    ["jpg", "png", "jpeg", "pdf"], 
-                    'assets/image/item_rm/', 
-                    [], 
-                    "item_rm", "attachment");
-                
-                $postFinal = array_merge($post, ["attachment" => $attachment]);
-                $item_rm = $this->crud->create('item_rm', $postFinal);
-                //$email = $this->emails->emailRegistration($post['email'], $post['name'], $post['username'], $post['password']);
-                echo $item_rm;
+        if ($this->input->post()) {
+            if ($this->form_validation->run() == TRUE) {
+                $post   = $this->input->post();
+                $send   = $this->crud->create('item_rm', $post);
+                echo $send;
             } else {
                 show_error(validation_errors());
             }
-         } else {
-             show_error("Cannot Process your request");
-         }
+        } else {
+            show_error("Cannot Process your request");
+        }
      }
     
 
-      //UPDATE DATA
-      public function update()
-      {
-          if ($this->input->post()) {
-                  $id   = base64_decode($this->input->get('id'));
-                  $post = $this->input->post();
-                  $send = $this->crud->update('item_rm', ["id" => $id], $post);
-                  echo $send;
-              } else {
-                show_error("Cannot Process your request");
-        
-          }
-      }
+       //UPDATE DATA
+       public function update()
+       {
+        if ($this->input->post()) {
+            $id   = base64_decode($this->input->get('id'));
+            $post = $this->input->post();
+            $send = $this->crud->update('item_rm', ["id" => $id], $post);
+            echo $send;
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+
+       public function uploadatt()
+    {
+        // Pastikan file disimpan dalam direktori yang diinginkan
+        $uploadDir = 'assets/image/item_rm/';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Pastikan ada file yang diunggah dari permintaan
+            if (isset($_FILES['file'])) {
+                $file = $_FILES['file'];
+
+                // Validasi ekstensi file yang diunggah
+                $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+                $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+                if (!in_array($fileExtension, $allowedExtensions)) {
+                    echo json_encode(['success' => false, 'message' => 'Only files with the extension .pdf, .jpg, or .png are allowed.']);
+                    exit; // Menghentikan proses lebih lanjut jika ekstensi tidak valid
+                }
+
+                // Validasi ukuran file yang diunggah (maksimal 5MB)
+                $maxFileSize = 2 * 1024 * 1024; // 5MB dalam bytes
+                if ($file['size'] > $maxFileSize) {
+                    echo json_encode(['success' => false, 'message' => 'Ukuran file terlalu besar. Maksimal 2MB yang diperbolehkan.']);
+                    exit; // Menghentikan proses lebih lanjut jika ukuran terlalu besar
+                }
+
+                // Pastikan tidak ada error dalam proses upload
+                if ($file['error'] === UPLOAD_ERR_OK) {
+                    // Buat nama unik untuk file yang diunggah
+                    $fileName = uniqid() . '_' . $file['name'];
+                    $uploadPath = $uploadDir . $fileName;
+
+                    // Pindahkan file dari temporary directory ke lokasi yang diinginkan
+                    if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+                        // File berhasil diunggah
+                        echo json_encode(['success' => true, 'message' => 'File Upload Success.', 'filename' => $fileName]);
+                    } else {
+                        // Gagal menyimpan file
+                        echo json_encode(['success' => false, 'message' => 'File Upload Failed.']);
+                    }
+                } else {
+                    // Ada error dalam proses upload
+                    echo json_encode(['success' => false, 'message' => 'Error while Upload.']);
+                }
+            } else {
+                // File tidak ditemukan dalam permintaan
+                echo json_encode(['success' => false, 'message' => 'File Not Found.']);
+            }
+        } else {
+            // Metode request yang diperlukan adalah POST
+            echo json_encode(['success' => false, 'message' => 'Metode request yang diperlukan adalah POST.']);
+        }
+    }
+
      //DELETE DATA
      public function delete()
      {

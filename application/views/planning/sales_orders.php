@@ -15,7 +15,7 @@
             <th rowspan="2" data-options="field:'total_pph',width:100,halign:'center',align:'right',formatter: numberFormat">PPh</th>
             <th rowspan="2" data-options="field:'total_grand',width:100,halign:'center',align:'right',formatter: numberFormat">Grand Total</th>
             <th rowspan="2" data-options="field:'remarks',width:150,halign:'center'">Remarks</th>
-            <!-- <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th> -->
+            <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -125,10 +125,14 @@
                     <span style="width:35%; display:inline-block;">Remarks</span>
                     <input style="width:60%;" name="remarks" id="remarks" class="easyui-textbox">
                 </div>
-                <!-- <div class="fitem">
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Attachment</span>
-                    <input style="width:60%;" name="attachment" id="attachment" class="easyui-filebox">
-                </div> -->
+                    <input style="width:60%;" name="attachment_upload" id="attachment_upload" class="easyui-filebox">
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Attachment</span>
+                    <input style="width:60%;" name="attachment" id="attachment" class="easyui-textbox">
+                </div>
             </div>
         </fieldset>
         <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Sales Order Lists" toolbar="#toolbar2"></table>
@@ -876,7 +880,7 @@
                     var delivery_date = $("#delivery_date").datebox('getValue');
                     var customer_address_id = $("#customer_address_id").combobox('getValue');
                     var remarks = $("#remarks").textbox('getValue');
-                    // var attachment = $("#attachment").filebox('getValue');
+                    var attachment = $("#attachment").textbox('getValue');
                     var pph = $("#pph").numberbox('getValue');
                     var taxes = $("#taxes").numberbox('getValue');
                     var total_sub = $("#total_sub").numberbox('getValue');
@@ -904,7 +908,7 @@
                                         delivery_date: delivery_date,
                                         customer_address_id: customer_address_id,
                                         remarks: remarks,
-                                        // attachment: attachment,
+                                        attachment: attachment,
                                         total_sub: total_sub,
                                         total_tax: total_tax,
                                         pph: pph,
@@ -1052,4 +1056,36 @@
         });
         return "<b>" + formatter.format(value) + "</b>";
     }
+
+    $('#attachment_upload').filebox({
+    buttonText: 'Browse File',
+    accept: '.jpg, .png, .pdf',
+        onChange: function () {
+            var files = $(this).filebox('files');
+            var formData = new FormData();
+
+            for (var i = 0; i < files.length; i++) {
+                var file = files[i];
+                formData.append('file', file, file.name);
+            }
+
+            $.ajax({
+                url: '<?= base_url('planning/sales_orders/uploadatt') ?>',
+                type: 'post',
+                data: formData,
+                contentType: false,
+                processData: false,
+                dataType: 'json',
+                success: function (data) {
+                    if (data.success == true) {
+                        toastr.success(data.message);
+                        $('#attachment').textbox('setValue', data.filename); // Mengatur nilai pada textbox
+                    } else {
+                        toastr.error(data.message);
+                    }
+                }
+            });
+        }
+    });
+
 </script>

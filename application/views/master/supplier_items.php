@@ -160,6 +160,15 @@
                         }
                     }
                 }, {
+                    field: 'id',
+                    width: 150,
+                    hidden: true,
+                    halign: 'center',
+                    title: "ID",
+                    editor: {
+                        type: 'textbox'
+                    }
+                },{
                     field: 'item_id',
                     width: 150,
                     hidden: true,
@@ -359,6 +368,8 @@
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
             $("#supplier_id").combogrid('disable');
+            url_save = '<?= base_url('master/supplier_items/update') ?>'
+            
 
             addTable('<?= base_url('master/supplier_items/datatableUpdates?supplier_id=') ?>' + window.btoa(row.supplier_id));
         } else {
@@ -584,9 +595,10 @@
                         if (rows[i].item_id) {
                             $.ajax({
                                 type: "post",
-                                url: '<?= base_url('master/supplier_items/create') ?>',
+                                url: url_save,
                                 data: {
                                     supplier_id: supplier_id,
+                                    id: rows[i].id,
                                     item_id: rows[i].item_id,
                                     item_supplier: rows[i].item_supplier,
                                     price: rows[i].price,
@@ -698,19 +710,19 @@
         textField: 'number',
         mode: 'remote',
         fitColumns: true,
-        prompt: "Choose Product No.",
+        prompt: "Choose Part No.",
         columns: [
             [{
                 field: 'id',
-                title: 'Product ID',
+                title: 'Part ID',
                 width: 180
             }, {
                 field: 'number',
-                title: 'Product No.',
+                title: 'Part No.',
                 width: 150
             }, {
                 field: 'name',
-                title: 'Product Name',
+                title: 'Part Name',
                 width: 150
             }, ]
         ],

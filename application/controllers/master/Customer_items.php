@@ -145,6 +145,22 @@ class Customer_items extends CI_Controller
             if (isset($_FILES['file'])) {
                 $file = $_FILES['file'];
 
+                // Validasi ekstensi file yang diunggah
+                $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+                $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+                if (!in_array($fileExtension, $allowedExtensions)) {
+                    echo json_encode(['success' => false, 'message' => 'Only files with the extension .pdf, .jpg, or .png are allowed.']);
+                    exit; // Menghentikan proses lebih lanjut jika ekstensi tidak valid
+                }
+
+                // Validasi ukuran file yang diunggah (maksimal 5MB)
+                $maxFileSize = 2 * 1024 * 1024; // 5MB dalam bytes
+                if ($file['size'] > $maxFileSize) {
+                    echo json_encode(['success' => false, 'message' => 'Ukuran file terlalu besar. Maksimal 2MB yang diperbolehkan.']);
+                    exit; // Menghentikan proses lebih lanjut jika ukuran terlalu besar
+                }
+
                 // Pastikan tidak ada error dalam proses upload
                 if ($file['error'] === UPLOAD_ERR_OK) {
                     // Buat nama unik untuk file yang diunggah
@@ -173,6 +189,7 @@ class Customer_items extends CI_Controller
         }
     }
 
+
     
     //CREATE DATA
     public function create()
@@ -180,19 +197,18 @@ class Customer_items extends CI_Controller
         if ($this->input->post()) {
             $post = $this->input->post();
 
-            $customer_items = $this->crud->read("customer_items", [], ["customer_id" => $post['customer_id'], "item_id" => $post['item_id'], "item_customer" => $post['item_customer']]);
-            $customer_item_histories = $this->crud->read("customer_item_histories", [], ["customer_id" => $post['customer_id'], "item_id" => $post['item_id'], "price" => $post['price']]);
-            
-            if (@$customer_items->customer_id != "") {
-                $send = $this->crud->update('customer_items', ["customer_id" => $post['customer_id'], "item_id" => $post['item_id'], "item_id" => $post['item_id']], $post);
-                if (@$customer_item_histories->customer_id == "") {
-                    $send2 = $this->crud->create('customer_item_histories', $post);
-                }
+            $customer_items = $this->crud->read("customer_items", [], ["customer_id" => $post['customer_id'], "item_id" => $post['item_id']]);
+            $item_fg = $this->crud->read('item_fg', [], ["id" => $post['item_id']]);
+            $customers = $this->crud->read('customers', [], ["id" => $post['customer_id']]);
+
+            if (!empty($customer_items)) {
+                echo json_encode(array("title" => "Duplicated", "message" => "Customer Name " . $customers->name . " and Product No " . $item_fg->number . " has been inputed please Update previous Data", "theme" => "error"));
             } else {
                 $send = $this->crud->create('customer_items', $post);
                 $send2 = $this->crud->create('customer_item_histories', $post);
+                echo $send;
             }
-            echo $send;
+            
         } else {
             show_error("Cannot Process your request");
         }
@@ -212,11 +228,28 @@ class Customer_items extends CI_Controller
       public function update()
       {
           if ($this->input->post()) {
-                  $id   = base64_decode($this->input->get('id'));
                   $post = $this->input->post();
-                  $send = $this->crud->update('customer_items', ["id" => $id], $post);
-                  $send = $this->crud->update('customer_item_histories', ["id" => $id], $post);
-                  echo $send;
+                  $id   = $post['id'];
+
+                  $datas = array(
+                    'customer_id' => $post['customer_id'],
+                    'item_id' => $post['item_id'],
+                    'item_customer' => $post['item_customer'],
+                    'attachment' => $post['attachment'],
+                    'price' => $post['price'],
+                    'valid_date' => $post['valid_date'],
+                    'description' => $post['description']
+                );
+
+                  $customer_item = $this->crud->reads("customer_items", [], $datas);
+    
+                if(count(@$customer_item) > 0){
+                    show_error("Data tidak ada Perubahan");
+                }else{
+                    $send = $this->crud->update('customer_items', ["id" => $id], $post);
+                    $send2 = $this->crud->create('customer_item_histories', $datas);
+                    echo $send;
+                }
               } else {
                 show_error("Cannot Process your request");
               
