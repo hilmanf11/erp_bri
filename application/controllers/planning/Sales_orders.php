@@ -339,9 +339,9 @@ class Sales_orders extends CI_Controller
             } else {
                 $customer_items = $this->crud->read('customer_items', [], ["item_id" => $data['item_fg_id'],"customer_id" => $data['customer_id']]);
                 $sales_orders = $this->crud->read('sales_orders', [], ["customer_order_no" => $data['customer_order_no'], "item_fg_id" => $data['item_fg_id']]);
-                
+
                 if (!empty($sales_orders->sales_order_no )) {
-                    echo json_encode(array("title" => "Duplicated", "message" => "Item FG No " . $data['item_fg_id'] . " and Customer Order No " . $data['customer_order_no'] . " Duplicated", "theme" => "error"));
+                    echo json_encode(array("title" => "Duplicated", "message" => "Product ID " . $data['item_fg_id'] . " and Customer Order No " . $data['customer_order_no'] . " Duplicated", "theme" => "error"));
                 } else {
                     $dataFinal = array(
                         //field        //excel

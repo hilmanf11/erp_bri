@@ -73,11 +73,17 @@ class Machines extends CI_Controller
                         $this->db->like("c.name", $filter->value);
 
                     }elseif($filter->field == "item_category_name"){
-                            $this->db->like("d.name", $filter->value);
+                        $this->db->like("d.name", $filter->value);
     
                     }elseif($filter->field == "item_familys_name"){
-                            $this->db->like("e.name", $filter->value);
-    
+                        $this->db->like("e.name", $filter->value);
+                            
+                    }elseif($filter->field == "status" && strtolower($filter->value) === "active") {
+                        $this->db->where("a.status", 0);
+
+                    } elseif($filter->field == "status" && strtolower($filter->value) === "inactive") {
+                        $this->db->where("a.status", 1);
+
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
                     }

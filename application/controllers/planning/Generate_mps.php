@@ -87,12 +87,11 @@ class Generate_mps extends CI_Controller
 
             //Select Query
             $this->db->select('a.id, a.number, a.name, a.leadtime, b.customer_id,
-                COALESCE(c.pp, 0) as pp, 
-                COALESCE(c.p1, 0) as p1, 
-                COALESCE(c.p2, 0) as p2, 
+                COALESCE(c.pp, 0) as pp,  
                 COALESCE(c.p3, 0) as p3,
-                COALESCE(c.pp + c.p1 + c.p2 + c.p3, 0) as total_wip, 
+                COALESCE(c.pp + c.p3, 0) as total_wip, 
                 COALESCE(d.qty, 0) as fg, 
+                COALESCE(a.safety_stock, 0) as safetystockfg, 
                 COALESCE(e.qty, 0) as os_mpp, 
                 COALESCE(SUM(f.qty), 0) as os_so');
             $this->db->from('item_fg a');
@@ -123,8 +122,8 @@ class Generate_mps extends CI_Controller
                 $i = 1;
                 $beginBalance = 0;
                 $forecast = 0;
-                $deliveryRate = 0;
-                $ito = 0;
+                // $deliveryRate = 0;
+                $os_so_qty = 0;
                 $safetyStock = 0;
                 $prodPlan = 0;
                 $arrMonth = array();
@@ -132,8 +131,9 @@ class Generate_mps extends CI_Controller
                 $monthStart = strtotime($filter_year . "-" . $filter_month . "-01");
                 $monthEnd =  strtotime(date('Y-m-d', strtotime('+5 month', strtotime($varBackYear . "-" . $varBackMonth . "-01"))));
 
+                
                 //Cek Forecasts
-                $forecastread = $this->crud->read('forecasts', [], ["item_fg_id" => $data['id'], "customer_id" => $data['customer_id'], "p_month" => $filter_month, "p_year" => $filter_year, "revision" => $filter_revision]);
+                $forecastread = $this->crud->read('forecasts', [], ["item_fg_id" => $data['id'], "customer_id" => $data['customer_id'], "p_month" => $filter_month, "p_year" => $filter_year]);
 
                 while ($monthStart < $monthEnd) {
                     $monthName = date('F Y', $monthStart);
@@ -144,6 +144,19 @@ class Generate_mps extends CI_Controller
 
                     $start2 = strtotime(date('Y-m-01', strtotime('+1 month', $monthStart)));
                     $finish2 = strtotime(date('Y-m-t', strtotime('+1 month', $monthStart)));
+
+
+                    //Cek sales orders
+                    $os_so_qty =$this->db->select_sum('qty'); 
+                                $this->db->from('sales_orders');
+                                $this->db->where('item_fg_id', $data['id']);
+                                $this->db->where('YEAR(sales_order_date)', $filter_year);
+                                $this->db->where('MONTH(sales_order_date)', $filter_month);
+                                
+                    
+                    $result = $this->db->get()->row();
+
+                    $os_so_qty = $result->qty;
 
                     //HKW 1
                     $hkw = 0;
@@ -187,49 +200,50 @@ class Generate_mps extends CI_Controller
                         }
                     }
 
+
                     //Bulan Pertama - Keenam
                     if ($i == 1) {
-                        $beginBalance = $totalStock - $data['os_so'];
+                        $beginBalance = $totalStock - $os_so_qty;
                         $forecastData = @round($forecastread->month_1);
-                        $deliveryRate = @round($forecastData / $hkw);
-                        $ito = @round($beginBalance / $deliveryRate);
-                        $safetyStock = @round(((@$data['leadtime'] + $config->fg_ss) / $hkw2) * $forecastread->month_2);
-                        $prodPlan = @round(($forecastData + $safetyStock) - $beginBalance);
+                        // $deliveryRate = @round($forecastData / $hkw);
+                        // $ito = @round($beginBalance / $deliveryRate);
+                        $safetyStock = @round($forecastread->month_2 * ($data['safetystockfg'] / 100));
+                        $prodPlan = @round($beginBalance - ($forecastData + $safetyStock));
                     } else if ($i == 2) {
                         $beginBalance = (($prodPlan + $beginBalance) - $forecast);
                         $forecastData = @round($forecastread->month_2);
-                        $deliveryRate = @round($forecastData / $hkw);
-                        $ito = @round($beginBalance / $deliveryRate);
-                        $safetyStock = @round(((@$data['leadtime'] + $config->fg_ss) / $hkw2) * $forecastread->month_3);
-                        $prodPlan = @round(($forecastData + $safetyStock) - $beginBalance);
+                        // $deliveryRate = @round($forecastData / $hkw);
+                        // $ito = @round($beginBalance / $deliveryRate);
+                        $safetyStock = @round(($data['safetystockfg'] / 100) * $forecastread->month_3);
+                        $prodPlan = @round($beginBalance - ($forecastData + $safetyStock));
                     } elseif ($i == 3) {
                         $beginBalance = (($prodPlan + $beginBalance) - $forecast);
                         $forecastData = @round($forecastread->month_3);
-                        $deliveryRate = @round($forecastData / $hkw);
-                        $ito = @round($beginBalance / $deliveryRate);
-                        $safetyStock = @round(((@$data['leadtime'] + $config->fg_ss) / $hkw2) * $forecastread->month_4);
-                        $prodPlan = @round(($forecastData + $safetyStock) - $beginBalance);
+                        // $deliveryRate = @round($forecastData / $hkw);
+                        // $ito = @round($beginBalance / $deliveryRate);
+                        $safetyStock = @round(($data['safetystockfg'] / 100) * $forecastread->month_4);
+                        $prodPlan = @round($beginBalance - ($forecastData + $safetyStock));
                     } elseif ($i == 4) {
                         $beginBalance = (($prodPlan + $beginBalance) - $forecast);
                         $forecastData = @round($forecastread->month_4);
-                        $deliveryRate = @round($forecastData / $hkw);
-                        $ito = @round($beginBalance / $deliveryRate);
-                        $safetyStock = @round(((@$data['leadtime'] + $config->fg_ss) / $hkw2) * $forecastread->month_5);
-                        $prodPlan = @round(($forecastData + $safetyStock) - $beginBalance);
+                        // $deliveryRate = @round($forecastData / $hkw);
+                        // $ito = @round($beginBalance / $deliveryRate);
+                        $safetyStock = @round(($data['safetystockfg'] / 100) * $forecastread->month_5);
+                        $prodPlan = @round($beginBalance - ($forecastData + $safetyStock));
                     } elseif ($i == 5) {
                         $beginBalance = (($prodPlan + $beginBalance) - $forecast);
                         $forecastData = @round($forecastread->month_5);
-                        $deliveryRate = @round($forecastData / $hkw);
-                        $ito = @round($beginBalance / $deliveryRate);
-                        $safetyStock = @round(((@$data['leadtime'] + $config->fg_ss) / $hkw2) * $forecastread->month_6);
-                        $prodPlan = @round(($forecastData + $safetyStock) - $beginBalance);
+                        // $deliveryRate = @round($forecastData / $hkw);
+                        // $ito = @round($beginBalance / $deliveryRate);
+                        $safetyStock = @round(($data['safetystockfg'] / 100) * $forecastread->month_6);
+                        $prodPlan = @round($beginBalance - ($forecastData + $safetyStock));
                     } elseif ($i == 6) {
                         $beginBalance = (($prodPlan + $beginBalance) - $forecast);
                         $forecastData = @round($forecastread->month_6);
-                        $deliveryRate = @round($forecastData / $hkw);
-                        $ito = @round($beginBalance / $deliveryRate);
-                        $safetyStock = @round(((@$data['leadtime'] + $config->fg_ss) / $hkw2) * $forecastread->month_6);
-                        $prodPlan = @round(($forecastData + $safetyStock) - $beginBalance);
+                        // $deliveryRate = @round($forecastData / $hkw);
+                        // $ito = @round($beginBalance / $deliveryRate);
+                        $safetyStock = @round(($data['safetystockfg'] / 100) * $forecastread->month_6);
+                        $prodPlan = @round($beginBalance - ($forecastData + $safetyStock));
                     }
 
                     if ($prodPlan <= 0) {
@@ -248,9 +262,10 @@ class Generate_mps extends CI_Controller
                         "ltpp_month2" => $monthName2,
                         "hkw" => "$hkw2",
                         "begin_balance" => "$beginBalance",
-                        "ito" => "$ito",
+                        "os_so" => $os_so_qty,
+                        // "ito" => "$ito",
                         "forecast" => $forecastData,
-                        "delivery_rate" => "$deliveryRate",
+                        // "delivery_rate" => "$deliveryRate",
                         "safety_stock" => "$safetyStock",
                         "prod_plan" => "$prodPlanFinal"
 
@@ -261,8 +276,8 @@ class Generate_mps extends CI_Controller
 
                     $beginBalance = $beginBalance;
                     $forecast = $forecastData;
-                    $deliveryRate = $deliveryRate;
-                    $ito = $ito;
+                    // $deliveryRate = $deliveryRate;
+                    // $ito = $ito;
                     $safetyStock = $safetyStock;
                     $prodPlan = $prodPlanFinal;
                     $balance = (($prodPlan + $beginBalance) - $forecast);
@@ -276,8 +291,6 @@ class Generate_mps extends CI_Controller
                     "item_fg_id" => $data['id'],
                     "wip_month" => strtoupper($monthBack),
                     "pp" => $data['pp'],
-                    "p1" => $data['p1'],
-                    "p2" => $data['p2'],
                     "p3" => $data['p3'],
                     "fg" => $fg,
                     "os_mpp" => $data['os_mpp'],
@@ -385,30 +398,6 @@ class Generate_mps extends CI_Controller
             echo json_encode(array("theme" => "error"));
         }
     }
-
-    // public function checkOstSo()
-    // {
-    //     $filter_month = base64_decode($this->input->get('filter_month'));
-    //     $filter_year = base64_decode($this->input->get('filter_year'));
-    //     $filter_revision = base64_decode($this->input->get('filter_revision'));
-
-    //     //Select Query
-    //     $this->db->select('*');
-    //     $this->db->from('os_so');
-    //     //$this->db->where('approved_to', '');
-    //     if ($filter_month != "" or $filter_year != "") {
-    //         $this->db->where('p_month', $filter_month);
-    //         $this->db->where('p_year', $filter_year);
-    //     }
-    //     $this->db->like('revision', $filter_revision);
-    //     $records = $this->db->get()->result_array();
-
-    //     if (count($records) > 0) {
-    //         echo json_encode(array("theme" => "success"));
-    //     } else {
-    //         echo json_encode(array("theme" => "error"));
-    //     }
-    // }
 
     public function checkStockWip()
     {
@@ -533,9 +522,10 @@ class Generate_mps extends CI_Controller
                     "ltpp_month2" => $postDetail['ltpp_month2'],
                     "hkw" => $postDetail['hkw'],
                     "begin_balance" => $postDetail['begin_balance'],
-                    "ito" => $postDetail['ito'],
+                    "os_so" => $postDetail['os_so'],
+                    // "ito" => $postDetail['ito'],
                     "forecast" => $postDetail['forecast'],
-                    "delivery_rate" => $postDetail['delivery_rate'],
+                    // "delivery_rate" => $postDetail['delivery_rate'],
                     "safety_stock" => $postDetail['safety_stock'],
                     "need" => $postDetail['prod_plan'],
                     "prod_plan" => $postDetail['prod_plan']
@@ -572,8 +562,6 @@ class Generate_mps extends CI_Controller
                 "item_fg_id" => $post['item_fg_id'],
                 "wip_month" => $post['wip_month'],
                 "pp" => $post['pp'],
-                "p1" => $post['p1'],
-                "p2" => $post['p2'],
                 "p3" => $post['p3'],
                 "fg" => $post['fg'],
                 "os_mpp" => $post['os_mpp'],
@@ -708,19 +696,17 @@ class Generate_mps extends CI_Controller
             $monthName = date('F Y', $monthStart);
 
             if ($no == 1) {
-                $xbar = '<th style="text-align:center;" rowspan="2">XBAR</th>';
-                $colspan = '8';
+                // $xbar = '<th style="text-align:center;" rowspan="2">XBAR</th>';
+                $colspan = '6';
             } else {
-                $xbar = "";
-                $colspan = '7';
+                // $xbar = "";
+                $colspan = '6';
             }
 
             $header .= '<th style="text-align:center;" colspan="' . $colspan . '" width="50">' . strtoupper($monthName) . '</th>';
             $headerDetails .= ' <th style="text-align:center;" rowspan="2">BALANCE <br> AWAL</th>
-                                    <th style="text-align:center;" rowspan="2">ITO</th>
-                                    ' . $xbar . '
+                                    <th style="text-align:center;" rowspan="2">SALES <br> ORDER</th>
                                     <th style="text-align:center;" rowspan="2">FC</th>
-                                    <th style="text-align:center;" rowspan="2">DELIVERY <br> RATE</th>
                                     <th style="text-align:center;" rowspan="2">SAFETY <br> STOCK</th>
                                     <th style="text-align:center;" rowspan="2">NEED</th>
                                     <th style="text-align:center;" rowspan="2">PROD <br> PLAN</th>';
@@ -758,18 +744,22 @@ class Generate_mps extends CI_Controller
                 <th style="text-align:center;" rowspan="3" width="50">OST<br>MPP</th>
                 <th style="text-align:center;" rowspan="3" width="50">TOTAL<br>STOCK</th>
                 <th style="text-align:center;" rowspan="3" width="50">OST<br>SO</th>';
+                
         $html .= $header;
+        
         $html .= '
                 <th style="text-align:center;" rowspan="3" width="50">BAL</th>
             </tr>
             <tr>
-                <th style="text-align:center;" colspan="2">STOCK WIP</th>';
+                <th style="text-align:center;" colspan="2">STOCK</th>';
 
         $html .= $headerDetails;
         $html .= '</tr>
+
+        
             <tr>
-                <th style="text-align:center;" width="50">PP</th>
-                <th style="text-align:center;" width="50">STOCK<br>TF</th>
+                <th style="text-align:center;" width="50">STOCK<br>WIP</th>
+                <th style="text-align:center;" width="50">SUBCONT</th>
             </tr>';
 
         foreach ($customers as $customer) {
@@ -794,7 +784,7 @@ class Generate_mps extends CI_Controller
                 $this->db->where('a.p_year', $filter_year);
             }
             $this->db->where('a.customer_id', $customer['customer_id']);                        //a.os_so field di table generate_mps
-            $this->db->where("(a.pp > 0 or a.p1 > 0 or a.p2 > 0 or a.p3 > 0 or a.fg > 0 or a.os_mpp > 0 or a.os_so > 0 or a.total_stock > 0 or a.balance > 0 or b.begin_balance > 0 or b.ito > 0 or b.forecast > 0 or b.delivery_rate > 0 or b.safety_stock > 0 or b.prod_plan > 0)");
+            $this->db->where("(a.pp > 0 or a.p3 > 0 or a.fg > 0 or a.os_mpp > 0 or a.os_so > 0 or a.total_stock > 0 or a.balance > 0 or b.begin_balance > 0 or b.forecast > 0 or b.safety_stock > 0 or b.prod_plan > 0 or b.os_so > 0)");
             $this->db->like('a.revision', $filter_revision);
             $this->db->like('a.item_fg_id', $filter_product_no);
             $this->db->group_by('a.item_fg_id');
@@ -808,7 +798,7 @@ class Generate_mps extends CI_Controller
                             <td>' . $data['item_fg_name'] . '</td>
 
                             <td style="text-align:center;">' . $data['pp'] . '</td>
-                            <td style="text-align:center;">' . ($data['p1'] + $data['p2'] + $data['p3']) . '</td>
+                            <td style="text-align:center;">' . $data['p3'] . '</td>
                             
                             <td style="text-align:center;">' . $data['fg'] . '</td>
                             <td style="text-align:center;">' . $data['os_mpp'] . '</td>
@@ -817,8 +807,7 @@ class Generate_mps extends CI_Controller
 
                 $this->db->select('a.*, b.qty');
                 $this->db->from('generate_mps_details a');
-                $this->db->join('stock_so b', 'a.p_month = b.p_month and a.p_year = b.p_year and a.revision = b.revision and a.item_fg_id = b.item_fg_id', 'left');
-                $this->db->where('a.p_month', $data['p_month']);
+                $this->db->join('stock_so b', 'a.p_month = b.p_month and a.p_year = b.p_year and a.revision = b.revision and a.item_fg_id = b.item_fg_id', 'left');                $this->db->where('a.p_month', $data['p_month']);
                 $this->db->where('a.p_year', $data['p_year']);
                 $this->db->where('a.revision', $data['revision']);
                 $this->db->where('a.customer_id', $data['customer_id']);
@@ -830,22 +819,20 @@ class Generate_mps extends CI_Controller
 
                 $nodetail = 1;
                 foreach ($details2 as $detail2) {
-                    if ($nodetail == 1) {
-                        if ($detail2['qty'] == "") {
-                            $xbarQty = 0;
-                        } else {
-                            $xbarQty = $detail2['qty'];
-                        }
-                        $xbar2 = '<td style="text-align:center;">' . $xbarQty . '</td>';
-                    } else {
-                        $xbar2 = "";
-                    }
+                    // if ($nodetail == 1) {
+                    //     if ($detail2['qty'] == "") {
+                    //         $xbarQty = 0;
+                    //     } else {
+                    //         $xbarQty = $detail2['qty'];
+                    //     }
+                    //     $xbar2 = '<td style="text-align:center;">' . $xbarQty . '</td>';
+                    // } else {
+                    //     $xbar2 = "";
+                    // }
 
                     $html .= '  <td style="text-align:center;">' . $detail2['begin_balance'] . '</td>
-                            <td style="text-align:center;">' . $detail2['ito'] . '</td>
-                            ' . $xbar2 . '
+                            <td style="text-align:center;">' . $detail2['os_so'] . '</td>
                             <td style="text-align:center;">' . $detail2['forecast'] . '</td>
-                            <td style="text-align:center;">' . $detail2['delivery_rate'] . '</td>
                             <td style="text-align:center;">' . $detail2['safety_stock'] . '</td>
                             <td style="text-align:center;">' . $detail2['need'] . '</td>
                             <td style="text-align:center;">' . $detail2['prod_plan'] . '</td>';

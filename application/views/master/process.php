@@ -116,6 +116,7 @@
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
+            fit: true,
             rownumbers: true
         }).datagrid('enableFilter');
 

@@ -14,7 +14,7 @@
             <th rowspan="2" data-options="field:'bank_account',width:150,halign:'center'">Bank Account</th>
             <th rowspan="2" data-options="field:'bank_name',width:150,halign:'center'">Bank Name</th>
             <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
-            <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', styler:styleApproved, formatter:formatApproved">Approved To</th>
+            <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', styler:styleApproved, formatter:formatApproved">Approval Status</th>
             <th rowspan="2" data-options="field:'approved_by',width:100,halign:'center'">Approved by</th>
             <th rowspan="2" data-options="field:'approved_date',width:100,halign:'center'">Approved date</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -365,6 +365,7 @@
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
+            fit: true,
             rownumbers: true
         }).datagrid('enableFilter');
 
@@ -433,7 +434,7 @@
         if (value == 0) {
             return 'Active';
         } else {
-            return 'Not Active';
+            return 'Inactive';
         }
     };
 

@@ -81,6 +81,12 @@ class Item_fg extends CI_Controller
                     }elseif($filter->field == "item_family_sub_name"){
                         $this->db->like("d.name", $filter->value);
 
+                    }elseif($filter->field == "status" && strtolower($filter->value) === "active") {
+                        $this->db->where("a.status", 0);
+
+                    } elseif($filter->field == "status" && strtolower($filter->value) === "inactive") {
+                        $this->db->where("a.status", 1);
+
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
                     }

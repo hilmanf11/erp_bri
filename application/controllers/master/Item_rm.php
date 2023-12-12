@@ -75,17 +75,20 @@ class Item_rm extends CI_Controller
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if($filter->field == "item_category_name"){
-                        $this->db->like("b.name", $filter->value);
-
-                    }elseif($filter->field == "item_familys_name"){
-                        $this->db->like("c.name", $filter->value);
-
-                    }elseif($filter->field == "item_family_sub_name"){
-                        $this->db->like("d.name", $filter->value);
-
-                    }else{
-                        $this->db->like("a.".$filter->field, $filter->value);
+                    if ($filter->field == "item_category_name") {
+                        $this->db->like("b.id", $filter->value);
+                    } elseif ($filter->field == "item_family_name") {
+                        $this->db->like("c.id", $filter->value);
+                    } elseif ($filter->field == "item_sub_family_name") {
+                        $this->db->like("d.id", $filter->value);
+                    } elseif ($filter->field == "status" && strtolower($filter->value) === "active") {
+                        // Tampilkan data dengan status "active" (nilai 0)
+                        $this->db->where("a.status", 0);
+                    } elseif ($filter->field == "status" && strtolower($filter->value) === "inactive") {
+                        // Tampilkan data dengan status "inactive" (nilai 1)
+                        $this->db->where("a.status", 1);
+                    } else {
+                        $this->db->like("a." . $filter->field, $filter->value);
                     }
                 }
             }

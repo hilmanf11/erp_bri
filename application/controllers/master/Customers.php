@@ -67,7 +67,25 @@ class Customers extends CI_Controller
             $this->db->where('deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    $this->db->like($filter->field, $filter->value);
+                    if ($filter->field == "status" && strtolower($filter->value) === "active") {
+                        // Tampilkan data dengan status "active" (nilai 0)
+                        $this->db->where("status", 0);
+                    } elseif ($filter->field == "status" && strtolower($filter->value) === "inactive") {
+                        // Tampilkan data dengan status "inactive" (nilai 1)
+                        $this->db->where("status", 1);
+                    } elseif ($filter->field == "approved_to" && strtolower($filter->value) === "approved") {
+                        // Tampilkan data yang memiliki approved_to kosong atau null
+                        $this->db->group_start();
+                        $this->db->where("approved_to", null);
+                        $this->db->or_where("approved_to", "");
+                        $this->db->group_end();
+                    } elseif ($filter->field == "approved_to" && strtolower($filter->value) === "checking") {
+                        // Tampilkan data yang memiliki approved_to tidak kosong
+                        $this->db->where("approved_to !=", null);
+                        $this->db->where("approved_to !=", "");
+                    } else {
+                        $this->db->like($filter->field, $filter->value);
+                    }                    
                 }
             }
             $this->db->order_by('id', 'asc');

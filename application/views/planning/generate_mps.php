@@ -72,8 +72,8 @@
     <ul>
         <li>TOTAL STOCK = <b>(WIP + FG + OS MPP)</b></li>
         <li>BALANCE AWAL = <b>(TOTAL STOCK - OS SO)</b></li>
-        <li>ITO = <b>(BALANCE AWAL / DELIVERY RATE)</b></li>
-        <li>DELIVERY RATE = <b>(FC / HKW)</b></li>
+        <!-- <li>ITO = <b>(BALANCE AWAL / DELIVERY RATE)</b></li>
+        <li>DELIVERY RATE = <b>(FC / HKW)</b></li> -->
         <li>SAFETY STOCK = <b>((LEADTIME + FG SS) / HKW(next month) x FC(next month))</b></li>
         <li>PROD PLAN = <b>(FC + SAFETY STOCK - BALANCE AWAL)</b></li>
     </ul>
