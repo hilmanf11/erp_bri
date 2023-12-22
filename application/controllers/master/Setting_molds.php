@@ -33,9 +33,18 @@ class Setting_molds extends CI_Controller
      public function reads()
      {
          $post = isset($_POST['q']) ? $_POST['q'] : "";
-         $send = $this->crud->reads('setting_molds', ["name" => $post]);
+         $send = $this->crud->reads('setting_molds', ["item_fg_id" => $post]);
          echo json_encode($send);
      }
+
+     public function readss()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT b.id, b.number, b.name
+            FROM setting_molds a 
+            JOIN item_fg b ON a.item_fg_id = b.id");
+        echo json_encode($send);
+    }
 
      //GET DATATABLES
      public function datatables()

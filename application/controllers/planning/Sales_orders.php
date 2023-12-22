@@ -262,7 +262,6 @@ class Sales_orders extends CI_Controller
         $total_sub = 0;
          for ($i = 7; $i <= $total_row; $i++) {
             $item_fg_number = $data->val($i, 3);
-            $customers_id = $data->val(2, 3);
             $item_fg = $this->crud->read('item_fg', [], ["number" => $item_fg_number]);
 
             if (!empty($item_fg->number)) {

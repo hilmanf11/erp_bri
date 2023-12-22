@@ -177,8 +177,7 @@ class Crud extends CI_Model
         $size = $_FILES[$filename]['size'];
         $temporary = $_FILES[$filename]['tmp_name'];
         $newname  = round(microtime(true)) . '.' . $extension_final;
-        //$fileSave  = base_url($path) . round(microtime(true)) . '.' . $extension_final;
-        $fileSave  = round(microtime(true)) . '.' . $extension_final;
+        $fileSave  = base_url($path) . round(microtime(true)) . '.' . $extension_final;
 
         if (in_array($extension_final, $extension) === true || $file == "") {
             if ($size < 2097152) {

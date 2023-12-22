@@ -379,14 +379,14 @@ class Forecasts extends CI_Controller
 
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/forecasts.txt');
+        @unlink('failed/forecasts.txt');
     }
 
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/forecasts.txt', 'a');
+            $textFailed = fopen('failed/forecasts.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -395,7 +395,7 @@ class Forecasts extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/forecasts.txt";
+        $file = "failed/forecasts.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -426,17 +426,22 @@ class Forecasts extends CI_Controller
 
             //Cek Process Number          //table       //field        //field excel
             $forecasts = $this->crud->read('forecasts', [], ["customer_id" => $data['customer_id'], "item_fg_id" => $data['item_fg_id']]);
-
+            $customer = $this->crud->read('customers', [], ["number" => $data['customer_id']]);
+            $item = $this->crud->read('item_fg', [], ["number" => $data['item_fg_id']]);
 
             if (!empty($forecasts->customer_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Customer " . $data['customer_id'] . " is Duplicate Data", "theme" => "error"));
             } elseif (!empty($forecasts->item_fg_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['item_fg_id'] . " is Duplicate Data", "theme" => "error"));
+            } elseif (empty($customer->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Customer " . $data['customer_id'] . " Not Found", "theme" => "error"));
+            } elseif (empty($item->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Product No. " . $data['item_fg_id'] . " Not Found", "theme" => "error"));
             } else {
                 $dataFinal = array(
                     //field
-                    "customer_id" => $data['customer_id'],
-                    "item_fg_id" => $data['item_fg_id'],
+                    "customer_id" => $customer->id,
+                    "item_fg_id" => $item->id,
                     "document_no" => $autoid,
                     "issued_date" => $data['issued_date'],
                     "p_month" => $data['p_month'],

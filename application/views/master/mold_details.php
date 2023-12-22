@@ -3,10 +3,10 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'customer_id',align:'center',width:100">ID</th>
             <th rowspan="2" data-options="field:'customer_name',halign:'center',width:250">Customer Name</th>
-            <th rowspan="2" data-options="field:'type',halign:'center',width:80">Type</th>
-            <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'type',halign:'center',width:80">Customer Type</th>
+            <th rowspan="2" data-options="field:'currency',halign:'center',width:80">Currency</th>
+            <!-- <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th> -->
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -60,21 +60,6 @@
     </form>
 </div>
 
-<!-- Detail Histories -->
-<div id="dlg_history" class="easyui-dialog" title="Price Histories"  data-options="closed: true,modal:true" style="width: 700px; height: 300px; top: 20px;">
-    <table id="dg_history" class="easyui-datagrid" style="width:100%;">
-        <thead>
-            <tr>
-                <th data-options="field:'item_number',width:100,halign:'center'">Product No</th>
-                <th data-options="field:'price',width:100,halign:'center',formatter: priceformat">Price</th>
-                <th data-options="field:'valid_date',width:100,halign:'center'">Valid Date</th>
-                <th data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>
-                <th data-options="field:'created_date',width:100,halign:'center'">Update Date</th>
-                <th data-options="field:'created_by',width:100,halign:'center'">Update By</th>
-            </tr>
-        </thead>
-    </table>
-</div>
 
 <!-- Upload -->
 <div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
@@ -97,7 +82,7 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/customer_items/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/mold_details/print') ?>" style="width: 100%;" hidden></iframe>
 
 
 <!-- data isian treegrid -->
@@ -106,7 +91,7 @@
     function add() {
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
-        url_save = '<?= base_url('master/customer_items/create') ?>';
+        url_save = '<?= base_url('master/mold_details/create') ?>';
         $('#frm_insert').form('clear');
         $("#customer_id").combogrid('enable');
     }
@@ -124,7 +109,7 @@
                     editor: {
                         type: 'combogrid',
                         options: {
-                            url: '<?= base_url('master/item_fg/reads'); ?>',
+                            url: '<?= base_url('master/setting_molds/readss'); ?>',
                             required: true,
                             panelWidth: 400,
                             idField: 'number',
@@ -156,6 +141,11 @@
                                     index: rowIndex,
                                     field: 'item_id'
                                 });
+                                var ed3 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'total_price'
+                                });
+
 
                                 $(ed.target).textbox('setValue', rows.name);
                                 $(ed2.target).textbox('setValue', rows.id);
@@ -189,100 +179,169 @@
                         type: 'textbox'
                     }
                 }, {
-                    field: 'item_customer',
-                    width: 150,
-                    halign: 'center',
-                    title: "Product Customer",
-                    editor: {
-                        type: 'textbox'
-                    }
-                }, {
                     field: 'price',
                     width: 100,
                     align: 'center',
-                    title: "Price",
+                    title: "Mold <br>Price",
                     editor: {
                         type: 'numberbox',
                         options: {
                             precision: 2,
-                            onChange: function(newValue, oldValue) {
-                                var field = $(this).closest('td[field]').attr('field');
-                                
-                                if (field = 'price' && newValue !== oldValue) {
-                                    toastr.error("Please Upload New Attachment when Price Updated!, Ignore this message when Add New Data.", "Information");
-                                    setTimeout(function() {
-                                        toastr.clear();
-                                    }, 5000);
-                                }
-                            }
                         }
                     }
+                // }, {
+                //     field: 'attachment_upload',
+                //     width: 200,
+                //     halign: 'center',
+                //     title: "Attachment",
+                //     editor:{
+                //         type:'filebox',
+                //         options:{
+                //             // required: true,
+                //             buttonText:'Browse File',
+                //             accept:'.jpg, .png, .pdf',
+                //             onChange: function(){
+                //                 var dg = $('#dg2');
+                //                 var row = dg.datagrid('getSelected');
+                //                 var rowIndex = dg.datagrid('getRowIndex', row);
+
+                //                 var ed = dg.datagrid('getEditor', {
+                //                     index: rowIndex,
+                //                     field: 'attachment'
+                //                 });
+
+                //                 var files = $(this).filebox('files')
+                //                 var formData = new FormData();
+                //                 for(var i=0; i<files.length; i++){
+                //                     var file = files[i];
+                //                     formData.append('file',file,file.name);
+                //                 }
+                //                 $.ajax({
+                //                     url: '<?= base_url('master/mold_details/uploadatt') ?>',
+                //                     type:'post',
+                //                     data: formData,
+                //                     contentType:false,
+                //                     processData:false,
+                //                     dataType: 'json',
+                //                     success:function(data){
+                //                         if(data.success == true){
+                //                             toastr.success(data.message);
+                //                             $(ed.target).textbox('setValue', data.filename);
+                //                         }else{
+                //                             toastr.error(data.message);
+                //                         }
+                //                     }
+                //                 })
+                //             }
+                //         }
+                //     }
                 }, {
-                    field: 'valid_date',
-                    width: 180,
+                    field: 'depreciation',
+                    width: 150,
                     halign: 'center',
-                    align: 'right',
-                    title: "Valid Date",
+                    title: "Depreciation <br>(MONTH)",
                     editor: {
-                        type: 'datebox',
-                        options: {
-                            formatter: myformatter,
-                            parser: myparser
-                        }
+                        type: 'numberbox'
                     }
                 }, {
-                    field: 'attachment_upload',
-                    width: 200,
+                    field: 'qty_depreciation',
+                    width: 150,
                     halign: 'center',
-                    title: "Attachment",
-                    editor:{
-                        type:'filebox',
-                        options:{
-                            // required: true,
-                            buttonText:'Browse File',
-                            accept:'.jpg, .png, .pdf',
-                            onChange: function(){
+                    title: "QTY <br>Depreciation",
+                    editor: {
+                        type: 'numberbox'
+                    }
+                }, {
+                    field: 'product_price',
+                    width: 100,
+                    align: 'center',
+                    title: "Product <br>Price",
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            precision: 2,
+                            onChange: function(product_price) {
                                 var dg = $('#dg2');
                                 var row = dg.datagrid('getSelected');
                                 var rowIndex = dg.datagrid('getRowIndex', row);
 
                                 var ed = dg.datagrid('getEditor', {
                                     index: rowIndex,
-                                    field: 'attachment'
+                                    field: 'total_price'
                                 });
 
-                                var files = $(this).filebox('files')
-                                var formData = new FormData();
-                                for(var i=0; i<files.length; i++){
-                                    var file = files[i];
-                                    formData.append('file',file,file.name);
-                                }
-                                $.ajax({
-                                    url: '<?= base_url('master/customer_items/uploadatt') ?>',
-                                    type:'post',
-                                    data: formData,
-                                    contentType:false,
-                                    processData:false,
-                                    dataType: 'json',
-                                    success:function(data){
-                                        if(data.success == true){
-                                            toastr.success(data.message);
-                                            $(ed.target).textbox('setValue', data.filename);
-                                        }else{
-                                            toastr.error(data.message);
-                                        }
-                                    }
-                                })
+                                var ed2 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'tooling_price'
+                                });
+
+                                var tooling_price = $(ed2.target).numberbox('getValue')
+
+                                var total = (parseInt(tooling_price) + parseInt(product_price));
+                               
+                                $(ed.target).numberbox('setValue', total);
+        
                             }
                         }
                     }
                 }, {
-                    field: 'description',
-                    width: 200,
-                    halign: 'center',
-                    title: "Description",
+                    field: 'tooling_price',
+                    width: 100,
+                    align: 'center',
+                    title: "Tooling <br>Price",
                     editor: {
-                        type: 'textbox'
+                        type: 'numberbox',
+                        options: {
+                            precision: 2,
+                            onChange: function(tooling_price) {
+                                var dg = $('#dg2');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
+
+                                var ed = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'total_price'
+                                });
+
+                                var ed2 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'product_price'
+                                });
+
+                                var product_price = $(ed2.target).numberbox('getValue')
+
+                                var total = (parseInt(tooling_price) + parseInt(product_price));
+                               
+                                $(ed.target).numberbox('setValue', total);
+        
+                            }
+                        }
+                    }
+                }, {
+                    field: 'total_price',
+                    width: 100,
+                    align: 'center',
+                    title: "Total <br>Price",
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            precision: 2,
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'status',
+                    width: 80,
+                    align: 'center',
+                    title: "Status",
+                    editor: {
+                        type: 'combobox',
+                        options: {
+                        data: [
+                        { value: 'OPEN', text: 'OPEN' },{ value: 'CLOSE', text: 'CLOSE' } ],
+                        valueField: 'value',
+                        textField: 'text'
+                        }
                     }
                 }, {
                     field: 'attachment',
@@ -361,7 +420,7 @@
 
         $.ajax({
             method: 'post',
-            url: '<?= base_url('master/customer_items/delete') ?>',
+            url: '<?= base_url('master/mold_details/delete') ?>',
             data: {
                 customer_id: row.customer_id,
                 item_id: item_id
@@ -389,11 +448,11 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/customer_items/update') ?>';
+            url_save = '<?= base_url('master/mold_details/update') ?>';
             $("#customer_id").combogrid('disable');
 
             
-            addTable('<?= base_url('master/customer_items/datatableUpdates?customer_id=') ?>' + window.btoa(row.customer_id));
+            addTable('<?= base_url('master/mold_details/datatableUpdates?customer_id=') ?>' + window.btoa(row.customer_id));
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -409,7 +468,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/customer_items/delete') ?>',
+                            url: '<?= base_url('master/mold_details/delete') ?>',
                             data: {
                                 customer_id: row.customer_id
                             },
@@ -437,7 +496,7 @@
     }
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_customer_items.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_mold_details.xls') ?>');
     }
 
     //FILTER DATA
@@ -449,11 +508,11 @@
             "&filter_item_id=" + window.btoa(filter_item_id);
 
         $('#dg').datagrid({
-            url: '<?= base_url('master/customer_items/datatables') ?>' + url
+            url: '<?= base_url('master/mold_details/datatables') ?>' + url
         });
 
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('master/customer_items/print') ?>' + url);
+        $("#printout").attr('src', '<?= base_url('master/mold_details/print') ?>' + url);
     }
 
     //PRINT PDF
@@ -469,7 +528,7 @@
         var url = "?filter_customer_id=" + window.btoa(filter_customer_id) +
             "&filter_item_id=" + window.btoa(filter_item_id);
 
-        window.location.assign('<?= base_url('master/customer_items/print/excel') ?>' + url);
+        window.location.assign('<?= base_url('master/mold_details/print/excel') ?>' + url);
     }
 
     //RELOAD
@@ -483,7 +542,7 @@
 
         //SETTING DATAGRID EASYUI DETAIL
         $('#dg').datagrid({
-            url: '<?= base_url('master/customer_items/datatables') ?>',
+            url: '<?= base_url('master/mold_details/datatables') ?>',
             pagination: true,
             rownumbers: true,
             // height: '645px',
@@ -498,7 +557,7 @@
                 var filter_item_id = $("#filter_item_id").combogrid('getValue');
 
                 ddv.datagrid({
-                    url: '<?= base_url('master/customer_items/datatableDetails?number=') ?>' + window.btoa(row.customers_number) + "&filter_item_id=" + window.btoa(filter_item_id),
+                    url: '<?= base_url('master/mold_details/datatableDetails?number=') ?>' + window.btoa(row.customers_number) + "&filter_item_id=" + window.btoa(filter_item_id),
                     singleSelect: true,
                     rownumbers: true,
                     columns: [
@@ -513,54 +572,74 @@
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'item_customer',
-                            title: 'Product Customer',
+                            field: 'mold_name',
+                            title: 'Mold Name',
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'currency',
-                            title: 'Currency',
-                            halign: 'center',
+                            field: 'mold_type',
+                            title: 'Mold Type',
+                            align: 'center',
+                            width: 100
+                        }, {
+                            field: 'mold_model',
+                            title: 'Model',
+                            align: 'center',
+                            width: 100
+                        }, {
+                            field: 'standard_cavity',
+                            title: 'Standard <br>Cavity',
+                            align: 'center',
+                            width: 100
+                        }, {
+                            field: 'project_year',
+                            title: 'Project <br>Year',
+                            align: 'center',
                             width: 100
                         }, {
                             field: 'price',
-                            title: 'Price',
+                            title: 'Mold Price',
                             halign: 'center',
                             width: 100,
                             formatter: priceformat
                         }, {
-                            field: 'btn',
-                            title: 'History',
-                            halign: 'center',
-                            width: 80,
-                            formatter: btnHistories
-                        }, {
-                            field: 'valid_date',
-                            title: 'Valid Date',
+                            field: 'depreciation',
+                            title: 'Depreciation <br>(Month)',
                             halign: 'center',
                             width: 100
                         }, {
-                            field: 'description',
-                            title: 'Description',
+                            field: 'qty_depreciation',
+                            title: 'Qty <br>Depreciation',
+                            halign: 'center',
+                            width: 100
+                        }, {
+                            field: 'total_delivery',
+                            title: 'Total <br>Delivery',
+                            halign: 'center',
+                            width: 100
+                        }, {
+                            field: 'product_price',
+                            title: 'Product <br>Price',
+                            halign: 'center',
+                            width: 100,
+                            formatter: priceformat
+                        }, {
+                            field: 'tooling_price',
+                            title: 'Tooling <br>Price',
+                            halign: 'center',
+                            width: 100,
+                            formatter: priceformat
+                        }, {
+                            field: 'total_price',
+                            title: 'Total <br>Price',
+                            halign: 'center',
+                            width: 100,
+                            formatter: priceformat
+                        }, {
+                            field: 'status',
+                            title: 'Status',
                             width: 200,
                             halign: 'center',
-                        }, {
-                            field: 'approved_to',
-                            title: 'Approved',
-                            align: 'center',
-                            width: 100,
-                            styler: styleApproved, 
-                            formatter: formatApproved
-                        }, {
-                            field: 'approved_by',
-                            title: 'Approved By',
-                            halign: 'center',
-                            width: 100
-                        }, {
-                            field: 'approved_date',
-                            title: 'Approved Date',
-                            halign: 'center',
-                            width: 150
                         }]
                     ],
                     onResize: function() {
@@ -577,69 +656,61 @@
             
         });
 
-        //SAVE DATA
+            //SAVE DATA
         $('#dlg_insert').dialog({
-    buttons: [{
-        text: 'Save All',
-        iconCls: 'icon-ok',
-        handler: function() {
-            var customer_id = $("#customer_id").combogrid('getValue');
-            var rows = $('#dg2').datagrid('getRows');
-            var totalrows = rows.length;
-            var changesDetected = false;
+            buttons: [{
+                text: 'Save All',
+                iconCls: 'icon-ok',
+                handler: function() {
+                    var customer_id = $("#customer_id").combogrid('getValue');
+                    
+                    var rows = $('#dg2').datagrid('getRows');
+                    var totalrows = rows.length;
+                    var changesDetected = false;
 
-            endEditing();
+                    endEditing();
 
-            for (let i = 0; i < totalrows; i++) {
-                if (rows[i].item_id) {
-                    var originalPrice = rows[i].price; // Ganti dengan properti yang sesuai untuk menyimpan harga awal dari database
-                    if (rows[i].price !== originalPrice) {
-                        changesDetected = true; // Tandai bahwa ada perubahan pada price
+                    for (let i = 0; i < totalrows; i++) {
+                        if (rows[i].item_id) {
+                            $.ajax({
+                                type: "post",
+                                url: url_save,
+                                data: {
+                                    customer_id: customer_id,
+                                    id: rows[i].id,
+                                    item_id: rows[i].item_id,
+                                    price: rows[i].price,
+                                    depreciation: rows[i].depreciation,
+                                    qty_depreciation: rows[i].qty_depreciation,
+                                    product_price: rows[i].product_price,
+                                    tooling_price: rows[i].tooling_price,
+                                    total_price: rows[i].total_price,
+                                    status: rows[i].status
+                                },
+                                dataType: "json",
+                                success: function(result) {
+                                    if (i == (totalrows - 1)) {
+                                        Swal.fire({
+                                            title: result.message,
+                                            icon: result.theme,
+                                            confirmButtonText: 'Ok',
+                                            allowOutsideClick: false,
+                                        }).then((result) => {
+                                            if (result.isConfirmed) {
+                                                window.location.reload();
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+                        }
                     }
 
-                    // Lakukan pengiriman data melalui AJAX
-                    $.ajax({
-                        type: "post",
-                        url: url_save,
-                        data: {
-                            customer_id: customer_id,
-                            id: rows[i].id,
-                            item_id: rows[i].item_id,
-                            item_customer: rows[i].item_customer,
-                            price: rows[i].price,
-                            valid_date: rows[i].valid_date,
-                            attachment: rows[i].attachment,
-                            description: rows[i].description
-                        },
-                        dataType: "json",
-                        success: function(result) {
-                            if (i == (totalrows - 1)) {
-                                Swal.fire({
-                                    title: result.message,
-                                    icon: result.theme,
-                                    confirmButtonText: 'Ok',
-                                    allowOutsideClick: false,
-                                }).then((result) => {
-                                    if (result.isConfirmed) {
-                                        window.location.reload();
-                                    }
-                                });
-                            }
-                        }
-                    });
+                    $('#dg').datagrid('reload');
+                    $('#dlg_insert').dialog('close');
                 }
-            }
-
-            // Setelah pengiriman data selesai, terapkan validasi untuk file attachment jika ada perubahan pada price
-            if (changesDetected) {
-                $('#attachment_upload').filebox('textbox').validatebox({ required: true });
-            }
-
-            $('#dg').datagrid('reload');
-            $('#dlg_insert').dialog('close');
-        }
-    }]
-});
+            }]
+        });
 
     });
     
@@ -797,6 +868,14 @@
         }
     }
 
+    // function typeFormat(value, row){
+    //     if (value === 'EX') {
+    //         return 'EXTERNAL';
+    //     } else {
+    //         return 'INTERNAL';
+    //     }
+    // }
+
     function priceformat(value, row) {
         if (row.currency == "USD") {
             var digits = 4;
@@ -830,7 +909,7 @@
         var attachment = row.attachment;
         
         if (attachment != null && attachment != "") {
-            return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/customer_items/') ?>'+row.attachment+'" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+            return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/mold_details/') ?>'+row.attachment+'" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
         } else {
             return '-';
         }
@@ -845,7 +924,7 @@
     function viewHistories(customer_id, item_id) {
         $("#dlg_history").dialog('open');
         $('#dg_history').datagrid({
-            url: '<?= base_url('master/customer_items/datatableHistories?customer_id=') ?>' + btoa(customer_id) + "&item_id=" + btoa(item_id),
+            url: '<?= base_url('master/mold_details/datatableHistories?customer_id=') ?>' + btoa(customer_id) + "&item_id=" + btoa(item_id),
             pagination: false,
             rownumbers: true,
         });
@@ -856,14 +935,14 @@
         buttons: [{
             text: 'List Failed',
             handler: function() {
-                window.open('<?= base_url('master/customer_items/uploadDownloadFailed') ?>', '_blank');
+                window.open('<?= base_url('master/mold_details/uploadDownloadFailed') ?>', '_blank');
             }
         }, {
             text: 'Upload',
             iconCls: 'icon-ok',
             handler: function() {
                 $('#frm_upload').form('submit', {
-                    url: '<?= base_url('master/customer_items/upload') ?>',
+                    url: '<?= base_url('master/mold_details/upload') ?>',
                     onSubmit: function() {
                         if ($(this).form('validate') == false) {
                             return $(this).form('validate');
@@ -878,7 +957,7 @@
                         $.messager.progress('close');
                         //Clear File
                         $.ajax({
-                            url: "<?= base_url('master/customer_items/uploadclearFailed') ?>"
+                            url: "<?= base_url('master/mold_details/uploadclearFailed') ?>"
                         });
                         var json = eval('(' + result + ')');
                         requestData(json.total, json);
@@ -893,7 +972,7 @@
                                 $.ajax({
                                     type: "POST",
                                     async: true,
-                                    url: "<?= base_url('master/customer_items/uploadCreate') ?>",
+                                    url: "<?= base_url('master/mold_details/uploadCreate') ?>",
                                     data: {
                                         "data": json[number - 1]
                                     },
@@ -911,7 +990,7 @@
                                             $.ajax({
                                                 type: "POST",
                                                 async: true,
-                                                url: "<?= base_url('master/customer_items/uploadcreateFailed') ?>",
+                                                url: "<?= base_url('master/mold_details/uploadcreateFailed') ?>",
                                                 data: {
                                                     data: json[number - 1],
                                                     message: result.message

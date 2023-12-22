@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Customer_items extends CI_Controller
+class Mold_details extends CI_Controller
 {
     public function __construct()
     {
@@ -12,8 +12,7 @@ class Customer_items extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('customer_id', 'Customer', 'required|min_length[1]|max_length[20]|is_unique[customer_items.customer_id]');
-        $this->form_validation->set_rules('item_id', 'Code', 'required|min_length[1]|max_length[30]|is_unique[customer_items.item_id]');
+        $this->form_validation->set_rules('customer_id', 'Customer', 'required|min_length[1]|max_length[20]|is_unique[mold_details.customer_id]');
         
     }
     //HALAMAN UTAMA
@@ -24,7 +23,7 @@ class Customer_items extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('master/customer_items');
+            $this->load->view('master/mold_details');
         } else {
             redirect('error_access');
         }
@@ -34,7 +33,7 @@ class Customer_items extends CI_Controller
     {
         $customer_id = base64_decode($customer_id);
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT b.id, b.number, b.name, a.price FROM customer_items a 
+        $send = $this->crud->query("SELECT b.id, b.number, b.name, a.price FROM mold_details a 
             JOIN item_fg b ON a.item_id = b.id 
             WHERE a.customer_id = '$customer_id' and (b.number LIKE '%$post%' or b.name LIKE '%$post%')");
         echo json_encode($send);
@@ -56,12 +55,11 @@ class Customer_items extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
              //Select Query
-            $this->db->select('b.number as customers_number, b.name as customer_name, b.type, b.id as customer_id, b.status, a.created_by, a.created_date, a.updated_by, a.updated_date');
-            $this->db->from('customer_items a');
+            $this->db->select('b.number as customers_number, b.currency, b.name as customer_name, b.type, b.id as customer_id, b.status, a.created_by, a.created_date, a.updated_by, a.updated_date');
+            $this->db->from('mold_details a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->like('a.item_id', $filter_item_id);
-            $this->db->where('b.status', "0");
             $this->db->group_by('b.name');
             $this->db->order_by('b.id', 'ASC');
             //Total Data
@@ -84,15 +82,18 @@ class Customer_items extends CI_Controller
             $number = base64_decode($this->input->get('number'));
             $filter_customer_id = base64_decode($this->input->get('filter_customer_id'));
 
-            $this->db->select('a.*, b.currency, c.number as item_number, c.name as item_name, c.moq as item_moq, c.mpq as item_mpq, c.leadtime as item_leadtime, c.safety_stock as item_safety_stock');
-            $this->db->from('customer_items a');
+            $this->db->select('a.*, c.number as item_number, c.name as item_name, d.name as mold_name, d.type as mold_type, d.model as mold_model, d.standard as standard_cavity, d.project_year as project_year');
+            $this->db->from('mold_details a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_id = c.id');
+            $this->db->join('setting_molds e', 'a.item_id = e.item_fg_id');
+            $this->db->join('molds d', 'e.mold_id = d.id');
             $this->db->where('b.number', $number);
             $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->group_by('a.id');
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
+
 
             echo json_encode($records);
         }
@@ -105,7 +106,7 @@ class Customer_items extends CI_Controller
              $customer_id = base64_decode($this->input->get('customer_id'));
 
             $this->db->select('a.*,  c.number as item_number, c.name as item_name');
-            $this->db->from('customer_items a');
+            $this->db->from('mold_details a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_id = c.id');
             $this->db->where('a.customer_id', $customer_id);
@@ -116,78 +117,59 @@ class Customer_items extends CI_Controller
          }
      }
 
-      // GET DATATABLE HISTORY PRICE
-    public function datatableHistories()
-    {
-        if ($this->input->get()) {
-            $customer_id = base64_decode($this->input->get('customer_id'));
-            $item_id = base64_decode($this->input->get('item_id'));
+    // public function uploadatt()
+    // {
+    //     // Pastikan file disimpan dalam direktori yang diinginkan
+    //     $uploadDir = 'assets/image/mold_details/';
 
-            $this->db->select('a.*,  c.number as item_number');
-            $this->db->from('customer_item_histories a');
-            $this->db->join('item_fg c', 'a.item_id = c.id');
-            $this->db->where('a.customer_id', $customer_id);
-            $this->db->where('a.item_id', $item_id);
-            $this->db->order_by('a.valid_date , a.created_date', 'DESC');
-            $records = $this->db->get()->result_array();
+    //     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    //         // Pastikan ada file yang diunggah dari permintaan
+    //         if (isset($_FILES['file'])) {
+    //             $file = $_FILES['file'];
 
-            echo json_encode($records);
-        }
-    }
+    //             // Validasi ekstensi file yang diunggah
+    //             $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+    //             $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
 
-    public function uploadatt()
-    {
-        // Pastikan file disimpan dalam direktori yang diinginkan
-        $uploadDir = 'assets/image/customer_items/';
+    //             if (!in_array($fileExtension, $allowedExtensions)) {
+    //                 echo json_encode(['success' => false, 'message' => 'Only files with the extension .pdf, .jpg, or .png are allowed.']);
+    //                 exit; // Menghentikan proses lebih lanjut jika ekstensi tidak valid
+    //             }
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Pastikan ada file yang diunggah dari permintaan
-            if (isset($_FILES['file'])) {
-                $file = $_FILES['file'];
+    //             // Validasi ukuran file yang diunggah (maksimal 5MB)
+    //             $maxFileSize = 2 * 1024 * 1024; // 5MB dalam bytes
+    //             if ($file['size'] > $maxFileSize) {
+    //                 echo json_encode(['success' => false, 'message' => 'Ukuran file terlalu besar. Maksimal 2MB yang diperbolehkan.']);
+    //                 exit; // Menghentikan proses lebih lanjut jika ukuran terlalu besar
+    //             }
 
-                // Validasi ekstensi file yang diunggah
-                $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
-                $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    //             // Pastikan tidak ada error dalam proses upload
+    //             if ($file['error'] === UPLOAD_ERR_OK) {
+    //                 // Buat nama unik untuk file yang diunggah
+    //                 $fileName = uniqid() . '_' . $file['name'];
+    //                 $uploadPath = $uploadDir . $fileName;
 
-                if (!in_array($fileExtension, $allowedExtensions)) {
-                    echo json_encode(['success' => false, 'message' => 'Only files with the extension .pdf, .jpg, or .png are allowed.']);
-                    exit; // Menghentikan proses lebih lanjut jika ekstensi tidak valid
-                }
-
-                // Validasi ukuran file yang diunggah (maksimal 5MB)
-                $maxFileSize = 2 * 1024 * 1024; // 5MB dalam bytes
-                if ($file['size'] > $maxFileSize) {
-                    echo json_encode(['success' => false, 'message' => 'Ukuran file terlalu besar. Maksimal 2MB yang diperbolehkan.']);
-                    exit; // Menghentikan proses lebih lanjut jika ukuran terlalu besar
-                }
-
-                // Pastikan tidak ada error dalam proses upload
-                if ($file['error'] === UPLOAD_ERR_OK) {
-                    // Buat nama unik untuk file yang diunggah
-                    $fileName = uniqid() . '_' . $file['name'];
-                    $uploadPath = $uploadDir . $fileName;
-
-                    // Pindahkan file dari temporary directory ke lokasi yang diinginkan
-                    if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-                        // File berhasil diunggah
-                        echo json_encode(['success' => true, 'message' => 'File Upload Success.', 'filename' => $fileName]);
-                    } else {
-                        // Gagal menyimpan file
-                        echo json_encode(['success' => false, 'message' => 'File Upload Failed.']);
-                    }
-                } else {
-                    // Ada error dalam proses upload
-                    echo json_encode(['success' => false, 'message' => 'Error while Upload.']);
-                }
-            } else {
-                // File tidak ditemukan dalam permintaan
-                echo json_encode(['success' => false, 'message' => 'File Not Found.']);
-            }
-        } else {
-            // Metode request yang diperlukan adalah POST
-            echo json_encode(['success' => false, 'message' => 'Metode request yang diperlukan adalah POST.']);
-        }
-    }
+    //                 // Pindahkan file dari temporary directory ke lokasi yang diinginkan
+    //                 if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+    //                     // File berhasil diunggah
+    //                     echo json_encode(['success' => true, 'message' => 'File Upload Success.', 'filename' => $fileName]);
+    //                 } else {
+    //                     // Gagal menyimpan file
+    //                     echo json_encode(['success' => false, 'message' => 'File Upload Failed.']);
+    //                 }
+    //             } else {
+    //                 // Ada error dalam proses upload
+    //                 echo json_encode(['success' => false, 'message' => 'Error while Upload.']);
+    //             }
+    //         } else {
+    //             // File tidak ditemukan dalam permintaan
+    //             echo json_encode(['success' => false, 'message' => 'File Not Found.']);
+    //         }
+    //     } else {
+    //         // Metode request yang diperlukan adalah POST
+    //         echo json_encode(['success' => false, 'message' => 'Metode request yang diperlukan adalah POST.']);
+    //     }
+    // }
 
 
     
@@ -197,15 +179,14 @@ class Customer_items extends CI_Controller
         if ($this->input->post()) {
             $post = $this->input->post();
 
-            $customer_items = $this->crud->read("customer_items", [], ["customer_id" => $post['customer_id'], "item_id" => $post['item_id']]);
+            $mold_details = $this->crud->read("mold_details", [], ["customer_id" => $post['customer_id'], "item_id" => $post['item_id']]);
             $item_fg = $this->crud->read('item_fg', [], ["id" => $post['item_id']]);
             $customers = $this->crud->read('customers', [], ["id" => $post['customer_id']]);
 
-            if (!empty($customer_items)) {
+            if (!empty($mold_details)) {
                 echo json_encode(array("title" => "Duplicated", "message" => "Customer Name " . $customers->name . " and Product No " . $item_fg->number . " has been inputed please Update previous Data", "theme" => "error"));
             } else {
-                $send = $this->crud->create('customer_items', $post);
-                $send2 = $this->crud->create('customer_item_histories', $post);
+                $send = $this->crud->create('mold_details', $post);
                 echo $send;
             }
             
@@ -218,8 +199,7 @@ class Customer_items extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('customer_items', $data);
-        $send = $this->crud->delete('customer_item_histories', $data);
+        $send = $this->crud->delete('mold_details', $data);
         echo $send;
     }
     
@@ -234,21 +214,22 @@ class Customer_items extends CI_Controller
                   $datas = array(
                     'customer_id' => $post['customer_id'],
                     'item_id' => $post['item_id'],
-                    'item_customer' => $post['item_customer'],
-                    'attachment' => $post['attachment'],
                     'price' => $post['price'],
-                    'valid_date' => $post['valid_date'],
-                    'description' => $post['description']
+                    'depreciation' => $post['depreciation'],
+                    'qty_depreciation' => $post['qty_depreciation'],
+                    'product_price' => $post['product_price'],
+                    'tooling_price' => $post['tooling_price'],
+                    'total_price' => $post['total_price'],
+                    'status' => $post['status']
                 );
 
-                  $customer_item = $this->crud->reads("customer_items", [], $datas);
+                  $mold_details = $this->crud->reads("mold_details", [], $datas);
 
 
-                if(count(@$customer_item) > 0){
+                if(count(@$mold_details) > 0){
                     show_error("Data tidak ada Perubahan");
                 }else{
-                    $send = $this->crud->update('customer_items', ["id" => $id], $post);
-                    $send2 = $this->crud->create('customer_item_histories', $datas);
+                    $send = $this->crud->update('mold_details', ["id" => $id], $post);
                     echo $send;
                 }
               } else {
@@ -273,10 +254,12 @@ class Customer_items extends CI_Controller
                  //excel
                  'customer_id' => $data->val($i, 2),
                  'product_no' => $data->val($i, 3),
-                 'product_customer' => $data->val($i, 4),
-                 'price' => $data->val($i, 5),
-                 'valid_date' => $data->val($i, 6),
-                 'description' => $data->val($i, 7)
+                 'price' => $data->val($i, 4),
+                 'depreciation' => $data->val($i, 5),
+                 'qty_depreciation' => $data->val($i, 6),
+                 'product_price' => $data->val($i, 7),
+                 'tooling_price' => $data->val($i, 8),
+                 'status' => $data->val($i, 9)
                  
              );
          }
@@ -286,13 +269,13 @@ class Customer_items extends CI_Controller
      }
      public function uploadclearFailed()
      {
-         @unlink('failed/customer_items.txt');
+         @unlink('failed/mold_details.txt');
      }
      public function uploadcreateFailed()
      {
          if ($this->input->post()) {
              $message = $this->input->post('message');
-             $textFailed = fopen('failed/customer_items.txt', 'a');
+             $textFailed = fopen('failed/mold_details.txt', 'a');
              fwrite($textFailed, $message . "\n");
              fclose($textFailed);
          }
@@ -301,7 +284,7 @@ class Customer_items extends CI_Controller
      //UPLOAD DOWNLOAD FAILED
      public function uploadDownloadFailed()
      {
-         $file = "failed/customer_items.txt";
+         $file = "failed/mold_details.txt";
          header('Content-Description: File Failed');
          header('Content-Disposition: attachment; filename=' . basename($file));
          header('Expires: 0');
@@ -316,30 +299,36 @@ class Customer_items extends CI_Controller
      public function uploadcreate()
      {
         if ($this->input->post()) {
-            $data       = $this->input->post('data');
+            $data = $this->input->post('data');
 
              //Cek Process Number     //table        //field           //field excel
              $item = $this->crud->read('item_fg', [], ["id" => $data['product_no']]);
              $customer = $this->crud->read('customers', [], ["number" => $data['customer_id']]);
-             $customer_items = $this->crud->read('customer_items', [], ["item_id" => @$item->id, "customer_id" => $data['customer_id']] );
+             $setting_molds = $this->crud->read('setting_molds',[],["item_fg_id"=> $data['product_no']]);
+             $mold_details = $this->crud->read('mold_details', [], ["item_id" => @$item->id, "customer_id" => $data['customer_id']] );
 
             if (empty($item->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Product ID " . $data['product_no'] . " Not Found", "theme" => "error"));
             } elseif (empty($customer->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Customer " . $data['customer_id'] . " Not Found", "theme" => "error"));
-            } elseif (!empty($customer_items->item_id)) {
+            } elseif (empty($setting_molds->item_fg_id)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Product ID " . $data['product_no'] . " Not Found in Setting Molds", "theme" => "error"));
+            } elseif (!empty($mold_details->item_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['product_no'] . " Duplicate Data", "theme" => "error"));
             } else {
                  $dataFinal = array(
                      //field        //excel
                      "customer_id" => $customer->id,
                      "item_id" => $data['product_no'],
-                     "item_customer" => $data['product_customer'],
                      "price" => $data['price'],
-                     "valid_date" => $data['valid_date'],
-                     "description" => $data['description'],
+                     "depreciation" => $data['depreciation'],
+                     "qty_depreciation" => $data['qty_depreciation'],
+                     "product_price" => $data['product_price'],
+                     "tooling_price" => $data['tooling_price'],
+                     "total_price" => ($data['tooling_price'] + $data['tooling_price']) ,
+                     "status" => $data['status'],
                  );
-                 $send= $this->crud->create('customer_items', $dataFinal);
+                 $send= $this->crud->create('mold_details', $dataFinal);
                  echo $send;
              }
          }
@@ -351,7 +340,7 @@ class Customer_items extends CI_Controller
         if ($option == "excel") {
             $format = date("Ymd");
             header("Content-type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            header("Content-Disposition: attachment; filename=customer_items_$format.xls");
+            header("Content-Disposition: attachment; filename=mold_details_$format.xls");
          }
 
          $get = $this->input->get();
@@ -363,15 +352,17 @@ class Customer_items extends CI_Controller
          $this->db->from('config');
          $config = $this->db->get()->row();
  
-         $this->db->select('a.*, b.name as customer_name, b.currency, b.id as customer_id, c.number as item_number, c.name as item_name');
-         $this->db->from('customer_items a');
+         $this->db->select('a.*, b.name as customer_name, b.currency, b.id as customer_id, c.number as item_number, c.name as item_name , d.name as mold_name, d.type as mold_type, d.model as mold_model, d.standard as standard_cavity, d.project_year as project_year');
+         $this->db->from('mold_details a');
          $this->db->join('customers b', 'a.customer_id = b.id');
          $this->db->join('item_fg c', 'a.item_id = c.id');
+         $this->db->join('setting_molds e', 'a.item_id = e.item_fg_id');
+         $this->db->join('molds d', 'e.mold_id = d.id');
          $this->db->like('a.customer_id', $filter_customer_id);
          $this->db->like('a.item_id', $filter_item_id);
          $this->db->order_by('a.customer_id', 'ASC');
          $records = $this->db->get()->result_array();
-         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customer_items {border-collapse: collapse;width: 100%;font-size: 12px;}#customer_items td, #customer_items th {border: 1px solid #ddd;padding: 2px;}#customer_items tr:nth-child(even){background-color: #f2f2f2;}#customer_items tr:hover {background-color: #ddd;}#customer_items th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#mold_details {border-collapse: collapse;width: 100%;font-size: 12px;}#mold_details td, #mold_details th {border: 1px solid #ddd;padding: 2px;}#mold_details tr:nth-child(even){background-color: #f2f2f2;}#mold_details tr:hover {background-color: #ddd;}#mold_details th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
          <center>
              <div style="float: left; font-size: 12px; text-align: left;">
                  <table style="width: 100%;">
@@ -395,18 +386,27 @@ class Customer_items extends CI_Controller
              </div>
          </center>
          
-         <table id="customer_items" border="1">
+         <table id="mold_details" border="1">
              <tr>
                  <th width="20">No</th>
                  <th>ID</th>
                  <th>Customer Name</th>
                  <th>Product No</th>
                  <th>Product Name</th>
-                 <th>Product Customer</th>
                  <th>Currency</th>
-                 <th>Price</th>
-                 <th>Valid Date</th>
-                 <th>Description</th>
+                 <th>Mold Name</th>
+                 <th>Mold Type</th>
+                 <th>Model</th>
+                 <th>Standard Cavity</th>
+                 <th>Project Year</th>
+                 <th>Mold Price</th>
+                 <th>Depreciation (MONTH)</th>
+                 <th>QTY Depreciation</th>
+                 <th>Total Delivery</th>
+                 <th>Product Price</th>
+                 <th>Tooling Price</th>
+                 <th>Total Price</th>
+                 <th>Status</th>
              </tr>';
          $no = 1;
          foreach ($records as $data) {
@@ -423,11 +423,20 @@ class Customer_items extends CI_Controller
                          <td>' . $data['customer_name'] . '</td>
                          <td>' . $number . '</td>
                          <td>' . $data['item_name'] . '</td>
-                         <td>' . $data['item_customer'] . '</td>
                          <td>' . $data['currency'] . '</td>
+                         <td>' . $data['mold_name'] . '</td>
+                         <td>' . $data['mold_type'] . '</td>
+                         <td>' . $data['mold_model'] . '</td>
+                         <td>' . $data['standard_cavity'] . '</td>
+                         <td>' . $data['project_year'] . '</td>
                          <td>'. number_format($data['price']) . '</td>
-                         <td>' . $data['valid_date'] . '</td>
-                         <td>' . $data['description'] . '</td>
+                         <td>' . $data['depreciation'] . '</td>
+                         <td>' . $data['qty_depreciation'] . '</td>
+                         <td>' . $data['total_delivery'] . '</td>
+                         <td>' . $data['product_price'] . '</td>
+                         <td>' . $data['tooling_price'] . '</td>
+                         <td>' . $data['total_price'] . '</td>
+                         <td>' . $data['status'] . '</td>
                      </tr>';
              $no++;
          }

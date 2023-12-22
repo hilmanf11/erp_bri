@@ -39,9 +39,10 @@ class Customers extends CI_Controller
     public function readsA()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('customers', ["name" => $post], ["status"=>"0"]);
+        $send = $this->crud->query("SELECT * FROM customers WHERE name LIKE '%$post%' AND `status` = '0' AND (`approved_to` IS NULL OR `approved_to` = '')");
         echo json_encode($send);
     }
+
 
     public function readAddress($customer_id)
     {

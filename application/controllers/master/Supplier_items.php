@@ -38,6 +38,24 @@ class Supplier_items extends CI_Controller
          echo json_encode($send);
      }
 
+     public function readItems()
+     {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $item_family_number = $this->input->get('item_family_number');
+
+        $this->db->select('a.*, b.currency, c.number as item_number, c.name as item_name, c.specification');
+        $this->db->from('supplier_items a');
+        $this->db->join('suppliers b', 'a.supplier_id = b.id');
+        $this->db->join('item_rm c', 'a.item_id = c.id');
+        $this->db->where('c.item_family_number', $item_family_number);
+        $this->db->like('c.number', $post);
+        $this->db->group_by('a.id');
+        $this->db->order_by('a.id', 'ASC');
+        $records = $this->db->get()->result_array();
+
+         echo json_encode($records);
+     }
+
      //GET DATATABLES
      public function datatables()
      {

@@ -155,7 +155,6 @@ class Generate_mps extends CI_Controller
                                 
                     
                     $result = $this->db->get()->row();
-
                     $os_so_qty = $result->qty;
 
                     //HKW 1
@@ -214,35 +213,35 @@ class Generate_mps extends CI_Controller
                         $forecastData = @round($forecastread->month_2);
                         // $deliveryRate = @round($forecastData / $hkw);
                         // $ito = @round($beginBalance / $deliveryRate);
-                        $safetyStock = @round(($data['safetystockfg'] / 100) * $forecastread->month_3);
+                        $safetyStock = @round($forecastread->month_3 * ($data['safetystockfg'] / 100));
                         $prodPlan = @round($beginBalance - ($forecastData + $safetyStock));
                     } elseif ($i == 3) {
                         $beginBalance = (($prodPlan + $beginBalance) - $forecast);
                         $forecastData = @round($forecastread->month_3);
                         // $deliveryRate = @round($forecastData / $hkw);
                         // $ito = @round($beginBalance / $deliveryRate);
-                        $safetyStock = @round(($data['safetystockfg'] / 100) * $forecastread->month_4);
+                        $safetyStock = @round($forecastread->month_4 * ($data['safetystockfg'] / 100));
                         $prodPlan = @round($beginBalance - ($forecastData + $safetyStock));
                     } elseif ($i == 4) {
                         $beginBalance = (($prodPlan + $beginBalance) - $forecast);
                         $forecastData = @round($forecastread->month_4);
                         // $deliveryRate = @round($forecastData / $hkw);
                         // $ito = @round($beginBalance / $deliveryRate);
-                        $safetyStock = @round(($data['safetystockfg'] / 100) * $forecastread->month_5);
+                        $safetyStock = @round($forecastread->month_5 * ($data['safetystockfg'] / 100));
                         $prodPlan = @round($beginBalance - ($forecastData + $safetyStock));
                     } elseif ($i == 5) {
                         $beginBalance = (($prodPlan + $beginBalance) - $forecast);
                         $forecastData = @round($forecastread->month_5);
                         // $deliveryRate = @round($forecastData / $hkw);
                         // $ito = @round($beginBalance / $deliveryRate);
-                        $safetyStock = @round(($data['safetystockfg'] / 100) * $forecastread->month_6);
+                        $safetyStock = @round($forecastread->month_6 * ($data['safetystockfg'] / 100));
                         $prodPlan = @round($beginBalance - ($forecastData + $safetyStock));
                     } elseif ($i == 6) {
                         $beginBalance = (($prodPlan + $beginBalance) - $forecast);
                         $forecastData = @round($forecastread->month_6);
                         // $deliveryRate = @round($forecastData / $hkw);
                         // $ito = @round($beginBalance / $deliveryRate);
-                        $safetyStock = @round(($data['safetystockfg'] / 100) * $forecastread->month_6);
+                        $safetyStock = @round($forecastread->month_6 * ($data['safetystockfg'] / 100));
                         $prodPlan = @round($beginBalance - ($forecastData + $safetyStock));
                     }
 
@@ -652,12 +651,11 @@ class Generate_mps extends CI_Controller
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=generate_mps_$format.xls");
         }
-
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-
+        
         //Filter Data
         $filter_month = base64_decode($this->input->get('filter_month'));
         $filter_year = base64_decode($this->input->get('filter_year'));

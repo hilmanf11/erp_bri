@@ -74,7 +74,7 @@
         <li>BALANCE AWAL = <b>(TOTAL STOCK - OS SO)</b></li>
         <!-- <li>ITO = <b>(BALANCE AWAL / DELIVERY RATE)</b></li>
         <li>DELIVERY RATE = <b>(FC / HKW)</b></li> -->
-        <li>SAFETY STOCK = <b>((LEADTIME + FG SS) / HKW(next month) x FC(next month))</b></li>
+        <li>SAFETY STOCK = <b>((LEADTIME FG % ) x FC(next month))</b></li>
         <li>PROD PLAN = <b>(FC + SAFETY STOCK - BALANCE AWAL)</b></li>
     </ul>
 
@@ -93,7 +93,7 @@
     //Add Data
     function add() {
         var filter_month = $("#filter_month").combobox('getValue');
-        var filter_year = $("#filter_year").textbox('getValue');
+        var filter_year = $("#filter_year").combobox('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
         var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_product_no = $("#filter_product_no").combogrid('getValue');
@@ -107,15 +107,6 @@
         if (check_forecast.checked == true && check_fg.checked == true && check_wip.checked == true && check_ost_mpp.checked == true && check_so.checked == true) {
             $.messager.prompt('Generate MPS', 'Please input Password Generate', function(r) {
                 if (r == "GENERATEMPS") {
-                    Swal.fire({
-                        title: 'Please Wait for Push Data',
-                        showConfirmButton: false,
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        },
-                    });
                     Swal.fire({
                         title: 'Please Wait 5 - 10 Minutes for Generating Data',
                         showConfirmButton: false,
@@ -198,8 +189,10 @@
                             }
                         }
                     });
+                }else{
+                    toastr.warning("Please Input Correct Password!", "Information");
                 }
-            });
+            }, 'password');
         } else {
             toastr.warning("Component Check Not Complete ", "Information");
         }
@@ -211,7 +204,7 @@
 
     function filter() {
         var filter_month = $("#filter_month").combobox('getValue');
-        var filter_year = $("#filter_year").textbox('getValue');
+        var filter_year = $("#filter_year").combobox('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
         var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_product_no = $("#filter_product_no").combogrid('getValue');
@@ -246,7 +239,7 @@
 
     function componentCheck(filter_month, filter_year, filter_revision) {
         var filter_month = $("#filter_month").combobox('getValue');
-        var filter_year = $("#filter_year").textbox('getValue');
+        var filter_year = $("#filter_year").combobox('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
 
         $.ajax({
@@ -390,17 +383,15 @@
 
     function excel() {
         var filter_month = $("#filter_month").combobox('getValue');
-        var filter_year = $("#filter_year").textbox('getValue');
+        var filter_year = $("#filter_year").combobox('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
-        var filter_line_no = $("#filter_line_no").combobox('getValue');
-        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
+        var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_product_no = $("#filter_product_no").combogrid('getValue');
 
         var url = "?filter_month=" + window.btoa(filter_month) +
             "&filter_year=" + window.btoa(filter_year) +
             "&filter_revision=" + window.btoa(filter_revision) +
-            "&filter_line_no=" + window.btoa(filter_line_no) +
-            "&filter_customer_id=" + window.btoa(filter_customer_id) +
+            "&filter_customer=" + window.btoa(filter_customer) +
             "&filter_product_no=" + window.btoa(filter_product_no);
 
         if (filter_month == "" || filter_year == "") {
