@@ -178,19 +178,16 @@ class Purchase_requests extends CI_Controller
     public function create()
     {
         if ($this->input->post()) {
-            if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
-                $purchase_request_item = $this->crud->read('purchase_requests', [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_id']]);
+                $purchase_request_item = $this->crud->read('purchase_requests', [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']]);
                 if (@$purchase_request_item->id != "") {
-                    $send = $this->crud->update('purchase_requests', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_id']], $post);
+                    $send = $this->crud->update('purchase_requests', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], $post);
                 } else {
                     $send = $this->crud->create('purchase_requests', $post);
                 }
 
                 echo $send;
-            } else {
-                show_error(validation_errors());
-            }
+        
         } else {
             show_error("Cannot Process your request");
         }

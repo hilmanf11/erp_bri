@@ -172,7 +172,7 @@
                                 var rowIndex = dg.datagrid('getRowIndex', row);
                                 var ed = dg.datagrid('getEditor', {
                                     index: rowIndex,
-                                    field: 'item_id'
+                                    field: 'item_rm_id'
                                 });
 
                                 var ed2 = dg.datagrid('getEditor', {
@@ -189,10 +189,13 @@
                                     index: rowIndex,
                                     field: 'po'
                                 });
+                                var ed5 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'id'
+                                });
 
                                 $(ed.target).textbox('setValue', rows.item_id);
                                 $(ed2.target).textbox('setValue', rows.item_name);
-
 
                                 // $.ajax({
                                 //     type: "post",
@@ -234,7 +237,7 @@
                         type: 'textbox'
                     }
                 }, {
-                    field: 'item_id',
+                    field: 'item_rm_id',
                     // hidden: true,
                     width: 100,
                     halign: 'center',
@@ -349,6 +352,7 @@
                     $('#frm_insert').form('load', row);
                     $("#item_family_id").combobox('disable');
                     $("#item_category_id").combobox('disable');
+
 
                     setTimeout(function() {
                         $('#request_no').textbox('setValue', row.request_no);
@@ -522,15 +526,15 @@
                     var totalrows = rows.length;
                     endEditing();
                     for (let i = 0; i < totalrows; i++) {
-                        if (rows[i].item_id) {
+                        if (rows[i].item_rm_id) {
                             $.ajax({
                                 type: "post",
                                 url: '<?= base_url('purchase/purchase_requests/create') ?>',
                                 data: {
+                                    item_rm_id: rows[i].item_rm_id,
                                     request_no: request_no,
                                     request_date: request_date,
                                     request_name: request_name,
-                                    item_rm_id: rows[i].item_id,
                                     qty: rows[i].qty,
                                     expected_date: expected_date,
                                     remarks: rows[i].remarks
