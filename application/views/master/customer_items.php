@@ -165,7 +165,7 @@
                 }, {
                     field: 'id',
                     width: 150,
-                    hidden: true,
+                    // hidden: true,
                     halign: 'center',
                     title: "ID",
                     editor: {
@@ -174,7 +174,7 @@
                 }, {
                     field: 'item_id',
                     width: 150,
-                    hidden: true,
+                    // hidden: true,
                     halign: 'center',
                     title: "Product ID",
                     editor: {

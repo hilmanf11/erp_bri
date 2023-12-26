@@ -235,7 +235,7 @@
                     }
                 }, {
                     field: 'item_id',
-                    hidden: true,
+                    // hidden: true,
                     width: 100,
                     halign: 'center',
                     title: "ID",
