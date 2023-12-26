@@ -172,7 +172,7 @@
                                 var rowIndex = dg.datagrid('getRowIndex', row);
                                 var ed = dg.datagrid('getEditor', {
                                     index: rowIndex,
-                                    field: 'item_rm_id'
+                                    field: 'item_id'
                                 });
 
                                 var ed2 = dg.datagrid('getEditor', {
@@ -190,7 +190,7 @@
                                     field: 'po'
                                 });
 
-                                $(ed.target).textbox('setValue', rows.item_rm_id);
+                                $(ed.target).textbox('setValue', rows.item_id);
                                 $(ed2.target).textbox('setValue', rows.item_name);
 
 
@@ -234,7 +234,7 @@
                         type: 'textbox'
                     }
                 }, {
-                    field: 'item_rm_id',
+                    field: 'item_id',
                     hidden: true,
                     width: 100,
                     halign: 'center',
@@ -522,7 +522,7 @@
                     var totalrows = rows.length;
                     endEditing();
                     for (let i = 0; i < totalrows; i++) {
-                        if (rows[i].item_rm_id) {
+                        if (rows[i].item_id) {
                             $.ajax({
                                 type: "post",
                                 url: '<?= base_url('purchase/purchase_requests/create') ?>',
@@ -530,7 +530,7 @@
                                     request_no: request_no,
                                     request_date: request_date,
                                     request_name: request_name,
-                                    item_rm_id: rows[i].item_rm_id,
+                                    item_rm_id: rows[i].item_id,
                                     qty: rows[i].qty,
                                     expected_date: expected_date,
                                     remarks: rows[i].remarks
