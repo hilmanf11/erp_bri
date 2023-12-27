@@ -189,12 +189,8 @@
                                     index: rowIndex,
                                     field: 'po'
                                 });
-                                var ed5 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'id'
-                                });
 
-                                $(ed.target).textbox('setValue', rows.item_id);
+                                $(ed.target).textbox('setValue', rows.item_rm_id);
                                 $(ed2.target).textbox('setValue', rows.item_name);
 
                                 // $.ajax({

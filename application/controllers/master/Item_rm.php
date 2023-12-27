@@ -76,9 +76,9 @@ class Item_rm extends CI_Controller
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
                     if ($filter->field == "item_category_name") {
-                        $this->db->like("b.id", $filter->value);
-                    } elseif ($filter->field == "item_family_name") {
-                        $this->db->like("c.id", $filter->value);
+                        $this->db->like("b.name", $filter->value);
+                    } elseif ($filter->field == "item_familys_name") {
+                        $this->db->like("c.name", $filter->value);
                     } elseif ($filter->field == "item_sub_family_name") {
                         $this->db->like("d.id", $filter->value);
                     } elseif ($filter->field == "status" && strtolower($filter->value) === "active") {
