@@ -42,6 +42,7 @@ class Purchase_orders extends CI_Controller
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $supplier_id = $this->input->get('supplier_id');
+
         $this->db->select('a.po_no, a.po_date, a.po_name, b.number as supplier_number, b.name as supplier_name');
         $this->db->from('purchase_orders a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
@@ -51,6 +52,7 @@ class Purchase_orders extends CI_Controller
         $this->db->like('a.po_no', $post);
         $this->db->group_by('a.po_no');
         $this->db->order_by('a.created_date', 'desc');
+        
         $records = $this->db->get()->result_object();
         echo json_encode($records);
     }
@@ -90,10 +92,10 @@ class Purchase_orders extends CI_Controller
             if ($id === "0") {
                 //Select Query
                 $this->db->select('a.po_no, a.request_no, a.total_dp,
-                    a.po_date, 
+                    a.po_date,
+                    d.name as supplier_name,
+                    b.uom,
                     d.currency, 
-                    f.name as uom,
-                    d.name as supplier_name, 
                     SUM(a.qty) as qty, 
                     SUM(a.price) as price, 
                     SUM(a.total) as total_price,
@@ -104,7 +106,6 @@ class Purchase_orders extends CI_Controller
                 $this->db->join('item_familys c', 'b.item_family_number = c.number');
                 $this->db->join('suppliers d', 'a.supplier_id = d.id');
                 $this->db->join('supplier_items e', 'a.item_rm_id = e.item_id and a.supplier_id = e.supplier_id');
-                $this->db->join('uom f', 'b.uom = f.id');
                 $this->db->join('(SELECT po_no, COUNT(status) as total_status_close FROM purchase_orders WHERE status = 1 GROUP BY po_no) g', 'a.po_no = g.po_no', 'left');
                 $this->db->where('a.deleted', 0);
                 if ($filter_from != "" or $filter_to != "") {
@@ -122,51 +123,44 @@ class Purchase_orders extends CI_Controller
                 $this->db->limit($rows, $offset);
                 //Get Data Array
                 $records = $this->db->get()->result_array();
-
-                // var_dump($records);
                 //Mapping Data
-                if (!empty($records)) {
-                    foreach ($records as $record) {
-                        if ($record['total_status'] == $record['total_status_close']) {
-                            $status = "1";
-                        } else {
-                            $status = "0";
-                        }
-
-                        $arr[] = array(
-                            "id" => $record['po_no'],
-                            "po_no" => $record['po_no'],
-                            "request_no" => $record['request_no'],
-                            "po_date" => $record['po_date'],
-                            "uom" => $record['uom'],
-                            "currency" => $record['currency'],
-                            "supplier_name" => $record['supplier_name'],
-                            "status" => $status,
-                            "status1" => $record['total_status'],
-                            "status2" => $record['total_status_close'],
-                            "total_dp" => $record['total_dp'],
-                            "total_grand" => ($record['total_price'] - $record['total_dp']),
-                            "state" => "closed",
-                            "datatable" => 1
-                        );
+                foreach ($records as $record) {
+                    if ($record['total_status'] == $record['total_status_close']) {
+                        $status = "1";
+                    } else {
+                        $status = "0";
                     }
-                    $result['total'] = $totalRows;
-                    $result = array_merge($result, ['rows' => @$arr]);
-                    echo json_encode($result);
-                } else {
-                    // Jika tidak ada rekaman yang ditemukan, kirim respons kosong
-                    echo json_encode(['message' => 'No records found']);
+
+                    $arr[] = array(
+                        "id" => $record['po_no'],
+                        "po_no" => $record['po_no'],
+                        "request_no" => $record['request_no'],
+                        "po_date" => $record['po_date'],
+                        "uom" => $record['uom'],
+                        "currency" => $record['currency'],
+                        "supplier_name" => $record['supplier_name'],
+                        "status" => $status,
+                        "status1" => $record['total_status'],
+                        "status2" => $record['total_status_close'],
+                        "total_dp" => $record['total_dp'],
+                        "total_grand" => ($record['total_price'] - $record['total_dp']),
+                        "state" => "closed",
+                        "datatable" => 1
+                    );
                 }
+                $result['total'] = $totalRows;
+                $result = array_merge($result, ['rows' => @$arr]);
+                echo json_encode($result);
             } else {
                 $this->db->select('a.*, 
-                    b.number as item_number, 
+                    b.number as item_number,
                     b.name as item_name,
+                    b.uom,
                     c.name as item_family_name, 
                     d.name as supplier_name, 
                     d.currency, e.mpq, 
                     e.moq,
-                    a.price, 
-                    f.name as uom,
+                    a.price,
                     a.status, 
                     (a.qty * a.price) as total_price');
                 $this->db->from('purchase_orders a');
@@ -174,7 +168,6 @@ class Purchase_orders extends CI_Controller
                 $this->db->join('item_familys c', 'b.item_family_number = c.number');
                 $this->db->join('suppliers d', 'a.supplier_id = d.id');
                 $this->db->join('supplier_items e', 'a.item_rm_id = e.item_id and a.supplier_id = e.supplier_id');
-                $this->db->join('uom f', 'b.uom = f.id');
                 $this->db->where('a.deleted', 0);
                 if ($filter_from != "" or $filter_to != "") {
                     $this->db->where('a.po_date >=', $filter_from);
@@ -185,12 +178,8 @@ class Purchase_orders extends CI_Controller
                 $this->db->order_by('a.status', 'ASC');
                 $this->db->order_by('a.po_no', 'DESC');
                 $records = $this->db->get()->result_array();
-                if (!empty($records)) {
-                    echo json_encode($records);
-                } else {
-                    // Jika tidak ada rekaman yang ditemukan, kirim respons kosong
-                    echo json_encode(['message' => 'No records found']);
-                }
+
+                echo json_encode($records);
             }
         }
     }
@@ -201,6 +190,7 @@ class Purchase_orders extends CI_Controller
         $this->db->select('a.*, 
             b.number as item_number, 
             b.name as item_name,
+            b.uom,
             d.id as supplier_id, 
             d.number as supplier_number, 
             d.name as supplier_name, 
@@ -214,7 +204,6 @@ class Purchase_orders extends CI_Controller
         $this->db->join('item_familys c', 'b.item_family_number = c.number');
         $this->db->join('suppliers d', 'a.supplier_id = d.id');
         $this->db->join('supplier_items e', 'a.item_rm_id = e.item_id and a.supplier_id = e.supplier_id');
-        $this->db->join('uom f', 'b.uom = f.id');
         $this->db->where('a.deleted', 0);
         $this->db->where('a.status', 0);
         $this->db->where('a.po_no', $po_no);
@@ -247,7 +236,7 @@ class Purchase_orders extends CI_Controller
                 $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id']]);
                 $config = $this->crud->read("config");
 
-                $datenow    = $item_family->number . date("ymd");
+                $datenow    = date("ymd");
                 $sqlGetID   = $this->db->query("SELECT max(po_no) as kode FROM purchase_orders WHERE po_no like '%$datenow%'");
                 $rowID      = $sqlGetID->row();
                 $kode       = $rowID->kode;
@@ -307,7 +296,7 @@ class Purchase_orders extends CI_Controller
             $id   = $this->input->post('id');
             $post = $this->input->post();
 
-            $items = $this->crud->read('items', [], ['number' => $post['item_number']]);
+            $items = $this->crud->read('item_rm', [], ['number' => $post['item_number']]);
             $supplier_items = $this->crud->read('supplier_items', [], ["item_id" => $items->id, "supplier_id" => $post['supplier_id']]);
             $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_id" => $items->id]);
             if (@$post['price'] != "") {
@@ -316,7 +305,7 @@ class Purchase_orders extends CI_Controller
                 $price = @$supplier_items->price;
             }
 
-            $purchase_orders = $this->crud->update('purchase_orders', ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_id" => $items->id], [
+            $purchase_orders = $this->crud->update('purchase_orders', ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_rm_id" => $items->id], [
                 "qty" => $post['qty'],
                 "po_date" => $post['po_date'],
                 "price" => $price,
@@ -327,7 +316,7 @@ class Purchase_orders extends CI_Controller
                 "revision" => (@$purchaseOrder->revision + 1)
             ]);
 
-            $purchase_requests = $this->crud->update('purchase_requests', ["request_no" => $post['request_no'], "item_id" => $items->id], [
+            $purchase_requests = $this->crud->update('purchase_requests', ["request_no" => $post['request_no'], "item_rm_id" => $items->id], [
                 "qty" => $post['qty']
             ]);
 
@@ -353,7 +342,7 @@ class Purchase_orders extends CI_Controller
     {
         $data = $this->input->post();
         $send = $this->crud->delete('purchase_orders', $data);
-        $update = $this->crud->update('purchase_requests', ["request_no" => $data['request_no'], "item_id" => $data['item_id']], ["status" => 0]);
+        $update = $this->crud->update('purchase_requests', ["request_no" => $data['request_no'], "item_rm_id" => $data['item_rm_id']], ["status" => 0]);
         echo $send;
     }
     public function print_po($po_no)
@@ -414,12 +403,11 @@ class Purchase_orders extends CI_Controller
         $hal = 1;
         $subtotal = 0;
         for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*, b.number as item_id, b.description as item_name, c.currency, a.price, e.name as uom');
+            $this->db->select('a.*, b.number as item_id, b.name as item_name, b.uom, c.currency, a.price');
             $this->db->from('purchase_orders a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('suppliers c', 'a.supplier_id = c.id');
             $this->db->join('supplier_items d', 'a.supplier_id = d.supplier_id and a.item_rm_id = d.item_id');
-            $this->db->join('uom e', 'b.uom = e.id');
             $this->db->where('a.deleted', 0);
             $this->db->where('a.po_no', base64_decode($po_no));
             $this->db->order_by('b.number', 'asc');
@@ -554,9 +542,9 @@ class Purchase_orders extends CI_Controller
                 $no++;
             }
             if (($i + 1) == $page) {
-                $this->db->select('a.remarks, b.number as item_id, b.description as item_name');
+                $this->db->select('a.remarks, b.number as item_id, b.name as item_name');
                 $this->db->from('purchase_orders a');
-                $this->db->join('items b', 'a.item_rm_id = b.id');
+                $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->where('a.deleted', 0);
                 $this->db->where('a.po_no', base64_decode($po_no));
                 $this->db->order_by('b.number', 'asc');
@@ -682,18 +670,17 @@ class Purchase_orders extends CI_Controller
         $this->db->select('a.*, 
             b.number as item_id, 
             b.name as item_name,
+            b.uom,
             c.name as item_family_name, 
             d.name as supplier_name, 
             d.currency, 
             e.mpq, 
-            e.moq,
-            f.name as uom');
+            e.moq');
         $this->db->from('purchase_orders a');
-        $this->db->join('items b', 'a.item_rm_id = b.id');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('item_familys c', 'b.item_family_number = c.number');
         $this->db->join('suppliers d', 'a.supplier_id = d.id');
         $this->db->join('supplier_items e', 'a.item_rm_id = e.item_id and a.supplier_id = e.supplier_id');
-        $this->db->join('uom f', 'b.uom = f.id');
         $this->db->where('a.deleted', 0);
         if ($filter_from != "" or $filter_to != "") {
             $this->db->where('a.po_date >=', $filter_from);
