@@ -616,9 +616,11 @@ class Forecasts extends CI_Controller
                         <td>' . number_format($data['month_11']) . '</td>
                         <td>' . number_format($data['month_12']) . '</td>';
                 $no++;
+            
             }
             $html .= '</table></body></html>';
             echo $html;
+
         } elseif ($filter_customer_id != "") {
             $i_d_from = date_create($filter_issued_date_from);
             $i_d_to = date_create($filter_issued_date_to);

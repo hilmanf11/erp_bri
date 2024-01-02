@@ -43,7 +43,7 @@ class Supplier_items extends CI_Controller
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $item_family_number = $this->input->get('item_family_number');
 
-        $this->db->select('a.*, b.currency, c.number as item_number, c.name as item_name, c.specification');
+        $this->db->select('a.*, b.currency, c.number as item_number, c.name as item_name, c.specification,b.name as name');
         $this->db->from('supplier_items a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
         $this->db->join('item_rm c', 'a.item_id = c.id');
@@ -55,6 +55,30 @@ class Supplier_items extends CI_Controller
 
          echo json_encode($records);
      }
+
+     public function readSuppliers()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $item_number = $this->input->get('item_number');
+        $item_id = $this->input->get('item_rm_id');
+        $item_family_number = $this->input->get('item_family_number');
+
+        $this->db->select('b.*, c.number as item_number, a.mpq, a.moq');
+        $this->db->from('supplier_items a');
+        $this->db->join('suppliers b', 'a.supplier_id = b.id');
+        $this->db->join('item_rm c', 'a.item_id = c.id');
+        $this->db->join('item_familys d', 'c.item_family_number = d.number');
+        $this->db->where('a.deleted', 0);
+        // $this->db->where('a.status', 0);
+        $this->db->like("c.number", $item_number);
+        $this->db->like("c.id", $item_id);
+        $this->db->like("d.id", $item_family_number);
+        $this->db->like("b.name", $post);
+        $this->db->group_by('b.number');
+        $this->db->order_by('b.name', 'ASC');
+        $records = $this->db->get()->result_array();
+        echo json_encode($records);
+    }
 
      //GET DATATABLES
      public function datatables()

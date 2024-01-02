@@ -190,7 +190,7 @@
                                     field: 'po'
                                 });
 
-                                $(ed.target).textbox('setValue', rows.item_rm_id);
+                                $(ed.target).textbox('setValue', rows.item_id);
                                 $(ed2.target).textbox('setValue', rows.item_name);
 
                                 // $.ajax({
@@ -207,19 +207,19 @@
                                 //     }
                                 // });
 
-                                // $.ajax({
-                                //     type: "post",
-                                //     url: "<?= base_url('purchase/purchase_orders/readTotalPo') ?>",
-                                //     data: "item_rm_id=" + rows.id,
-                                //     dataType: "json",
-                                //     success: function(jsonpo) {
-                                //         if (jsonpo != null) {
-                                //             $(ed4.target).numberbox('setValue', jsonpo.qty);
-                                //         } else {
-                                //             $(ed4.target).numberbox('setValue', 0);
-                                //         }
-                                //     }
-                                // });
+                                $.ajax({
+                                    type: "post",
+                                    url: "<?= base_url('purchase/purchase_orders/readTotalPo') ?>",
+                                    data: "item_rm_id=" + rows.id,
+                                    dataType: "json",
+                                    success: function(jsonpo) {
+                                        if (jsonpo != null) {
+                                            $(ed4.target).numberbox('setValue', jsonpo.qty);
+                                        } else {
+                                            $(ed4.target).numberbox('setValue', 0);
+                                        }
+                                    }
+                                });
                             }
                         }
                     }
