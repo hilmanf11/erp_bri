@@ -57,14 +57,17 @@ class Compound_alias extends CI_Controller
              $this->db->where('a.deleted', 0);
              if (@count($filters) > 0) {
                  foreach ($filters as $filter) {
-                     if($filter->field == "item_fg_no"){
-                         $this->db->like("b.number", $filter->value);
+                    if($filter->field == "item_fg_no"){
+                        $this->db->like("b.number", $filter->value);
  
-                     }elseif($filter->field == "item_fg_name"){
-                         $this->db->like("b.name", $filter->value);
+                    }elseif($filter->field == "item_fg_name"){
+                        $this->db->like("b.name", $filter->value);
+
+                    }elseif($filter->field == "item_rm_name"){
+                        $this->db->like("c.name", $filter->value);
    
-                     }else{
-                         $this->db->like("a.".$filter->field, $filter->value);
+                    }else{
+                        $this->db->like("a.".$filter->field, $filter->value);
                     }
                  }
              }

@@ -3,13 +3,14 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'item_fg_id',align:'center',width:100">Product No</th>
-            <th rowspan="2" data-options="field:'item_fg_name',align:'center',width:100">Product Name</th>
-            <th rowspan="2" data-options="field:'item_rm_id',align:'center',width:100">Part ID</th>
-            <th rowspan="2" data-options="field:'item_rm_name',align:'center',width:100">Part Name</th>
+            <th rowspan="2" data-options="field:'number',width:100,halign:'center'">Code</th>
+            <th rowspan="2" data-options="field:'location',width:150,halign:'center'">Location</th>
+            <th rowspan="2" data-options="field:'area',width:150,halign:'center'">Area</th>
+            <th rowspan="2" data-options="field:'rack',width:150,halign:'center'">Rack</th>
+            <th rowspan="2" data-options="field:'level',width:150,halign:'center'">Level</th>
+            <th rowspan="2" data-options="field:'level_sub',width:150,halign:'center'">Level Sub</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
-            
         </tr>
         <tr>
             <th data-options="field:'created_by',width:100,align:'center'"> By</th>
@@ -29,42 +30,76 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product No</span>
-                <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combogrid">
+                <span style="width:35%; display:inline-block;">Type</span>
+                <input style="width:30%;" name="type" id="type" readonly class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Part ID</span>
-                <input style="width:60%;" name="item_rm_id" id="item_rm_id" required="" class="easyui-combogrid">
+                <span style="width:35%; display:inline-block;">Code</span>
+                <input style="width:60%;" name="number" required="" class="easyui-textbox">
             </div>
-        </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Location</span>
+                <input style="width:60%;" name="location" required="" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Area</span>
+                <input style="width:60%;" name="area" required="" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Rack</span>
+                <input style="width:60%;" name="rack" required="" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Level</span>
+                <input style="width:60%;" name="level" required="" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Level Sub</span>
+                <input style="width:60%;" name="level_sub" required="" class="easyui-textbox">
+            </div>
         </fieldset>
     </form>
 </div>
-
+<!-- DIALOG UPLOAD -->
+<div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+    <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+            <legend><b>Form Data</b></legend>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">File Upload</span>
+                <input name="file_upload" style="width: 60%;" required="" accept=".xls" id="file_excel" class="easyui-filebox">
+            </div>
+        </fieldset>
+    </form>
+    <span style="float: left; color:green;">SUCCESS : <b id="p_success">0</b></span><span style="float: right; color:red;"> FAILED : <b id="p_failed">0</b></span>
+    <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
+    <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
+    <div id="p_remarks" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
+        <ul id="remarks">
+        </ul>
+    </div>
+</div>
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/compound_alias/print') ?>" style="width: 100%;" hidden></iframe>
-
+<iframe id="printout" src="<?= base_url('master/rm_locations/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
-
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/compound_alias/create') ?>';
-        $('#frm_insert').form('clear')
+        url_save = '<?= base_url('master/rm_locations/create') ?>';
+        $('#frm_insert').form('clear');
+        $('#type').textbox('setValue', 'RM');
     }
-
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/compound_alias/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('master/rm_locations/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
-
     //DELETE DATA
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
@@ -75,7 +110,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/compound_alias/delete') ?>',
+                            url: '<?= base_url('master/rm_locations/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -83,8 +118,8 @@
                                 var result = eval('(' + result + ')');
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error("This item cannot be deleted, Please make sure it didn't have any relation");
-                                // $.messager.alert("Error", jqXHR.statusText, 'error');
+                                toastr.error(jqXHR.statusText);
+                                $.messager.alert("Error", jqXHR.statusText, 'error');
                             },
                             complete: function(data) {
                                 $('#dg').datagrid('reload');
@@ -97,66 +132,13 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
-
-
-        $('#item_fg_id').combogrid({
-            url: '<?= base_url('master/item_fg/reads') ?>',
-            panelWidth: 420,
-            idField: 'id',
-            textField: 'number',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Choose Product No",
-            columns: [
-                [{
-                    field: 'id',
-                    title: 'Product ID',
-                    width: 100
-                }, {
-                    field: 'number',
-                    title: 'Product No',
-                    width: 100
-                }, {
-                    field: 'name',
-                    title: 'Product Name',
-                    width: 100
-                }, ]
-            ],
-        });
-
-        $('#item_rm_id').combogrid({
-            url: '<?= base_url('master/item_rm/readsC') ?>',
-            panelWidth: 420,
-            idField: 'id',
-            textField: 'number',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Choose Product No",
-            columns: [
-                [{
-                    field: 'id',
-                    title: 'Part ID',
-                    width: 100
-                }, {
-                    field: 'number',
-                    title: 'Part No',
-                    width: 100
-                }, {
-                    field: 'name',
-                    title: 'Part Name',
-                    width: 100
-                }, ]
-            ],
-        });
-
-
-   //Upload Data
+    //UPLOAD DATA
     function upload() {
         $('#dlg_upload').dialog('open');
     }
-
+    //DOWNLOAD TEMPLATE UPLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_compound_alias.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_locations.xls') ?>');
     }
     //PRINT PDF
     function pdf() {
@@ -164,35 +146,16 @@
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/compound_alias/print/excel') ?>');
+        window.location.assign('<?= base_url('master/rm_locations/print/excel') ?>');
     }
-    
     //RELOAD
     function reload() {
         window.location.reload();
     }
-
-    //CELLSTYLE STATUS
-    function cellStyler(value, row, index) {
-        if (value == 0) {
-            return 'background: #53D636; color:white;';
-        } else {
-            return 'background: #FF5F5F; color:white;';
-        }
-    }
-    //FORMATTER STATUS
-    function cellFormatter(value) {
-        if (value == 0) {
-            return 'Active';
-        } else {
-            return 'Inactive';
-        }
-    };
-
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/compound_alias/datatables') ?>',
+            url: '<?= base_url('master/rm_locations/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
@@ -217,6 +180,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
+                            
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
@@ -224,20 +188,19 @@
                 }
             }]
         });
-
-         //Upload Data
-         $('#dlg_upload').dialog({
+        //UPLOAD DATA
+        $('#dlg_upload').dialog({
             buttons: [{
                 text: 'List Failed',
                 handler: function() {
-                    window.open('<?= base_url('master/compound_alias/uploadDownloadFailed') ?>', '_blank');
+                    window.open('<?= base_url('master/rm_locations/uploadDownloadFailed') ?>', '_blank');
                 }
             }, {
                 text: 'Upload',
                 iconCls: 'icon-ok',
                 handler: function() {
                     $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/compound_alias/upload') ?>',
+                        url: '<?= base_url('master/rm_locations/upload') ?>',
                         onSubmit: function() {
                             if ($(this).form('validate') == false) {
                                 return $(this).form('validate');
@@ -252,7 +215,7 @@
                             $.messager.progress('close');
                             //Clear File
                             $.ajax({
-                                url: "<?= base_url('master/compound_alias/uploadclearFailed') ?>"
+                                url: "<?= base_url('master/rm_locations/uploadclearFailed') ?>"
                             });
                             var json = eval('(' + result + ')');
                             requestData(json.total, json);
@@ -263,11 +226,10 @@
                                     $('#p_upload').progressbar('setValue', value);
                                     $('#p_start').html(number);
                                     $('#p_finish').html(total);
-
                                     $.ajax({
                                         type: "POST",
                                         async: true,
-                                        url: "<?= base_url('master/compound_alias/uploadCreate') ?>",
+                                        url: "<?= base_url('master/rm_locations/uploadCreate') ?>",
                                         data: {
                                             "data": json[number - 1]
                                         },
@@ -285,7 +247,7 @@
                                                 $.ajax({
                                                     type: "POST",
                                                     async: true,
-                                                    url: "<?= base_url('master/compound_alias/uploadcreateFailed') ?>",
+                                                    url: "<?= base_url('master/rm_locations/uploadcreateFailed') ?>",
                                                     data: {
                                                         data: json[number - 1],
                                                         message: result.message

@@ -89,7 +89,7 @@ class Machines extends CI_Controller
                     }
                 }
             }
-             $this->db->order_by('a.id', 'ASC');
+             $this->db->order_by('a.created_date', 'DESC');
              //Total Data
              $totalRows = $this->db->count_all_results('', false);
              //Limit 1 - 10

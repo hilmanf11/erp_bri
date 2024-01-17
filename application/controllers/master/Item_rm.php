@@ -42,6 +42,14 @@ class Item_rm extends CI_Controller
         $send = $this->crud->reads('item_rm', ["number" => $post], ["item_family_number"=>"CP"]);
         echo json_encode($send);
     }
+
+    public function readByProductFamilySubs($item_sub_family_number)
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT * FROM item_rm WHERE item_family_sub_number = '$item_sub_family_number' and (`number` like '%$post%' or `name` like '%$post%')");
+        echo json_encode($send);
+    }
+
      //CODE OTOMATIS
      public function autoid($item_category_number, $item_family_number, $item_family_sub_number = "NA"){
     

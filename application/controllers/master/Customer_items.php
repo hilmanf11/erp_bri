@@ -40,6 +40,24 @@ class Customer_items extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readItems()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $customer_id = $this->input->get('customer_id');
+
+        $this->db->select('c.id as item_id, c.number as item_number, c.name as item_name');
+        $this->db->from('customer_items a');
+        $this->db->join('customers b', 'a.customer_id = b.id');
+        $this->db->join('item_fg c','a.item_id = c.id');
+        $this->db->where('a.deleted', 0);
+        $this->db->where('b.status', 0);
+        $this->db->like('a.customer_id', $customer_id);
+        $this->db->order_by('a.created_date', 'desc');
+        
+        $records = $this->db->get()->result_object();
+        echo json_encode($records);
+    }
+
      //GET DATATABLES
      public function datatables()
      {
@@ -62,8 +80,9 @@ class Customer_items extends CI_Controller
             $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->like('a.item_id', $filter_item_id);
             $this->db->where('b.status', "0");
+            $this->db->where('(b.approved_to IS NULL OR b.approved_to = "")');
             $this->db->group_by('b.name');
-            $this->db->order_by('b.id', 'ASC');
+            $this->db->order_by('a.id', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -369,6 +388,7 @@ class Customer_items extends CI_Controller
          $this->db->join('item_fg c', 'a.item_id = c.id');
          $this->db->like('a.customer_id', $filter_customer_id);
          $this->db->like('a.item_id', $filter_item_id);
+         $this->db->where('b.status', "0");
          $this->db->order_by('a.customer_id', 'ASC');
          $records = $this->db->get()->result_array();
          $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customer_items {border-collapse: collapse;width: 100%;font-size: 12px;}#customer_items td, #customer_items th {border: 1px solid #ddd;padding: 2px;}#customer_items tr:nth-child(even){background-color: #f2f2f2;}#customer_items tr:hover {background-color: #ddd;}#customer_items th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>

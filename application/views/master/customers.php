@@ -92,7 +92,7 @@
                     <span style="width:35%; display:inline-block;">Status</span>
                     <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
                         <option value="0">Active</option>
-                        <option value="1">Not Active</option>
+                        <option value="1">Inactive</option>
                     </select>
                 </div>
             </div>

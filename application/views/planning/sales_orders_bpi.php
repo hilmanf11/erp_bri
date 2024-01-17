@@ -8,14 +8,14 @@
             <th rowspan="2" data-options="field:'customer_order_no',width:150,halign:'center'">Customer Order No</th>
             <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'sales_order_date',width:150,halign:'center'">Sales Order Date</th>
-            <!-- <th rowspan="2" data-options="field:'delivery_date',width:150,halign:'center'">Delivery Date</th> -->
+            <th rowspan="2" data-options="field:'delivery_date',width:150,halign:'center'">Delivery Date</th>
             <th rowspan="2" data-options="field:'currency',width:80,align:'center'">Currency</th>
             <th rowspan="2" data-options="field:'total_sub',width:100,halign:'center',align:'right',formatter: numberFormat">Sub Total</th>
             <th rowspan="2" data-options="field:'total_tax',width:100,halign:'center',align:'right',formatter: numberFormat">Taxes</th>
             <th rowspan="2" data-options="field:'total_pph',width:100,halign:'center',align:'right',formatter: numberFormat">PPh</th>
             <th rowspan="2" data-options="field:'total_grand',width:100,halign:'center',align:'right',formatter: numberFormat">Grand Total</th>
             <th rowspan="2" data-options="field:'remarks',width:150,halign:'center'">Remarks</th>
-            <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>
+            <th rowspan="2" data-options="field:'attachment',width:150,halign:'center'">Attachment</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -78,8 +78,8 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1210px; height: 100%; padding:10px; top: 20px;">
-    <form id="frm_insert" method="post" enctype="multipart/form-data" novalidate>
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; height: 700px; padding:10px; top: 20px;">
+    <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div style="width: 50%; float: left;">
@@ -99,16 +99,16 @@
                     <span style="width:35%; display:inline-block;">Sales Order No</span>
                     <input style="width:60%;" name="sales_order_no" id="sales_order_no" readonly class="easyui-textbox">
                 </div>
-                <!-- <div class="fitem">
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Division</span>
                     <input style="width:60%;" name="division" id="division" required="" class="easyui-combobox">
-                </div> -->
-                <!-- <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Delivery Date</span>
-                    <input style="width:40%;" name="delivery_date" id="delivery_date" required data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
-                </div> -->
+                </div>
             </div>
             <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Delivery Date</span>
+                    <input style="width:40%;" name="delivery_date" id="delivery_date" required data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
+                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Shipping Address</span>
                     <input style="width:60%;" name="customer_address_id" id="customer_address_id" required="" class="easyui-combobox">
@@ -127,18 +127,13 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Attachment</span>
-                    <input style="width:60%;" name="attachment_upload" id="attachment_upload" class="easyui-filebox">
-                </div>
-                <div class="fitem" hidden>
-                    <span style="width:35%; display:inline-block;">Attachment</span>
-                    <input style="width:60%;" name="attachment" id="attachment" class="easyui-textbox">
+                    <input style="width:60%;" name="attachment" id="attachment" class="easyui-filebox">
                 </div>
             </div>
         </fieldset>
         <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Sales Order Lists" toolbar="#toolbar2"></table>
         <div style="width: 30%; float: right; margin-top: 10px;">
-            <!-- <a style="width: 100%;" class="easyui-linkbutton c8" onclick="calculate()">Calculate</a>
-            <a href="javascript:;" class="easyui-linkbutton" style="width: 100%" onclick="calculate()"><i class="fa fa-calculator"></i> Calculate</a> -->
+            <a style="width: 100%;" class="easyui-linkbutton c2" onclick="calculate()">Calculate</a>
             <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; margin-top: 10px; border-radius:4px;">
                 <div style="width: 100%; float: left;">
                     <div class="fitem">
@@ -162,26 +157,6 @@
             </fieldset>
         </div>
     </form>
-</div>
-
-<!-- Upload -->
-<div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
-    <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
-        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
-            <legend><b>Form Data</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">File Upload</span>
-                <input name="file_upload" style="width: 60%;" required="" accept=".xls" id="file_excel" class="easyui-filebox">
-            </div>
-        </fieldset>
-    </form>
-    <span style="float: left; color:green;">SUCCESS : <b id="p_success">0</b></span><span style="float: right; color:red;"> FAILED : <b id="p_failed">0</b></span>
-    <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
-    <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
-    <div id="p_remarks" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
-        <ul id="remarks">
-        </ul>
-    </div>
 </div>
 
 <!-- PDF -->
@@ -215,7 +190,7 @@
         });
 
         $('#customer_id').combobox({
-            url: '<?= base_url('master/customers/readsA/'); ?>',
+            url: '<?= base_url('master/customers/reads/'); ?>',
             valueField: 'id',
             textField: 'name',
             prompt: 'Choose Customer Name',
@@ -260,8 +235,6 @@
         endEditing();
         var totalrows = rows.length;
 
-        // alert(totalrows);
-
         if (totalrows > 0) {
             var total_sub = 0;
             for (let i = 0; i < totalrows; i++) {
@@ -284,23 +257,8 @@
         $('#dg2').datagrid({
             url: link,
             singleSelect: true,
-            rownumbers: true,
             columns: [
                 [{
-                    field: 'delivery_date',
-                    width: 120,
-                    halign: 'center',
-                    title: "Delivery Date",
-                    editor: {
-                        type: 'datebox',
-                        options: {
-                            formatter: myformatter,
-                            parser: myparser,
-                            editable: false,
-                            required: true
-                        }
-                    }
-                },{
                     field: 'item_fg_id',
                     width: 150,
                     halign: 'center',
@@ -439,7 +397,6 @@
 
                                 $(ed3.target).numberbox('setValue', outstanding);
                                 $(ed.target).numberbox('setValue', total);
-                                calculate();
                             }
                         }
                     }
@@ -659,20 +616,10 @@
         $("#printout").attr('src', '<?= base_url('planning/sales_orders/print') ?>' + url);
     }
 
-     //Upload Data
-     function upload() {
-        $('#dlg_upload').dialog('open');
-    }
-
-    function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_sales_orders.xls') ?>');
-    }
-
     //PRINT PDF
     function pdf() {
         $("#printout").get(0).contentWindow.print();
     }
-
 
     //PRINT EXCEL
     function excel() {
@@ -702,7 +649,6 @@
             url: '<?= base_url('planning/sales_orders/datatables') ?>',
             pagination: true,
             rownumbers: true,
-            fit: true,
             view: detailview,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.sales_order_no + '"></table></div>';
@@ -714,14 +660,8 @@
                     url: '<?= base_url('planning/sales_orders/datatableDetails?sales_order_no=') ?>' + window.btoa(row.sales_order_no),
                     singleSelect: true,
                     rownumbers: true,
-                    height:'auto',
                     columns: [
                         [{
-                            field: 'delivery_date',
-                            title: 'Delivery Date',
-                            halign: 'center',
-                            width: 200
-                        },{
                             field: 'item_fg_id',
                             title: 'Product ID',
                             halign: 'center',
@@ -789,87 +729,6 @@
             }
         });
 
-         //Upload Data
-         $('#dlg_upload').dialog({
-            buttons: [{
-                text: 'List Failed',
-                handler: function() {
-                    window.open('<?= base_url('planning/sales_orders/uploadDownloadFailed') ?>', '_blank');
-                }
-            }, {
-                text: 'Upload',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_upload').form('submit', {
-                        url: '<?= base_url('planning/sales_orders/upload') ?>',
-                        onSubmit: function() {
-                            if ($(this).form('validate') == false) {
-                                return $(this).form('validate');
-                            } else {
-                                $.messager.progress({
-                                    title: 'Please Wait',
-                                    msg: 'Importing Excel to Database'
-                                });
-                            }
-                        },
-                        success: function(result) {
-                            $.messager.progress('close');
-                            //Clear File
-                            $.ajax({
-                                url: "<?= base_url('planning/sales_orders/uploadclearFailed') ?>"
-                            });
-                            var json = eval('(' + result + ')');
-                            requestData(json.total, json);
-
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
-
-                                    $.ajax({
-                                        type: "POST",
-                                        async: true,
-                                        url: "<?= base_url('planning/sales_orders/uploadCreate') ?>",
-                                        data: {
-                                            "data": json[number - 1],
-                                            "total_sub": json.total_sub,
-                                        },
-                                        cache: false,
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (result.theme == "success") {
-                                                $('#p_success').html(success);
-                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                //Json Failed
-                                                $.ajax({
-                                                    type: "POST",
-                                                    async: true,
-                                                    url: "<?= base_url('planning/sales_orders/uploadcreateFailed') ?>",
-                                                    data: {
-                                                        data: json[number - 1],
-                                                        message: result.message
-                                                    },
-                                                    cache: false
-                                                });
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                            }
-                                            $("#p_remarks").append(title + "<br>");
-                                        }
-                                    });
-                                }
-                            }
-                        }
-                    });
-                }
-            }]
-        });
-
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
@@ -880,11 +739,10 @@
                     var customer_order_no = $("#customer_order_no").textbox('getValue');
                     var sales_order_date = $("#sales_order_date").datebox('getValue');
                     var sales_order_no = $("#sales_order_no").textbox('getValue');
-                    // var division = $("#division").combobox('getValue');
-                    // var delivery_date = $("#delivery_date").datebox('getValue');
+                    var division = $("#division").combobox('getValue');
+                    var delivery_date = $("#delivery_date").datebox('getValue');
                     var customer_address_id = $("#customer_address_id").combobox('getValue');
                     var remarks = $("#remarks").textbox('getValue');
-                    var attachment = $("#attachment").textbox('getValue');
                     var pph = $("#pph").numberbox('getValue');
                     var taxes = $("#taxes").numberbox('getValue');
                     var total_sub = $("#total_sub").numberbox('getValue');
@@ -898,7 +756,6 @@
 
                     if (customer_address_id != "" && total_grand != "") {
                         for (let i = 0; i < totalrows; i++) {
-                            // alert(rows[i].item_fg_id);
                             if (rows[i].item_fg_id) {
                                 $.ajax({
                                     type: "post",
@@ -908,19 +765,16 @@
                                         customer_order_no: customer_order_no,
                                         sales_order_date: sales_order_date,
                                         sales_order_no: sales_order_no,
-                                        // division: division,
-                                        // delivery_date: delivery_date,
+                                        division: division,
+                                        delivery_date: delivery_date,
                                         customer_address_id: customer_address_id,
                                         remarks: remarks,
-                                        attachment: attachment,
                                         total_sub: total_sub,
                                         total_tax: total_tax,
                                         pph: pph,
                                         taxes: taxes,
                                         total_pph: total_pph,
                                         total_grand: total_grand,
-                                        // customer_order_no: rows[i].customer_order_no,
-                                        delivery_date: rows[i].delivery_date,
                                         item_fg_id: rows[i].item_fg_id,
                                         uom: rows[i].uom,
                                         qty: rows[i].qty,
@@ -960,7 +814,7 @@
     });
 
     $('#filter_customer_id').combobox({
-        url: '<?= base_url('master/customers/readsA'); ?>',
+        url: '<?= base_url('master/customers/reads'); ?>',
         valueField: 'id',
         textField: 'name',
         prompt: 'Choose All',
@@ -999,23 +853,13 @@
         }
     });
 
-    function btnDetails(val, row, index) {
-        var attachment = row.attachment;
-        
-        if (attachment != null && attachment != "") {
-            return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/sales_orders/') ?>'+row.attachment+'" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
-        } else {
-            return '-';
-        }
-    }
-
-    // $('#division').combobox({
-    //     url: '<?= base_url('master/divisions/reads'); ?>',
-    //     valueField: 'name',
-    //     textField: 'name',
-    //     panelHeight: 'panelHeight',
-    //     prompt: 'Choose Division',
-    // });
+    $('#division').combobox({
+        url: '<?= base_url('master/divisions/reads'); ?>',
+        valueField: 'name',
+        textField: 'name',
+        panelHeight: 'panelHeight',
+        prompt: 'Choose Division',
+    });
 
     //CELLSTYLE STATUS
     function cellStyler(value, row, index) {
@@ -1061,36 +905,4 @@
         });
         return "<b>" + formatter.format(value) + "</b>";
     }
-
-    $('#attachment_upload').filebox({
-    buttonText: 'Browse File',
-    accept: '.jpg, .png, .pdf',
-        onChange: function () {
-            var files = $(this).filebox('files');
-            var formData = new FormData();
-
-            for (var i = 0; i < files.length; i++) {
-                var file = files[i];
-                formData.append('file', file, file.name);
-            }
-
-            $.ajax({
-                url: '<?= base_url('planning/sales_orders/uploadatt') ?>',
-                type: 'post',
-                data: formData,
-                contentType: false,
-                processData: false,
-                dataType: 'json',
-                success: function (data) {
-                    if (data.success == true) {
-                        toastr.success(data.message);
-                        $('#attachment').textbox('setValue', data.filename); // Mengatur nilai pada textbox
-                    } else {
-                        toastr.error(data.message);
-                    }
-                }
-            });
-        }
-    });
-
 </script>

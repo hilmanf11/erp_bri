@@ -11,7 +11,7 @@
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Product Name</th>
             <th rowspan="2" data-options="field:'specification',width:400,halign:'center'">Product Specification</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
-            <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformat">Total Qty</th>
+            <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right'">Total Qty</th>
             <th rowspan="2" data-options="field:'remarks',width:100,halign:'center'">Remarks</th>
             <th rowspan="2" data-options="field:'po_no',width:120,align:'center'">Po No</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -250,7 +250,7 @@
                         type: 'numberbox',
                         options: {
                             required: true,
-                            precision: 2
+                            // precision: 2
                         }
                     }
                 }, {
@@ -320,7 +320,7 @@
         if (item_family_id != "") {
             if (endEditing()) {
                 $('#dg2').datagrid('appendRow', {
-                    qty: '0'
+                    qty: ''
                 });
                 editIndex = $('#dg2').datagrid('getRows').length - 1;
                 $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);

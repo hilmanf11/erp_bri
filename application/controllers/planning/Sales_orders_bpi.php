@@ -14,7 +14,7 @@ class Sales_orders extends CI_Controller
 
         //VALIDASI FORM
         $this->form_validation->set_rules('customer_id', 'Customer', 'required|min_length[1]|max_length[20]|is_unique[customer_items.customer_id]');
-        $this->form_validation->set_rules('item_id', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[customer_items.item_id]');
+        $this->form_validation->set_rules('item_fg_id', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[customer_items.item_fg_id]');
     }
 
     //HALAMAN UTAMA
@@ -154,9 +154,9 @@ class Sales_orders extends CI_Controller
         if ($this->input->post()) {
             $post = $this->input->post();
 
-            $sales_orders = $this->crud->read("sales_orders", [], ["sales_order_no" => $post['sales_order_no'],"delivery_date" => $post['delivery_date'], "item_fg_id" => $post['item_fg_id']]);
+            $sales_orders = $this->crud->read("sales_orders", [], ["sales_order_no" => $post['sales_order_no'], "item_fg_id" => $post['item_fg_id']]);
             if (@$sales_orders->sales_order_no != "") {
-                $send = $this->crud->update('sales_orders', ["sales_order_no" => $post['sales_order_no'],"delivery_date" => $post['delivery_date'], "item_fg_id" => $post['item_fg_id']], $post);
+                $send = $this->crud->update('sales_orders', ["sales_order_no" => $post['sales_order_no'], "item_fg_id" => $post['item_fg_id']], $post);
             } else {
                 $send = $this->crud->create('sales_orders', $post);
             }
@@ -167,61 +167,6 @@ class Sales_orders extends CI_Controller
         }
     }
 
-    public function uploadatt()
-    {
-        // Pastikan file disimpan dalam direktori yang diinginkan
-        $uploadDir = 'assets/image/sales_orders/';
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Pastikan ada file yang diunggah dari permintaan
-            if (isset($_FILES['file'])) {
-                $file = $_FILES['file'];
-
-                // Validasi ekstensi file yang diunggah
-                $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
-                $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-
-                if (!in_array($fileExtension, $allowedExtensions)) {
-                    echo json_encode(['success' => false, 'message' => 'Only files with the extension .pdf, .jpg, or .png are allowed.']);
-                    exit; // Menghentikan proses lebih lanjut jika ekstensi tidak valid
-                }
-
-                // Validasi ukuran file yang diunggah (maksimal 5MB)
-                $maxFileSize = 2 * 1024 * 1024; // 5MB dalam bytes
-                if ($file['size'] > $maxFileSize) {
-                    echo json_encode(['success' => false, 'message' => 'Ukuran file terlalu besar. Maksimal 2MB yang diperbolehkan.']);
-                    exit; // Menghentikan proses lebih lanjut jika ukuran terlalu besar
-                }
-
-                // Pastikan tidak ada error dalam proses upload
-                if ($file['error'] === UPLOAD_ERR_OK) {
-                    // Buat nama unik untuk file yang diunggah
-                    $fileName = uniqid() . '_' . $file['name'];
-                    $uploadPath = $uploadDir . $fileName;
-
-                    // Pindahkan file dari temporary directory ke lokasi yang diinginkan
-                    if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-                        // File berhasil diunggah
-                        echo json_encode(['success' => true, 'message' => 'File Upload Success.', 'filename' => $fileName]);
-                    } else {
-                        // Gagal menyimpan file
-                        echo json_encode(['success' => false, 'message' => 'File Upload Failed.']);
-                    }
-                } else {
-                    // Ada error dalam proses upload
-                    echo json_encode(['success' => false, 'message' => 'Error while Upload.']);
-                }
-            } else {
-                // File tidak ditemukan dalam permintaan
-                echo json_encode(['success' => false, 'message' => 'File Not Found.']);
-            }
-        } else {
-            // Metode request yang diperlukan adalah POST
-            echo json_encode(['success' => false, 'message' => 'Metode request yang diperlukan adalah POST.']);
-        }
-    }
-
-
     //DELETE DATA
     public function delete()
     {
@@ -229,146 +174,6 @@ class Sales_orders extends CI_Controller
         $send = $this->crud->delete('sales_orders', $data);
         echo $send;
     }
-
-     //UPLOAD DATA
-     public function upload()
-    {
-        error_reporting(0);
-        require_once 'assets/vendors/excel_reader2.php';
-        $target = basename($_FILES['file_upload']['name']);
-        move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
-        chmod($_FILES['file_upload']['name'], 0777);
-        $file = $_FILES['file_upload']['name'];
-        $data = new Spreadsheet_Excel_Reader($file, false);
-        $total_row = $data->rowcount($sheet_index = 0);
-
-        $customer_id = $data->val(2, 3);
-        $sales_order_date = $data->val(3, 3);
-
-        $datenow    = "SO" . $customer_id . date("ymd", strtotime($sales_order_date));
-        $sqlGetID   = $this->db->query("SELECT max(`sales_order_no`) as kode FROM sales_orders WHERE `sales_order_no` like '%$datenow%'");
-        $rowID      = $sqlGetID->row();
-        $kode       = $rowID->kode;
-        if ($kode == NULL) {
-            $autoID = sprintf("%03s", $kode + 1);
-        } else {
-            $urutan = (int) substr($kode, -3);
-            $urutan++;
-            $autoID = sprintf("%03s", $urutan);
-        }        
-
-        $sales_order_no = $datenow . $autoID;
-
-        $total_sub = 0;
-         for ($i = 7; $i <= $total_row; $i++) {
-            $item_fg_number = $data->val($i, 3);
-            $item_fg = $this->crud->read('item_fg', [], ["number" => $item_fg_number]);
-
-            if (!empty($item_fg->number)) {
-                $customer_items = $this->crud->read('customer_items', [], ["item_id" => $item_fg->id,"customer_id" => $customer_id]);
-                $total = ($data->val($i, 4) * $customer_items->price);
-                $datas[] = array(
-                    //excel
-                    'customer_id' => $customer_id,
-                    'sales_order_date' => $data->val(3, 3),
-                    'delivery_date' => $data->val(4, 3),
-                    'customer_address_id' => $data->val(2, 5),
-                    'remarks' => $data->val(3, 5),
-                    'customer_order_no' => $data->val($i, 2),
-                    'item_fg_id' => $item_fg->id,
-                    'qty' => $data->val($i, 4),
-                    'price' => $customer_items->price,
-                    'sales_order_no' => $sales_order_no,
-                    "total" => $total,
-                    'uom' => $item_fg->uom,
-                );
-                $total_sub += $total;
-            }
-         }
-
-         $datas['total_sub'] = $total_sub;
-         $datas['total'] = count($datas);
-         echo json_encode($datas);
-         unlink($_FILES['file_upload']['name']);
-    }
-     public function uploadclearFailed()
-     {
-         @unlink('failed/sales_orders.txt');
-     }
-     public function uploadcreateFailed()
-     {
-         if ($this->input->post()) {
-             $message = $this->input->post('message');
-             $textFailed = fopen('failed/sales_orders.txt', 'a');
-             fwrite($textFailed, $message . "\n");
-             fclose($textFailed);
-         }
-     }
- 
-     //UPLOAD DOWNLOAD FAILED
-     public function uploadDownloadFailed()
-     {
-         $file = "failed/sales_orders.txt";
-         header('Content-Description: File Failed');
-         header('Content-Disposition: attachment; filename=' . basename($file));
-         header('Expires: 0');
-         header('Cache-Control: must-revalidate');
-         header('Pragma: public');
-         header('Content-Length: ' . @filesize($file));
-         header("Content-Type: text/plain");
-         @readfile($file);
-     }
- 
-     //UPLOAD CREATE DATA
-     public function uploadcreate()
-     {
-         if ($this->input->post()) {
-            $data = $this->input->post('data');//field excel
-            $total_sub = $this->input->post('total_sub');
-
-            //Cek Process Number                //table             //field           //field excel
-            $customers = $this->crud->read('customers', [], ["id" => $data['customer_id']]);
-            $customer_address = $this->crud->read('customer_address', [], ["id" => $data['customer_address_id'],"customer_id" => $data['customer_id']]);
-            
-
-            if (empty($customers->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Customers ID " . $data['customer_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty($customer_address->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Customers Address ID " . $data['customer_address_id'] . " Not Found in Customers ID ". $data['customer_id'] . "", "theme" => "error"));
-            } else {
-                $customer_items = $this->crud->read('customer_items', [], ["item_id" => $data['item_fg_id'],"customer_id" => $data['customer_id']]);
-                $sales_orders = $this->crud->read('sales_orders', [], ["customer_order_no" => $data['customer_order_no'], "item_fg_id" => $data['item_fg_id']]);
-
-                if (!empty($sales_orders->sales_order_no )) {
-                    echo json_encode(array("title" => "Duplicated", "message" => "Product ID " . $data['item_fg_id'] . " and Customer Order No " . $data['customer_order_no'] . " Duplicated", "theme" => "error"));
-                } else {
-                    $dataFinal = array(
-                        //field        //excel
-                        "customer_id" => $data['customer_id'],
-                        "sales_order_date" => $data['sales_order_date'],
-                        "sales_order_no" => $data['sales_order_no'],
-                        "delivery_date" => $data['delivery_date'],
-                        "customer_address_id" => $data['customer_address_id'],
-                        "remarks" => $data['remarks'],
-                        "customer_order_no" => $data['customer_order_no'],
-                        "item_fg_id" => $data['item_fg_id'],
-                        "qty" => $data['qty'],
-                        "uom" => $data['uom'],
-                        "currency" => $customers->currency,
-                        "price" => $data['price'],
-                        "total" => $data['total'],
-                        "total_sub" => $total_sub,
-                        "total_tax" => ($total_sub * ($customers->taxes / 100)),
-                        "total_pph" => 0,
-                        "total_grand" => ($total_sub + ($total_sub * ($customers->taxes / 100))),
-                        
-                    );
-                    $send   = $this->crud->create('sales_orders', $dataFinal);
-                    echo $send;
-                }
-             }
-         }
-     }
 
     //PRINT & EXCEL DATA
     public function print($option = "")
@@ -437,6 +242,7 @@ class Sales_orders extends CI_Controller
                 <th>Customer Order No</th>
                 <th>Sales Order No</th>
                 <th>Sales Order Date</th>
+                <th>Division</th>
                 <th>Delivery Date</th>
                 <th>Remarks</th>
                 <th>Product ID</th>
@@ -458,6 +264,7 @@ class Sales_orders extends CI_Controller
                         <td>' . $data['customer_order_no'] . '</td>
                         <td>' . $data['sales_order_no'] . '</td>
                         <td>' . $data['sales_order_date'] . '</td>
+                        <td>' . $data['division'] . '</td>
                         <td>' . $data['delivery_date'] . '</td>
                         <td>' . $data['remarks'] . '</td>
                         <td>' . $data['item_fg_id'] . '</td>

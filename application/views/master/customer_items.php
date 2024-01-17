@@ -27,7 +27,7 @@
             <legend><b>Form Filter Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Customer</span>
-                <input style="width:60%;" id="filter_customer_id" class="easyui-combogrid">
+                <input style="width:60%;" id="filter_customer_id" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
@@ -165,7 +165,7 @@
                 }, {
                     field: 'id',
                     width: 150,
-                    // hidden: true,
+                    hidden: true,
                     halign: 'center',
                     title: "ID",
                     editor: {
@@ -174,7 +174,7 @@
                 }, {
                     field: 'item_id',
                     width: 150,
-                    // hidden: true,
+                    hidden: true,
                     halign: 'center',
                     title: "Product ID",
                     editor: {
@@ -442,7 +442,7 @@
 
     //FILTER DATA
     function filter() {
-        var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
+        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
         var filter_item_id = $("#filter_item_id").combogrid('getValue');
 
         var url = "?filter_customer_id=" + window.btoa(filter_customer_id) +
@@ -463,7 +463,7 @@
 
     //PRINT EXCEL
     function excel() {
-        var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
+        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
         var filter_item_id = $("#filter_item_id").combogrid('getValue');
 
         var url = "?filter_customer_id=" + window.btoa(filter_customer_id) +
@@ -669,77 +669,152 @@
         ]
     });
 
-    // combogrid filter customers
-    $('#filter_customer_id').combogrid({
+    $('#filter_customer_id').combobox({
         url: '<?= base_url('master/customers/readsA'); ?>',
-        panelWidth: 750,
-        idField: 'id',
+        valueField: 'id',
         textField: 'name',
-        mode: 'remote',
-        fitColumns: true,
-        prompt: "Choose Customer",
-        columns: [
-            [{
-                field: 'id',
-                title: 'Customer ID',
-                width: 150
-            }, {
-                field: 'number',
-                title: 'Customer Code',
-                width: 150
-            }, {
-                field: 'name',
-                title: 'Customer Name',
-                width: 200
-            }, {
-                field: 'type',
-                title: 'Type',
-                width: 100
-            }, {
-                field: 'currency',
-                title: 'Currency',
-                width: 100
-            }, ]
-        ],
+        // panelHeight:'auto',
+        prompt: 'Choose Customer',
         icons: [{
             iconCls: 'icon-clear',
             handler: function(e) {
-                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
             }
         }],
+        onSelect: function(customer) {
+            $('#filter_item_id').combogrid({
+                url: '<?= base_url('master/customer_items/readItems?customer_id='); ?>'+ customer.id,
+                panelWidth: 500,
+                idField: 'item_id',
+                textField: 'item_number',
+                mode: 'remote',
+                fitColumns: true,
+                // panelHeight:'auto',
+                prompt: "Choose Product No.",
+                columns: [
+                    [{
+                        field: 'item_id',
+                        title: 'Product ID',
+                        width: 180
+                    }, {
+                        field: 'item_number',
+                        title: 'Product No.',
+                        width: 150
+                    }, {
+                        field: 'item_name',
+                        title: 'Product Name',
+                        width: 150
+                    }, ]
+                ],
+                icons: [{
+                    iconCls: 'icon-clear',
+                    handler: function(e) {
+                        $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                    }
+                }],
+            });
+        }
     });
 
+    // combogrid filter customers
+    // $('#filter_customer_id').combogrid({
+    //     url: '<?= base_url('master/customers/readsA'); ?>',
+    //     panelWidth: 750,
+    //     idField: 'id',
+    //     textField: 'name',
+    //     mode: 'remote',
+    //     fitColumns: true,
+    //     prompt: "Choose Customer",
+    //     columns: [
+    //         [{
+    //             field: 'number',
+    //             title: 'Customer Code',
+    //             width: 150
+    //         }, {
+    //             field: 'name',
+    //             title: 'Customer Name',
+    //             width: 200
+    //         }, {
+    //             field: 'type',
+    //             title: 'Type',
+    //             width: 100
+    //         }, {
+    //             field: 'currency',
+    //             title: 'Currency',
+    //             width: 100
+    //         }, ]
+    //     ],
+    //     icons: [{
+    //         iconCls: 'icon-clear',
+    //         handler: function(e) {
+    //             $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+    //         }
+    //     }],
+    //     onSelect: function(customer) {
+    //         $('#filter_item_id').combogrid({
+    //             url: '<?= base_url('master/customer_items/readItems?customer_id='); ?>'+ customer.id,
+    //             panelWidth: 500,
+    //             idField: 'item_id',
+    //             textField: 'item_number',
+    //             mode: 'remote',
+    //             fitColumns: true,
+    //             prompt: "Choose Product No.",
+    //             columns: [
+    //                 [{
+    //                     field: 'item_id',
+    //                     title: 'Product ID',
+    //                     width: 180
+    //                 }, {
+    //                     field: 'item_number',
+    //                     title: 'Product No.',
+    //                     width: 150
+    //                 }, {
+    //                     field: 'item_name',
+    //                     title: 'Product Name',
+    //                     width: 150
+    //                 }, ]
+    //             ],
+    //             icons: [{
+    //                 iconCls: 'icon-clear',
+    //                 handler: function(e) {
+    //                     $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+    //                 }
+    //             }],
+    //         });
+    //     }
+    // });
+
     // combogrid filter items
-    $('#filter_item_id').combogrid({
-        url: '<?= base_url('master/item_fg/reads'); ?>',
-        panelWidth: 500,
-        idField: 'id',
-        textField: 'number',
-        mode: 'remote',
-        fitColumns: true,
-        prompt: "Choose Product No.",
-        columns: [
-            [{
-                field: 'id',
-                title: 'Product ID',
-                width: 180
-            }, {
-                field: 'number',
-                title: 'Product No.',
-                width: 150
-            }, {
-                field: 'name',
-                title: 'Product Name',
-                width: 150
-            }, ]
-        ],
-        icons: [{
-            iconCls: 'icon-clear',
-            handler: function(e) {
-                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-            }
-        }],
-    });
+    // $('#filter_item_id').combogrid({
+    //     url: '<?= base_url('master/customer_items/readItems'); ?>',
+    //     panelWidth: 500,
+    //     idField: 'id',
+    //     textField: 'number',
+    //     mode: 'remote',
+    //     fitColumns: true,
+    //     prompt: "Choose Product No.",
+    //     columns: [
+    //         [{
+    //             field: 'id',
+    //             title: 'Product ID',
+    //             width: 180
+    //         }, {
+    //             field: 'number',
+    //             title: 'Product No.',
+    //             width: 150
+    //         }, {
+    //             field: 'name',
+    //             title: 'Product Name',
+    //             width: 150
+    //         }, ]
+    //     ],
+    //     icons: [{
+    //         iconCls: 'icon-clear',
+    //         handler: function(e) {
+    //             $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+    //         }
+    //     }],
+    // });
 
      //CELLSTYLE APPROVE
      function styleApproved(value, row, index) {

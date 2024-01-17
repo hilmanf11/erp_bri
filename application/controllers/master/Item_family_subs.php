@@ -35,6 +35,13 @@ class Item_family_subs extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readss($item_family_number)
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->reads('item_family_subs', ["number" => $post],["item_family_number" => $item_family_number]);
+        echo json_encode($send);
+    }
+
     //GET DATATABLES
     public function datatables()
     {

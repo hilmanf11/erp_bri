@@ -515,10 +515,10 @@ class Forecasts extends CI_Controller
         $this->db->like('a.customer_id', $filter_customer_id);
         $this->db->like('a.item_fg_id', $filter_product_no);
         $this->db->like('a.revision', $filter_revision);
-        $this->db->group_by('a.customer_id');
-        $this->db->group_by('a.p_month');
-        $this->db->group_by('a.p_year');
-        $this->db->group_by('a.revision');
+        // $this->db->group_by('a.customer_id');
+        // $this->db->group_by('a.p_month');
+        // $this->db->group_by('a.p_year');
+        // $this->db->group_by('a.revision');
         $this->db->order_by('a.created_date', 'DESC');
         $records = $this->db->get()->result_array();
 
