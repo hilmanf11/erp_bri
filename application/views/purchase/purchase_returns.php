@@ -11,7 +11,7 @@
             <!-- <th rowspan="2" data-options="field:'description',width:400,halign:'center'">Product Specification</th> -->
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
             <th rowspan="2" data-options="field:'mpq',width:80,halign:'center',align:'right',formatter:numberformat">MPQ</th>
-            <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right';">Qty</th>
+            <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right'">Qty</th>
             <th rowspan="2" data-options="field:'remarks',width:150,halign:'center'">Remarks</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -511,6 +511,7 @@
             }],
         });
     });
+
     //Format Datepicker
     function myformatter(date) {
         var y = date.getFullYear();
