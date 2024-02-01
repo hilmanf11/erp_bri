@@ -60,7 +60,7 @@
 </div>
 
 <!-- Insert -->
-<div id="dlg_insert" class="easyui-dialog" title="Convert Purchase Request to Purchase Order" data-options="closed: true,modal:true" style="width: 900px; height: 100%; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Convert Purchase Request to Purchase Order" data-options="closed: true,modal:true" style="width: 80%; height: 100%; padding:10px; top: 0;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:60%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -550,7 +550,6 @@
                     var editors = $('#dg_request').datagrid('getEditors', rowIndex);
                     var item_id = $(editors[0].target).textbox('getValue');
                     var supplier_id = $(editors[1].target);
-                    var delivery_date = $(editors[6].target);
                     var po_date = $("#po_date").datebox('getValue');
                     supplier_id.combogrid({
                         url: '<?= base_url('master/supplier_items/readSuppliers?item_number=') ?>' + item_id,
@@ -576,7 +575,7 @@
                             $(editors[2].target).textbox('setValue', rows.id);
                             $(editors[3].target).textbox('setValue', rows.mpq);
                             $(editors[4].target).textbox('setValue', rows.moq);
-                            $(editors[6].target).textbox('setValue', 0.00);
+                            $(editors[6].target).textbox('setValue', "<?= date("Y-m-d") ?>");
                         }
                     });
                     delivery_date.add(delivery_date).datebox({
@@ -615,6 +614,7 @@
                                     },
                                     success: function(result) {
                                         var result = eval('(' + result + ')');
+                                        toastr.success(result.message);
                                     },
                                     error: function(jqXHR, textStatus, errorThrown) {
                                         toastr.error(jqXHR.statusText);
