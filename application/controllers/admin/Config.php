@@ -40,8 +40,6 @@ class Config extends CI_Controller
             $uploadLogo = $this->crud->upload('logo', ['png', 'jpg', 'jpeg'], 'assets/image/config/logo/', ["number" => "ERP"], "config", "logo");
             $uploadFavicon = $this->crud->upload('favicon', ['png', 'jpg', 'jpeg'], 'assets/image/config/favicon/', ["number" => "ERP"], "config", "favicon");
             $uploadLogin = $this->crud->upload('image', ['png', 'jpg', 'jpeg'], 'assets/image/config/login/', ["number" => "ERP"], "config", "image");
-
-
             $post_final = array_merge($post, ['logo' => @$uploadLogo, 'favicon' => @$uploadFavicon, 'image' => @$uploadLogin]);
             $send = $this->db->update("config", $post_final);
             if ($send) {

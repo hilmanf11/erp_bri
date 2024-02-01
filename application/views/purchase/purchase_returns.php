@@ -511,7 +511,6 @@
             }],
         });
     });
-
     //Format Datepicker
     function myformatter(date) {
         var y = date.getFullYear();

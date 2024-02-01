@@ -579,67 +579,67 @@
 
         //SAVE DATA
         $('#dlg_insert').dialog({
-    buttons: [{
-        text: 'Save All',
-        iconCls: 'icon-ok',
-        handler: function() {
-            var customer_id = $("#customer_id").combogrid('getValue');
-            var rows = $('#dg2').datagrid('getRows');
-            var totalrows = rows.length;
-            var changesDetected = false;
+            buttons: [{
+                text: 'Save All',
+                iconCls: 'icon-ok',
+                handler: function() {
+                    var customer_id = $("#customer_id").combogrid('getValue');
+                    var rows = $('#dg2').datagrid('getRows');
+                    var totalrows = rows.length;
+                    var changesDetected = false;
 
-            endEditing();
+                    endEditing();
 
-            for (let i = 0; i < totalrows; i++) {
-                if (rows[i].item_id) {
-                    var originalPrice = rows[i].price; // Ganti dengan properti yang sesuai untuk menyimpan harga awal dari database
-                    if (rows[i].price !== originalPrice) {
-                        changesDetected = true; // Tandai bahwa ada perubahan pada price
+                    for (let i = 0; i < totalrows; i++) {
+                        if (rows[i].item_id) {
+                            var originalPrice = rows[i].price; // Ganti dengan properti yang sesuai untuk menyimpan harga awal dari database
+                            if (rows[i].price !== originalPrice) {
+                                changesDetected = true; // Tandai bahwa ada perubahan pada price
+                            }
+
+                            // Lakukan pengiriman data melalui AJAX
+                            $.ajax({
+                                type: "post",
+                                url: url_save,
+                                data: {
+                                    customer_id: customer_id,
+                                    id: rows[i].id,
+                                    item_id: rows[i].item_id,
+                                    item_customer: rows[i].item_customer,
+                                    price: rows[i].price,
+                                    valid_date: rows[i].valid_date,
+                                    attachment: rows[i].attachment,
+                                    description: rows[i].description
+                                },
+                                dataType: "json",
+                                success: function(result) {
+                                    if (i == (totalrows - 1)) {
+                                        Swal.fire({
+                                            title: result.message,
+                                            icon: result.theme,
+                                            confirmButtonText: 'Ok',
+                                            allowOutsideClick: false,
+                                        }).then((result) => {
+                                            if (result.isConfirmed) {
+                                                window.location.reload();
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+                        }
                     }
 
-                    // Lakukan pengiriman data melalui AJAX
-                    $.ajax({
-                        type: "post",
-                        url: url_save,
-                        data: {
-                            customer_id: customer_id,
-                            id: rows[i].id,
-                            item_id: rows[i].item_id,
-                            item_customer: rows[i].item_customer,
-                            price: rows[i].price,
-                            valid_date: rows[i].valid_date,
-                            attachment: rows[i].attachment,
-                            description: rows[i].description
-                        },
-                        dataType: "json",
-                        success: function(result) {
-                            if (i == (totalrows - 1)) {
-                                Swal.fire({
-                                    title: result.message,
-                                    icon: result.theme,
-                                    confirmButtonText: 'Ok',
-                                    allowOutsideClick: false,
-                                }).then((result) => {
-                                    if (result.isConfirmed) {
-                                        window.location.reload();
-                                    }
-                                });
-                            }
-                        }
-                    });
+                    // Setelah pengiriman data selesai, terapkan validasi untuk file attachment jika ada perubahan pada price
+                    if (changesDetected) {
+                        $('#attachment_upload').filebox('textbox').validatebox({ required: true });
+                    }
+
+                    $('#dg').datagrid('reload');
+                    $('#dlg_insert').dialog('close');
                 }
-            }
-
-            // Setelah pengiriman data selesai, terapkan validasi untuk file attachment jika ada perubahan pada price
-            if (changesDetected) {
-                $('#attachment_upload').filebox('textbox').validatebox({ required: true });
-            }
-
-            $('#dg').datagrid('reload');
-            $('#dlg_insert').dialog('close');
-        }
-    }]
-});
+            }]
+        });
 
     });
     
@@ -667,6 +667,38 @@
                 width: 100
             }, ]
         ]
+    });
+
+    // combogrid filter items
+    $('#filter_item_id').combogrid({
+        url: '<?= base_url('master/item_fg/reads'); ?>',
+        panelWidth: 500,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Product No.",
+        columns: [
+            [{
+                field: 'id',
+                title: 'Product ID',
+                width: 180
+            }, {
+                field: 'number',
+                title: 'Product No.',
+                width: 150
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 150
+            }, ]
+        ],
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
     });
 
     $('#filter_customer_id').combobox({
@@ -715,106 +747,6 @@
             });
         }
     });
-
-    // combogrid filter customers
-    // $('#filter_customer_id').combogrid({
-    //     url: '<?= base_url('master/customers/readsA'); ?>',
-    //     panelWidth: 750,
-    //     idField: 'id',
-    //     textField: 'name',
-    //     mode: 'remote',
-    //     fitColumns: true,
-    //     prompt: "Choose Customer",
-    //     columns: [
-    //         [{
-    //             field: 'number',
-    //             title: 'Customer Code',
-    //             width: 150
-    //         }, {
-    //             field: 'name',
-    //             title: 'Customer Name',
-    //             width: 200
-    //         }, {
-    //             field: 'type',
-    //             title: 'Type',
-    //             width: 100
-    //         }, {
-    //             field: 'currency',
-    //             title: 'Currency',
-    //             width: 100
-    //         }, ]
-    //     ],
-    //     icons: [{
-    //         iconCls: 'icon-clear',
-    //         handler: function(e) {
-    //             $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-    //         }
-    //     }],
-    //     onSelect: function(customer) {
-    //         $('#filter_item_id').combogrid({
-    //             url: '<?= base_url('master/customer_items/readItems?customer_id='); ?>'+ customer.id,
-    //             panelWidth: 500,
-    //             idField: 'item_id',
-    //             textField: 'item_number',
-    //             mode: 'remote',
-    //             fitColumns: true,
-    //             prompt: "Choose Product No.",
-    //             columns: [
-    //                 [{
-    //                     field: 'item_id',
-    //                     title: 'Product ID',
-    //                     width: 180
-    //                 }, {
-    //                     field: 'item_number',
-    //                     title: 'Product No.',
-    //                     width: 150
-    //                 }, {
-    //                     field: 'item_name',
-    //                     title: 'Product Name',
-    //                     width: 150
-    //                 }, ]
-    //             ],
-    //             icons: [{
-    //                 iconCls: 'icon-clear',
-    //                 handler: function(e) {
-    //                     $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-    //                 }
-    //             }],
-    //         });
-    //     }
-    // });
-
-    // combogrid filter items
-    // $('#filter_item_id').combogrid({
-    //     url: '<?= base_url('master/customer_items/readItems'); ?>',
-    //     panelWidth: 500,
-    //     idField: 'id',
-    //     textField: 'number',
-    //     mode: 'remote',
-    //     fitColumns: true,
-    //     prompt: "Choose Product No.",
-    //     columns: [
-    //         [{
-    //             field: 'id',
-    //             title: 'Product ID',
-    //             width: 180
-    //         }, {
-    //             field: 'number',
-    //             title: 'Product No.',
-    //             width: 150
-    //         }, {
-    //             field: 'name',
-    //             title: 'Product Name',
-    //             width: 150
-    //         }, ]
-    //     ],
-    //     icons: [{
-    //         iconCls: 'icon-clear',
-    //         handler: function(e) {
-    //             $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-    //         }
-    //     }],
-    // });
 
      //CELLSTYLE APPROVE
      function styleApproved(value, row, index) {
@@ -982,6 +914,7 @@
                                         } else {
                                             $('#p_failed').html(failed);
                                             var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            
                                             //Json Failed
                                             $.ajax({
                                                 type: "POST",

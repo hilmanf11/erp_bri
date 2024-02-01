@@ -2,7 +2,7 @@
 
 	<!-- Header -->
 	<div data-options="region:'north', border:false" id="header" style="background-image: url(<?= base_url('assets/image/header/' . $profile->theme . '.png') ?>);">
-		<div style="float: left;">
+		<div style="float: left;" class="animate__animated animate__bounce animate__slower">
 			<img src="<?= base_url('assets/image/logo/' . $profile->theme . '.gif') ?>" width="140">
 		</div>
 

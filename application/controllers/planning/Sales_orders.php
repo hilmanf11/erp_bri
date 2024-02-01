@@ -54,6 +54,12 @@ class Sales_orders extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readCustomerOrders()
+    {
+        $send = $this->crud->query("SELECT DISTINCT customer_order_no FROM sales_orders WHERE `status` = '0'");
+        echo json_encode($send);
+    }
+
     public function number($customer_id, $sales_order_date)
     {
         $datenow    = "SO" . $customer_id . date("ymd", strtotime(base64_decode($sales_order_date)));
@@ -80,6 +86,7 @@ class Sales_orders extends CI_Controller
             $filter_customer_id = @base64_decode($get['filter_customer_id']);
             $filter_sales_order_no = @base64_decode($get['filter_sales_order_no']);
             $filter_status = @base64_decode($get['filter_status']);
+            $filter_customer_order_no = @base64_decode($get['filter_customer_order_no']);
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -99,6 +106,7 @@ class Sales_orders extends CI_Controller
             $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->like('a.sales_order_no', $filter_sales_order_no);
             $this->db->like('a.status', $filter_status);
+            $this->db->like('a.customer_order_no', $filter_customer_order_no);
             $this->db->group_by('a.sales_order_no');
             $this->db->order_by('a.status', 'ASC');
             //Total Data
@@ -385,6 +393,7 @@ class Sales_orders extends CI_Controller
         $filter_customer_id = @base64_decode($get['filter_customer_id']);
         $filter_sales_order_no = @base64_decode($get['filter_sales_order_no']);
         $filter_status = @base64_decode($get['filter_status']);
+        $filter_customer_order_no = @base64_decode($get['filter_customer_order_no']);
 
         //Config
         $this->db->select('*');
@@ -402,6 +411,7 @@ class Sales_orders extends CI_Controller
         $this->db->like('a.customer_id', $filter_customer_id);
         $this->db->like('a.sales_order_no', $filter_sales_order_no);
         $this->db->like('a.status', $filter_status);
+        $this->db->like('a.customer_order_no', $filter_customer_order_no);
         $this->db->order_by('a.sales_order_no', 'ASC');
         $records = $this->db->get()->result_array();
 

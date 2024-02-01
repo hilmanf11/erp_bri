@@ -23,7 +23,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 | a PHP script and you can easily do that on your own.
 |
 */
-$config['base_url'] = "http://" . $_SERVER['HTTP_HOST'] . "/erp_bri";
+$config['base_url'] = "https://" . $_SERVER['HTTP_HOST'];
 
 /*
 |--------------------------------------------------------------------------
@@ -159,8 +159,6 @@ $config['composer_autoload'] = FALSE;
 |
 */
 $config['permitted_uri_chars'] = 'a-z 0-9~%.:\_\=+%\&';
-$config['permitted_uri_chars'] = 'a-z 0-9~%.:_\-@\=';
-
 
 /*
 |--------------------------------------------------------------------------

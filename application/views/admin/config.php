@@ -31,7 +31,7 @@
                 <span style="width:35%; display:inline-block;">Login</span>
                 <input style="width:60%;" name="image" class="easyui-filebox">
             </div>
-            <!-- <div class="fitem">
+            <div class="fitem">
                     <span style="width:35%; display:inline-block;">Theme</span>
                     <select style="width:60%;" name="theme" value="<?= $config->theme ?>" class="easyui-combobox">
                         <option value="default">Default</option>
@@ -51,7 +51,7 @@
                         <option value="metro-red">Metro Red</option>
                         <option value="sunny">Sunny</option>
                     </select>
-                </div> -->
+                </div>
         </fieldset>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Config Purchase Invoice</b></legend>

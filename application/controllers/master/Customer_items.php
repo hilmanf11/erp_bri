@@ -303,10 +303,12 @@ class Customer_items extends CI_Controller
          echo json_encode($datas);
          unlink($_FILES['file_upload']['name']);
      }
+
      public function uploadclearFailed()
      {
          @unlink('failed/customer_items.txt');
      }
+
      public function uploadcreateFailed()
      {
          if ($this->input->post()) {
@@ -391,6 +393,7 @@ class Customer_items extends CI_Controller
          $this->db->where('b.status', "0");
          $this->db->order_by('a.customer_id', 'ASC');
          $records = $this->db->get()->result_array();
+
          $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customer_items {border-collapse: collapse;width: 100%;font-size: 12px;}#customer_items td, #customer_items th {border: 1px solid #ddd;padding: 2px;}#customer_items tr:nth-child(even){background-color: #f2f2f2;}#customer_items tr:hover {background-color: #ddd;}#customer_items th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
          <center>
              <div style="float: left; font-size: 12px; text-align: left;">

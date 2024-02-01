@@ -160,7 +160,6 @@
                             sales_order_no: sales_order_no,
                             status: status,
                             closing_reason: closing_reason,
-
                         },
                         dataType: "json",
                         success: function(result) {

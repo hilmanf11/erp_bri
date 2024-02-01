@@ -155,6 +155,7 @@ class Generate_mps extends CI_Controller
                                 
                     
                     $result = $this->db->get()->row();
+
                     $os_so_qty = $result->qty;
 
                     //HKW 1
@@ -651,11 +652,12 @@ class Generate_mps extends CI_Controller
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=generate_mps_$format.xls");
         }
+
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        
+
         //Filter Data
         $filter_month = base64_decode($this->input->get('filter_month'));
         $filter_year = base64_decode($this->input->get('filter_year'));

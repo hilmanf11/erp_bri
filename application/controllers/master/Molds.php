@@ -114,7 +114,6 @@ class Molds extends CI_Controller
             show_error("Cannot Process your request");
         }
     }
-    
     //DELETE DATA
     public function delete()
     {

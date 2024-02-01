@@ -309,7 +309,7 @@ class Purchase_order_receipts extends CI_Controller
         $this->db->from('purchase_order_labels a');
         $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
         $this->db->join('item_rm c', 'b.item_rm_id = c.id');
-        $this->db->join('warehouse_location_items d', 'd.item_rm_id = c.id', 'left');
+        $this->db->join('warehouse_location_items d', 'd.item_id = c.id', 'left');
         $this->db->where('a.deleted', 0);
         //$this->db->where('a.status', 0);
         $this->db->where('a.receipt_id', $receipt_id);
@@ -396,7 +396,7 @@ class Purchase_order_receipts extends CI_Controller
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
         $this->db->join('item_familys d', 'c.item_family_number = d.number');
         $this->db->join('supplier_items e', 'b.id = e.supplier_id and c.id = e.item_id');
-        $this->db->join('warehouse_location_items g', 'a.item_rm_id = g.item_rm_id', 'left');
+        $this->db->join('warehouse_location_items g', 'a.item_rm_id = g.item_id', 'left');
         $this->db->where('a.deleted', 0);
         // $this->db->where('a.status', 0);
         $this->db->where('a.receipt_no', base64_decode($receipt_no));
@@ -458,7 +458,7 @@ class Purchase_order_receipts extends CI_Controller
                 $this->db->join('item_rm c', 'a.item_rm_id = c.id');
                 $this->db->join('item_familys d', 'c.item_family_number = d.number');
                 $this->db->join('supplier_items e', 'b.id = e.supplier_id and c.id = e.item_id');
-                $this->db->join('warehouse_location_items g', 'a.item_rm_id = g.item_rm_id', 'left');
+                $this->db->join('warehouse_location_items g', 'a.item_rm_id = g.item_id', 'left');
                 $this->db->where('a.deleted', 0);
                 // $this->db->where('a.status', 0);
                 $this->db->where('a.receipt_no', base64_decode($receipt_no));

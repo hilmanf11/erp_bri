@@ -265,7 +265,6 @@
         }
     }
 
-
     //CELLSTYLE STATUS
     function cellStyler(value, row, index) {
         if (value == 0) {

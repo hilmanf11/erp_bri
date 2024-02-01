@@ -1,3 +1,11 @@
- Supplier Code TES is Duplicate Data
- Please Input Code TEST1 with 3 character
- Please Input Code TEST2 with 3 character
+ Supplier Code AI is Duplicate Data
+ Supplier Code CII is Duplicate Data
+ Supplier Code API is Duplicate Data
+ Supplier Code BPI is Duplicate Data
+ Supplier Code EMM is Duplicate Data
+ Supplier Code ANC is Duplicate Data
+ Supplier Code PTE is Duplicate Data
+ Supplier Code GOM is Duplicate Data
+ Supplier Code CPL is Duplicate Data
+ Supplier Code PSA is Duplicate Data
+ Supplier Code DTM is Duplicate Data

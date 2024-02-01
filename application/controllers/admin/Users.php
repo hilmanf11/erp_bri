@@ -78,12 +78,7 @@ class Users extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post = $this->input->post();
-                $avatar = $this->crud->upload('avatar', 
-                    ["jpg", "png", "jpeg"], 
-                    'assets/image/users/', 
-                    ["username" => $post['username']], 
-                    "users", "avatar");
-                
+                $avatar = $this->crud->upload('avatar', ["jpg", "png", "jpeg"], 'assets/image/users/', ["username" => $post['username']], "users", "avatar");
                 $postFinal = array_merge($post, ["avatar" => $avatar]);
                 $users = $this->crud->create('users', $postFinal);
                 //$email = $this->emails->emailRegistration($post['email'], $post['name'], $post['username'], $post['password']);

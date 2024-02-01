@@ -644,11 +644,13 @@
         var filter_customer_id = $("#filter_customer_id").combobox('getValue');
         var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
+        var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
             "&filter_status=" + window.btoa(filter_status);
 
         $('#dg').datagrid({
@@ -681,11 +683,13 @@
         var filter_customer_id = $("#filter_customer_id").combobox('getValue');
         var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
+        var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
             "&filter_status=" + window.btoa(filter_status);
 
         window.location.assign('<?= base_url('planning/sales_orders/print/excel') ?>' + url);
@@ -958,6 +962,19 @@
             }]
         });
     });
+
+    $('#filter_customer_order_no').combobox({
+                url: '<?= base_url('planning/sales_orders/readCustomerOrders/'); ?>',
+                valueField: 'customer_order_no',
+                textField: 'customer_order_no',
+                prompt: 'Choose Order No',
+                icons: [{
+                    iconCls: 'icon-clear',
+                    handler: function(e) {
+                        $(e.data.target).combobox('clear').combobox('textbox').focus();
+                    }
+                }],
+            });
 
     $('#filter_customer_id').combobox({
         url: '<?= base_url('master/customers/readsA'); ?>',
