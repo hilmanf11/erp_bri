@@ -39,7 +39,7 @@ class purchase_returns extends CI_Controller
             $this->db->select('a.supplier_id, a.item_rm_id, b.number, b.name, c.mpq, a.qty');// b.specification,
             $this->db->from('purchase_orders a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-            $this->db->join('supplier_items c', 'a.supplier_id = c.supplier_id and a.item_rm_id = c.item_id');
+            $this->db->join('supplier_items c', 'a.supplier_id = c.supplier_id and a.item_rm_id = c.item_rm_id');
             $this->db->where('a.po_no', $po_no);
             $this->db->like('b.number', $post);
             $this->db->order_by('b.number', 'asc');
@@ -131,7 +131,7 @@ class purchase_returns extends CI_Controller
                 // b.specification,
             $this->db->from('purchase_returns a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-            $this->db->join('supplier_items c', 'c.item_id = b.id and a.supplier_id = c.supplier_id');
+            $this->db->join('supplier_items c', 'c.item_rm_id = b.id and a.supplier_id = c.supplier_id');
             $this->db->join('suppliers d', 'a.supplier_id = d.id');
             $this->db->where('a.deleted', 0);
             if ($filter_from != "" or $filter_to != "") {
@@ -241,7 +241,7 @@ class purchase_returns extends CI_Controller
         $page = 1;
         foreach ($suppliers as $supplier) {
             $this->db->select('a.*, 
-                b.number as item_id, 
+                b.number as item_rm_id, 
                 b.name as item_name,  
                 b.uom, 
                 d.number as supplier_number, 
@@ -254,7 +254,7 @@ class purchase_returns extends CI_Controller
             $this->db->from('purchase_returns a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('suppliers d', 'a.supplier_id = d.id');
-            $this->db->join('supplier_items e', 'a.item_rm_id = e.item_id and a.supplier_id = e.supplier_id');
+            $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
             $this->db->where('a.deleted', 0);
             $this->db->where('a.return_no', $return_no);
             $this->db->where('a.supplier_id', $supplier['supplier_id']);
@@ -369,7 +369,7 @@ class purchase_returns extends CI_Controller
             foreach ($records as $record) {
                 $html .= '  <tr>
                                 <td style="text-align:center">' . $no . '</td>
-                                <td style="font-size:10px;">' . $record['item_id'] . '</td>
+                                <td style="font-size:10px;">' . $record['item_rm_id'] . '</td>
                                 <td><span style="font-size:10px;">' . $record['item_name'] . '</span></td>
                                 <td style="text-align:center;"><span style="font-size:10px;">' . $record['uom'] . '</span></td>
                                 <td style="text-align:right">' . number_format($record['qty'], 2, ",", ".") . '</td>
@@ -425,7 +425,7 @@ class purchase_returns extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.number as item_id, b.name as item_name, b.uom, c.name as supplier_name');
+        $this->db->select('a.*, b.number as item_rm_id, b.name as item_name, b.uom, c.name as supplier_name');
         $this->db->from('purchase_returns a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('suppliers c', 'a.supplier_id = c.id');
@@ -486,7 +486,7 @@ class purchase_returns extends CI_Controller
                         <td>' . $data['return_date'] . '</td>
                         <td>' . $data['return_name'] . '</td>
                         <td>' . $data['supplier_name'] . '</td>
-                        <td>' . $data['item_id'] . '</td>
+                        <td>' . $data['item_rm_id'] . '</td>
                         <td>' . $data['item_name'] . '</td>
                         <td>' . number_format($data['qty'], 2) . '</td>
                         <td>' . $data['uom'] . '</td>

@@ -196,7 +196,7 @@ class Purchase_order_receipts extends CI_Controller
                 $this->db->join('suppliers b', 'a.supplier_id = b.id');
                 $this->db->join('item_rm c', 'a.item_rm_id = c.id');
                 $this->db->join('item_familys d', 'c.item_family_number = d.number');
-                $this->db->join('supplier_items e', 'b.id = e.supplier_id and c.id = e.item_id');
+                $this->db->join('supplier_items e', 'b.id = e.supplier_id and c.id = e.item_rm_id');
                 $this->db->join('purchase_order_labels g', 'g.receipt_id = a.receipt_id', 'left');
                 $this->db->where('a.deleted', 0);
                 if ($filter_from != "" and $filter_to != "") {
@@ -228,7 +228,7 @@ class Purchase_order_receipts extends CI_Controller
             CEIL((a.qty - (CASE WHEN d.qty_os is null THEN 0 ELSE d.qty_os END)) / c.mpq) as qty_label');
         $this->db->from('purchase_orders a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-        $this->db->join('supplier_items c', 'a.item_rm_id = c.item_id and a.supplier_id = c.supplier_id');
+        $this->db->join('supplier_items c', 'a.item_rm_id = c.item_rm_id and a.supplier_id = c.supplier_id');
         $this->db->join('(SELECT sum(qty_receipt) as qty_os, item_rm_id, supplier_id, po_no FROM purchase_order_receipts GROUP BY item_rm_id, supplier_id, po_no) d', 'a.item_rm_id = d.item_rm_id and a.supplier_id = d.supplier_id and a.po_no = d.po_no', 'left');
         $this->db->where('a.deleted', 0);
         $this->db->where('a.status', 0);
@@ -309,7 +309,7 @@ class Purchase_order_receipts extends CI_Controller
         $this->db->from('purchase_order_labels a');
         $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
         $this->db->join('item_rm c', 'b.item_rm_id = c.id');
-        $this->db->join('warehouse_location_items d', 'd.item_id = c.id', 'left');
+        $this->db->join('warehouse_location_items d', 'd.item_rm_id = c.id', 'left');
         $this->db->where('a.deleted', 0);
         //$this->db->where('a.status', 0);
         $this->db->where('a.receipt_id', $receipt_id);
@@ -395,8 +395,8 @@ class Purchase_order_receipts extends CI_Controller
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
         $this->db->join('item_familys d', 'c.item_family_number = d.number');
-        $this->db->join('supplier_items e', 'b.id = e.supplier_id and c.id = e.item_id');
-        $this->db->join('warehouse_location_items g', 'a.item_rm_id = g.item_id', 'left');
+        $this->db->join('supplier_items e', 'b.id = e.supplier_id and c.id = e.item_rm_id');
+        $this->db->join('warehouse_location_items g', 'a.item_rm_id = g.item_rm_id', 'left');
         $this->db->where('a.deleted', 0);
         // $this->db->where('a.status', 0);
         $this->db->where('a.receipt_no', base64_decode($receipt_no));
@@ -457,8 +457,8 @@ class Purchase_order_receipts extends CI_Controller
                 $this->db->join('suppliers b', 'a.supplier_id = b.id');
                 $this->db->join('item_rm c', 'a.item_rm_id = c.id');
                 $this->db->join('item_familys d', 'c.item_family_number = d.number');
-                $this->db->join('supplier_items e', 'b.id = e.supplier_id and c.id = e.item_id');
-                $this->db->join('warehouse_location_items g', 'a.item_rm_id = g.item_id', 'left');
+                $this->db->join('supplier_items e', 'b.id = e.supplier_id and c.id = e.item_rm_id');
+                $this->db->join('warehouse_location_items g', 'a.item_rm_id = g.item_rm_id', 'left');
                 $this->db->where('a.deleted', 0);
                 // $this->db->where('a.status', 0);
                 $this->db->where('a.receipt_no', base64_decode($receipt_no));
@@ -609,7 +609,7 @@ class Purchase_order_receipts extends CI_Controller
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
         $this->db->join('item_familys d', 'c.item_family_number = d.number');
-        $this->db->join('supplier_items e', 'b.id = e.supplier_id and c.id = e.item_id');
+        $this->db->join('supplier_items e', 'b.id = e.supplier_id and c.id = e.item_rm_id');
         $this->db->where('a.deleted', 0);
         if ($filter_from != "" and $filter_to != "") {
             $this->db->where('a.receipt_date >=', $filter_from);

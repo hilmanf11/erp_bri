@@ -59,12 +59,12 @@ class Purchase_orders extends CI_Controller
 
     public function readTotalPo()
     {
-        $item_id = $this->input->post('item_rm_id');
+        $item_rm_id = $this->input->post('item_rm_id');
         $this->db->select('item_rm_id, SUM(qty) as qty');
         $this->db->from('purchase_orders');
         $this->db->where('deleted', 0);
         $this->db->where('status', 0);
-        $this->db->where('item_rm_id', $item_id);
+        $this->db->where('item_rm_id', $item_rm_id);
         $this->db->group_by('item_rm_id');
         $records = $this->db->get()->row();
 
@@ -105,7 +105,7 @@ class Purchase_orders extends CI_Controller
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->join('item_familys c', 'b.item_family_number = c.number');
                 $this->db->join('suppliers d', 'a.supplier_id = d.id');
-                $this->db->join('supplier_items e', 'a.item_rm_id = e.item_id and a.supplier_id = e.supplier_id');
+                $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
                 $this->db->join('(SELECT po_no, COUNT(status) as total_status_close FROM purchase_orders WHERE status = 1 GROUP BY po_no) g', 'a.po_no = g.po_no', 'left');
                 $this->db->where('a.deleted', 0);
                 if ($filter_from != "" or $filter_to != "") {
@@ -167,7 +167,7 @@ class Purchase_orders extends CI_Controller
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->join('item_familys c', 'b.item_family_number = c.number');
                 $this->db->join('suppliers d', 'a.supplier_id = d.id');
-                $this->db->join('supplier_items e', 'a.item_rm_id = e.item_id and a.supplier_id = e.supplier_id');
+                $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
                 $this->db->where('a.deleted', 0);
                 if ($filter_from != "" or $filter_to != "") {
                     $this->db->where('a.po_date >=', $filter_from);
@@ -203,7 +203,7 @@ class Purchase_orders extends CI_Controller
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('item_familys c', 'b.item_family_number = c.number');
         $this->db->join('suppliers d', 'a.supplier_id = d.id');
-        $this->db->join('supplier_items e', 'a.item_rm_id = e.item_id and a.supplier_id = e.supplier_id');
+        $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
         $this->db->where('a.deleted', 0);
         $this->db->where('a.status', 0);
         $this->db->where('a.po_no', $po_no);
@@ -232,7 +232,7 @@ class Purchase_orders extends CI_Controller
                 $items = $this->crud->read('item_rm', [], ['number' => base64_decode($post['item_number'])]);
                 $item_family = $this->crud->read('item_familys', [], ['number' => $items->item_family_number]);
                 $suppliers = $this->crud->read('suppliers', [], ["id" => $post['supplier_id']]);
-                $supplier_items = $this->crud->read('supplier_items', [], ["item_id" => $items->id, "supplier_id" => $post['supplier_id']]);
+                $supplier_items = $this->crud->read('supplier_items', [], ["item_rm_id" => $items->id, "supplier_id" => $post['supplier_id']]);
                 $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id']]);
                 $config = $this->crud->read("config");
 
@@ -297,8 +297,8 @@ class Purchase_orders extends CI_Controller
             $post = $this->input->post();
 
             $items = $this->crud->read('item_rm', [], ['number' => $post['item_number']]);
-            $supplier_items = $this->crud->read('supplier_items', [], ["item_id" => $items->id, "supplier_id" => $post['supplier_id']]);
-            $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_id" => $items->id]);
+            $supplier_items = $this->crud->read('supplier_items', [], ["item_rm_id" => $items->id, "supplier_id" => $post['supplier_id']]);
+            $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_rm_id" => $items->id]);
             if (@$post['price'] != "") {
                 $price = $post['price'];
             } else {
@@ -403,11 +403,11 @@ class Purchase_orders extends CI_Controller
         $hal = 1;
         $subtotal = 0;
         for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*, b.number as item_id, b.name as item_name, b.uom, c.currency, a.price');
+            $this->db->select('a.*, b.number as item_rm_id, b.name as item_name, b.uom, c.currency, a.price');
             $this->db->from('purchase_orders a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('suppliers c', 'a.supplier_id = c.id');
-            $this->db->join('supplier_items d', 'a.supplier_id = d.supplier_id and a.item_rm_id = d.item_id');
+            $this->db->join('supplier_items d', 'a.supplier_id = d.supplier_id and a.item_rm_id = d.item_rm_id');
             $this->db->where('a.deleted', 0);
             $this->db->where('a.po_no', base64_decode($po_no));
             $this->db->order_by('b.number', 'asc');
@@ -529,7 +529,7 @@ class Purchase_orders extends CI_Controller
                 
                 $html .= '  <tr>
                                 <td  style="text-align:center;">' . $no . '</td>
-                                <td>' . $record['item_id'] . '</td>
+                                <td>' . $record['item_rm_id'] . '</td>
                                 <td><span style="font-size:10px;">' . $record['item_name'] . '</span></td>
                                 <td style="text-align:right;">' . number_format($record['qty'], 2) . '</td>
                                 <td style="text-align:center;">' . $record['uom'] . '</td>
@@ -542,7 +542,7 @@ class Purchase_orders extends CI_Controller
                 $no++;
             }
             if (($i + 1) == $page) {
-                $this->db->select('a.remarks, b.number as item_id, b.name as item_name');
+                $this->db->select('a.remarks, b.number as item_rm_id, b.name as item_name');
                 $this->db->from('purchase_orders a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->where('a.deleted', 0);
@@ -556,7 +556,7 @@ class Purchase_orders extends CI_Controller
                                     <b>Note :</b> <br>';
                 foreach ($remarks as $remark) {
                     if ($remark['remarks'] != "") {
-                        $html .= $remark['item_id'] . " &nbsp; (" . $remark['remarks'] . ") <br>";
+                        $html .= $remark['item_rm_id'] . " &nbsp; (" . $remark['remarks'] . ") <br>";
                     }
                 }
 
@@ -668,7 +668,7 @@ class Purchase_orders extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
         $this->db->select('a.*, 
-            b.number as item_id, 
+            b.number as item_rm_id, 
             b.name as item_name,
             b.uom,
             c.name as item_family_name, 
@@ -680,7 +680,7 @@ class Purchase_orders extends CI_Controller
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('item_familys c', 'b.item_family_number = c.number');
         $this->db->join('suppliers d', 'a.supplier_id = d.id');
-        $this->db->join('supplier_items e', 'a.item_rm_id = e.item_id and a.supplier_id = e.supplier_id');
+        $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
         $this->db->where('a.deleted', 0);
         if ($filter_from != "" or $filter_to != "") {
             $this->db->where('a.po_date >=', $filter_from);
@@ -750,7 +750,7 @@ class Purchase_orders extends CI_Controller
                         <td>' . $data['po_date'] . '</td>
                         <td>' . $data['po_name'] . '</td>
                         <td>' . $data['supplier_name'] . '</td>
-                        <td>' . $data['item_id'] . '</td>
+                        <td>' . $data['item_rm_id'] . '</td>
                         <td>' . $data['item_name'] . '</td>
                         <td>' . number_format($data['mpq'], 2) . '</td>
                         <td>' . number_format($data['moq'], 2) . '</td>

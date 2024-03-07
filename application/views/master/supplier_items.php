@@ -31,7 +31,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
-                <input style="width:60%;" id="filter_item_id" class="easyui-combogrid"><!-- ingat untuk edit script pencarian dan datatable -->
+                <input style="width:60%;" id="filter_item_rm_id" class="easyui-combogrid"><!-- ingat untuk edit script pencarian dan datatable -->
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
@@ -151,7 +151,7 @@
                                 });
                                 var ed2 = dg.datagrid('getEditor', {
                                     index: rowIndex,
-                                    field: 'item_id'
+                                    field: 'item_rm_id'
                                 });
 
                                 $(ed.target).textbox('setValue', rows.name);
@@ -169,7 +169,7 @@
                         type: 'textbox'
                     }
                 },{
-                    field: 'item_id',
+                    field: 'item_rm_id',
                     width: 150,
                     hidden: true,
                     halign: 'center',
@@ -331,18 +331,18 @@
 
         var ed = dg.datagrid('getEditor', {
             index: editIndex,
-            field: 'item_id'
+            field: 'item_rm_id'
         });
 
         var supplier_id = $("#supplier_id").combogrid('getValue');
-        var item_id = $(ed.target).textbox('getValue');
+        var item_rm_id = $(ed.target).textbox('getValue');
 
         $.ajax({
             method: 'post',
             url: '<?= base_url('master/supplier_items/delete') ?>',
             data: {
                 supplier_id: row.supplier_id,
-                item_id: item_id
+                item_rm_id: item_rm_id
             },
             success: function(result) {
                 var result = eval('(' + result + ')');
@@ -421,10 +421,10 @@
     //FILTER DATA
     function filter() {
         var filter_supplier_id = $("#filter_supplier_id").combogrid('getValue');
-        var filter_item_id = $("#filter_item_id").combogrid('getValue');
+        var filter_item_rm_id = $("#filter_item_rm_id").combogrid('getValue');
 
         var url = "?filter_supplier_id=" + window.btoa(filter_supplier_id) +
-            "&filter_item_id=" + window.btoa(filter_item_id);
+            "&filter_item_rm_id=" + window.btoa(filter_item_rm_id);
 
         $('#dg').datagrid({
             url: '<?= base_url('master/supplier_items/datatables') ?>' + url
@@ -442,10 +442,10 @@
     //PRINT EXCEL
     function excel() {
         var filter_supplier_id = $("#filter_supplier_id").combogrid('getValue');
-        var filter_item_id = $("#filter_item_id").combogrid('getValue');
+        var filter_item_rm_id = $("#filter_item_rm_id").combogrid('getValue');
 
         var url = "?filter_supplier_id=" + window.btoa(filter_supplier_id) +
-            "&filter_item_id=" + window.btoa(filter_item_id);
+            "&filter_item_rm_id=" + window.btoa(filter_item_rm_id);
 
         window.location.assign('<?= base_url('master/supplier_items/print/excel') ?>' + url);
     }
@@ -472,10 +472,10 @@
             },
             onExpandRow: function(index, row) {
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
-                var filter_item_id = $("#filter_item_id").combogrid('getValue');
+                var filter_item_rm_id = $("#filter_item_rm_id").combogrid('getValue');
 
                 ddv.datagrid({
-                    url: '<?= base_url('master/supplier_items/datatableDetails?number=') ?>' + window.btoa(row.supplier_number) + "&filter_item_id=" + window.btoa(filter_item_id),
+                    url: '<?= base_url('master/supplier_items/datatableDetails?number=') ?>' + window.btoa(row.supplier_number) + "&filter_item_rm_id=" + window.btoa(filter_item_rm_id),
                     singleSelect: true,
                     rownumbers: true,
                     columns: [
@@ -591,15 +591,15 @@
                     endEditing();
 
                     for (let i = 0; i < totalrows; i++) {
-                        // alert(rows[i].item_id);
-                        if (rows[i].item_id) {
+                        // alert(rows[i].item_rm_id);
+                        if (rows[i].item_rm_id) {
                             $.ajax({
                                 type: "post",
                                 url: url_save,
                                 data: {
                                     supplier_id: supplier_id,
                                     id: rows[i].id,
-                                    item_id: rows[i].item_id,
+                                    item_rm_id: rows[i].item_rm_id,
                                     item_supplier: rows[i].item_supplier,
                                     price: rows[i].price,
                                     mpq: rows[i].mpq,
@@ -703,7 +703,7 @@
     });
 
     // combogrid filter items
-    $('#filter_item_id').combogrid({
+    $('#filter_item_rm_id').combogrid({
         url: '<?= base_url('master/item_rm/reads'); ?>',
         panelWidth: 500,
         idField: 'id',
@@ -820,14 +820,14 @@
     }
 
     function btnHistories(val, row) {
-        var history = "viewHistories('" + row.supplier_id + "','" + row.item_id + "')";
+        var history = "viewHistories('" + row.supplier_id + "','" + row.item_rm_id + "')";
         return '<a class="btn btn-primary w-100" onClick="' + history + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
     }
 
-    function viewHistories(supplier_id, item_id) {
+    function viewHistories(supplier_id, item_rm_id) {
         $("#dlg_history").dialog('open');
         $('#dg_history').datagrid({
-            url: '<?= base_url('master/supplier_items/datatableHistories?supplier_id=') ?>' + btoa(supplier_id) + "&item_id=" + btoa(item_id),
+            url: '<?= base_url('master/supplier_items/datatableHistories?supplier_id=') ?>' + btoa(supplier_id) + "&item_rm_id=" + btoa(item_rm_id),
             pagination: false,
             rownumbers: true,
         });

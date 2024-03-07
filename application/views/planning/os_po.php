@@ -327,7 +327,7 @@
                 $('#item_rm_id').combogrid({
                     url: '<?= base_url('master/supplier_items/readss?supplier_id='); ?>'+ suppliers.id,
                     panelWidth: 350,
-                    idField: 'item_id',
+                    idField: 'item_rm_id',
                     textField: 'item_number',
                     mode: 'remote',
                     fitColumns: true,

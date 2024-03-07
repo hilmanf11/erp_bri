@@ -85,7 +85,7 @@ class Stock_so extends CI_Controller
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.customer_id as customer_id_cus_item, d.name as customer_name');
             $this->db->from('stock_so a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-            $this->db->join('customer_items c', 'a.item_fg_id = c.item_id AND a.customer_id = c.customer_id');
+            $this->db->join('customer_items c', 'a.item_fg_id = c.item_fg_id AND a.customer_id = c.customer_id');
             $this->db->join('customers d', 'c.customer_id = d.id');
             $this->db->like('a.p_month', $filter_period_month);
             $this->db->like('a.p_year', $filter_period_year);

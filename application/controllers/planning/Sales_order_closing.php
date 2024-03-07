@@ -14,7 +14,7 @@ class Sales_order_closing extends CI_Controller
 
         //VALIDASI FORM
         $this->form_validation->set_rules('customer_id', 'Customer', 'required|min_length[1]|max_length[20]|is_unique[customer_items.customer_id]');
-        $this->form_validation->set_rules('item_id', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[customer_items.item_id]');
+        $this->form_validation->set_rules('item_fg_id', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[customer_items.item_fg_id]');
     }
 
     //HALAMAN UTAMA
@@ -36,7 +36,7 @@ class Sales_order_closing extends CI_Controller
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $send = $this->crud->query("SELECT b.id, b.number, b.name, a.price, c.currency, b.uom
             FROM customer_items a 
-            JOIN item_fg b ON a.item_id = b.id
+            JOIN item_fg b ON a.item_fg_id = b.id
             JOIN customers c ON a.customer_id = c.id
             WHERE a.customer_id = '$customer_id' and (b.number LIKE '%$post%' or b.name LIKE '%$post%')");
         echo json_encode($send);

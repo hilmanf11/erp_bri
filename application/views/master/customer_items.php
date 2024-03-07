@@ -31,7 +31,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
-                <input style="width:60%;" id="filter_item_id" class="easyui-combogrid">
+                <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
@@ -154,7 +154,7 @@
                                 });
                                 var ed2 = dg.datagrid('getEditor', {
                                     index: rowIndex,
-                                    field: 'item_id'
+                                    field: 'item_fg_id'
                                 });
 
                                 $(ed.target).textbox('setValue', rows.name);
@@ -172,7 +172,7 @@
                         type: 'textbox'
                     }
                 }, {
-                    field: 'item_id',
+                    field: 'item_fg_id',
                     width: 150,
                     hidden: true,
                     halign: 'center',
@@ -353,18 +353,18 @@
 
         var ed = dg.datagrid('getEditor', {
             index: editIndex,
-            field: 'item_id'
+            field: 'item_fg_id'
         });
 
         var customer_id = $("#customer_id").combogrid('getValue');
-        var item_id = $(ed.target).textbox('getValue');
+        var item_fg_id = $(ed.target).textbox('getValue');
 
         $.ajax({
             method: 'post',
             url: '<?= base_url('master/customer_items/delete') ?>',
             data: {
                 customer_id: row.customer_id,
-                item_id: item_id
+                item_fg_id: item_fg_id
             },
             success: function(result) {
                 var result = eval('(' + result + ')');
@@ -443,10 +443,10 @@
     //FILTER DATA
     function filter() {
         var filter_customer_id = $("#filter_customer_id").combobox('getValue');
-        var filter_item_id = $("#filter_item_id").combogrid('getValue');
+        var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
 
         var url = "?filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_item_id=" + window.btoa(filter_item_id);
+            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id);
 
         $('#dg').datagrid({
             url: '<?= base_url('master/customer_items/datatables') ?>' + url
@@ -464,10 +464,10 @@
     //PRINT EXCEL
     function excel() {
         var filter_customer_id = $("#filter_customer_id").combobox('getValue');
-        var filter_item_id = $("#filter_item_id").combogrid('getValue');
+        var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
 
         var url = "?filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_item_id=" + window.btoa(filter_item_id);
+            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id);
 
         window.location.assign('<?= base_url('master/customer_items/print/excel') ?>' + url);
     }
@@ -495,10 +495,10 @@
             },
             onExpandRow: function(index, row) {
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
-                var filter_item_id = $("#filter_item_id").combogrid('getValue');
+                var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
 
                 ddv.datagrid({
-                    url: '<?= base_url('master/customer_items/datatableDetails?number=') ?>' + window.btoa(row.customers_number) + "&filter_item_id=" + window.btoa(filter_item_id),
+                    url: '<?= base_url('master/customer_items/datatableDetails?number=') ?>' + window.btoa(row.customers_number) + "&filter_item_fg_id=" + window.btoa(filter_item_fg_id),
                     singleSelect: true,
                     rownumbers: true,
                     columns: [
@@ -591,7 +591,7 @@
                     endEditing();
 
                     for (let i = 0; i < totalrows; i++) {
-                        if (rows[i].item_id) {
+                        if (rows[i].item_fg_id) {
                             var originalPrice = rows[i].price; // Ganti dengan properti yang sesuai untuk menyimpan harga awal dari database
                             if (rows[i].price !== originalPrice) {
                                 changesDetected = true; // Tandai bahwa ada perubahan pada price
@@ -604,7 +604,7 @@
                                 data: {
                                     customer_id: customer_id,
                                     id: rows[i].id,
-                                    item_id: rows[i].item_id,
+                                    item_fg_id: rows[i].item_fg_id,
                                     item_customer: rows[i].item_customer,
                                     price: rows[i].price,
                                     valid_date: rows[i].valid_date,
@@ -670,7 +670,7 @@
     });
 
     // combogrid filter items
-    $('#filter_item_id').combogrid({
+    $('#filter_item_fg_id').combogrid({
         url: '<?= base_url('master/item_fg/reads'); ?>',
         panelWidth: 500,
         idField: 'id',
@@ -714,10 +714,10 @@
             }
         }],
         onSelect: function(customer) {
-            $('#filter_item_id').combogrid({
+            $('#filter_item_fg_id').combogrid({
                 url: '<?= base_url('master/customer_items/readItems?customer_id='); ?>'+ customer.id,
                 panelWidth: 500,
-                idField: 'item_id',
+                idField: 'item_fg_id',
                 textField: 'item_number',
                 mode: 'remote',
                 fitColumns: true,
@@ -725,7 +725,7 @@
                 prompt: "Choose Product No.",
                 columns: [
                     [{
-                        field: 'item_id',
+                        field: 'item_fg_id',
                         title: 'Product ID',
                         width: 180
                     }, {
@@ -845,14 +845,14 @@
 
 
     function btnHistories(val, row) {
-        var history = "viewHistories('" + row.customer_id + "','" + row.item_id + "')";
+        var history = "viewHistories('" + row.customer_id + "','" + row.item_fg_id + "')";
         return '<a class="btn btn-primary w-100" onClick="' + history + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
     }
 
-    function viewHistories(customer_id, item_id) {
+    function viewHistories(customer_id, item_fg_id) {
         $("#dlg_history").dialog('open');
         $('#dg_history').datagrid({
-            url: '<?= base_url('master/customer_items/datatableHistories?customer_id=') ?>' + btoa(customer_id) + "&item_id=" + btoa(item_id),
+            url: '<?= base_url('master/customer_items/datatableHistories?customer_id=') ?>' + btoa(customer_id) + "&item_fg_id=" + btoa(item_fg_id),
             pagination: false,
             rownumbers: true,
         });
@@ -914,7 +914,6 @@
                                         } else {
                                             $('#p_failed').html(failed);
                                             var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                            
                                             //Json Failed
                                             $.ajax({
                                                 type: "POST",

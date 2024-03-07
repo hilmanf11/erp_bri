@@ -13,7 +13,7 @@ class Customer_items extends CI_Controller
         $this->load->model('crud');
         //VALIDASI FORM
         $this->form_validation->set_rules('customer_id', 'Customer', 'required|min_length[1]|max_length[20]|is_unique[customer_items.customer_id]');
-        $this->form_validation->set_rules('item_id', 'Code', 'required|min_length[1]|max_length[30]|is_unique[customer_items.item_id]');
+        $this->form_validation->set_rules('item_fg_id', 'Code', 'required|min_length[1]|max_length[30]|is_unique[customer_items.item_fg_id]');
         
     }
     //HALAMAN UTAMA
@@ -35,7 +35,7 @@ class Customer_items extends CI_Controller
         $customer_id = base64_decode($customer_id);
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $send = $this->crud->query("SELECT b.id, b.number, b.name, a.price FROM customer_items a 
-            JOIN item_fg b ON a.item_id = b.id 
+            JOIN item_fg b ON a.item_fg_id = b.id 
             WHERE a.customer_id = '$customer_id' and (b.number LIKE '%$post%' or b.name LIKE '%$post%')");
         echo json_encode($send);
     }
@@ -45,10 +45,10 @@ class Customer_items extends CI_Controller
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $customer_id = $this->input->get('customer_id');
 
-        $this->db->select('c.id as item_id, c.number as item_number, c.name as item_name');
+        $this->db->select('c.id as item_fg_id, c.number as item_number, c.name as item_name');
         $this->db->from('customer_items a');
         $this->db->join('customers b', 'a.customer_id = b.id');
-        $this->db->join('item_fg c','a.item_id = c.id');
+        $this->db->join('item_fg c','a.item_fg_id = c.id');
         $this->db->where('a.deleted', 0);
         $this->db->where('b.status', 0);
         $this->db->like('a.customer_id', $customer_id);
@@ -64,7 +64,7 @@ class Customer_items extends CI_Controller
          if ($this->input->post()) {
             $get = $this->input->get();
             $filter_customer_id = @base64_decode($get['filter_customer_id']);
-            $filter_item_id = @base64_decode($get['filter_item_id']);
+            $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -78,7 +78,7 @@ class Customer_items extends CI_Controller
             $this->db->from('customer_items a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->like('a.customer_id', $filter_customer_id);
-            $this->db->like('a.item_id', $filter_item_id);
+            $this->db->like('a.item_fg_id', $filter_item_fg_id);
             $this->db->where('b.status', "0");
             $this->db->where('(b.approved_to IS NULL OR b.approved_to = "")');
             $this->db->group_by('b.name');
@@ -106,7 +106,7 @@ class Customer_items extends CI_Controller
             $this->db->select('a.*, b.currency, c.number as item_number, c.name as item_name, c.moq as item_moq, c.mpq as item_mpq, c.leadtime as item_leadtime, c.safety_stock as item_safety_stock');
             $this->db->from('customer_items a');
             $this->db->join('customers b', 'a.customer_id = b.id');
-            $this->db->join('item_fg c', 'a.item_id = c.id');
+            $this->db->join('item_fg c', 'a.item_fg_id = c.id');
             $this->db->where('b.number', $number);
             $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->group_by('a.id');
@@ -126,7 +126,7 @@ class Customer_items extends CI_Controller
             $this->db->select('a.*,  c.number as item_number, c.name as item_name');
             $this->db->from('customer_items a');
             $this->db->join('customers b', 'a.customer_id = b.id');
-            $this->db->join('item_fg c', 'a.item_id = c.id');
+            $this->db->join('item_fg c', 'a.item_fg_id = c.id');
             $this->db->where('a.customer_id', $customer_id);
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
@@ -140,13 +140,13 @@ class Customer_items extends CI_Controller
     {
         if ($this->input->get()) {
             $customer_id = base64_decode($this->input->get('customer_id'));
-            $item_id = base64_decode($this->input->get('item_id'));
+            $item_fg_id = base64_decode($this->input->get('item_fg_id'));
 
             $this->db->select('a.*,  c.number as item_number');
             $this->db->from('customer_item_histories a');
-            $this->db->join('item_fg c', 'a.item_id = c.id');
+            $this->db->join('item_fg c', 'a.item_fg_id = c.id');
             $this->db->where('a.customer_id', $customer_id);
-            $this->db->where('a.item_id', $item_id);
+            $this->db->where('a.item_fg_id', $item_fg_id);
             $this->db->order_by('a.valid_date , a.created_date', 'DESC');
             $records = $this->db->get()->result_array();
 
@@ -216,8 +216,8 @@ class Customer_items extends CI_Controller
         if ($this->input->post()) {
             $post = $this->input->post();
 
-            $customer_items = $this->crud->read("customer_items", [], ["customer_id" => $post['customer_id'], "item_id" => $post['item_id']]);
-            $item_fg = $this->crud->read('item_fg', [], ["id" => $post['item_id']]);
+            $customer_items = $this->crud->read("customer_items", [], ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id']]);
+            $item_fg = $this->crud->read('item_fg', [], ["id" => $post['item_fg_id']]);
             $customers = $this->crud->read('customers', [], ["id" => $post['customer_id']]);
 
             if (!empty($customer_items)) {
@@ -252,7 +252,7 @@ class Customer_items extends CI_Controller
 
                   $datas = array(
                     'customer_id' => $post['customer_id'],
-                    'item_id' => $post['item_id'],
+                    'item_fg_id' => $post['item_fg_id'],
                     'item_customer' => $post['item_customer'],
                     'attachment' => $post['attachment'],
                     'price' => $post['price'],
@@ -303,12 +303,10 @@ class Customer_items extends CI_Controller
          echo json_encode($datas);
          unlink($_FILES['file_upload']['name']);
      }
-
      public function uploadclearFailed()
      {
          @unlink('failed/customer_items.txt');
      }
-
      public function uploadcreateFailed()
      {
          if ($this->input->post()) {
@@ -342,19 +340,19 @@ class Customer_items extends CI_Controller
              //Cek Process Number     //table        //field           //field excel
              $item = $this->crud->read('item_fg', [], ["id" => $data['product_no']]);
              $customer = $this->crud->read('customers', [], ["number" => $data['customer_id']]);
-             $customer_items = $this->crud->read('customer_items', [], ["item_id" => @$item->id, "customer_id" => $data['customer_id']] );
+             $customer_items = $this->crud->read('customer_items', [], ["item_fg_id" => @$item->id, "customer_id" => $data['customer_id']] );
 
             if (empty($item->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Product ID " . $data['product_no'] . " Not Found", "theme" => "error"));
             } elseif (empty($customer->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Customer " . $data['customer_id'] . " Not Found", "theme" => "error"));
-            } elseif (!empty($customer_items->item_id)) {
+            } elseif (!empty($customer_items->item_fg_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['product_no'] . " Duplicate Data", "theme" => "error"));
             } else {
                  $dataFinal = array(
                      //field        //excel
                      "customer_id" => $customer->id,
-                     "item_id" => $data['product_no'],
+                     "item_fg_id" => $data['product_no'],
                      "item_customer" => $data['product_customer'],
                      "price" => $data['price'],
                      "valid_date" => $data['valid_date'],
@@ -377,7 +375,7 @@ class Customer_items extends CI_Controller
 
          $get = $this->input->get();
          $filter_customer_id = @base64_decode($get['filter_customer_id']);
-         $filter_item_id = @base64_decode($get['filter_item_id']);
+         $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
 
          //Config
          $this->db->select('*');
@@ -387,13 +385,12 @@ class Customer_items extends CI_Controller
          $this->db->select('a.*, b.name as customer_name, b.currency, b.id as customer_id, c.number as item_number, c.name as item_name');
          $this->db->from('customer_items a');
          $this->db->join('customers b', 'a.customer_id = b.id');
-         $this->db->join('item_fg c', 'a.item_id = c.id');
+         $this->db->join('item_fg c', 'a.item_fg_id = c.id');
          $this->db->like('a.customer_id', $filter_customer_id);
-         $this->db->like('a.item_id', $filter_item_id);
+         $this->db->like('a.item_fg_id', $filter_item_fg_id);
          $this->db->where('b.status', "0");
          $this->db->order_by('a.customer_id', 'ASC');
          $records = $this->db->get()->result_array();
-
          $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customer_items {border-collapse: collapse;width: 100%;font-size: 12px;}#customer_items td, #customer_items th {border: 1px solid #ddd;padding: 2px;}#customer_items tr:nth-child(even){background-color: #f2f2f2;}#customer_items tr:hover {background-color: #ddd;}#customer_items th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
          <center>
              <div style="float: left; font-size: 12px; text-align: left;">

@@ -95,7 +95,7 @@ class Generate_mps extends CI_Controller
                 COALESCE(e.qty, 0) as os_mpp, 
                 COALESCE(SUM(f.qty), 0) as os_so');
             $this->db->from('item_fg a');
-            $this->db->join('customer_items b', 'a.id = b.item_id');
+            $this->db->join('customer_items b', 'a.id = b.item_fg_id');
             $this->db->join('stock_wip c', "a.id = c.item_fg_id and c.p_month = '" . $filter_month . "' and c.p_year = '" . $filter_year . "' and c.revision = '" . $filter_revision . "'", "left");
             $this->db->join('stock_fg d', "a.id = d.item_fg_id and d.p_month = '" . $filter_month . "' and d.p_year = '" . $filter_year . "' and d.revision = '" . $filter_revision . "'", "left");
             $this->db->join('os_mpp e', "a.id = e.item_fg_id and b.customer_id = e.customer_id and e.p_month = '" . $filter_month . "' and e.p_year = '" . $filter_year . "' and e.revision = '" . $filter_revision . "'", "left");
@@ -107,7 +107,7 @@ class Generate_mps extends CI_Controller
                 $this->db->where('a.id', $filter_product_no);
             }
             $this->db->group_by('b.customer_id');
-            $this->db->group_by('b.item_id');
+            $this->db->group_by('b.item_fg_id');
             $this->db->order_by('a.number', 'asc');
             $records = $this->db->get()->result_array();
 
@@ -155,7 +155,6 @@ class Generate_mps extends CI_Controller
                                 
                     
                     $result = $this->db->get()->row();
-
                     $os_so_qty = $result->qty;
 
                     //HKW 1
@@ -652,12 +651,11 @@ class Generate_mps extends CI_Controller
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=generate_mps_$format.xls");
         }
-
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-
+        
         //Filter Data
         $filter_month = base64_decode($this->input->get('filter_month'));
         $filter_year = base64_decode($this->input->get('filter_year'));
@@ -777,7 +775,7 @@ class Generate_mps extends CI_Controller
             $this->db->from('generate_mps a');
             $this->db->join('generate_mps_details b', 'a.p_month = b.p_month and a.p_year = b.p_year and a.revision = b.revision and a.item_fg_id = b.item_fg_id');
             $this->db->join('customers c', 'a.customer_id = c.id');
-            $this->db->join('customer_items d', 'a.customer_id = d.customer_id and a.item_fg_id = d.item_id');
+            $this->db->join('customer_items d', 'a.customer_id = d.customer_id and a.item_fg_id = d.item_fg_id');
             $this->db->join('item_fg e', 'a.item_fg_id = e.id');
             if ($filter_month != "" or $filter_year != "") {
                 $this->db->where('a.p_month', $filter_month);

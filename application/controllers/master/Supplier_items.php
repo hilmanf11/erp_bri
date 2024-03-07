@@ -13,7 +13,7 @@ class Supplier_items extends CI_Controller
         $this->load->model('crud');
         //VALIDASI FORM
         $this->form_validation->set_rules('supplier_id', 'Code', 'required|min_length[1]|max_length[20]|is_unique[supplier_items.supplier_id]');
-        $this->form_validation->set_rules('item_id', 'Code', 'required|min_length[1]|max_length[30]|is_unique[supplier_items.item_id]');
+        $this->form_validation->set_rules('item_rm_id', 'Code', 'required|min_length[1]|max_length[30]|is_unique[supplier_items.item_rm_id]');
 
         
     }
@@ -46,7 +46,7 @@ class Supplier_items extends CI_Controller
         $this->db->select('a.*,c.number as item_number, c.name as item_name');
         $this->db->from('supplier_items a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
-        $this->db->join('item_rm c', 'a.item_id = c.id');
+        $this->db->join('item_rm c', 'a.item_rm_id = c.id');
         $this->db->where('a.supplier_id', $supplier_id);
         $this->db->like('c.number', $post);
         $this->db->group_by('a.id');
@@ -64,7 +64,7 @@ class Supplier_items extends CI_Controller
         $this->db->select('a.*, b.currency, c.number as item_number, c.name as item_name, c.specification,b.name as name');
         $this->db->from('supplier_items a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
-        $this->db->join('item_rm c', 'a.item_id = c.id');
+        $this->db->join('item_rm c', 'a.item_rm_id = c.id');
         $this->db->where('c.item_family_number', $item_family_number);
         $this->db->like('c.number', $post);
         $this->db->group_by('a.id');
@@ -78,18 +78,18 @@ class Supplier_items extends CI_Controller
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $item_number = $this->input->get('item_number');
-        $item_id = $this->input->get('item_rm_id');
+        $item_rm_id = $this->input->get('item_rm_id');
         $item_family_number = $this->input->get('item_family_number');
 
         $this->db->select('b.*, c.number as item_number, a.mpq, a.moq');
         $this->db->from('supplier_items a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
-        $this->db->join('item_rm c', 'a.item_id = c.id');
+        $this->db->join('item_rm c', 'a.item_rm_id = c.id');
         $this->db->join('item_familys d', 'c.item_family_number = d.number');
         $this->db->where('a.deleted', 0);
         // $this->db->where('a.status', 0);
         $this->db->like("c.number", $item_number);
-        $this->db->like("c.id", $item_id);
+        $this->db->like("c.id", $item_rm_id);
         $this->db->like("d.id", $item_family_number);
         $this->db->like("b.name", $post);
         $this->db->group_by('b.number');
@@ -104,7 +104,7 @@ class Supplier_items extends CI_Controller
          if ($this->input->post()) {
             $get = $this->input->get();
             $filter_supplier_id = @base64_decode($get['filter_supplier_id']);
-            $filter_item_id = @base64_decode($get['filter_item_id']);
+            $filter_item_rm_id = @base64_decode($get['filter_item_rm_id']);
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -118,7 +118,7 @@ class Supplier_items extends CI_Controller
             $this->db->from('supplier_items a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
             $this->db->like('a.supplier_id', $filter_supplier_id);
-            $this->db->like('a.item_id', $filter_item_id);
+            $this->db->like('a.item_rm_id', $filter_item_rm_id);
             $this->db->where('b.status', "0");
             $this->db->group_by('b.name');
             $this->db->order_by('b.id', 'ASC');
@@ -145,7 +145,7 @@ class Supplier_items extends CI_Controller
             $this->db->select('a.*, b.currency, c.number as item_number, c.name as item_name');
             $this->db->from('supplier_items a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
-            $this->db->join('item_rm c', 'a.item_id = c.id');
+            $this->db->join('item_rm c', 'a.item_rm_id = c.id');
             $this->db->where('b.number', $number);
             $this->db->like('a.supplier_id', $filter_supplier_id);
             $this->db->group_by('a.id');
@@ -165,7 +165,7 @@ class Supplier_items extends CI_Controller
             $this->db->select('a.*,  c.number as item_number, c.name as item_name');
             $this->db->from('supplier_items a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
-            $this->db->join('item_rm c', 'a.item_id = c.id');
+            $this->db->join('item_rm c', 'a.item_rm_id = c.id');
             $this->db->where('a.supplier_id', $supplier_id);
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
@@ -179,12 +179,12 @@ class Supplier_items extends CI_Controller
     {
         if ($this->input->get()) {
             $supplier_id = base64_decode($this->input->get('supplier_id'));
-            $item_id = base64_decode($this->input->get('item_id'));
+            $item_rm_id = base64_decode($this->input->get('item_rm_id'));
 
             $this->db->select('*');
             $this->db->from('supplier_item_histories');
             $this->db->where('supplier_id', $supplier_id);
-            $this->db->where('item_id', $item_id);
+            $this->db->where('item_rm_id', $item_rm_id);
             $this->db->order_by('valid_date', 'DESC');
             $records = $this->db->get()->result_array();
 
@@ -198,8 +198,8 @@ class Supplier_items extends CI_Controller
         if ($this->input->post()) {
             $post = $this->input->post();
 
-            $supplier_items = $this->crud->read("supplier_items", [], ["supplier_id" => $post['supplier_id'], "item_id" => $post['item_id']]);
-            $item_rm = $this->crud->read('item_rm', [], ["id" => $post['item_id']]);
+            $supplier_items = $this->crud->read("supplier_items", [], ["supplier_id" => $post['supplier_id'], "item_rm_id" => $post['item_rm_id']]);
+            $item_rm = $this->crud->read('item_rm', [], ["id" => $post['item_rm_id']]);
             $suppliers = $this->crud->read('suppliers', [], ["id" => $post['supplier_id']]);
 
             if (!empty($supplier_items)) {
@@ -233,7 +233,7 @@ class Supplier_items extends CI_Controller
 
                 $datas = array(
                   'supplier_id' => $post['supplier_id'],
-                  'item_id' => $post['item_id'],
+                  'item_rm_id' => $post['item_rm_id'],
                   'item_supplier' => $post['item_supplier'],
                   'price' => $post['price'],
                   'moq' => $post['moq'],
@@ -330,19 +330,19 @@ class Supplier_items extends CI_Controller
              //Cek Process Number     //table        //field           //field excel
              $item = $this->crud->read('item_rm', [], ["number" => $data['part_no']]);
              $supplier = $this->crud->read('suppliers', [], ["number" => $data['supplier_id']]);
-             $supplier_items = $this->crud->read('supplier_items', [], ["item_id" => @$item->id, "supplier_id" => $data['supplier_id']] );
+             $supplier_items = $this->crud->read('supplier_items', [], ["item_rm_id" => @$item->id, "supplier_id" => $data['supplier_id']] );
 
             if (empty($item->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Product No " . $data['part_no'] . " Not Found", "theme" => "error"));
             } elseif (empty($supplier->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Supplier " . $data['supplier_id'] . " Not Found", "theme" => "error"));
-            } elseif (!empty($supplier_items->item_id)) {
+            } elseif (!empty($supplier_items->item_rm_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['part_no'] . " Duplicate Data", "theme" => "error"));
             } else {
                  $dataFinal = array(
                      //field        //excel
                      "supplier_id" => $supplier->id,
-                     "item_id" => $item->id,
+                     "item_rm_id" => $item->id,
                      "item_supplier" => $data['part_supplier'],
                      "mpq" => $data['mpq'],
                      "moq" => $data['moq'],
@@ -370,7 +370,7 @@ class Supplier_items extends CI_Controller
 
          $get = $this->input->get();
          $filter_supplier_id = @base64_decode($get['filter_supplier_id']);
-         $filter_item_id = @base64_decode($get['filter_item_id']);
+         $filter_item_rm_id = @base64_decode($get['filter_item_rm_id']);
 
          //Config
          $this->db->select('*');
@@ -380,9 +380,9 @@ class Supplier_items extends CI_Controller
          $this->db->select('a.*, b.name as supplier_name, b.currency, b.id as supplier_id, c.number as item_number, c.name as item_name');
          $this->db->from('supplier_items a');
          $this->db->join('suppliers b', 'a.supplier_id = b.id');
-         $this->db->join('item_rm c', 'a.item_id = c.id');
+         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
          $this->db->like('a.supplier_id', $filter_supplier_id);
-         $this->db->like('a.item_id', $filter_item_id);
+         $this->db->like('a.item_rm_id', $filter_item_rm_id);
          $this->db->order_by('a.supplier_id', 'ASC');
          $records = $this->db->get()->result_array();
          $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#supplier_items {border-collapse: collapse;width: 100%;font-size: 12px;}#supplier_items td, #supplier_items th {border: 1px solid #ddd;padding: 2px;}#supplier_items tr:nth-child(even){background-color: #f2f2f2;}#supplier_items tr:hover {background-color: #ddd;}#supplier_items th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>

@@ -37,7 +37,7 @@ class Shipping_orders extends CI_Controller
             $this->db->from('delivery_orders a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('customers c', 'a.customer_id = c.id');
-            //$this->db->join("(SELECT delivery_order_no, c.item_id, SUM(a.qty) as shipping FROM shipping_orders a JOIN scan_item_receipts_fg b on a.checksheet_label = b.checksheet_label JOIN sales_orders c on a.so_number = c.number and b.so_number = c.number WHERE a.delivery_order_no = '$delivery_order_no' GROUP BY a.delivery_order_no, c.item_id) e", 'a.number = e.delivery_order_no and a.item_id = e.item_id', 'left');
+            //$this->db->join("(SELECT delivery_order_no, c.item_fg_id, SUM(a.qty) as shipping FROM shipping_orders a JOIN scan_item_receipts_fg b on a.checksheet_label = b.checksheet_label JOIN sales_orders c on a.so_number = c.number and b.so_number = c.number WHERE a.delivery_order_no = '$delivery_order_no' GROUP BY a.delivery_order_no, c.item_fg_id) e", 'a.number = e.delivery_order_no and a.item_fg_id = e.item_fg_id', 'left');
             $this->db->where('a.delivery_order_no', $delivery_order_no);
             $this->db->group_by('b.number');
 
@@ -90,7 +90,7 @@ class Shipping_orders extends CI_Controller
                 $this->db->select("a.*");
                 $this->db->from('scan_item_receipts_fg a');
                 $this->db->join('sales_orders b', 'a.so_number = b.number');
-                $this->db->join('delivery_orders c', 'b.item_id = c.item_id and c.customer_id = b.customer_id');
+                $this->db->join('delivery_orders c', 'b.item_fg_id = c.item_fg_id and c.customer_id = b.customer_id');
                 $this->db->where('a.checksheet_label', $post['checksheet_label']);
                 $this->db->where('c.number', $post['delivery_order_no']);
                 $this->db->where('a.status', '0');

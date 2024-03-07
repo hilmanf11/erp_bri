@@ -344,7 +344,7 @@ class Approvals extends CI_Controller
         $this->db->select('a.*, b.name as supplier_name, b.currency, b.id as supplier_id, c.number as item_number, c.name as item_name');
         $this->db->from('supplier_items a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
-        $this->db->join('item_rm c', 'a.item_id = c.id');
+        $this->db->join('item_rm c', 'a.item_rm_id = c.id');
         $this->db->where('a.approved_to', $approved_to);
         $this->db->where('a.created_by', $created_by);
         $this->db->order_by('a.supplier_id', 'ASC');
@@ -357,7 +357,7 @@ class Approvals extends CI_Controller
         $this->db->select('a.*, b.name as customer_name, b.currency, b.id as customer_id, c.number as item_number, c.name as item_name');
         $this->db->from('customer_items a');
         $this->db->join('customers b', 'a.customer_id = b.id');
-        $this->db->join('item_fg c', 'a.item_id = c.id');
+        $this->db->join('item_fg c', 'a.item_fg_id = c.id');
         $this->db->where('a.approved_to', $approved_to);
         $this->db->where('a.created_by', $created_by);
         $this->db->order_by('a.customer_id', 'ASC');

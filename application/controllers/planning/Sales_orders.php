@@ -14,7 +14,7 @@ class Sales_orders extends CI_Controller
 
         //VALIDASI FORM
         $this->form_validation->set_rules('customer_id', 'Customer', 'required|min_length[1]|max_length[20]|is_unique[customer_items.customer_id]');
-        $this->form_validation->set_rules('item_id', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[customer_items.item_id]');
+        $this->form_validation->set_rules('item_fg_id', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[customer_items.item_fg_id]');
     }
 
     //HALAMAN UTAMA
@@ -36,15 +36,26 @@ class Sales_orders extends CI_Controller
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $send = $this->crud->query("SELECT b.id, b.number, b.name, a.price, c.currency, b.uom
             FROM customer_items a 
-            JOIN item_fg b ON a.item_id = b.id
+            JOIN item_fg b ON a.item_fg_id = b.id
             JOIN customers c ON a.customer_id = c.id
             WHERE a.customer_id = '$customer_id' and (b.number LIKE '%$post%' or b.name LIKE '%$post%')");
         echo json_encode($send);
     }
 
+    public function readItems($customer_id, $sales_order_no)
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT b.id, b.number, b.name, a.qty
+            FROM sales_orders a 
+            JOIN item_fg b ON a.item_fg_id = b.id
+            JOIN customers c ON a.customer_id = c.id
+            WHERE a.customer_id = '$customer_id' and a.sales_order_no = '$sales_order_no' and a.status = 0 and (b.number LIKE '%$post%' or b.name LIKE '%$post%') ");
+        echo json_encode($send);
+    }
+
     public function readSalesOrder($customer_id)
     {
-        $send = $this->crud->query("SELECT DISTINCT sales_order_no FROM sales_orders WHERE customer_id = '$customer_id'");
+        $send = $this->crud->query("SELECT DISTINCT sales_order_no, sales_order_date FROM sales_orders WHERE customer_id = '$customer_id' and status = 0");
         echo json_encode($send);
     }
 
@@ -273,7 +284,7 @@ class Sales_orders extends CI_Controller
             $item_fg = $this->crud->read('item_fg', [], ["number" => $item_fg_number]);
 
             if (!empty($item_fg->number)) {
-                $customer_items = $this->crud->read('customer_items', [], ["item_id" => $item_fg->id,"customer_id" => $customer_id]);
+                $customer_items = $this->crud->read('customer_items', [], ["item_fg_id" => $item_fg->id,"customer_id" => $customer_id]);
                 $total = ($data->val($i, 4) * $customer_items->price);
                 $datas[] = array(
                     //excel
@@ -344,7 +355,7 @@ class Sales_orders extends CI_Controller
             } elseif (empty($customer_address->id)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Customers Address ID " . $data['customer_address_id'] . " Not Found in Customers ID ". $data['customer_id'] . "", "theme" => "error"));
             } else {
-                $customer_items = $this->crud->read('customer_items', [], ["item_id" => $data['item_fg_id'],"customer_id" => $data['customer_id']]);
+                $customer_items = $this->crud->read('customer_items', [], ["item_fg_id" => $data['item_fg_id'],"customer_id" => $data['customer_id']]);
                 $sales_orders = $this->crud->read('sales_orders', [], ["customer_order_no" => $data['customer_order_no'], "item_fg_id" => $data['item_fg_id']]);
 
                 if (!empty($sales_orders->sales_order_no )) {
