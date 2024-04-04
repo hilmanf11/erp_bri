@@ -1,22 +1,29 @@
+<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" style="width:100%; height: 100%;">
+        <div title="RELATIONS" style="padding: 20px;">
+            <ul>
+                <li>The Data Currency is taken from <b>Master Data > General Master > Currency</b></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'detail',width:80,align:'center',formatter: btnDetails">Address</th>
-            <th rowspan="2" data-options="field:'id',width:100,align:'center'">Customer ID</th>
-            <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Customer Name</th>
-            <th rowspan="2" data-options="field:'number',width:110,halign:'center'">Customer Code</th>
-            <th rowspan="2" data-options="field:'type',width:150,halign:'center'">Type</th>
-            <th rowspan="2" data-options="field:'currency',width:150,halign:'center'">Currency</th>
-            <th rowspan="2" data-options="field:'taxes',width:80,halign:'center'">Taxes</th>
-            <th rowspan="2" data-options="field:'payment_term',width:150,halign:'center'">Payment Term (Day)</th>
+            <th rowspan="2" data-options="field:'id',width:80,align:'center'">Customer<br>ID</th>
+            <th rowspan="2" data-options="field:'name',width:250,halign:'center'">Customer Name</th>
+            <th rowspan="2" data-options="field:'number',width:80,align:'center'">Customer<br>Code</th>
+            <th rowspan="2" data-options="field:'type',width:80,align:'center'">Type</th>
+            <th rowspan="2" data-options="field:'currency',width:80,align:'center'">Currency</th>
+            <th rowspan="2" data-options="field:'taxes',width:80,halign:'center',align:'right'">Taxes</th>
+            <th rowspan="2" data-options="field:'payment_term',width:100,halign:'center',align:'right'">Payment Term<br>(Day)</th>
             <th rowspan="2" data-options="field:'bank_account',width:150,halign:'center'">Bank Account</th>
             <th rowspan="2" data-options="field:'bank_name',width:150,halign:'center'">Bank Name</th>
-            <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
-            <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', styler:styleApproved, formatter:formatApproved">Approval Status</th>
-            <th rowspan="2" data-options="field:'approved_by',width:100,halign:'center'">Approved by</th>
-            <th rowspan="2" data-options="field:'approved_date',width:100,halign:'center'">Approved date</th>
+            <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -31,6 +38,7 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
 </div>
 <!-- TOOLBAR CUSTOMERS ADDRESS DATAGRID -->
 <div id="toolbar2" style="height: 35px;">
@@ -92,7 +100,7 @@
                     <span style="width:35%; display:inline-block;">Status</span>
                     <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
                         <option value="0">Active</option>
-                        <option value="1">Inactive</option>
+                        <option value="1">Not Active</option>
                     </select>
                 </div>
             </div>
@@ -106,14 +114,16 @@
         <thead>
             <tr>
                 <th rowspan="2" field="ck" checkbox="true"></th>
-                <th rowspan="2" data-options="field:'id',width:150,halign:'center'">ID</th>
-                <th rowspan="2" data-options="field:'address',width:150,halign:'center'">Address</th>
+                <th rowspan="2" data-options="field:'id',width:120,halign:'center'">ID</th>
+                <th rowspan="2" data-options="field:'plant',width:100,halign:'center'">Plant</th>
+                <th rowspan="2" data-options="field:'department',width:100,halign:'center'">Department</th>
+                <th rowspan="2" data-options="field:'address',width:250,halign:'center'">Address</th>
                 <th rowspan="2" data-options="field:'address_billing',width:150,halign:'center'">Billing Address</th>
-                <th rowspan="2" data-options="field:'contact_person',width:150,halign:'center'">Contact Person</th>
-                <th rowspan="2" data-options="field:'telp',width:150,halign:'center'">Telepon</th>
-                <th rowspan="2" data-options="field:'telp_billing',width:150,halign:'center'">Billing Contact</th>
-                <th rowspan="2" data-options="field:'email',width:150,halign:'center'">Email</th>
-                <th rowspan="2" data-options="field:'website',width:150,halign:'center'">Website</th>
+                <th rowspan="2" data-options="field:'contact_person',width:100,halign:'center'">Contact Person</th>
+                <th rowspan="2" data-options="field:'telp',width:100,halign:'center'">Telepon</th>
+                <th rowspan="2" data-options="field:'telp_billing',width:100,halign:'center'">Billing Contact</th>
+                <th rowspan="2" data-options="field:'email',width:100,halign:'center'">Email</th>
+                <th rowspan="2" data-options="field:'website',width:100,halign:'center'">Website</th>
                 <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
                 <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
             </tr>
@@ -134,6 +144,14 @@
             <div class="fitem" hidden>
                 <span style="width:35%; display:inline-block;">Customer ID</span>
                 <input style="width:60%;" name="customer_id" id="customer_id" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Plant</span>
+                <input style="width:60%;" name="plant" id="plant" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Department</span>
+                <input style="width:60%;" name="department" id="department" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Address</span>
@@ -365,8 +383,10 @@
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
+            rownumbers: true,
             fit: true,
-            rownumbers: true
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
         }).datagrid('enableFilter');
 
         //SAVE DATA
@@ -434,24 +454,7 @@
         if (value == 0) {
             return 'Active';
         } else {
-            return 'Inactive';
-        }
-    };
-
-     //CELLSTYLE APPROVE
-     function styleApproved(value, row, index) {
-        if (value == "" || value === null ) {
-            return 'background: #53D636; color:white;';
-        } else {
-            return 'background: #FF5F5F; color:white;';
-        }
-    }
-    //FORMATTER APPROVE
-    function formatApproved(value) {
-        if (value == "" || value === null ) {
-            return 'Approved';
-        } else {
-            return 'Checking';
+            return 'Not Active';
         }
     };
 

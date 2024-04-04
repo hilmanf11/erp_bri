@@ -285,7 +285,7 @@
         }],
         onSelect: function(category) {
             $('#filter_product_family').combobox({
-                url: '<?= base_url('master/item_familys/readss/'); ?>' + category.number,
+                url: '<?= base_url('master/item_familys/reads/'); ?>' + category.id,
                 valueField: 'id',
                 textField: 'name',
                 prompt: 'Choose Product Family',
@@ -297,7 +297,7 @@
                 }],
                 onSelect: function(prodfam) {
                     $('#filter_product_family_sub').combobox({
-                        url: '<?= base_url('master/item_family_subs/readss/'); ?>' + prodfam.number,
+                        url: '<?= base_url('master/item_family_subs/reads/'); ?>' + prodfam.id,
                         valueField: 'id',
                         textField: 'name',
                         prompt: 'Choose Product Family Sub',
@@ -402,7 +402,7 @@
     });
 
     $('#location').combobox({
-        url: '<?= base_url('master/rm_locations/readLocations/'); ?>',
+        url: '<?= base_url('master/locations/reads/RM'); ?>',
         valueField: 'location',
         textField: 'location',
         prompt: 'Choose Locations',

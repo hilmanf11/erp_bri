@@ -32,20 +32,9 @@ class Customers extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT * FROM customers WHERE id like '%$post%' or `number` like '%$post%' or `name` like '%$post%' or `status` like '0'");
+        $send = $this->crud->query("SELECT * FROM customers WHERE id like '%$post%' or `number` like '%$post%' or `name` like '%$post%'");
         echo json_encode($send);
     }
-
-    public function readsA()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        // $send = $this->crud->reads('customers', ["name" => $post], ["status" => "0","approved_to" =>null ]);
-        $send = $this->crud->query("SELECT * FROM customers WHERE name LIKE '%$post%' AND `status` = '0' AND (`approved_to` IS NULL OR `approved_to` = '')");
-
-
-        echo json_encode($send);
-    }
-
 
     public function readAddress($customer_id)
     {
@@ -71,25 +60,7 @@ class Customers extends CI_Controller
             $this->db->where('deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if ($filter->field == "status" && strtolower($filter->value) === "active") {
-                        // Tampilkan data dengan status "active" (nilai 0)
-                        $this->db->where("status", 0);
-                    } elseif ($filter->field == "status" && strtolower($filter->value) === "inactive") {
-                        // Tampilkan data dengan status "inactive" (nilai 1)
-                        $this->db->where("status", 1);
-                    } elseif ($filter->field == "approved_to" && strtolower($filter->value) === "approved") {
-                        // Tampilkan data yang memiliki approved_to kosong atau null
-                        $this->db->group_start();
-                        $this->db->where("approved_to", null);
-                        $this->db->or_where("approved_to", "");
-                        $this->db->group_end();
-                    } elseif ($filter->field == "approved_to" && strtolower($filter->value) === "checking") {
-                        // Tampilkan data yang memiliki approved_to tidak kosong
-                        $this->db->where("approved_to !=", null);
-                        $this->db->where("approved_to !=", "");
-                    } else {
-                        $this->db->like($filter->field, $filter->value);
-                    }                    
+                    $this->db->like($filter->field, $filter->value);
                 }
             }
             $this->db->order_by('id', 'asc');
@@ -126,7 +97,7 @@ class Customers extends CI_Controller
                     $this->db->like($filter->field, $filter->value);
                 }
             }
-            $this->db->order_by('id', 'asc');
+            $this->db->order_by('plant', 'asc');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -321,13 +292,15 @@ class Customers extends CI_Controller
             $datas[] = array(
                 //excel
                 'customer_id' => $data->val($i, 2),
-                'address' => $data->val($i, 3),
-                'address_billing' => $data->val($i, 4),
-                'contact_person' => $data->val($i, 5),
-                'telp' => $data->val($i, 6),
-                'telp_billing' => $data->val($i, 7),
-                'email' => $data->val($i, 8),
-                'website' => $data->val($i, 9),
+                'plant' => $data->val($i, 3),
+                'department' => $data->val($i, 4),
+                'address' => $data->val($i, 5),
+                'address_billing' => $data->val($i, 6),
+                'contact_person' => $data->val($i, 7),
+                'telp' => $data->val($i, 8),
+                'telp_billing' => $data->val($i, 9),
+                'email' => $data->val($i, 10),
+                'website' => $data->val($i, 11),
             );
         }
         $datas['total'] = count($datas);
@@ -375,6 +348,8 @@ class Customers extends CI_Controller
                 $dataFinal = array(
                     //field
                     "customer_id" => $data['customer_id'],
+                    "plant" => $data['plant'],
+                    "department" => $data['department'],
                     "address" => $data['address'],
                     "address_billing" => $data['address_billing'],
                     "contact_person" => $data['contact_person'],
@@ -439,7 +414,9 @@ class Customers extends CI_Controller
                 <th width="20">No</th>
                 <th>Customer Name</th>
                 <th>Customer Code</th>
-                <th>type</th>
+                <th>Type</th>
+                <th>Plant</th>
+                <th>Department</th>
                 <th>Address</th>
                 <th>Billing Address</th>
                 <th>Contact Person</th>
@@ -467,6 +444,8 @@ class Customers extends CI_Controller
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['number'] . '</td>
                     <td>' . $data['type'] . '</td>
+                    <td>' . $data['plant'] . '</td>
+                    <td>' . $data['department'] . '</td>
                     <td>' . $data['address'] . '</td>
                     <td>' . $data['address_billing'] . '</td>
                     <td>' . $data['contact_person'] . '</td>

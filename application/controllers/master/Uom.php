@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
 class Uom extends CI_Controller
 {
@@ -11,7 +12,7 @@ class Uom extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('name', 'Code', 'required|min_length[1]|max_length[20]|is_unique[uom.name]');
+        $this->form_validation->set_rules('name', 'Name', 'required|min_length[1]|max_length[20]|is_unique[uom.name]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -26,7 +27,6 @@ class Uom extends CI_Controller
             redirect('error_access');
         }
     }
-
     //GET DATA
     public function reads()
     {
@@ -34,17 +34,6 @@ class Uom extends CI_Controller
         $send = $this->crud->reads('uom', ["name" => $post]);
         echo json_encode($send);
     }
-
-      //CODE OTOMATIS
-      public function autoid(){
-        $sql = $this->db->query("SELECT max(`id`) as kode From uom");
-        $row = $sql->row();
-        $kode = substr($row->kode, 1);
-        $autoid = "U". sprintf("%02s", $kode + 1);
-        echo $autoid;
-
-    }
-
     //GET DATATABLES
     public function datatables()
     {
@@ -66,7 +55,7 @@ class Uom extends CI_Controller
                     $this->db->like($filter->field, $filter->value);
                 }
             }
-            $this->db->order_by('number', 'asc');
+            $this->db->order_by('id', 'asc');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -78,6 +67,14 @@ class Uom extends CI_Controller
             $result = array_merge($result, ['rows' => $records]);
             echo json_encode($result);
         }
+    }
+    //AUTO ID
+    public function autoid(){
+        $sql = $this->db->query("SELECT max(id) as kode FROM uom");
+        $row = $sql->row();
+        $kode = substr($row->kode,1);
+        $autoid ="U". sprintf("%02s", $kode + 1);
+        echo $autoid;
     }
     //CREATE DATA
     public function create()
@@ -139,8 +136,7 @@ class Uom extends CI_Controller
                             <img src="' . $config->favicon . '" width="30">
                         </td>
                         <td style="font-size: 14px; text-align: left; margin:2px;">
-                            <b>' . $config->name . '</b><br>
-                            <small>MASTER UNIT OF MEASURE</small>
+                            <b>' . $config->name . '</b>
                         </td>
                     </tr>
                 </table>
@@ -149,8 +145,11 @@ class Uom extends CI_Controller
                 Print Date ' . date("d M Y H:m:s") . ' <br>
                 Print By ' . $this->session->username . '  
             </div>
+            <br><br>
+            <div style="float: centet; font-size: 16px; text-align: center;">
+                <h3>MASTER UNIT OF MEASURE</h3>
+            </div>
         </center>
-        <br><br><br>
         
         <table id="customers" border="1">
             <tr>
@@ -163,7 +162,7 @@ class Uom extends CI_Controller
         foreach ($records as $data) {
             $html .= '<tr>
                     <td>' . $no . '</td>
-                    <td>' . $data['id'] . '</td>
+                    <td>' . $data['number'] . '</td>
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['description'] . '</td>';
             $no++;

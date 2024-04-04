@@ -174,7 +174,9 @@ class Stock_wip extends CI_Controller
                 'document_no' => $data->val($i, 2),
                 'item_fg_id' => $data->val($i, 3),
                 'pp' => $data->val($i, 4),
-                'p3' => $data->val($i, 5)
+                'p1' => $data->val($i, 5),
+                'p2' => $data->val($i, 6),
+                'p3' => $data->val($i, 7)
             );
         }
 
@@ -230,6 +232,8 @@ class Stock_wip extends CI_Controller
                 "p_year" => $data['p_year'],
                 "revision" => $data['revision'],
                 'pp' => $data['pp'],
+                'p1' => $data['p1'],
+                'p2' => $data['p2'],
                 'p3' => $data['p3'],
             ]);
 

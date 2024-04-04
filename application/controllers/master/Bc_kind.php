@@ -1,5 +1,4 @@
 <?php
-date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
 class Bc_kind extends CI_Controller
 {
@@ -11,9 +10,8 @@ class Bc_kind extends CI_Controller
         $this->load->library('form_validation');
         $this->load->library('session');
         $this->load->model('crud');
-
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[30]|is_unique[bc_kind.number]');
+        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[20]|is_unique[bc_kind.number]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -28,15 +26,13 @@ class Bc_kind extends CI_Controller
             redirect('error_access');
         }
     }
-    
     //GET DATA
-    public function reads()
+    public function reads($type = "INCOMING")
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('bc_kind', ["name" => $post]);
+        $send = $this->crud->reads('bc_kind', ["name" => $post], ["type" => $type]);
         echo json_encode($send);
     }
-
     //GET DATATABLES
     public function datatables()
     {
@@ -58,7 +54,7 @@ class Bc_kind extends CI_Controller
                     $this->db->like($filter->field, $filter->value);
                 }
             }
-            $this->db->order_by('id', 'ASC');
+            $this->db->order_by('name', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -117,13 +113,11 @@ class Bc_kind extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-
         $this->db->select('*');
         $this->db->from('bc_kind');
         $this->db->where('deleted', 0);
-        $this->db->order_by('id', 'ASC');
+        $this->db->order_by('name', 'ASC');
         $records = $this->db->get()->result_array();
-
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">
@@ -134,13 +128,13 @@ class Bc_kind extends CI_Controller
                         </td>
                         <td style="font-size: 14px; text-align: left; margin:2px;">
                             <b>' . $config->name . '</b><br>
-                            <small>MASTER ITEM CATEGORY</small>
+                            <small>MASTER BC KIND</small>
                         </td>
                     </tr>
                 </table>
             </div>
             <div style="float: right; font-size: 12px; text-align: right;">
-                Print Date ' . date("d M Y H:i:s") . ' <br>
+                Print Date ' . date("d M Y H:m:s") . ' <br>
                 Print By ' . $this->session->username . '  
             </div>
         </center>

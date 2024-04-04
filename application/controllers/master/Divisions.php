@@ -70,7 +70,7 @@ class divisions extends CI_Controller
     }
     //AUTO ID
     public function autoid(){
-        $sql = $this->db->query("SELECT coalesce(max(`id`),0) as kode FROM divisions");
+        $sql = $this->db->query("SELECT max(id) as kode FROM divisions");
         $row = $sql->row();
         $kode = @substr($row->kode,-2);
         $autoid ="DIV". sprintf("%02s", $kode + 1);

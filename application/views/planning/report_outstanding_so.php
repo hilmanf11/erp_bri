@@ -30,10 +30,10 @@
                     <span style="width:35%; display:inline-block;">Product No</span>
                     <input style="width:60%;" id="filter_item_fg" class="easyui-combogrid">
                 </div>
-                <!-- <div class="fitem">
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Division</span>
                     <input style="width:60%;" id="filter_division" class="easyui-combobox">
-                </div> -->
+                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Report Display</span>
                     <select style="width:60%;" id="filter_display" class="easyui-combobox" panelHeight="auto">
@@ -61,7 +61,7 @@
         var filter_customer_order_no = $("#filter_customer_order_no").combobox("getValue");
         var filter_sales_order_no = $("#filter_sales_order_no").combobox("getValue");
         var filter_item_fg = $("#filter_item_fg").combobox("getValue");
-        // var filter_division = $("#filter_division").combobox("getValue");
+        var filter_division = $("#filter_division").combobox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
 
         var url = "?filter_so_date_from=" + window.btoa(filter_so_date_from) +
@@ -70,7 +70,7 @@
             "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
-            // "&filter_division=" + window.btoa(filter_division) +
+            "&filter_division=" + window.btoa(filter_division) +
             "&filter_display=" + window.btoa(filter_display);
 
         if (filter_so_date_from == "" && filter_so_date_to == "") {
@@ -88,7 +88,7 @@
         var filter_customer_order_no = $("#filter_customer_order_no").combobox("getValue");
         var filter_sales_order_no = $("#filter_sales_order_no").combobox("getValue");
         var filter_item_fg = $("#filter_item_fg").combobox("getValue");
-        // var filter_division = $("#filter_division").combobox("getValue");
+        var filter_division = $("#filter_division").combobox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
 
         var url = "?filter_so_date_from=" + window.btoa(filter_so_date_from) +
@@ -97,7 +97,7 @@
             "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
-            // "&filter_division=" + window.btoa(filter_division) +
+            "&filter_division=" + window.btoa(filter_division) +
             "&filter_display=" + window.btoa(filter_display);
 
         if (filter_so_date_from == "" && filter_so_date_to == "") {
@@ -217,12 +217,12 @@
             ],
         });
 
-        // $('#filter_division').combobox({
-        //     url: '<?= base_url('master/divisions/reads'); ?>',
-        //     valueField: 'name',
-        //     textField: 'name',
-        //     prompt: 'Choose Division',
-        // });
+        $('#filter_division').combobox({
+            url: '<?= base_url('master/divisions/reads'); ?>',
+            valueField: 'name',
+            textField: 'name',
+            prompt: 'Choose Division',
+        });
     });
 
     // FORMAT tahun-bulan-tanggal

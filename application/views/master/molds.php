@@ -1,16 +1,32 @@
+<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" style="width:100%; height: 100%;">
+        <div title="RELATIONS" style="padding: 20px;">
+            <ul>
+                <li>The Data Customer is taken from <b>Master Data > Marketing > Customer</b></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:100,align:'center'">ID</th>
-            <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Mold Name</th>
-            <th rowspan="2" data-options="field:'type',width:100,halign:'center',formatter:formatType">Type</th>
+            <th rowspan="2" data-options="field:'id',width:150,align:'center'">Mold ID</th>
+            <th rowspan="2" data-options="field:'mold_name',width:150,halign:'center'">Mold Name</th>
+            <th rowspan="2" data-options="field:'type',width:130,halign:'center'">Type</th>
             <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
-            <th rowspan="2" data-options="field:'model',width:100,halign:'center',formatter:formatModel">Model</th>
-            <th rowspan="2" data-options="field:'project_year',width:100,halign:'center',align:'center'">Project Year</th>
-            <th rowspan="2" data-options="field:'standard',width:100,halign:'center',align:'center'">Standard <br>Cavity</th>
-            <th rowspan="2" data-options="field:'actual',width:100,halign:'center',align:'center'">Actual Cavity</th>
+            <th rowspan="2" data-options="field:'model',width:150,halign:'center'">Model</th>
+            <th rowspan="2" data-options="field:'mold_size',width:150,halign:'center'">Mold Size</th>
+            <th rowspan="2" data-options="field:'project_year',width:150,halign:'center'">Project Year</th>
+            <th rowspan="2" data-options="field:'cavity_standard',width:150,halign:'center'">Standard Cavity</th>
+            <th rowspan="2" data-options="field:'cavity_actual',width:150,halign:'center'">Actual Cavity</th>
+            <th rowspan="2" data-options="field:'shoot_standard',width:150,halign:'center'">Standard Shoot</th>
+            <th rowspan="2" data-options="field:'shoot_actual',width:150,halign:'center'">Actual Shoot</th>
+            <th rowspan="2" data-options="field:'mold_type',width:80,halign:'center'">Mold Type</th>
+            <th rowspan="2" data-options="field:'remark',width:150,halign:'center'">Remarks</th>
+            <th rowspan="2" data-options="field:'status',width:150,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -25,50 +41,77 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 600px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">ID</span>
-                <input style="width:30%;" name="id" id="id" required="" readonly class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Mold ID</span>
+                <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Mold Name</span>
-                <input style="width:60%;" name="name" required="" class="easyui-textbox">
+                <input style="width:60%;" name="mold_name" id="mold_name" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Type</span>
                 <select style="width:60%;" name="type" id="type" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="EX">EXTERNAL</option>
-                    <option value="IN">INTERNAL</option>
+                    <option value="INTERNAL">INTERNAL</option>
+                    <option value="CUSTOMER PROPERTY">CUSTOMER PROPERTY</option>
                 </select>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Customer Name</span>
+                <span style="width:35%; display:inline-block;">Customer</span>
                 <input style="width:60%;" name="customer_id" id="customer_id" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Model</span>
-                <select style="width:60%;" name="model" id="model" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="COM">COMPRESSION</option>
-                    <option value="INJ">INJECTION</option>
-                    <option value="TRF">TRANSFER</option>
-                </select>
+                <input style="width:60%;" name="model" id="model" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Mold Size</span>
+                <input style="width:60%;" name="mold_size" id="mold_size" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Project Year</span>
-                <input style="width:60%;" name="project_year" data-options="formatter:myformatter,parser:myparser" required="" class="easyui-datebox">
+                <input style="width:60%;" name="project_year" id="project_year" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Standard Cavity</span>
-                <input style="width:60%;" name="standard" required="" class="easyui-textbox">
+                <input style="width:60%;" name="cavity_standard" id="cavity_standard" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Actual Cavity</span>
-                <input style="width:60%;" name="actual" required="" class="easyui-textbox">
+                <input style="width:60%;" name="cavity_actual" id="cavity_actual" class="easyui-numberbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Standard Shoot</span>
+                <input style="width:60%;" name="shoot_standard" id="shoot_standard" class="easyui-numberbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Actual Shoot</span>
+                <input style="width:60%;" name="shoot_actual" id="shoot_actual" class="easyui-numberbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Mold Type</span>
+                <select style="width:60%;" name="mold_type" id="mold_type" panelHeight="auto" class="easyui-combobox">
+                    <option value="SINGLE">SINGLE</option>
+                    <option value="DOUBLE">DOUBLE</option>
+                </select>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Remarks</span>
+                <input style="width:60%;" name="remark" id="remark" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Status</span>
+                <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
+                    <option value="0">Active</option>
+                    <option value="1">Not Active</option>
+                </select>
             </div>
         </fieldset>
     </form>
@@ -102,24 +145,26 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/molds/create') ?>';
         $('#frm_insert').form('clear');
+        
+        $('#type').combobox('setValue', 'INTERNAL');
+        $('#mold_type').combobox('setValue', 'SINGLE');
+        $('#status').combobox('setValue', '0');
+        $('#cavity_standard').numberbox('setValue', '1');
+        $('#cavity_actual').numberbox('setValue', '1');
 
         $.ajax({
-            type: "post",
-            url: '<?= base_url('master/molds/autoid') ?>',
-            dataType: "html",
-            success: function (response) {
+            type : "post",
+            url : "<?= base_url('master/molds/autoid')?>",
+            dataType : "html",
+            success : function(response){
                 $('#id').textbox('setValue', response);
             }
         });
     }
+    
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
-
-        setTimeout(function() { 
-            $('#id').textbox('setValue', row.id);
-        }, 1000);
-
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
@@ -128,34 +173,6 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
-
-    // Formatter function untuk kolom 'Type'
-    function formatType(value, row, index) {
-        if (value === 'EX') {
-            return 'EXTERNAL';
-        } else if (value === 'IN') {
-            return 'INTERNAL';
-        }
-        return value; // Nilai lainnya tetap seperti aslinya
-    }
-
-    // Formatter function untuk kolom 'Type'
-    function formatModel(value, row, index) {
-        if (value === 'COM') {
-            return 'COMPRESSION';
-        } else if (value === 'INJ'){
-            return 'INJECTION';
-        } else if (value === 'TRF') {
-            return 'TRANSFER';
-        }
-        return value; // Nilai lainnya tetap seperti aslinya
-    }
-
-        // Inisialisasi datagrid
-    $('#dg').datagrid({
-        
-    });
-
     //DELETE DATA
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
@@ -174,8 +191,8 @@
                                 var result = eval('(' + result + ')');
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error("This item cannot be deleted, Please make sure it didn't have any relation");
-                                // $.messager.alert("Error", jqXHR.statusText, 'error');
+                                toastr.error(jqXHR.statusText);
+                                $.messager.alert("Error", jqXHR.statusText, 'error');
                             },
                             complete: function(data) {
                                 $('#dg').datagrid('reload');
@@ -188,14 +205,13 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
-
-    //Upload Data
+    // UPLOAD DATA
     function upload() {
         $('#dlg_upload').dialog('open');
     }
-
+    // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_molds.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_mold.xls') ?>');
     }
     //PRINT PDF
     function pdf() {
@@ -209,31 +225,6 @@
     function reload() {
         window.location.reload();
     }
-
-     // FORMAT tahun-bulan-tanggal
-    function myformatter(date) {
-        var y = date.getFullYear();
-        var m = date.getMonth(); // Mengambil indeks bulan (0 - Januari, 11 - Desember)
-        var monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-        return monthNames[m] + ' ' + y;
-    }
-
-    function myparser(s) {
-        if (!s) return new Date();
-        var parts = s.split(' ');
-        if (parts.length === 2) {
-            var monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-            var m = monthNames.indexOf(parts[0]); // Mencari indeks bulan dari nama bulan
-            var y = parseInt(parts[1]);
-            if (m !== -1 && !isNaN(y)) {
-                return new Date(y, m);
-            }
-        }
-        return new Date();
-    }
-
-
-
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
@@ -241,12 +232,67 @@
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
+            rownumbers: true,
             fit: true,
-            rownumbers: true
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
         }).datagrid('enableFilter');
+        //SAVE DATA
+        $('#dlg_insert').dialog({
+            buttons: [{
+                text: 'Save',
+                iconCls: 'icon-ok',
+                handler: function() {
+                    $('#frm_insert').form('submit', {
+                        url: url_save,
+                        onSubmit: function() {
+                            return $(this).form('validate');
+                        },
+                        success: function(result) {
+                            var result = eval('(' + result + ')');
+                            if (result.theme == "success") {
+                                toastr.success(result.message, result.title);
+                            } else {
+                                toastr.error(result.message, result.title);
+                            }
+                            
+                            $('#dlg_insert').dialog('close');
+                            $('#dg').datagrid('reload');
+                        }
+                    });
+                }
+            }]
+        });
+    });
 
-        //Upload Data
-        $('#dlg_upload').dialog({
+   
+
+    $('#customer_id').combobox({
+        url:'<?= base_url('master/customers/reads'); ?>',
+        valueField:'id',
+        textField:'name',
+        prompt: 'Choose Customer',
+    });
+
+    //CELLSTYLE STATUS
+    function cellStyler(value, row, index) {
+        if (value == 0) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+    //FORMATTER STATUS
+    function cellFormatter(value) {
+        if (value == 0) {
+            return 'Active';
+        } else {
+            return 'Not Active';
+        }
+    };
+
+    // UPLOAD DATA
+    $('#dlg_upload').dialog({
             buttons: [{
                 text: 'List Failed',
                 handler: function() {
@@ -324,76 +370,4 @@
                 }
             }]
         });
-
-        //SAVE DATA
-        $('#dlg_insert').dialog({
-            buttons: [{
-                text: 'Save',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_insert').form('submit', {
-                        url: url_save,
-                        onSubmit: function() {
-                            return $(this).form('validate');
-                        },
-                        success: function(result) {
-                            var result = eval('(' + result + ')');
-                            if (result.theme == "success") {
-                                toastr.success(result.message, result.title);
-                            } else {
-                                toastr.error(result.message, result.title);
-                            }
-                            $('#dlg_insert').dialog('close');
-                            $('#dg').datagrid('reload');
-                        }
-                    });
-                }
-            }]
-        });
-    });
-
-        $('#type').combobox({
-        url: '<?php echo base_url('master/molds/type'); ?>',
-        valueField: 'value',
-        textField: 'name',
-        prompt: "Choose Type",
-        onSelect: function(selectedOption_type) {
-            // Ambil nilai yang dipilih dari combobox
-            var selectedValue_type = selectedOption_type.value;
-            var selectedName_type = selectedOption_type.name;
-
-                $('#model').combobox({
-                    url: '<?php echo base_url('master/molds/model'); ?>',
-                    valueField: 'value',
-                    textField: 'name',
-                    prompt: "Choose Model",
-                    onSelect: function(selectedOption_model) {
-                        // Ambil nilai yang dipilih dari combobox
-                        var selectedValue_model = selectedOption_model.value;
-                        var selectedName_model = selectedOption_model.name;
-
-                        // Lakukan permintaan AJAX untuk mendapatkan ID berdasarkan nilai yang dipilih
-                        $.ajax({
-                            type: "post",
-                            url: '<?php echo base_url('master/molds/autoid/'); ?>' + selectedValue_type + '/' + selectedValue_model,
-                            dataType: "html",
-                            success: function (response) {
-                                // Set nilai response ke elemen dengan ID '#id'
-                                $('#id').textbox('setValue', response);
-                            }
-                        });
-                    }
-                });
-           }
-        });
-
-
-
-
-    $('#customer_id').combobox({
-            url: '<?= base_url('master/customers/reads') ?>',
-            valueField: 'id',
-            textField: 'name',
-            prompt: "Choose Customers"
-         });
 </script>

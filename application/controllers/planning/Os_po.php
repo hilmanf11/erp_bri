@@ -156,9 +156,9 @@ class Os_po extends CI_Controller
                 'po_no' => $data->val($i, 2),
                 'po_date' => $data->val($i, 3),
                 'supplier_id' => $data->val($i, 4),
-                'item_rm_id' => $data->val($i, 5),
-                'qty' => $data->val($i, 6),
-                'price' => $data->val($i, 7)
+                'item_rm_id' => $data->val($i, 6),
+                'qty' => $data->val($i, 10),
+                'price' => $data->val($i, 12)
             );
         }
 

@@ -59,12 +59,12 @@ class Purchase_orders extends CI_Controller
 
     public function readTotalPo()
     {
-        $item_rm_id = $this->input->post('item_rm_id');
+        $item_id = $this->input->post('item_rm_id');
         $this->db->select('item_rm_id, SUM(qty) as qty');
         $this->db->from('purchase_orders');
         $this->db->where('deleted', 0);
         $this->db->where('status', 0);
-        $this->db->where('item_rm_id', $item_rm_id);
+        $this->db->where('item_rm_id', $item_id);
         $this->db->group_by('item_rm_id');
         $records = $this->db->get()->row();
 
@@ -95,15 +95,20 @@ class Purchase_orders extends CI_Controller
                     a.po_date,
                     d.name as supplier_name,
                     b.uom,
+                    a.month_1,
+                    a.month_2,
+                    a.month_3,
+                    a.discount,
                     d.currency, 
                     SUM(a.qty) as qty, 
                     SUM(a.price) as price, 
                     SUM(a.total) as total_price,
                     COUNT(a.status) as total_status,
+                    a.total_sub,
                     g.total_status_close');
                 $this->db->from('purchase_orders a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-                $this->db->join('item_familys c', 'b.item_family_number = c.number');
+                $this->db->join('item_familys c', 'b.item_family_id = c.id');
                 $this->db->join('suppliers d', 'a.supplier_id = d.id');
                 $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
                 $this->db->join('(SELECT po_no, COUNT(status) as total_status_close FROM purchase_orders WHERE status = 1 GROUP BY po_no) g', 'a.po_no = g.po_no', 'left');
@@ -143,6 +148,7 @@ class Purchase_orders extends CI_Controller
                         "status1" => $record['total_status'],
                         "status2" => $record['total_status_close'],
                         "total_dp" => $record['total_dp'],
+                        "total_sub" => $record['total_sub'],
                         "total_grand" => ($record['total_price'] - $record['total_dp']),
                         "state" => "closed",
                         "datatable" => 1
@@ -165,7 +171,7 @@ class Purchase_orders extends CI_Controller
                     (a.qty * a.price) as total_price');
                 $this->db->from('purchase_orders a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-                $this->db->join('item_familys c', 'b.item_family_number = c.number');
+                $this->db->join('item_familys c', 'b.item_family_id= c.id');
                 $this->db->join('suppliers d', 'a.supplier_id = d.id');
                 $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
                 $this->db->where('a.deleted', 0);
@@ -187,21 +193,22 @@ class Purchase_orders extends CI_Controller
     public function datatable_updates()
     {
         $po_no = base64_decode($this->input->get('po_no'));
-        $this->db->select('a.*, 
+        $this->db->select('a.*,  
             b.number as item_number, 
             b.name as item_name,
             b.uom,
             d.id as supplier_id, 
             d.number as supplier_number, 
-            d.name as supplier_name, 
+            d.name as supplier_name,
+            c.name as category_name,
             e.mpq, 
             e.moq,
             d.vat_status,
-            (a.qty * a.price) as amount,
+            ((a.qty * a.price)-(a.qty * a.price * (a.discount/100))) as amount,
             d.currency');
         $this->db->from('purchase_orders a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-        $this->db->join('item_familys c', 'b.item_family_number = c.number');
+        $this->db->join('item_familys c', 'b.item_family_id = c.id');
         $this->db->join('suppliers d', 'a.supplier_id = d.id');
         $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
         $this->db->where('a.deleted', 0);
@@ -229,20 +236,21 @@ class Purchase_orders extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post = $this->input->post();
-                $items = $this->crud->read('item_rm', [], ['number' => base64_decode($post['item_number'])]);
-                $item_family = $this->crud->read('item_familys', [], ['number' => $items->item_family_number]);
+                $items = $this->crud->read('item_rm', [], ['number' => $post['item_number']]);
                 $suppliers = $this->crud->read('suppliers', [], ["id" => $post['supplier_id']]);
                 $supplier_items = $this->crud->read('supplier_items', [], ["item_rm_id" => $items->id, "supplier_id" => $post['supplier_id']]);
                 $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id']]);
+                $purchaseRequests = $this->crud->read('purchase_requests', [], ["request_no" => $post['request_no']]);
                 $config = $this->crud->read("config");
 
-                $datenow    = date("ymd");
+                $divisions = $purchaseRequests->division;
+                $datenow    = $divisions . date("ymd");
                 $sqlGetID   = $this->db->query("SELECT max(po_no) as kode FROM purchase_orders WHERE po_no like '%$datenow%'");
                 $rowID      = $sqlGetID->row();
                 $kode       = $rowID->kode;
                 if ($kode == NULL) {
                     $autoID = sprintf("%04s", $kode + 1);
-                    $po_no = "PO-" . $datenow . "-" . $autoID;
+                    $po_no = "PO" . $datenow . "-" . $autoID;
                 } else {
                     if ($purchaseOrder) {
                         $po_no = $purchaseOrder->po_no;
@@ -250,7 +258,7 @@ class Purchase_orders extends CI_Controller
                         $urutan = (int)substr($kode, -4);
                         $urutan++;
                         $autoID = sprintf("%04s", $urutan);
-                        $po_no = "PO-" . $datenow . "-" . $autoID;
+                        $po_no = "PO" . $datenow . "-" . $autoID;
                     }
                 }
 
@@ -271,17 +279,22 @@ class Purchase_orders extends CI_Controller
                     "po_name" => $this->session->name,
                     "delivery_date" => $post['delivery_date'],
                     "qty" => $post['qty'],
-                    "price" => $supplier_items->price,
-                    "total" => ($supplier_items->price * $post['qty']),
+                    "discount" => $post['discount'],
+                    "price" => $post['price'],
+                    "total" => $post['total'],
                     "taxes" => $taxes,
-                    "total_vat" => (($supplier_items->price * $post['qty']) * ($taxes / 100)),
                     "remarks" => $post['remarks'],
+                    "month_1" => $post['month_1'],
+                    "month_2" => $post['month_2'],
+                    "month_3" => $post['month_3'],
+                    "total_sub" => $post['total_sub'],
                 );
+
                 $send = $this->crud->create('purchase_orders', $data);
                 $this->db->where('request_no', $post['request_no']);
                 $this->db->where('item_rm_id', $items->id);
                 $this->db->update("purchase_requests", ["status" => 1]);
-                echo $send;
+                echo json_encode($send);
             } else {
                 show_error(validation_errors());
             }
@@ -293,26 +306,30 @@ class Purchase_orders extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = $this->input->post('id');
             $post = $this->input->post();
 
             $items = $this->crud->read('item_rm', [], ['number' => $post['item_number']]);
-            $supplier_items = $this->crud->read('supplier_items', [], ["item_rm_id" => $items->id, "supplier_id" => $post['supplier_id']]);
             $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_rm_id" => $items->id]);
-            if (@$post['price'] != "") {
-                $price = $post['price'];
-            } else {
-                $price = @$supplier_items->price;
-            }
 
             $purchase_orders = $this->crud->update('purchase_orders', ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_rm_id" => $items->id], [
                 "qty" => $post['qty'],
+                "discount" => $post['discount'],
                 "po_date" => $post['po_date'],
-                "price" => $price,
-                "total" => ($price * $post['qty']),
+                "price" => $post['price'],
+                "total" => $post['total'],
                 "delivery_date" => $post['delivery_date'],
                 "remarks" => $post['remarks'],
+                "month_1" => $post['month_1'],
+                "month_2" => $post['month_2'],
+                "month_3" => $post['month_3'],
+                "total_sub" => $post['total_sub'],
+                "disc_pr" => $post['disc_pr'],
+                "discount_total" => $post['discount_total'],
+                "income_tax" => $post['income_tax'],
+                "income_total" => $post['income_total'],
                 "total_dp" => $post['total_dp'],
+                "total_grand" => $post['total_grand'],
+                "total_vat" => $post['total_vat'],
                 "revision" => (@$purchaseOrder->revision + 1)
             ]);
 
@@ -345,6 +362,25 @@ class Purchase_orders extends CI_Controller
         $update = $this->crud->update('purchase_requests', ["request_no" => $data['request_no'], "item_rm_id" => $data['item_rm_id']], ["status" => 0]);
         echo $send;
     }
+
+    //GET PERIOD LISTS
+    public function readPeriodLists()
+    {
+        $po_date = $this->input->post('po_date');
+        $p_date_start = date("Y-m-d", strtotime($po_date . "-01"));
+        $p_date_to = date('Y-m-d', strtotime('+3 month', strtotime($p_date_start)));
+
+        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+            $dates[] = array(
+                "name" => date("M-y", strtotime($p_date_start))
+            );
+
+            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+        }
+
+        echo json_encode($dates);
+    }
+
     public function print_po($po_no)
     {
         $purchase_orders_total = $this->crud->reads('purchase_orders', [], ["po_no" => base64_decode($po_no)]);
@@ -353,12 +389,49 @@ class Purchase_orders extends CI_Controller
         $config = $this->db->get('config')->row();
         $config_iso = $this->db->get('config_iso')->row();
         $signatures = $this->db->get('signatures')->row();
-
+        $approval = $this->crud->read('approvals', [], ["table_name" => "purchase_orders"]);
+        $user_1 = $this->crud->read('users', [], ["username" => $approval->user_approval_1]);
+       
+        if (!empty($approval->user_approval_2)) {
+            $user_2 = $this->crud->read('users', [], ["username" => $approval->user_approval_2]);
+        } else {
+            $user_2 = (object) ["name" => ""];
+        }
+        
+        if (!empty($approval->user_approval_3)) {
+            $user_3 = $this->crud->read('users', [], ["username" => $approval->user_approval_3]);
+        } else {
+            $user_3 = (object) ["name" => ""];
+        }
+        
+        
+        if($purchase_orders->approved == 1){
+            $users_1 = '';
+            $users_2 = '';
+            $users_3 = '';
+        } elseif ($purchase_orders->approved == 2) {
+            $users_1 = '<img src="' . base_url('assets/image/qrcode/' . $user_1->name . '.png') . '" width="80"/>';
+            $users_2 = '';
+            $users_3 = '';
+        } elseif ($purchase_orders->approved == 3) {
+            $users_1 = '<img src="' . base_url('assets/image/qrcode/' . $user_1->name . '.png') . '" width="80"/>';
+            $users_2 = '<img src="' . base_url('assets/image/qrcode/' . $user_2->name . '.png') . '" width="80"/>';
+            $users_3 = '';
+        } else {
+            $users_1 = '<img src="' . base_url('assets/image/qrcode/' . $user_1->name . '.png') . '" width="80"/>';
+            $users_2 = '<img src="' . base_url('assets/image/qrcode/' . $user_2->name . '.png') . '" width="80"/>';
+            $users_3 = '<img src="' . base_url('assets/image/qrcode/' . $user_3->name . '.png') . '" width="80"/>';
+        }
+        
+        
         //Config Page
         $rows = 8;
         $page = ceil(count($purchase_orders_total) / $rows);
         //Generate QRcode
         $this->createQrcode($purchase_orders->po_no, "assets/image/qrcode/");
+        $this->createQrcode($user_3->name, "assets/image/qrcode/");
+        $this->createQrcode($user_2->name, "assets/image/qrcode/");
+        $this->createQrcode($user_1->name, "assets/image/qrcode/");
         $html = '<html>
                     <head>
                         <title>' . $purchase_orders->po_no . '</title>
@@ -403,7 +476,7 @@ class Purchase_orders extends CI_Controller
         $hal = 1;
         $subtotal = 0;
         for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*, b.number as item_rm_id, b.name as item_name, b.uom, c.currency, a.price');
+            $this->db->select('a.*, b.number as item_id, b.name as item_name, b.uom, c.currency, a.price, b.description, a.month_1, a.month_2, a.month_3');
             $this->db->from('purchase_orders a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('suppliers c', 'a.supplier_id = c.id');
@@ -508,15 +581,25 @@ class Purchase_orders extends CI_Controller
                                 </table>
                                 <table id="customers">
                                     <tr>
-                                        <th width="30" style="text-align:center;">No</th>
-                                        <th style="text-align:center;">Product No</th>
-                                        <th style="text-align:center;">Specification</th>
-                                        <th width="50" style="text-align:center;">Qty</th>
-                                        <th width="50" style="text-align:center;">Uom</th>
-                                        <th width="80" style="text-align:center;">Delivery<br>Date</th>
-                                        <th width="50" style="text-align:center;">Unit<br>Price</th>
-                                        <th width="50" style="text-align:center;">Currency</th>
-                                        <th width="50" style="text-align:center;">Amount</th>
+                                        <th rowspan="2" width="30" style="text-align:center;">No</th>
+                                        <th rowspan="2" width="150" style="text-align:center;">Product No</th>
+                                        <th rowspan="2" width="150" style="text-align:center;">Product Name</th>
+                                        <th rowspan="2" width="50" style="text-align:center;">Specification</th>
+                                        <th rowspan="2" width="50" style="text-align:center;">Qty</th>
+                                        <th rowspan="2" width="50" style="text-align:center;">Uom</th>
+                                        
+                                        <th rowspan="2" width="50" style="text-align:center;">Unit<br>Price</th>
+                                        <th rowspan="2" width="50" style="text-align:center;">Currency</th>
+                                        <th rowspan="2" width="50" style="text-align:center;">Amount</th>
+                                        <th rowspan="2" width="80" style="text-align:center;">Delivery<br>Date</th>
+                                        <th colspan="3" width="80" style="text-align:center;">Forecast</th>
+
+                                        <tr>
+                                            <th width="80" style="text-align:center;">Month 1</th>
+                                            <th width="80" style="text-align:center;">Month 2</th>
+                                            <th width="80" style="text-align:center;">Month 3</th>
+                                        </tr>
+                                        
                                     </tr>';
             $row = 0;
             foreach ($records as $record) {
@@ -527,22 +610,28 @@ class Purchase_orders extends CI_Controller
                     $digits = 2;
                 }
                 
-                $html .= '  <tr>
-                                <td  style="text-align:center;">' . $no . '</td>
-                                <td>' . $record['item_rm_id'] . '</td>
+                $html .= '  
+                            <tr>    
+                                <td style="text-align:center;">' . $no . '</td>
+                                <td>' . $record['item_id'] . '</td>
                                 <td><span style="font-size:10px;">' . $record['item_name'] . '</span></td>
+                                <td style="text-align:center;">' . $record['description'] . '</td>
                                 <td style="text-align:right;">' . number_format($record['qty'], 2) . '</td>
                                 <td style="text-align:center;">' . $record['uom'] . '</td>
-                                <td style="text-align:center;">' . $record['delivery_date'] . '</td>
+                                
                                 <td style="text-align:right;">' . number_format($record['price'], $digits) . '</td>
                                 <td style="text-align:center;">' . $record['currency'] . '</td>
-                                <td style="text-align:right;">' . number_format(($record['qty'] * $record['price']), 2) . '</td>
+                                <td style="text-align:right;">' . $record['total'] . '</td>
+                                <td style="text-align:center;">' . $record['delivery_date'] . '</td>
+                                <td style="text-align:center;">' . $record['month_1'] . '</td>
+                                <td style="text-align:center;">' . $record['month_2'] . '</td>
+                                <td style="text-align:center;">' . $record['month_3'] . '</td>
                             </tr>';
                 $row++;
                 $no++;
             }
             if (($i + 1) == $page) {
-                $this->db->select('a.remarks, b.number as item_rm_id, b.name as item_name');
+                $this->db->select('a.remarks, b.number as item_id, b.name as item_name');
                 $this->db->from('purchase_orders a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->where('a.deleted', 0);
@@ -552,11 +641,11 @@ class Purchase_orders extends CI_Controller
                 $remarks = $this->db->get()->result_array();
 
                 $html .= '  <tr>
-                                <td style="vertical-align: top; text-align:left;" colspan="6" rowspan="5">
+                                <td style="vertical-align: top; text-align:left;" colspan="6" rowspan="7">
                                     <b>Note :</b> <br>';
                 foreach ($remarks as $remark) {
                     if ($remark['remarks'] != "") {
-                        $html .= $remark['item_rm_id'] . " &nbsp; (" . $remark['remarks'] . ") <br>";
+                        $html .= $remark['item_id'] . " &nbsp; (" . $remark['remarks'] . ") <br>";
                     }
                 }
 
@@ -570,78 +659,102 @@ class Purchase_orders extends CI_Controller
                             </tr>
                             <tr>
                                 <th style="text-align:left" colspan="2">Sub Total</th>
-                                <th style="text-align:right;">' . number_format($subtotal, 2) . '</th>
+                                <th style="text-align:right;">' . number_format($record['total_sub'], 2) . '</th>
+                            </tr>
+                             <tr>
+                                <th style="text-align:left" colspan="2">Disc % (' . $record['disc_pr'] . '%)</th>
+                                <th style="text-align:right;">' . number_format($record['discount_total'], 2) . '</th>
                             </tr>
                             <tr>
                                 <th style="text-align:left" colspan="2">VAT (' . $tax . '%)</th>
-                                <th style="text-align:right;">' . number_format(((@$subtotal * $tax) / 100), 2) . '</th>
+                                <th style="text-align:right;">' . number_format($record['total_vat'], 2) . '</th>
+                            </tr>
+                            <tr>
+                                <th style="text-align:left" colspan="2">Income Tax % (' . $record['income_tax'] . '%)</th>
+                                <th style="text-align:right;">' . number_format($record['income_total'], 2) . '</th>
                             </tr>
                             <tr>
                                 <th style="text-align:left" colspan="2">Down Payment</th>
-                                <th style="text-align:right;">' . number_format(@$purchase_orders->total_dp, 2) . '</th>
+                                <th style="text-align:right;">' . number_format($record['total_dp'], 2) . '</th>
                             </tr>
                             <tr>
                                 <th style="text-align:left" colspan="2">Total Amount</th>
-                                <th style="text-align:right;">' . number_format($subtotal + ((@$subtotal * $tax) / 100) - @$purchase_orders->total_dp, 2) . '</th>
+                                <th style="text-align:right;">' . number_format($record['total_grand'], 2) . '</th>
                             </tr>
                         </table>';
+                        
             } else {
                 $html .= '</table>';
             }
             $html .= '  <div style="width:100%; display: grid; grid-template-columns: auto auto auto;">
-                        <div style="width:50%;">
-                            <table style="margin-top:20px; font-size:12px;">
-                                <tr>
-                                    <th width="200" style="text-align:center;">Supplier Approval</th>
-                                </tr>
-                                <tr>
-                                    <th style="height:80px;"></th>
-                                </tr>
-                                <tr>
-                                    <th style="height:20px; text-align:center;">(...................................)</th>
-                                </tr>
-                            </table>
-                        </div>
-                        <div style="width:50%; position: absolute; right: 50px;">
+                        <div style="width:40%; position: absolute; right: 50px;">
                             <table id="customers" style="margin-top:20px;">
                                 <tr>
-                                    <th width="200" style="text-align:center;">Prepared By</th>
-                                    <th width="200" style="text-align:center;">Checked By</th>
+                                    <th colspan="3" width="200" style="text-align:center;">PT. BANSHU PLASTIC INDONESIA</th>
+                                </tr>
+                                <tr>
                                     <th width="200" style="text-align:center;">Approved By</th>
+                                    <th width="200" style="text-align:center;">Checked By</th>
+                                    <th width="200" style="text-align:center;">Prepared By</th>
                                 </tr>
                                 <tr>
-                                    <th style="height:80px;"></th>
-                                    <th style="height:80px;"></th>
-                                    <th style="height:80px;"></th>
+                                    <th style="height:100px;">'. $users_3. '</th>
+                                    <th style="height:100px;">'. $users_2. '</th>
+                                    <th style="height:100px;">'. $users_1. '</th>
                                 </tr>
                                 <tr>
-                                    <th style="height:20px; text-align:center;">' . $signatures->po_prepared . '</th>
-                                    <th style="height:20px; text-align:center;">' . $signatures->po_checked . '</th>
-                                    <th style="height:20px; text-align:center;">' . $signatures->po_approved . '</th>  
-                        
+                                    <th style="height:20px; text-align:center;">' . $user_3->name . '</th>
+                                    <th style="height:20px; text-align:center;">' . $user_2->name . '</th>
+                                    <th style="height:20px; text-align:center;">' . $user_1->name . '</th>
+                                </tr>
+                                <tr>
+                                    <th width="200" style="text-align:center;">Director</th>
+                                    <th width="200" style="text-align:center;">Plant Head</th>
+                                    <th width="200" style="text-align:center;">Manager</th>
                                 </tr>
                             </table>
                         </div>
+                        
+                    </div>
+
+                    <div style="font-size:12px; margin-top:20px;">
+                        <tr>
+                            <td>Term & Condition</td>
+                        </tr>
                     </div>
     
                     <table style="width:100%; font-size:12px; margin-top:20px;">
                         <tr>
                             <td width="20">1.</td>
-                            <td>Please mention the Purchase Order Number in the shipping & billing document</td>
+                            <td>Please sign, stamp & reply email to : mcl@banshuplastic.com. Maximum one day after PO received.</td>
                         </tr>
                         <tr>
-                            <td>2. </td>
-                            <td>Make sure the delivery of goods must be meet to specifications otherwise penalty will be issued</td>
+                            <td>2.</td>
+                            <td>Please mention the Purchase Order Number in the Shipping & Billing Document.</td>
                         </tr>
                         <tr>
-                            <td>3. </td>
-                            <td>Please pay attention to letter of vendor regulations</td>
-                        </tr>
-                        <tr>
-                            <td>4. </td>
-                            <td>Late delivery must be inform one week before due date</td>
+                            <td>3.</td>
+                            <td>Please make sure delivery date is same with Purchase Order.</td>
                         </tr>
                     </table>
+
+                    <div style="width:50%;">
+                        <table style="margin-top:20px; font-size:12px;">
+                            <tr>
+                                <th width="200" style="text-align:center;">Supplier Name</th>
+                            </tr>
+                            <tr>
+                                <th width="200" style="text-align:center; font-size:10px;">Received</th>
+                            </tr>
+                            <tr>
+                                <th style="height:80px;"></th>
+                            </tr>
+                            <tr>
+                                <th style="height:20px; text-align:center;">_________________________</th>
+                            </tr>
+                        </table>
+                    </div>
+
                 </div>
             </div>';
             if (($i + 1) != $page) {
@@ -668,7 +781,7 @@ class Purchase_orders extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
         $this->db->select('a.*, 
-            b.number as item_rm_id, 
+            b.number as item_id, 
             b.name as item_name,
             b.uom,
             c.name as item_family_name, 
@@ -678,7 +791,7 @@ class Purchase_orders extends CI_Controller
             e.moq');
         $this->db->from('purchase_orders a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-        $this->db->join('item_familys c', 'b.item_family_number = c.number');
+        $this->db->join('item_familys c', 'b.item_family_id = c.id');
         $this->db->join('suppliers d', 'a.supplier_id = d.id');
         $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
         $this->db->where('a.deleted', 0);
@@ -750,7 +863,7 @@ class Purchase_orders extends CI_Controller
                         <td>' . $data['po_date'] . '</td>
                         <td>' . $data['po_name'] . '</td>
                         <td>' . $data['supplier_name'] . '</td>
-                        <td>' . $data['item_rm_id'] . '</td>
+                        <td>' . $data['item_id'] . '</td>
                         <td>' . $data['item_name'] . '</td>
                         <td>' . number_format($data['mpq'], 2) . '</td>
                         <td>' . number_format($data['moq'], 2) . '</td>

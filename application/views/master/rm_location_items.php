@@ -211,8 +211,10 @@
         $('#dg').datagrid({
             url: '<?= base_url('master/rm_location_items/datatables') ?>',
             pagination: true,
+            rownumbers: true,
             fit: true,
-            rownumbers: true
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
         });
         //SAVE DATA
         $('#dlg_insert').dialog({

@@ -224,7 +224,9 @@
             clientPaging: false,
             remoteFilter: true,
             rownumbers: true,
-            height: '640px',
+            fit: true,
+            pageList: [10, 50, 100, 500, 1000],
+            pageSize: 10,
         });
 
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
@@ -304,7 +306,7 @@
     });
 
     $('#customer_id').combobox({
-        url: '<?= base_url('master/customers/readsA'); ?>',
+        url: '<?= base_url('master/customers/reads'); ?>',
         valueField: 'id',
         textField: 'name',
         prompt: 'Choose Customer',
@@ -333,7 +335,7 @@
     });
 
     $('#filter_customer_id').combobox({
-        url: '<?= base_url('master/customers/readsA'); ?>',
+        url: '<?= base_url('master/customers/reads'); ?>',
         valueField: 'id',
         textField: 'name',
         prompt: 'Choose Customer',

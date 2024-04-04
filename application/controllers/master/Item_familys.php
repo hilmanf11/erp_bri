@@ -12,7 +12,7 @@ class Item_familys extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[30]|is_unique[item_familys.number]');
+        $this->form_validation->set_rules('number', 'Product Family code', 'required|min_length[1]|max_length[20]|is_unique[item_familys.number]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -27,32 +27,36 @@ class Item_familys extends CI_Controller
             redirect('error_access');
         }
     }
-
     //GET DATA
-    public function reads($category_number = "")
+    public function reads($item_category_id)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_familys', ["name" => $post], ["item_category_number" => $category_number]);
+        $send = $this->crud->reads('item_familys', ["name" => $post],["item_category_id" => $item_category_id]);
         echo json_encode($send);
     }
 
-    public function readss($item_category_number)
+    public function reads_fg()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_familys', ["name" => $post],["item_category_number" => $item_category_number]);
+        $send = $this->crud->query("SELECT * FROM item_familys WHERE item_category_id = 'C02'");
+        // $send = $this->crud->reads('item_categories', ["name" => $post]);
         echo json_encode($send);
     }
 
-     //CODE OTOMATIS
-     public function autoid(){
-        $sql = $this->db->query("SELECT max(`id`) as kode From item_familys");
-        $row = $sql->row();
-        $kode = substr($row->kode, 1);
-        $autoid = "P". sprintf("%02s", $kode + 1);
-        echo $autoid;
-
+    public function readNotFg()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT * FROM item_familys WHERE number != 'FG'");
+        echo json_encode($send);
     }
 
+    public function readss($category_number = "")
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->reads('item_familys', ["name" => $post], ["item_category_id" => $category_number]);
+        echo json_encode($send);
+    }
+    
     //GET DATATABLES
     public function datatables()
     {
@@ -68,7 +72,7 @@ class Item_familys extends CI_Controller
             //Select Query
             $this->db->select('a.*, b.name as item_category_name');
             $this->db->from('item_familys a');
-            $this->db->join('item_categories b', 'a.item_category_number = b.number');
+            $this->db->join('item_categories b', 'a.item_category_id = b.id');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
@@ -91,6 +95,14 @@ class Item_familys extends CI_Controller
             $result = array_merge($result, ['rows' => $records]);
             echo json_encode($result);
         }
+    }
+    //AUTO ID
+    public function autoid(){
+        $sql = $this->db->query("SELECT max(id) as kode FROM item_familys");
+        $row = $sql->row();
+        $kode = substr($row->kode,1);
+        $autoid ="P". sprintf("%02s", $kode + 1);
+        echo $autoid;
     }
     //CREATE DATA
     public function create()
@@ -138,14 +150,13 @@ class Item_familys extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        //QUERRY PRINT
+
         $this->db->select('a.*, b.name as item_category_name');
         $this->db->from('item_familys a');
-        $this->db->join('item_categories b', 'a.item_category_number = b.number');
+        $this->db->join('item_categories b', 'a.item_category_id = b.id');
         $this->db->where('a.deleted', 0);
-        $this->db->order_by('a.name', 'ASC');
+        $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
-
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">
@@ -155,25 +166,29 @@ class Item_familys extends CI_Controller
                             <img src="' . $config->favicon . '" width="30">
                         </td>
                         <td style="font-size: 14px; text-align: left; margin:2px;">
-                            <b>' . $config->name . '</b><br>
-                            <small>MASTER PRODUCT FAMILY</small>
+                            <b>' . $config->name . '</b>
                         </td>
                     </tr>
                 </table>
             </div>
             <div style="float: right; font-size: 12px; text-align: right;">
-                Print Date ' . date("d M Y H:i:s") . ' <br>
+                Print Date ' . date("d M Y H:m:s") . ' <br>
                 Print By ' . $this->session->username . '  
             </div>
+            <br><br>
+            <div style="float: centet; font-size: 16px; text-align: center;">
+                <h3>MASTER ITEM FAMILY</h3>
+            </div>
         </center>
-        <br><br><br>
         
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
-                <th>Id</th>
-                <th>Code</th>
+                <th>ID</th>
                 <th>Name</th>
+                <th>Product Family code</th>
+                <th>Account No.</th>
+                <th>Account Name</th>
                 <th>Category</th>
                 <th>Description</th>
             </tr>';
@@ -182,8 +197,10 @@ class Item_familys extends CI_Controller
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['id'] . '</td>
-                    <td>' . $data['number'] . '</td>
                     <td>' . $data['name'] . '</td>
+                    <td>' . $data['number'] . '</td>
+                    <td>' . $data['account_number'] . '</td>
+                    <td>' . $data['account_name'] . '</td>
                     <td>' . $data['item_category_name'] . '</td>
                     <td>' . $data['description'] . '</td>';
             $no++;

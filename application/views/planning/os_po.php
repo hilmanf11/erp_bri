@@ -72,12 +72,12 @@
                 <input style="width:60%;" name="po_date"  id="po_date" value="<?= date("Y-m-d") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Supplier</span>
-                <input style="width:60%;" name="supplier_id" id="supplier_id" required class="easyui-combobox">
+                <span style="width:35%; display:inline-block;">Part No</span>
+                <input style="width:60%;" name="item_rm_id"  id="item_rm_id" class="easyui-combogrid">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Part No</span>
-                <input style="width:60%;" name="item_rm_id"  id="item_rm_id" required class="easyui-combogrid">
+                <span style="width:35%; display:inline-block;">Supplier</span>
+                <input style="width:60%;" name="supplier_id" id="supplier_id" required class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Po No</span>
@@ -305,53 +305,18 @@
         ],
     });
 
-    // $('#supplier_id').combobox({
-    //     url: '<?= base_url('master/suppliers/reads'); ?>',
-    //     valueField: 'id',
-    //     textField: 'name',
-    //     prompt: 'Select Supplier',
-    // });
-
-    $("#supplier_id").combobox({
-            url: '<?= base_url('master/suppliers/reads') ?>',
-            valueField: 'id',
-            textField: 'name',
-            prompt: "Choose Supplier",
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }],
-            onSelect: function(suppliers) {
-                $('#item_rm_id').combogrid({
-                    url: '<?= base_url('master/supplier_items/readss?supplier_id='); ?>'+ suppliers.id,
-                    panelWidth: 350,
-                    idField: 'item_rm_id',
-                    textField: 'item_number',
-                    mode: 'remote',
-                    fitColumns: true,
-                    prompt: "Choose Part No",
-                    columns: [
-                        [{
-                            field: 'item_number',
-                            title: 'Part No',
-                            width: 150
-                        }, {
-                            field: 'item_name',
-                            title: 'Part Name',
-                            width: 100
-                        }]
-                    ],
-                });
-            }
-        });
+    $('#supplier_id').combobox({
+        url: '<?= base_url('master/suppliers/reads'); ?>',
+        valueField: 'id',
+        textField: 'name',
+        prompt: 'Select Supplier',
+    });
 
     $("#filter_suppliers").combobox({
             url: '<?= base_url('master/suppliers/reads') ?>',
             valueField: 'id',
             textField: 'name',
-            prompt: "Choose Supplier",
+            prompt: "Select Supplier",
             icons: [{
                 iconCls: 'icon-clear',
                 handler: function(e) {
@@ -363,7 +328,7 @@
                     url: '<?= base_url('planning/os_po/readPono?supplier_id=') ?>' + supp.id,
                     valueField: 'po_no',
                     textField: 'po_no',
-                    prompt: "Choose Purchase Order No",
+                    prompt: "Select Purchase Order No",
                     icons: [{
                         iconCls: 'icon-clear',
                         handler: function(e) {
@@ -374,30 +339,30 @@
             }
         });
 
-    // $('#item_rm_id').combogrid({
-    //     url: '<?= base_url('master/item_rm/reads/'); ?>',
-    //     panelWidth: 450,
-    //     idField: 'id',
-    //     textField: 'number',
-    //     mode: 'remote',
-    //     fitColumns: true,
-    //     prompt: "Choose Part No",
-    //     columns: [
-    //         [{
-    //             field: 'id',
-    //             title: 'Part ID',
-    //             width: 150
-    //         }, {
-    //             field: 'number',
-    //             title: 'Part No',
-    //             width: 150
-    //         }, {
-    //             field: 'name',
-    //             title: 'Part Name',
-    //             width: 100
-    //         }]
-    //     ],
-    // });
+    $('#item_rm_id').combogrid({
+        url: '<?= base_url('master/item_rm/reads/'); ?>',
+        panelWidth: 450,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Part No",
+        columns: [
+            [{
+                field: 'id',
+                title: 'Part ID',
+                width: 150
+            }, {
+                field: 'number',
+                title: 'Part No',
+                width: 150
+            }, {
+                field: 'name',
+                title: 'Part Name',
+                width: 100
+            }]
+        ],
+    });
 
     function numberFormat(value, row) {
         const formatter = new Intl.NumberFormat('id-ID', {

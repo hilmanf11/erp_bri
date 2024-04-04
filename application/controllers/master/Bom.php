@@ -12,7 +12,8 @@ class Bom extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('item_rm_id', 'Code', 'required|min_length[1]|max_length[20]|is_unique[bom.item_rm_id]');
+        $this->form_validation->set_rules('item_fg_id', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[bom.item_fg_id]');
+        $this->form_validation->set_rules('item_rm_id', 'Part No.', 'required|min_length[1]|max_length[20]|is_unique[bom.item_rm_id]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -34,6 +35,25 @@ class Bom extends CI_Controller
         $send = $this->crud->reads('bom', ["item_fg_id" => $post]);
         echo json_encode($send);
     }
+
+     //GET DATA
+     public function readWeight()
+     {
+        $post = $this->input->post();
+        $item_fg = $this->crud->read("item_fg", [] ,["id" => $post['item_fg_id']]);
+        echo json_encode($item_fg);
+    }
+
+    //GET DATA
+    public function readRunner()
+    {
+       $post = $this->input->post();
+       $item_fg_id = $post['item_fg_id'];
+       $menu_loading = $this->crud->query("SELECT SUM(a.runner) as runner, b.cavity_standard
+       FROM menu_loadings a JOIN molds b on a.mold_id = b.id
+       WHERE a.item_fg_id = '$item_fg_id' group by a.item_fg_id");
+       echo json_encode($menu_loading);
+   }
 
     //GET DATATABLES
     public function datatables()
@@ -78,12 +98,11 @@ class Bom extends CI_Controller
             $number = base64_decode($this->input->get('number'));
             $filter_item_rm_id = base64_decode($this->input->get('filter_item_rm_id'));
 
-            $this->db->select('a.*, b.name as item_fg_name, c.number as item_rm_number, c.name as item_rm_name, c.uom as uom, c.item_family_number as product_family, d.name as product_family_name, e.name as process_name, e.id as process_id');
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.name as item_rm_name, c.uom as uom, c.item_family_id as product_family, d.name as product_family_name');
             $this->db->from('bom a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-            $this->db->join('item_familys d', 'c.item_family_number = d.number');
-            $this->db->join('process e', 'a.process_id = e.id');
+            $this->db->join('item_familys d', 'c.item_family_id = d.id');
             $this->db->where('b.number', $number);
             $this->db->like('a.item_rm_id', $filter_item_rm_id);
             $this->db->group_by('a.id');
@@ -94,17 +113,17 @@ class Bom extends CI_Controller
         }
     }
 
+    // UPDATE DATA
     public function datatableUpdates()
     {
         if ($this->input->get()) {
             $item_fg_id = base64_decode($this->input->get('item_fg_id'));
 
-            $this->db->select('a.*, b.number as item_fg_number, c.number as item_rm_number, c.uom, d.name as item_rm_name, e.name as process_name, e.id as process_id, d.name as product_family_name');
+            $this->db->select('a.*, c.number as item_rm_number, c.name as item_rm_name, c.uom, d.name as item_family_name');
             $this->db->from('bom a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-            $this->db->join('item_familys d', 'c.item_family_number = d.number');
-            $this->db->join('process e', 'a.process_id = e.id');
+            $this->db->join('item_familys d', 'c.item_family_id = d.id');
             $this->db->where('a.item_fg_id', $item_fg_id);
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
@@ -117,16 +136,15 @@ class Bom extends CI_Controller
     public function create()
     {
         if ($this->input->post()) {
+            $post = $this->input->post();
 
-                $post = $this->input->post();
-                $bom = $this->crud->read("bom", [], ["item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']]);
-                if (@$bom->item_fg_id != "") {
-                    $send = $this->crud->update('bom', ["item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']], $post);
-                } else {
-                    $send = $this->crud->create('bom', $post);
-                }
-                echo $send;
-           
+            $bom = $this->crud->read("bom", [], ["item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']]);
+            if (@$bom->item_fg_id != "") {
+                $send = $this->crud->update('bom', ["item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']], $post);
+            } else {
+                $send = $this->crud->create('bom', $post);
+            }
+            echo $send;
         } else {
             show_error("Cannot Process your request");
         }
@@ -155,10 +173,11 @@ class Bom extends CI_Controller
             $datas[] = array(
                 //excel
                 'item_fg_id' => $data->val($i, 2),
-                'process_id' => $data->val($i, 3),
-                'item_rm_id' => $data->val($i, 4),
-                'composition' => $data->val($i, 5),
-                'priority' => $data->val($i, 6)
+                'item_rm_id' => $data->val($i, 3),
+                'type' => $data->val($i, 4),
+                'recyle' => $data->val($i, 5),
+                'composition' => $data->val($i, 6),
+                'remark' => $data->val($i, 7)
             );
         }
         $datas['total'] = count($datas);
@@ -196,25 +215,59 @@ class Bom extends CI_Controller
     }
 
     //UPLOAD CREATE DATA
-    public function uploadcreate()
+    public function uploadCreate()
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
-
-            //Cek Process Number          //table       //field        //field excel
             $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
             $item_rm = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
-            $bom = $this->crud->read("bom", [], ["item_fg_id" => $data['item_fg_id'], "item_rm_id" => $data['item_rm_id']]);
 
-            if (empty($item_fg->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => " Product No. " . $data['item_fg_id'] . " is Not Found", "theme" => "error"));
-            } elseif (empty($item_rm->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => " Part No. " . $data['item_rm_id'] . " is Not Found", "theme" => "error"));
-            } elseif (!empty($bom->item_fg_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['item_fg_id'] . " & Part No. " . $data['item_rm_id']." is Duplicate Data", "theme" => "error"));
+            $item_fg_id = $data['item_fg_id'];
+            $menu_loading = $this->crud->query("SELECT a.item_fg_id, SUM(a.runner) as runner, b.cavity_standard
+            FROM menu_loadings a JOIN molds b on a.mold_id = b.id
+            WHERE a.item_fg_id = '$item_fg_id' group by a.item_fg_id");
+
+            
+            $bom = $this->crud->read('bom', [], ["item_fg_id" => $data['item_fg_id'], "item_rm_id" => $data['item_rm_id']]);
+
+            if (empty($item_fg->id)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_fg_id'] ." Not Found", "theme" => "error"));
+            } elseif (empty($item_rm->id)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_rm_id'] ." Not Found", "theme" => "error"));
+            } elseif (empty($menu_loading[0]->item_fg_id)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_fg_id'] . " in Menu Loading Not Found", "theme" => "error"));
+            } elseif ($item_rm->item_family_id == 'P06' && $data['composition'] != "") {
+                echo json_encode(array("title" => "Alert", "message" => "Part ID" . $data['item_rm_id'] ." Product Family is VIRGIN ", "theme" => "error"));
+            } elseif (!empty($bom->item_rm_id)) {
+                echo json_encode(array("title" => "Duplicated", "message" => "Part ID" . $data['item_rm_id'] . " is Duplicate Data", "theme" => "error"));
             } else {
-                
-                $send   = $this->crud->create('bom', $data);
+                 // Hitung nilai untuk field composition
+                $weight = $item_fg->weight;
+                $runner = $menu_loading[0]->runner;
+                $cavity_standard = $menu_loading[0]->cavity_standard;
+
+                // if ($item_rm->item_family_id == 'P06') {
+                //     $dataFinal['composition'] = (floatval($weight) + floatval($runner / $cavity_standard));
+                // } elseif ($item_rm->item_family_id != 'P06') {
+                //     $dataFinal['composition'] = $data['composition'];
+                // }
+
+                $dataFinal = array(
+                    //field
+                    "item_fg_id" => $data['item_fg_id'],
+                    "item_rm_id" => $data['item_rm_id'],
+                    "type" => $data['type'],
+                    "recyle" => $data['recyle'],
+                    "remark" => $data['remark'],
+                );
+
+                if ($item_rm->item_family_id == 'P06') {
+                    $dataFinal['composition'] = (floatval($weight) + floatval($runner / $cavity_standard));
+                } elseif ($item_rm->item_family_id != 'P06') {
+                    $dataFinal['composition'] = $data['composition'];
+                }
+
+                $send   = $this->crud->create('bom', $dataFinal);
                 echo $send;
             }
         }
@@ -238,12 +291,11 @@ class Bom extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.name as item_fg_name, b.number as item_fg_number, c.number as item_rm_number, c.name as item_rm_name, c.uom as uom, c.item_family_number as product_family, d.name as product_family_name, e.name as process_name, e.id as process_id');
+        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.name as item_rm_name, c.item_family_id as product_family, c.uom as uom, , d.name as product_family_name');
         $this->db->from('bom a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-        $this->db->join('item_familys d', 'c.item_family_number = d.number');
-        $this->db->join('process e', 'a.process_id = e.id');
+        $this->db->join('item_familys d', 'c.item_family_id = d.id');
         $this->db->like('a.item_fg_id', $filter_item_fg_id);
         $this->db->like('a.item_rm_id', $filter_item_rm_id);
         $this->db->order_by('a.id', 'ASC');
@@ -277,48 +329,33 @@ class Bom extends CI_Controller
                 <th width="20">No</th>
                 <th>Product ID</th>
                 <th>Product No</th>
-                <th>Process Code</th>
-                <th>Process Name</th>
+                <th>Product Name</th>
                 <th>Part ID</th>
                 <th>Part No</th>
                 <th>Part Name</th>
+                <th>Type of Product</th>
+                <th>% Recycle Part</th>
                 <th>Product Family</th>
                 <th>Unit Of Measure</th>
                 <th>Composition</th>
-                <th>Priority</th>
+                <th>Remarks</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
-            $numberfg = $data['item_fg_number'];
-            $numberrm = $data['item_rm_number'];
-    
-            if (strpos($data['item_fg_number'], '0') === 0 || strpos($data['item_fg_number'], '+') === 0) {
-                $number = "'" . $data['item_fg_number'];
-            } else {
-                // Leave the data unchanged
-                $number = $data['item_fg_number'];
-            }
-            
-            if (strpos($data['item_rm_number'], '0') === 0 || strpos($data['item_rm_number'], '+') === 0) {
-                $number = "'" . $data['item_rm_number'];
-            } else {
-                // Leave the data unchanged
-                $number = $data['item_rm_number'];
-            }
-            
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['item_fg_id'] . '</td>
-                    <td>' . $numberfg . '</td>
-                    <td>' . $data['process_id'] . '</td>
-                    <td>' . $data['process_name'] . '</td>
+                    <td>' . $data['item_fg_number'] . '</td>
+                    <td>' . $data['item_fg_name'] . '</td>
                     <td>' . $data['item_rm_id'] . '</td>
-                    <td>' . $numberrm . '</td>
+                    <td>' . $data['item_rm_number'] . '</td>
                     <td>' . $data['item_rm_name'] . '</td>
+                    <td>' . $data['type'] . '</td>
+                    <td>' . $data['recyle'] . '</td>
                     <td>' . $data['product_family_name'] . '</td>
                     <td>' . $data['uom'] . '</td>
                     <td>' . $data['composition'] . '</td>
-                    <td>' . $data['priority'] . '</td>';
+                    <td>' . $data['remark'] . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';

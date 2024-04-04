@@ -169,7 +169,7 @@ class Supply_requestions extends CI_Controller
                         a.id,
                         (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty,0) - COALESCE(f.qty, 0)) as end_stock
                     FROM item_rm a 
-                    JOIN item_familys b ON a.item_family_number = b.number
+                    JOIN item_familys b ON a.item_family_id = b.id
                     JOIN uom c ON a.uom = c.name
                     LEFT JOIN purchase_order_receipts d ON a.id = d.item_rm_id and d.receipt_date <= '$dateNow'
                     LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
@@ -326,7 +326,7 @@ class Supply_requestions extends CI_Controller
             $this->db->from('supply_requestions a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             // $this->db->join('uom d', 'b.uom_id = d.id');
-            $this->db->join('warehouse_location_items f', "a.item_rm_id = f.item_rm_id", 'left');
+            $this->db->join('warehouse_location_items f', "a.item_rm_id = f.item_rm_id and type = 'RM'", 'left');
             $this->db->where('a.deleted', 0);
             $this->db->like('a.request_no', base64_decode($request_no));
             $this->db->limit(8, ($i * 8));
@@ -441,8 +441,8 @@ class Supply_requestions extends CI_Controller
                     a.id,
                     (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty,0) - COALESCE(f.qty, 0)) as end_stock
                 FROM item_rm a 
-                JOIN item_familys b ON a.item_family_number = b.number
-                JOIN uom c ON a.uom = c.name
+                JOIN item_familys b ON a.item_family_id = b.id
+                JOIN uom c ON a.uom = c.uom
                 LEFT JOIN purchase_order_receipts d ON a.id = d.item_rm_id and d.receipt_date <= '$dateNow'
                 LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
                 LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') <= '$dateNow' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
@@ -474,7 +474,7 @@ class Supply_requestions extends CI_Controller
                                 <td style="text-align:center;">' . $record['location'] . '</td>
                                 <td style="text-align:center;">' . $remarksSupply . '</td>
                             </tr>';
-                $no++; //
+                $no++;
             }
             $html .= '</table>
                 <br>

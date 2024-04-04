@@ -91,7 +91,7 @@ class Item_ng extends CI_Controller
             $filter_from = $this->input->get('filter_from');
             $filter_to = $this->input->get('filter_to');
             $filter_document = $this->input->get('filter_document');
-            $filter_family_number = $this->input->get('filter_family_number');
+            $filter_family_id = $this->input->get('filter_family_id');
             $filter_item_rm_id = $this->input->get('filter_item_rm_id');
 
             $page = $this->input->post('page');
@@ -111,7 +111,7 @@ class Item_ng extends CI_Controller
                 $this->db->where('a.trans_date <=', $filter_to);
             }
             $this->db->like('a.document', $filter_document);
-            $this->db->like('b.item_family_number', $filter_family_number);
+            $this->db->like('b.item_family_id', $filter_family_id);
             $this->db->like('b.id', $filter_item_rm_id);
             $this->db->order_by('a.trans_date', 'DESC');
             $this->db->order_by('a.document', 'DESC');
@@ -179,7 +179,7 @@ class Item_ng extends CI_Controller
         $filter_from = $this->input->get('filter_from');
         $filter_to = $this->input->get('filter_to');
         $filter_document = $this->input->get('filter_document');
-        $filter_family_number = $this->input->get('filter_family_number');
+        $filter_family_id = $this->input->get('filter_family_id');
         $filter_item_rm_id = $this->input->get('filter_item_rm_id');
 
         //Config
@@ -196,7 +196,7 @@ class Item_ng extends CI_Controller
             $this->db->where('a.trans_date <=', $filter_to);
         }
         $this->db->like('a.document', $filter_document);
-        $this->db->like('b.item_family_number', $filter_family_number);
+        $this->db->like('b.item_family_id', $filter_family_id);
         $this->db->like('b.id', $filter_item_rm_id);
         $this->db->order_by('a.trans_date', 'DESC');
         $records = $this->db->get()->result_array();

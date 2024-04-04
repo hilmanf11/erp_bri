@@ -34,7 +34,7 @@ class Mold_details extends CI_Controller
         $customer_id = base64_decode($customer_id);
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $send = $this->crud->query("SELECT b.id, b.number, b.name, a.price FROM mold_details a 
-            JOIN item_fg b ON a.item_fg_id = b.id 
+            JOIN item_fg b ON a.item_id = b.id 
             WHERE a.customer_id = '$customer_id' and (b.number LIKE '%$post%' or b.name LIKE '%$post%')");
         echo json_encode($send);
     }
@@ -45,7 +45,7 @@ class Mold_details extends CI_Controller
          if ($this->input->post()) {
             $get = $this->input->get();
             $filter_customer_id = @base64_decode($get['filter_customer_id']);
-            $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
+            $filter_item_id = @base64_decode($get['filter_item_id']);
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -59,7 +59,7 @@ class Mold_details extends CI_Controller
             $this->db->from('mold_details a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->like('a.customer_id', $filter_customer_id);
-            $this->db->like('a.item_fg_id', $filter_item_fg_id);
+            $this->db->like('a.item_id', $filter_item_id);
             $this->db->group_by('b.name');
             $this->db->order_by('b.id', 'ASC');
             //Total Data
@@ -85,8 +85,8 @@ class Mold_details extends CI_Controller
             $this->db->select('a.*, c.number as item_number, c.name as item_name, d.name as mold_name, d.type as mold_type, d.model as mold_model, d.standard as standard_cavity, d.project_year as project_year');
             $this->db->from('mold_details a');
             $this->db->join('customers b', 'a.customer_id = b.id');
-            $this->db->join('item_fg c', 'a.item_fg_id = c.id');
-            $this->db->join('setting_molds e', 'a.item_fg_id = e.item_fg_id');
+            $this->db->join('item_fg c', 'a.item_id = c.id');
+            $this->db->join('setting_molds e', 'a.item_id = e.item_fg_id');
             $this->db->join('molds d', 'e.mold_id = d.id');
             $this->db->where('b.number', $number);
             $this->db->like('a.customer_id', $filter_customer_id);
@@ -108,7 +108,7 @@ class Mold_details extends CI_Controller
             $this->db->select('a.*,  c.number as item_number, c.name as item_name');
             $this->db->from('mold_details a');
             $this->db->join('customers b', 'a.customer_id = b.id');
-            $this->db->join('item_fg c', 'a.item_fg_id = c.id');
+            $this->db->join('item_fg c', 'a.item_id = c.id');
             $this->db->where('a.customer_id', $customer_id);
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
@@ -179,8 +179,8 @@ class Mold_details extends CI_Controller
         if ($this->input->post()) {
             $post = $this->input->post();
 
-            $mold_details = $this->crud->read("mold_details", [], ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id']]);
-            $item_fg = $this->crud->read('item_fg', [], ["id" => $post['item_fg_id']]);
+            $mold_details = $this->crud->read("mold_details", [], ["customer_id" => $post['customer_id'], "item_id" => $post['item_id']]);
+            $item_fg = $this->crud->read('item_fg', [], ["id" => $post['item_id']]);
             $customers = $this->crud->read('customers', [], ["id" => $post['customer_id']]);
 
             if (!empty($mold_details)) {
@@ -213,7 +213,7 @@ class Mold_details extends CI_Controller
 
                   $datas = array(
                     'customer_id' => $post['customer_id'],
-                    'item_fg_id' => $post['item_fg_id'],
+                    'item_id' => $post['item_id'],
                     'price' => $post['price'],
                     'depreciation' => $post['depreciation'],
                     'qty_depreciation' => $post['qty_depreciation'],
@@ -305,7 +305,7 @@ class Mold_details extends CI_Controller
              $item = $this->crud->read('item_fg', [], ["id" => $data['product_no']]);
              $customer = $this->crud->read('customers', [], ["number" => $data['customer_id']]);
              $setting_molds = $this->crud->read('setting_molds',[],["item_fg_id"=> $data['product_no']]);
-             $mold_details = $this->crud->read('mold_details', [], ["item_fg_id" => @$item->id, "customer_id" => $data['customer_id']] );
+             $mold_details = $this->crud->read('mold_details', [], ["item_id" => @$item->id, "customer_id" => $data['customer_id']] );
 
             if (empty($item->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Product ID " . $data['product_no'] . " Not Found", "theme" => "error"));
@@ -313,13 +313,13 @@ class Mold_details extends CI_Controller
                 echo json_encode(array("title" => "Not Found", "message" => "Customer " . $data['customer_id'] . " Not Found", "theme" => "error"));
             } elseif (empty($setting_molds->item_fg_id)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Product ID " . $data['product_no'] . " Not Found in Setting Molds", "theme" => "error"));
-            } elseif (!empty($mold_details->item_fg_id)) {
+            } elseif (!empty($mold_details->item_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['product_no'] . " Duplicate Data", "theme" => "error"));
             } else {
                  $dataFinal = array(
                      //field        //excel
                      "customer_id" => $customer->id,
-                     "item_fg_id" => $data['product_no'],
+                     "item_id" => $data['product_no'],
                      "price" => $data['price'],
                      "depreciation" => $data['depreciation'],
                      "qty_depreciation" => $data['qty_depreciation'],
@@ -345,7 +345,7 @@ class Mold_details extends CI_Controller
 
          $get = $this->input->get();
          $filter_customer_id = @base64_decode($get['filter_customer_id']);
-         $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
+         $filter_item_id = @base64_decode($get['filter_item_id']);
 
          //Config
          $this->db->select('*');
@@ -355,11 +355,11 @@ class Mold_details extends CI_Controller
          $this->db->select('a.*, b.name as customer_name, b.currency, b.id as customer_id, c.number as item_number, c.name as item_name , d.name as mold_name, d.type as mold_type, d.model as mold_model, d.standard as standard_cavity, d.project_year as project_year');
          $this->db->from('mold_details a');
          $this->db->join('customers b', 'a.customer_id = b.id');
-         $this->db->join('item_fg c', 'a.item_fg_id = c.id');
-         $this->db->join('setting_molds e', 'a.item_fg_id = e.item_fg_id');
+         $this->db->join('item_fg c', 'a.item_id = c.id');
+         $this->db->join('setting_molds e', 'a.item_id = e.item_fg_id');
          $this->db->join('molds d', 'e.mold_id = d.id');
          $this->db->like('a.customer_id', $filter_customer_id);
-         $this->db->like('a.item_fg_id', $filter_item_fg_id);
+         $this->db->like('a.item_id', $filter_item_id);
          $this->db->order_by('a.customer_id', 'ASC');
          $records = $this->db->get()->result_array();
          $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#mold_details {border-collapse: collapse;width: 100%;font-size: 12px;}#mold_details td, #mold_details th {border: 1px solid #ddd;padding: 2px;}#mold_details tr:nth-child(even){background-color: #f2f2f2;}#mold_details tr:hover {background-color: #ddd;}#mold_details th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>

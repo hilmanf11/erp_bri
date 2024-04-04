@@ -74,7 +74,7 @@ class Report_outstanding_so extends CI_Controller
         $filter_customer_order_no = base64_decode($this->input->get("filter_customer_order_no"));
         $filter_sales_order_no = base64_decode($this->input->get("filter_sales_order_no"));
         $filter_item_fg = base64_decode($this->input->get("filter_item_fg"));
-        // $filter_division = base64_decode($this->input->get("filter_division"));
+        $filter_division = base64_decode($this->input->get("filter_division"));
         $filter_display = base64_decode($this->input->get("filter_display"));
 
         $customer = $this->crud->read("customers", [], ["id" => $filter_customer_name]);
@@ -147,7 +147,7 @@ class Report_outstanding_so extends CI_Controller
             $this->db->like('a.item_fg_id', $filter_item_fg);
             $this->db->like('a.customer_order_no', $filter_customer_order_no);
             $this->db->like('a.sales_order_no', $filter_sales_order_no);
-            // $this->db->like('a.division', $filter_division);
+            $this->db->like('a.division', $filter_division);
             $this->db->order_by('a.status', 'ASC');
             $this->db->group_by('a.sales_order_no');
             $records = $this->db->get()->result_array();
@@ -189,7 +189,7 @@ class Report_outstanding_so extends CI_Controller
                             <td>' . number_format($data['qty_order']) . '</td>
                             <td>' . number_format($data['qty_delivery']) . '</td>
                             <td>' . number_format($data['qty_outstanding']) . '</td>
-                            
+                            <td>' . $status . '</td>
                         </tr>';
                 $no++;
             }
@@ -199,7 +199,7 @@ class Report_outstanding_so extends CI_Controller
                         <th>' . number_format($qty_order) . '</th>
                         <th>' . number_format($qty_delivery) . '</th>
                         <th>' . number_format($qty_outstanding) . '</th>
-                        
+                        <th>' . $status . '</th>
                     </tr>';
         } else {
             $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, 
@@ -218,7 +218,7 @@ class Report_outstanding_so extends CI_Controller
             $this->db->like('a.item_fg_id', $filter_item_fg);
             $this->db->like('a.customer_order_no', $filter_customer_order_no);
             $this->db->like('a.sales_order_no', $filter_sales_order_no);
-            // $this->db->like('a.division', $filter_division);
+            $this->db->like('a.division', $filter_division);
             $this->db->order_by('a.status', 'ASC');
             $records = $this->db->get()->result_array();
 

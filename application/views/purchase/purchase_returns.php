@@ -24,7 +24,7 @@
         </tr>
     </thead>
 </table>
-<div id="toolbar" style="height: 190px; padding: 10px;">
+<div id="toolbar" style="height: 200px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
         <fieldset style="width: 45%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
@@ -152,7 +152,7 @@
                         options: {
                             url: '<?= base_url('purchase/purchase_returns/readItems?po_no=') ?>' + po_no,
                             required: true,
-                            panelWidth: 800,
+                            panelWidth: 400,
                             idField: 'number',
                             textField: 'number',
                             mode: 'remote',
@@ -167,10 +167,6 @@
                                     field: 'name',
                                     title: 'Product Name',
                                     width: 150
-                                }, {
-                                    field: 'description',
-                                    title: 'Specification',
-                                    width: 300
                                 }, {
                                     field: 'qty',
                                     title: 'Qty',

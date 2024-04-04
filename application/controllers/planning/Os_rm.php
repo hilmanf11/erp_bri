@@ -62,16 +62,16 @@ class Os_rm extends CI_Controller
             $this->db->select('a.*, b.uom, b.number as item_rm_number, b.name as item_rm_name, c.name as category_name, d.name as product_family_name, e.name as product_family_sub_name');
             $this->db->from('os_rm a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-            $this->db->join('item_categories c', 'b.item_category_number = c.number');
-            $this->db->join('item_familys d', 'b.item_family_number = d.number');
-            $this->db->join('item_family_subs e', 'b.item_family_sub_number = e.number','left');
+            $this->db->join('item_categories c', 'b.item_category_id = c.id');
+            $this->db->join('item_familys d', 'b.item_family_id = d.id');
+            $this->db->join('item_family_subs e', 'b.item_sub_family_id = e.id');
             if($filter_from != "" && $filter_to != ""){
                 $this->db->where('a.trans_date >=', $filter_from);
                 $this->db->where('a.trans_date <=', $filter_to);
             }
             $this->db->like('c.id', $filter_category);
             $this->db->like('d.id', $filter_product_family);
-            // $this->db->like('e.id', $filter_product_family_sub);
+            $this->db->like('e.id', $filter_product_family_sub);
             $this->db->like('b.id', $filter_item_rm);
             $this->db->order_by('a.trans_date', 'DESC');
 
@@ -140,9 +140,9 @@ class Os_rm extends CI_Controller
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
                 'item_rm_id' => $data->val($i, 2),
-                'trans_date' => $data->val($i, 3),
-                'qty' => $data->val($i, 4),
-                'location' => $data->val($i, 5)
+                'trans_date' => $data->val($i, 8),
+                'qty' => $data->val($i, 9),
+                'location' => $data->val($i, 10)
             );
         }
 
@@ -230,9 +230,9 @@ class Os_rm extends CI_Controller
         $this->db->select('a.*, b.uom, b.number as item_rm_number, b.name as item_rm_name, c.name as category_name, d.name as product_family_name, e.name as product_family_sub_name');
         $this->db->from('os_rm a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-        $this->db->join('item_categories c', 'b.item_category_number = c.number');
-        $this->db->join('item_familys d', 'b.item_family_number = d.number');
-        $this->db->join('item_family_subs e', 'b.item_family_sub_number = e.number');
+        $this->db->join('item_categories c', 'b.item_category_id = c.id');
+        $this->db->join('item_familys d', 'b.item_family_id = d.id');
+        $this->db->join('item_family_subs e', 'b.item_sub_family_id = e.id');
         if($filter_from != "" && $filter_to != ""){
             $this->db->where('a.trans_date >=', $filter_from);
             $this->db->where('a.trans_date <=', $filter_to);

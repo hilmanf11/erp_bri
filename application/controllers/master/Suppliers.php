@@ -12,7 +12,7 @@ class Suppliers extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[3]|is_unique[suppliers.number]');
+        $this->form_validation->set_rules('number', 'Supplier Code', 'required|min_length[1]|max_length[20]|is_unique[suppliers.number]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -34,23 +34,6 @@ class Suppliers extends CI_Controller
         $send = $this->crud->reads('suppliers', ["name" => $post]);
         echo json_encode($send);
     }
-
-    public function readsA()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('suppliers', ["name" => $post], ["status"=>"0"]);
-        echo json_encode($send);
-    }
-
-    //CODE OTOMATIS
-    public function autoid(){
-        $sql = $this->db->query("SELECT max(`id`) as kode From suppliers");
-        $row = $sql->row();
-        $kode = substr($row->kode, 1);
-        $autoid = "S". sprintf("%03s", $kode + 1);
-        echo $autoid;
-    }
-
     //GET DATATABLES
     public function datatables()
     {
@@ -69,28 +52,10 @@ class Suppliers extends CI_Controller
             $this->db->where('deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if ($filter->field == "status" && strtolower($filter->value) === "active") {
-                        // Tampilkan data dengan status "active" (nilai 0)
-                        $this->db->where("status", 0);
-                    } elseif ($filter->field == "status" && strtolower($filter->value) === "inactive") {
-                        // Tampilkan data dengan status "inactive" (nilai 1)
-                        $this->db->where("status", 1);
-                    } elseif ($filter->field == "approved_to" && strtolower($filter->value) === "approved") {
-                        // Tampilkan data yang memiliki approved_to kosong atau null
-                        $this->db->group_start();
-                        $this->db->where("approved_to", null);
-                        $this->db->or_where("approved_to", "");
-                        $this->db->group_end();
-                    } elseif ($filter->field == "approved_to" && strtolower($filter->value) === "checking") {
-                        // Tampilkan data yang memiliki approved_to tidak kosong
-                        $this->db->where("approved_to !=", null);
-                        $this->db->where("approved_to !=", "");
-                    } else {
-                        $this->db->like($filter->field, $filter->value);
-                    }                    
+                    $this->db->like($filter->field, $filter->value);
                 }
             }
-            $this->db->order_by('id', 'ASC');
+            $this->db->order_by('id', 'asc');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -102,6 +67,20 @@ class Suppliers extends CI_Controller
             $result = array_merge($result, ['rows' => $records]);
             echo json_encode($result);
         }
+    }
+    //AUTO ID
+    public function autoid(){
+        $month = date('my');
+        $format = "SP-".$month;
+        $sql = $this->db->query("SELECT max(id) as kode FROM suppliers WHERE id LIKE '%$format%'");
+        $row = $sql->row();
+        if ($row->kode == ""){
+            $kode = 0;
+        } else {
+            $kode = substr($row->kode,-3);
+        }
+        $autoid =$format. sprintf("%03s", $kode + 1);
+        echo $autoid;
     }
     //CREATE DATA
     public function create()
@@ -122,10 +101,10 @@ class Suppliers extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-                $id   = base64_decode($this->input->get('id'));
-                $post = $this->input->post();
-                $send = $this->crud->update('suppliers', ["id" => $id], $post);
-                echo $send;
+            $id   = base64_decode($this->input->get('id'));
+            $post = $this->input->post();
+            $send = $this->crud->update('suppliers', ["id" => $id], $post);
+            echo $send;
         } else {
             show_error("Cannot Process your request");
         }
@@ -151,8 +130,8 @@ class Suppliers extends CI_Controller
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
                 //excel
-                'suppliers_code' => $data->val($i, 2),
-                'name' => $data->val($i, 3),
+                'name' => $data->val($i, 2),
+                'number' => $data->val($i, 3),
                 'type' => $data->val($i, 4),
                 'address' => $data->val($i, 5),
                 'contact_person' => $data->val($i, 6),
@@ -163,11 +142,9 @@ class Suppliers extends CI_Controller
                 'currency' => $data->val($i, 11),
                 'payment_term' => $data->val($i, 12),
                 'incoterm' => $data->val($i, 13),
-                'vat_status' => $data->val($i, 14),
-                'vat' => $data->val($i, 15),
-                'tax_no' => $data->val($i, 16),
-                'bank_account' => $data->val($i, 17),
-                'bank_name' => $data->val($i, 18)
+                'bank_account' => $data->val($i, 14),
+                'bank_name' => $data->val($i, 15),
+                'status' => $data->val($i, 16)
             );
         }
         $datas['total'] = count($datas);
@@ -187,7 +164,6 @@ class Suppliers extends CI_Controller
             fclose($textFailed);
         }
     }
-
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
@@ -201,35 +177,38 @@ class Suppliers extends CI_Controller
         header("Content-Type: text/plain");
         @readfile($file);
     }
-
     //UPLOAD CREATE DATA
     public function uploadcreate()
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
 
-            //autoid
-            $sql = $this->db->query("SELECT max(`id`) as kode From suppliers");
+            //Cek Process Number          //table       //field        //field excel
+            $suppliers = $this->crud->read('suppliers', [], ["number" => $data['number']]);
+
+            //AUTOID
+            $month = date('my');
+            $format = "SP-".$month;
+            $sql = $this->db->query("SELECT max(id) as kode FROM suppliers WHERE id LIKE '%$format%'");
             $row = $sql->row();
-            $kode = substr($row->kode, 1);
-            $autoid = "S". sprintf("%03s", $kode + 1);
+            if ($row->kode == ""){
+                $kode = 0;
+            } else {
+                $kode = substr($row->kode,-3);
+            }
+            $autoid =$format. sprintf("%03s", $kode + 1);
 
-            //Cek Process Number            //table           //field           //field excel
-           $suppliers = $this->crud->read('suppliers', [], ["number" => $data['suppliers_code']]);
-
-           if (!empty($suppliers->number)) {
-               echo json_encode(array("title" => "Duplicated", "message" => " Supplier Code " . $data['suppliers_code'] . " is Duplicate Data", "theme" => "error"));
-            }elseif (strlen($data['suppliers_code']) != 3) {
-                echo json_encode(array("title" => "Error Max Lenght", "message" => " Please Input Code " . $data['suppliers_code'] . " with 3 character", "theme" => "error"));
-            }else {
+            if (!empty($suppliers->number)) {
+                echo json_encode(array("title" => "Duplicated", "message" => " Supplier Code " . $data['number'] . " is Duplicate Data", "theme" => "error"));
+            } else {
                 $dataFinal = array(
-                    // field      //excel
+                    //field
                     "id" => $autoid,
-                    "number" => $data['suppliers_code'],
                     "name" => $data['name'],
+                    "number" => $data['number'],
                     "type" => $data['type'],
                     "address" => $data['address'],
-                    "attention" => $data['contact_person'],
+                    "contact_person" => $data['contact_person'],
                     "telp" => $data['telp'],
                     "fax" => $data['fax'],
                     "email" => $data['email'],
@@ -237,18 +216,16 @@ class Suppliers extends CI_Controller
                     "currency" => $data['currency'],
                     "payment_term" => $data['payment_term'],
                     "incoterm" => $data['incoterm'],
-                    "vat_status" => $data['vat_status'],
-                    "vat" => $data['vat'],
-                    "tax" => $data['tax_no'],
                     "bank_account" => $data['bank_account'],
                     "bank_name" => $data['bank_name'],
+                    "status" => $data['status'],
                 );
                 $send   = $this->crud->create('suppliers', $dataFinal);
                 echo $send;
             }
         }
     }
-    // PRINT & EXCEL DATA
+    //PRINT & EXCEL DATA
     public function print($option = "")
     {
         if ($option == "excel") {
@@ -260,13 +237,12 @@ class Suppliers extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        
+
         $this->db->select('*');
         $this->db->from('suppliers');
         $this->db->where('deleted', 0);
         $this->db->order_by('id', 'ASC');
         $records = $this->db->get()->result_array();
-
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#suppliers {border-collapse: collapse;width: 100%;font-size: 12px;}#suppliers td, #suppliers th {border: 1px solid #ddd;padding: 2px;}#suppliers tr:nth-child(even){background-color: #f2f2f2;}#suppliers tr:hover {background-color: #ddd;}#suppliers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">
@@ -276,57 +252,61 @@ class Suppliers extends CI_Controller
                             <img src="' . $config->favicon . '" width="30">
                         </td>
                         <td style="font-size: 14px; text-align: left; margin:2px;">
-                            <b>' . $config->name . '</b><br>
-                            <small>MASTER SUPPLIER</small>
+                            <b>' . $config->name . '</b>
                         </td>
                     </tr>
                 </table>
             </div>
             <div style="float: right; font-size: 12px; text-align: right;">
-                Print Date ' . date("d M Y H:i:s") . ' <br>
+                Print Date ' . date("d M Y H:m:s") . ' <br>
                 Print By ' . $this->session->username . '  
             </div>
+            <br><br>
+            <div style="float: centet; font-size: 16px; text-align: center;">
+                <h3>MASTER SUPPLIER</h3>
+            </div>
         </center>
-        <br><br><br>
         
         <table id="suppliers" border="1">
             <tr>
                 <th width="20">No</th>
-                <th>Code</th>
-                <th>Name</th>
-                <th>Type</th>
+                <th>Supplier ID</th>
+                <th>Supplier Name</th>
+                <th>Supplier Code</th>
+                <th>type</th>
                 <th>Address</th>
                 <th>Contact Person</th>
+                <th>Telepon</th>
+                <th>Fax</th>
                 <th>Email</th>
                 <th>Website</th>
                 <th>Currency</th>
-                <th>Payment Term</th>
+                <th>Payment Term (Day)</th>
                 <th>Incoterm</th>
-                <th>Vat Status</th>
-                <th>Vat</th>
-                <th>Tax No</th>
                 <th>Bank Account</th>
                 <th>Bank Name</th>
+                <th>Status</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
             $html .= '<tr>
                     <td>' . $no . '</td>
-                    <td>' . $data['number'] . '</td>
+                    <td>' . $data['id'] . '</td>
                     <td>' . $data['name'] . '</td>
+                    <td>' . $data['number'] . '</td>
                     <td>' . $data['type'] . '</td>
                     <td>' . $data['address'] . '</td>
+                    <td>' . $data['contact_person'] . '</td>
                     <td>' . $data['telp'] . '</td>
+                    <td>' . $data['fax'] . '</td>
                     <td>' . $data['email'] . '</td>
                     <td>' . $data['website'] . '</td>
                     <td>' . $data['currency'] . '</td>
                     <td>' . $data['payment_term'] . '</td>
                     <td>' . $data['incoterm'] . '</td>
-                    <td>' . $data['vat_status'] . '</td>
-                    <td>' . $data['vat'] . '</td>
-                    <td>' . $data['tax'] . '</td>
                     <td>' . $data['bank_account'] . '</td>
-                    <td>' . $data['bank_name'] . '</td>';
+                    <td>' . $data['bank_name'] . '</td>
+                    <td>' . $data['status'] . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';

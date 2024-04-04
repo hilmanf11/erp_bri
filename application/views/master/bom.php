@@ -1,11 +1,30 @@
+<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" style="width:100%; height: 100%;">
+        <div title="RELATIONS" style="padding: 20px;">
+            <ul>
+                <li>The Data Product No is taken from <b>Master Data > Engineering > Item Finish Good</b></li>
+                <li>The Data Part No is taken from <b>Master Data > Engineering > Item Raw Material</b></li>
+                <li>The Data Weight is taken from <b>Master Data > Engineering > Item Finish Good</b></li>
+                <li>The Data Runner is taken from <b>Master Data > Engineering > Menu Loading</b></li>
+                <li>The Data Cavity Standard is taken from <b>Master Data > Engineering > Master Mold</b></li>
+            </ul>
+        </div>
+        <div title="CONDITIONS" style="padding: 20px;">
+            <ul>
+                <li><b>Composition</b> if Product Family is <b>VIRGIN</b> then ((Weight + (Runner / Cavity Standard)) / 1000)</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar">
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'item_fg_id',width:150,align:'center'">Product ID</th>
-            <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'">Product No</th>
-            <th rowspan="2" data-options="field:'item_fg_name',width:250,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'item_fg_number',width:250,halign:'center'">Product No</th>
+            <th rowspan="2" data-options="field:'item_fg_name',width:300,halign:'center'">Product Name</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -38,6 +57,7 @@
             </div>
         </fieldset>
         <?= $button ?>
+        <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
     </div>
 </div>
 
@@ -47,12 +67,12 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; height: 600px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; height: 600px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:15%; display:inline-block;">Product ID</span>
+                <span style="width:15%; display:inline-block;">Product No</span>
                 <input style="width:40%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combogrid">
             </div>
         </fieldset>
@@ -84,8 +104,6 @@
 <iframe id="printout" src="<?= base_url('master/bom/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
-
-    // Data Isian
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
@@ -100,10 +118,10 @@
             singleSelect: true,
             columns: [
                 [{
-                    field: 'item_rm_id',
+                    field: 'item_rm_number',
                     width: 150,
                     halign: 'center',
-                    title: "Part ID",
+                    title: "Part No",
                     editor: {
                         type: 'combogrid',
                         options: {
@@ -111,49 +129,107 @@
                             required: true,
                             panelWidth: 400,
                             idField: 'id',
-                            textField: 'id',
+                            textField: 'number',
                             mode: 'remote',
                             fitColumns: true,
                             prompt: 'Choose Part No',
                             columns: [
                                 [{
-                                    field: 'id',
-                                    title: 'Part ID',
-                                    width: 150
-                                }, {
                                     field: 'number',
                                     title: 'Part No',
-                                    width: 200
+                                    width: 150
                                 }, {
                                     field: 'name',
                                     title: 'Part Name',
                                     width: 200
                                 }]
                             ],
-                            onSelect: function(value, rows) {
+                            onSelect: function (value, rows) {
                                 var dg = $('#dg2');
                                 var row = dg.datagrid('getSelected');
                                 var rowIndex = dg.datagrid('getRowIndex', row);
 
-                                var ed = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'item_rm_number'
-                                });
-                                var ed2 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'uom'
-                                });
+                                var item_fg_id = $("#item_fg_id").combogrid('getValue');
 
-                                $(ed.target).textbox('setValue', rows.number);
-                                $(ed2.target).textbox('setValue', rows.uom);
+                                var weight, runner, cavity_standard;
+
+                                // Use $.when to wait for both AJAX requests to complete
+                                $.when(
+                                    $.ajax({
+                                        type: "post",
+                                        url: "<?= base_url('master/bom/readWeight'); ?>",
+                                        data: "item_fg_id=" + item_fg_id,
+                                        dataType: "json",
+                                        success: function (item_fg) {
+                                            weight = item_fg.weight;
+                                        }
+                                    }),
+                                    
+                                    $.ajax({
+                                        type: "post",
+                                        url: "<?= base_url('master/bom/readRunner'); ?>",
+                                        data: "item_fg_id=" + item_fg_id,
+                                        dataType: "json",
+                                        success: function (menu_loading) {
+                                            runner = menu_loading[0].runner;
+                                            cavity_standard = menu_loading[0].cavity_standard;
+                                        }
+                                    })
+                                ).then(function () {
+                                    // Both AJAX requests are complete, perform the calculation
+                                    var item_family_name = rows.item_family_name;
+                                    var calculatedComposition;
+
+                                    if (item_family_name == 'VIRGIN') {
+                                        calculatedComposition = ((parseFloat(weight) + parseFloat(runner / cavity_standard)) / 1000);
+                                    } else {
+                                        calculatedComposition = "";
+                                    }
+
+                                    var ed = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'item_rm_name'
+                                    });
+                                    var ed3 = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'item_rm_id'
+                                    });
+                                    var ed4 = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'item_family_name'
+                                    });
+                                    var ed5 = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'uom'
+                                    });
+                                    var ed6 = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'composition'
+                                    });
+
+                                    $(ed.target).textbox('setValue', rows.name);
+                                    $(ed3.target).textbox('setValue', rows.id);
+                                    $(ed4.target).textbox('setValue', rows.item_family_name);
+                                    $(ed5.target).textbox('setValue', rows.uom);
+                                    $(ed6.target).numberbox('setValue', calculatedComposition);
+                                });
                             }
                         }
                     }
                 }, {
-                    field: 'item_rm_number',
+                    field: 'item_rm_id',
+                    width: 150,
+                    hidden: true,
+                    halign: 'center',
+                    title: "Product ID",
+                    editor: {
+                        type: 'textbox'
+                    }
+                }, {
+                    field: 'item_rm_name',
                     width: 150,
                     halign: 'center',
-                    title: "Part No",
+                    title: "Part Name",
                     editor: {
                         type: 'textbox',
                         options: {
@@ -161,42 +237,14 @@
                         }
                     }
                 }, {
-                    field: 'product_family_name',
-                    width: 150,
-                    hidden:true,
+                    field: 'item_family_name',
+                    width: 120,
                     halign: 'center',
                     title: "Product Family",
                     editor: {
                         type: 'textbox',
                         options: {
                             readonly: true
-                        }
-                    }
-                },  {
-                    field: 'process_id',
-                    width: 150,
-                    halign: 'center',
-                    title: "Process Name",
-                    editor: {
-                        type: 'combobox',
-                        options: {
-                            url: '<?= base_url('master/process/reads'); ?>',
-                            required: true,
-                            valueField: 'id',
-                            textField: 'name',
-                            prompt: 'Choose Process'
-                        }        
-                    }
-                }, {
-                    field: 'composition',
-                    width: 100,
-                    halign: 'center',
-                    align: 'right',
-                    title: "Composition",
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 2
                         }
                     }
                 }, {
@@ -211,19 +259,83 @@
                         }
                     }
                 }, {
-                    field: 'priority',
+                    field: 'type',
+                    width: 120,
+                    halign: 'center',
+                    title: "Type",
+                    editor: {
+                        type: 'combobox',
+                        options: {
+                            valueField: 'name',
+                            textField: 'name',
+                            prompt: 'Choose Type',
+                            panelHeight: true,
+                            required: true,
+                            data: [{
+                                    name: "ORIGINAL",
+                                    type: "0"
+                                },
+                                {
+                                    name: "RECYCLE",
+                                    type: "100"
+                                },
+                                {
+                                    name: "BOTH",
+                                    type: ""
+                                },
+                            ],
+                            onSelect: function(rows) {
+                                var dg = $('#dg2');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
+
+                                var ed = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'recyle'
+                                });
+
+                                if (rows.type != "") {
+                                    $(ed.target).numberbox('disable');
+                                } else {
+                                    $(ed.target).numberbox('enable');
+                                }
+
+                                $(ed.target).numberbox('setValue', rows.type);
+                            }
+                        }
+                    }
+                }, {
+                    field: 'recyle',
+                    width: 80,
+                    align: 'center',
+                    title: "Recycle",
+                    editor: {
+                        type: 'numberbox',
+                    }
+                }, {
+                    field: 'composition',
                     width: 100,
                     halign: 'center',
-                    title: "Priority",
+                    align: 'right',
+                    title: "Composition",
                     editor: {
-                        type: 'numberbox'
+                        type: 'numberbox',
+                        options: {
+                            precision: 5,
+                        }
                     }
-
+                }, {
+                    field: 'remark',
+                    width: 200,
+                    halign: 'center',
+                    title: "Remarks",
+                    editor: {
+                        type: 'textbox'
+                    }
                 }]
             ],
             onClickCell: onClickCell
         });
-        
     }
 
     var editIndex = undefined;
@@ -265,7 +377,7 @@
                 $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
             }
         } else {
-            toastr.error("Please Choose Product ID first");
+            toastr.error("Please Choose Product No first");
         }
     }
 
@@ -411,7 +523,9 @@
             url: '<?= base_url('master/bom/datatables') ?>',
             pagination: true,
             rownumbers: true,
-            height: '645px',
+            fit: true,
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
             view: detailview,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.item_fg_number + '"></table></div>';
@@ -426,11 +540,6 @@
                     rownumbers: true,
                     columns: [
                         [{
-                            field: 'process_name',
-                            title: 'Prosess Name',
-                            halign: 'center',
-                            width: 150
-                        }, {
                             field: 'item_rm_id',
                             title: 'Part ID',
                             halign: 'center',
@@ -446,10 +555,26 @@
                             halign: 'center',
                             width: 200
                         }, {
+                            field: 'type',
+                            title: 'Type',
+                            halign: 'center',
+                            width: 100
+                        }, {
+                            field: 'recyle',
+                            title: 'Recyle',
+                            width: 100,
+                            halign: 'center',
+                            align: 'right',
+                        }, {
                             field: 'product_family_name',
                             title: 'Product Family',
                             halign: 'center',
                             width: 150
+                        }, {
+                            field: 'uom',
+                            title: 'UoM',
+                            align: 'center',
+                            width: 80
                         }, {
                             field: 'composition',
                             title: 'Composition',
@@ -457,14 +582,9 @@
                             halign: 'center',
                             align: 'right',
                         }, {
-                            field: 'uom',
-                            title: 'UoM',
-                            align: 'center',
-                            width: 80
-                        }, {
-                            field: 'priority',
-                            title: 'Priority',
-                            width: 80,
+                            field: 'remark',
+                            title: 'Remarks',
+                            width: 200,
                             halign: 'center',
                         }]
                     ],
@@ -501,9 +621,10 @@
                                 data: {
                                     item_fg_id: item_fg_id,
                                     item_rm_id: rows[i].item_rm_id,
-                                    process_id: rows[i].process_id,
+                                    type: rows[i].type,
+                                    recyle: rows[i].recyle,
                                     composition: rows[i].composition,
-                                    priority: rows[i].priority
+                                    remark: rows[i].remark
                                 },
                                 dataType: "json",
                                 success: function(result) {
@@ -531,24 +652,19 @@
         });
     });
 
-    // combogrid item FG
     $('#item_fg_id').combogrid({
         url: '<?= base_url('master/item_fg/reads/'); ?>',
         panelWidth: 420,
         idField: 'id',
-        textField: 'id',
+        textField: 'number',
         mode: 'remote',
         fitColumns: true,
-        prompt: "Choose Product Number",
+        prompt: "Choose Product No",
         columns: [
             [{
-                field: 'id',
-                title: 'Product ID',
-                width: 200
-            }, {
                 field: 'number',
                 title: 'Product No',
-                width: 250
+                width: 120
             }, {
                 field: 'name',
                 title: 'Product Name',
@@ -557,7 +673,6 @@
         ]
     });
 
-    // filter item FG
     $('#filter_item_fg_id').combogrid({
         url: '<?= base_url('master/item_fg/reads'); ?>',
         panelWidth: 750,
@@ -576,6 +691,10 @@
                 title: 'Product No',
                 width: 150
             }, {
+                field: 'number_customer',
+                title: 'Product Customer',
+                width: 150
+            }, {
                 field: 'name',
                 title: 'Product Name',
                 width: 250
@@ -589,7 +708,6 @@
         }],
     });
 
-    // filter item RM
     $('#filter_item_rm_id').combogrid({
         url: '<?= base_url('master/item_rm/reads'); ?>',
         panelWidth: 500,

@@ -29,7 +29,7 @@
             <legend><b>Form Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Code</span>
-                <input style="width:30%;" name="number" id="number" required="" class="easyui-textbox">
+                <input style="width:30%;" name="number" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Name</span>
@@ -37,13 +37,15 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Type</span>
-                <input style="width:60%;" name="type" class="easyui-textbox">
+                <select style="width:60%;" name="type" required="" class="easyui-combobox" panelHeight="auto">
+                    <option value="INCOMING">INCOMING</option>
+                    <option value="OUTGOING">OUTGOING</option>
+                </select>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Description</span>
                 <input style="width:60%;" name="description" class="easyui-textbox">
             </div>
-            
         </fieldset>
     </form>
 </div>
@@ -55,15 +57,6 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/bc_kind/create') ?>';
         $('#frm_insert').form('clear');
-
-        // $.ajax({
-        //     type: "post",
-        //     url: '<?= base_url('master/bc_kind/autoid') ?>',
-        //     dataType: "html",
-        //     success: function (response) {
-        //         $('#id').textbox('setValue', response);
-        //     }
-        // });
     }
     //EDIT DATA
     function update() {
@@ -94,8 +87,8 @@
                                 var result = eval('(' + result + ')');
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error("This item cannot be deleted, Please make sure it didn't have any relation");
-                                // $.messager.alert("Error", jqXHR.statusText, 'error');
+                                toastr.error(jqXHR.statusText);
+                                $.messager.alert("Error", jqXHR.statusText, 'error');
                             },
                             complete: function(data) {
                                 $('#dg').datagrid('reload');
@@ -127,10 +120,11 @@
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
+            rownumbers: true,
             fit: true,
-            rownumbers: true
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
         }).datagrid('enableFilter');
-
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{

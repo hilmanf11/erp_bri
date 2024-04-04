@@ -11,11 +11,6 @@ class Calendars extends CI_Controller
         $this->load->library('form_validation');
         $this->load->library('session');
         $this->load->model('crud');
-        //$this->load->model('banshu');
-        //$this->pg = $this->load->database('pg', TRUE);
-
-        //Validasi Form
-        $this->form_validation->set_rules('product_no', 'Product No', 'required|min_length[2]|max_length[50]|is_unique[generate_mps.product_no]');
     }
 
     public function index()

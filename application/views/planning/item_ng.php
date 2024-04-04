@@ -28,12 +28,12 @@
     </thead>
 </table>
 
-<div id="toolbar" style="height: 260px;">
+<div id="toolbar" style="height: 200px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-        <fieldset style="width: 40%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+        <fieldset style="width: 60%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
-            <div style="float: left; width: 100%;">
+            <div style="float: left; width: 50%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Trans Date</span>
                     <input style="width:30%;" id="filter_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
@@ -44,16 +44,18 @@
                     <input style="width:60%;" id="filter_document" class="easyui-combobox">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;"></span>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                </div>
+            </div>
+            <div style="float: left; width: 50%;">
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Family</span>
-                    <input style="width:60%;" id="filter_family_number" class="easyui-combobox">
+                    <input style="width:60%;" id="filter_family_id" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No</span>
                     <input style="width:60%;" id="filter_item_rm_id" class="easyui-combogrid">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;"></span>
-                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                 </div>
             </div>
         </fieldset>
@@ -444,10 +446,10 @@
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_document = $("#filter_document").combobox('getValue');
-        var filter_family_number = $("#filter_family_number").combobox('getValue');
+        var filter_family_id = $("#filter_family_id").combobox('getValue');
         var filter_item_rm_id = $("#filter_item_rm_id").combogrid('getValue');
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_document=" + filter_document + "&filter_family_number" + filter_family_number + "&filter_item_rm_id=" + filter_item_rm_id;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_document=" + filter_document + "&filter_family_id" + filter_family_id + "&filter_item_rm_id=" + filter_item_rm_id;
         $('#dg').datagrid({
             url: '<?= base_url('planning/item_ng/datatables') ?>' + url
         });
@@ -463,10 +465,10 @@
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_document = $("#filter_document").combobox('getValue');
-        var filter_family_number = $("#filter_family_number").combobox('getValue');
+        var filter_family_id = $("#filter_family_id").combobox('getValue');
         var filter_item_rm_id = $("#filter_item_rm_id").combogrid('getValue');
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_document=" + filter_document + "&filter_family_number" + filter_family_number + "&filter_item_rm_id=" + filter_item_rm_id;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_document=" + filter_document + "&filter_family_id" + filter_family_id + "&filter_item_rm_id=" + filter_item_rm_id;
 
         window.location.assign('<?= base_url('planning/item_ng/print/excel') ?>' + url);
     }
@@ -479,7 +481,10 @@
         $('#dg').datagrid({
             url: '<?= base_url('planning/item_ng/datatables') ?>',
             pagination: true,
-            rownumbers: true
+            rownumbers: true,
+            fit: true,
+            pageList: [10, 50, 100, 500, 1000],
+            pageSize: 10,
         });
 
         $("#trans_date").datebox({
@@ -619,9 +624,9 @@
         });
 
         //Get Product Family
-        $("#filter_family_number").combobox({
+        $("#filter_family_id").combobox({
             url: '<?= base_url('master/item_familys/readNotFg') ?>',
-            valueField: 'number',
+            valueField: 'id',
             textField: 'name',
             prompt: "Choose Product Family",
             icons: [{
@@ -632,7 +637,7 @@
             }],
             onSelect: function(row) {
                 $('#filter_item_rm_id').combogrid({
-                    url: '<?= base_url('master/item_rm/reads/') ?>' + row.number,
+                    url: '<?= base_url('master/items/reads/') ?>' + row.number,
                     panelWidth: 500,
                     idField: 'id',
                     textField: 'number',

@@ -1,3 +1,14 @@
+<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" style="width:100%; height: 100%;">
+        <div title="RELATIONS" style="padding: 20px;">
+            <ul>
+                <li>The Data Customer is taken from <b>Master Data > Marketing > Customer</b></li>
+                <li>The Data Product No is taken from <b>Master Data > Marketing > Customer Items</b></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar">
     <thead>
@@ -7,7 +18,7 @@
             <th rowspan="2" data-options="field:'document_no',width:150,halign:'center'">Document No</th>
             <th rowspan="2" data-options="field:'issued_date',width:100,halign:'center'">Issued Date</th>
             <th colspan="2" data-options="field:'',width:200,halign:'center'">Period</th>
-            <!-- <th rowspan="2" data-options="field:'revision',width:80,align:'center'">Revision</th> -->
+            <th rowspan="2" data-options="field:'revision',width:80,align:'center'">Revision</th>
             <th rowspan="2" data-options="field:'remark',width:100,halign:'center'">Remarks</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -51,10 +62,6 @@
                     <input style="width:60%;" id="filter_customer_id" class="easyui-combogrid">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product No</span>
-                    <input style="width:60%;" id="filter_product_no" class="easyui-combogrid">
-                </div>
-                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Revision</span>
                     <select style="width:30%;" id="filter_revision" class="easyui-combobox" panelHeight="auto">
                         <option value="" selected disabled>Choose All</option>
@@ -69,6 +76,7 @@
             </div>
         </fieldset>
         <?= $button ?>
+        <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
     </div>
 </div>
 
@@ -104,7 +112,14 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Revision</span>
-                    <input style="width:30%;" name="revision" id="revision" class="easyui-numberbox">
+                    <select style="width:30%;" name="revision" id="revision" class="easyui-combobox" panelHeight="auto">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Remarks</span>
@@ -155,7 +170,7 @@
         $("#p_month").combobox('enable');
         $("#p_year").combobox('enable');
 
-        $("#revision").numberbox('setValue', '0');
+        $("#revision").combobox('setValue', '0');
         $("#p_month").combobox('setValue', '<?= date("m") ?>');
         $("#p_month").combobox('setValue', '<?= date("m") ?>');
         $("#p_year").combobox('setValue', '<?= date("Y") ?>');
@@ -218,83 +233,14 @@
                                         });
                                         var ed3 = dg.datagrid('getEditor', {
                                             index: rowIndex,
-                                            field: 'month_1'
+                                            field: 'item_fg_customer'
                                         });
-                                        var ed4 = dg.datagrid('getEditor', {
-                                            index: rowIndex,
-                                            field: 'month_2'
-                                        });
-                                        var ed5 = dg.datagrid('getEditor', {
-                                            index: rowIndex,
-                                            field: 'month_3'
-                                        });
-                                        var ed6 = dg.datagrid('getEditor', {
-                                            index: rowIndex,
-                                            field: 'month_4'
-                                        });
-                                        var ed7 = dg.datagrid('getEditor', {
-                                            index: rowIndex,
-                                            field: 'month_5'
-                                        });
-                                        var ed8 = dg.datagrid('getEditor', {
-                                            index: rowIndex,
-                                            field: 'month_6'
-                                        });
-                                        var ed9 = dg.datagrid('getEditor', {
-                                            index: rowIndex,
-                                            field: 'month_7'
-                                        });
-                                        var ed10 = dg.datagrid('getEditor', {
-                                            index: rowIndex,
-                                            field: 'month_8'
-                                        });
-                                        var ed11 = dg.datagrid('getEditor', {
-                                            index: rowIndex,
-                                            field: 'month_9'
-                                        });
-                                        var ed12 = dg.datagrid('getEditor', {
-                                            index: rowIndex,
-                                            field: 'month_10'
-                                        });
-                                        var ed13 = dg.datagrid('getEditor', {
-                                            index: rowIndex,
-                                            field: 'month_11'
-                                        });
-                                        var ed14 = dg.datagrid('getEditor', {
-                                            index: rowIndex,
-                                            field: 'month_12'
-                                        });
-                                        // var ed3 = dg.datagrid('getEditor', {
-                                        //     index: rowIndex,
-                                        //     field: 'item_fg_customer'
-                                        // });
 
                                         $(ed.target).textbox('setValue', rows.name);
                                         $(ed2.target).textbox('setValue', rows.id);
-                                        $(ed3.target).numberbox('setValue', 0);
-                                        $(ed4.target).numberbox('setValue', 0);
-                                        $(ed5.target).numberbox('setValue', 0);
-                                        $(ed6.target).numberbox('setValue', 0);
-                                        $(ed7.target).numberbox('setValue', 0);
-                                        $(ed8.target).numberbox('setValue', 0);
-                                        $(ed9.target).numberbox('setValue', 0);
-                                        $(ed10.target).numberbox('setValue', 0);
-                                        $(ed11.target).numberbox('setValue', 0);
-                                        $(ed12.target).numberbox('setValue', 0);
-                                        $(ed13.target).numberbox('setValue', 0);
-                                        $(ed14.target).numberbox('setValue', 0);
-                                        // $(ed3.target).textbox('setValue', rows.number_customer);
+                                        $(ed3.target).textbox('setValue', rows.number_customer);
                                     }
                                 }
-                            }
-                        }, {
-                            field: 'id',
-                            width: 150,
-                            hidden: true,
-                            halign: 'center',
-                            title: "ID",
-                            editor: {
-                                type: 'textbox'
                             }
                         }, {
                             field: 'item_fg_id',
@@ -316,17 +262,17 @@
                                     readonly: true
                                 }
                             }
-                        // }, {
-                        //     field: 'item_fg_customer',
-                        //     width: 150,
-                        //     halign: 'center',
-                        //     title: "Product Customer",
-                        //     editor: {
-                        //         type: 'textbox',
-                        //         options: {
-                        //             readonly: true
-                        //         }
-                        //     }
+                        }, {
+                            field: 'item_fg_customer',
+                            width: 150,
+                            halign: 'center',
+                            title: "Product Customer",
+                            editor: {
+                                type: 'textbox',
+                                options: {
+                                    readonly: true
+                                }
+                            }
                         }, {
                             field: 'month_1',
                             width: 80,
@@ -528,14 +474,11 @@
     function update() {
         var row = $('#dg').datagrid('getSelected');
         if (row) {
-            url_save = '<?= base_url('planning/forecasts/update') ?>';
-
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
             $("#customer_id").combogrid('disable');
             $("#p_month").combobox('disable');
             $("#p_year").combobox('disable');
-
 
             addTable(row.customer_id, '<?= base_url('planning/forecasts/datatableUpdates?customer_id=') ?>' + btoa(row.customer_id) + "&p_month=" + btoa(row.p_month) + "&p_year=" + btoa(row.p_year) + "&revision=" + btoa(row.revision));
         } else {
@@ -595,7 +538,6 @@
         var filter_period_month = $("#filter_period_month").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
         var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
-        var filter_product_no = $("#filter_product_no").combogrid('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
 
         var url = "?filter_issued_date_from=" + window.btoa(filter_issued_date_from) +
@@ -603,7 +545,6 @@
             "&filter_period_month=" + window.btoa(filter_period_month) +
             "&filter_period_year=" + window.btoa(filter_period_year) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_product_no=" + window.btoa(filter_product_no) +
             "&filter_revision=" + window.btoa(filter_revision);
 
         $('#dg').datagrid({
@@ -626,7 +567,6 @@
         var filter_period_month = $("#filter_period_month").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
         var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
-        var filter_product_no = $("#filter_product_no").combogrid('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
 
         var url = "?filter_issued_date_from=" + window.btoa(filter_issued_date_from) +
@@ -634,7 +574,6 @@
             "&filter_period_month=" + window.btoa(filter_period_month) +
             "&filter_period_year=" + window.btoa(filter_period_year) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_product_no=" + window.btoa(filter_product_no) +
             "&filter_revision=" + window.btoa(filter_revision);
 
         window.location.assign('<?= base_url('planning/forecasts/print/excel') ?>' + url);
@@ -651,7 +590,9 @@
             url: '<?= base_url('planning/forecasts/datatables') ?>',
             pagination: true,
             rownumbers: true,
-            height: '645px',
+            fit: true,
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
             view: detailview,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.customer_name + '"></table></div>';
@@ -687,15 +628,10 @@
                                     halign: 'center',
                                     width: 120
                                 }, {
-                                    field: 'revision',
-                                    title: 'Revision',
+                                    field: 'item_fg_customer',
+                                    title: 'Product Customer',
                                     halign: 'center',
-                                    width: 120
-                                // }, {
-                                //     field: 'item_fg_customer',
-                                //     title: 'Product Customer',
-                                //     halign: 'center',
-                                //     width: 150
+                                    width: 150
                                 }, {
                                     field: 'month_1',
                                     width: 70,
@@ -780,16 +716,6 @@
                                     align: 'right',
                                     title: result[11].name,
                                     formatter: numberFormat
-                                }, {
-                                    field: 'created_by',
-                                    title: 'Update By',
-                                    halign: 'center',
-                                    width: 120
-                                }, {
-                                    field: 'created_date',
-                                    title: 'Update Date',
-                                    halign: 'center',
-                                    width: 120
                                 }]
                             ],
                             onResize: function() {
@@ -818,7 +744,7 @@
                     var customer_id = $("#customer_id").combogrid('getValue');
                     var document_no = $("#document_no").textbox('getValue');
                     var issued_date = $("#issued_date").datebox('getValue');
-                    var revision = $("#revision").numberbox('getValue');
+                    var revision = $("#revision").textbox('getValue');
                     var remark = $("#remark").textbox('getValue');
 
                     var rows = $('#dg2').datagrid('getRows');
@@ -829,7 +755,7 @@
                         if (rows[i].item_fg_id) {
                             $.ajax({
                                 type: "post",
-                                url: url_save,
+                                url: '<?= base_url('planning/forecasts/create') ?>',
                                 data: {
                                     p_month: p_month,
                                     p_year: p_year,
@@ -838,7 +764,6 @@
                                     issued_date: issued_date,
                                     revision: revision,
                                     remark: remark,
-                                    id: rows[i].id,
                                     item_fg_id: rows[i].item_fg_id,
                                     month_1: rows[i].month_1,
                                     month_2: rows[i].month_2,
@@ -880,7 +805,7 @@
     });
 
     $('#customer_id').combogrid({
-        url: '<?= base_url('master/customers/readsA/'); ?>',
+        url: '<?= base_url('master/customers/reads/'); ?>',
         panelWidth: 550,
         idField: 'id',
         textField: 'name',
@@ -937,7 +862,7 @@
     });
 
     $('#filter_customer_id').combogrid({
-        url: '<?= base_url('master/customers/readsA'); ?>',
+        url: '<?= base_url('master/customers/reads'); ?>',
         panelWidth: 550,
         idField: 'id',
         textField: 'name',
@@ -956,37 +881,6 @@
             }, {
                 field: 'name',
                 title: 'Customer Name',
-                width: 300
-            }]
-        ],
-        icons: [{
-            iconCls: 'icon-clear',
-            handler: function(e) {
-                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-            }
-        }],
-    });
-
-    $('#filter_product_no').combogrid({
-        url: '<?= base_url('master/item_fg/reads'); ?>',
-        panelWidth: 550,
-        idField: 'id',
-        textField: 'number',
-        mode: 'remote',
-        fitColumns: true,
-        prompt: "Choose Customer",
-        columns: [
-            [{
-                field: 'id',
-                title: 'Product ID',
-                width: 110
-            }, {
-                field: 'number',
-                title: 'Product No',
-                width: 110
-            }, {
-                field: 'name',
-                title: 'Product Name',
                 width: 300
             }]
         ],
@@ -1077,11 +971,6 @@
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'document_no',
-                            title: 'Document No',
-                            halign: 'center',
-                            width: 120
-                        }, {
                             field: 'item_fg_number',
                             title: 'Product No',
                             halign: 'center',
@@ -1089,11 +978,6 @@
                         }, {
                             field: 'item_fg_name',
                             title: 'Product Name',
-                            halign: 'center',
-                            width: 120
-                        }, {
-                            field: 'revision',
-                            title: 'Revision',
                             halign: 'center',
                             width: 120
                         }, {
@@ -1180,16 +1064,6 @@
                             align: 'right',
                             title: result[11].name,
                             formatter: numberFormat
-                        }, {
-                            field: 'created_by',
-                            title: 'Update by',
-                            halign: 'center',
-                            width: 120
-                        }, {
-                            field: 'created_date',
-                            title: 'Update date',
-                            halign: 'center',
-                            width: 120
                         }]
                     ]
                 });

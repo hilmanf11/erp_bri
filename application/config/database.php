@@ -75,6 +75,10 @@ $query_builder = TRUE;
 
 $db['default'] = array(
 	'dsn'	=> '',
+	// 'hostname' => '151.106.119.176',
+	// 'username' => 'u1738363_indra',
+	// 'password' => 'indra@123#',
+	// 'database' => 'u1738363_erp_bri',
 	'hostname' => 'localhost',
 	'username' => 'u1738363_hilman',
 	'password' => 'hilman@123#',

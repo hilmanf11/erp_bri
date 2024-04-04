@@ -36,7 +36,7 @@
         </tr>
     </thead>
 </table>
-<div id="toolbar" style="height: 190px; padding:10px;">
+<div id="toolbar" style="height: 200px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;">
         <fieldset style="width: 65%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
@@ -357,7 +357,18 @@
         if (receipt_no == "") {
             toastr.warning("Please select Receipt No!", "Information");
         } else {
-            window.open("<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no), "_blank");
+            $.ajax({
+                type: "post",
+                url: "<?= base_url('purchase/purchase_order_receipts/checkLabel/') ?>" + window.btoa(receipt_no),
+                dataType: "json",
+                success: function (response) {
+                    if(response.qty_label == response.label_no){
+                        window.open("<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no), "_blank");
+                    }else{
+                        toastr.error("The labels haven't been scanned yet");
+                    }
+                }
+            });            
         }
     }
 
@@ -414,6 +425,7 @@
                     var bc_date = $("#bc_date").datebox('getValue');
                     var awb_no = $("#awb_no").textbox('getValue');
                     var awb_date = $("#awb_date").datebox('getValue');
+
                     if (bc_kind == "" || bc_document == "" || bc_date == "" || bc_aju == "") {
                         toastr.warning("Please input BC Kind, AJU, Doc No and Doc Date!", "Information");
                     } else {
@@ -458,14 +470,29 @@
                                                 });
                                             }
                                         });
+
+                                        $.messager.confirm('Warning', 'Are you Want to Print Barcode?', function(r) {
+                                            if (r) {
+                                                var receipt_no = $("#receipt_no").textbox('getValue');
+                                                var qty_receipt = row ? row.qty_receipt : 0;
+                                                var qty_label = row ? row.qty_label : 0;
+
+                                                var po = {
+                                                    receipt_no: receipt_no,
+                                                    qty_receipt: qty_receipt,
+                                                    qty_label: qty_label
+                                                };
+                                                print_po(po);
+                                            }
+                                        });
                                     }
-                                    //window.open("<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no), "_blank");
-                                    //toastr.success(result.message, result.title);
-                                    //readReceiptNo();
-                                    $('#dg').treegrid('reload');
-                                    $('#dlg_insert').dialog('close');
+                                    
+                                        $('#dg').treegrid('reload');
+                                        $('#dlg_insert').dialog('close');
+                                    
                                 }
                             });
+
                         } else {
                             toastr.warning("Please select one of the data in the table first!", "Information");
                         }
@@ -493,7 +520,7 @@
             }],
             onSelect: function(supp) {
                 $("#filter_receipt").combobox({
-                    url: '<?= base_url('purchase/purchase_order_receipts/readReceipt/') ?>' + supp.id,
+                    url: '<?= base_url('purchase/purchase_order_receipts/readReceipt/') ?>' + window.btoa(supp.id),
                     valueField: 'receipt_no',
                     textField: 'receipt_no',
                     prompt: "Select Receipt No",
@@ -505,7 +532,7 @@
                     }],
                 });
                 $("#filter_doc_no").combobox({
-                    url: '<?= base_url('purchase/purchase_order_receipts/readDocno/') ?>' + supp.id,
+                    url: '<?= base_url('purchase/purchase_order_receipts/readDocno/') ?>' + window.btoa(supp.id),
                     valueField: 'bc_document',
                     textField: 'bc_document',
                     prompt: "Select Document No",
@@ -517,7 +544,7 @@
                     }],
                 });
                 $("#filter_po_no").combobox({
-                    url: '<?= base_url('purchase/purchase_order_receipts/readPoNo/') ?>' + supp.id,
+                    url: '<?= base_url('purchase/purchase_order_receipts/readPoNo/') ?>' + window.btoa(supp.id),
                     valueField: 'po_no',
                     textField: 'po_no',
                     prompt: "Select PO No",
@@ -599,7 +626,14 @@
 
     function BtnPrintLabel(val, row) {
         if (val != "closed") {
+            console.log(row);
             return '<a class="btn btn-primary w-100" style="pointer-events: visible; opacity:1;" target="_blank" href="<?= base_url('purchase/purchase_order_receipts/print_label/') ?>' + window.btoa(row.id) + '"><i class="fa fa-print"></i> Print</a>';
         }
+    }
+
+    function print_po(po) {
+        console.log(po);
+        var url = '<?= base_url('purchase/purchase_order_receipts/print_label_po/') ?>' + window.btoa(po.receipt_no);
+        window.open(url, '_blank');
     }
 </script>

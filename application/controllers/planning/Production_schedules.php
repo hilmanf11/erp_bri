@@ -77,6 +77,7 @@ class Production_schedules extends CI_Controller
             WHERE a.status = 0 and a.period = '$period' and a.wp = '$wp' and a.workorder = '$workorder' ORDER BY a.workorder DESC");
         echo json_encode($send);
     }
+
     public function readItems()
     {
         $period = base64_decode($this->input->get('period'));
@@ -91,6 +92,7 @@ class Production_schedules extends CI_Controller
             WHERE a.status = 0 and a.period = '$period' and a.wp = '$wp' and a.customer_id = '$customer_id' and a.workorder = '$workorder' ORDER BY a.workorder DESC");
         echo json_encode($send);
     }
+
     public function readMonth()
     {
         $months = array('01' => 'January', '02' => 'February', '03' => 'March', '04' => 'April', '05' => 'May', '06' => 'June', '07' => 'July', '08' => 'August', '09' => 'September', '10' => 'October', '11' => 'November', '12' => 'December');
@@ -102,6 +104,7 @@ class Production_schedules extends CI_Controller
         }
         die(json_encode($arr));
     }
+
     public function readYear()
     {
         $tahun_before = date('Y', strtotime('-5 year', strtotime(date('Y'))));
@@ -113,12 +116,13 @@ class Production_schedules extends CI_Controller
         }
         die(json_encode($arr));
     }
+
     public function workorder($wp, $trans_date)
     {
-        $production_schedule = $this->crud->read("production_schedules", [], ["wp" => $wp]);
-        if ($production_schedule) {
-            return $production_schedule->workorder;
-        } else {
+        // $production_schedule = $this->crud->read("production_schedules", [], ["wp" => $wp]);
+        // if ($production_schedule) {
+        //     return $production_schedule->workorder;
+        // } else {
         $datenow = date("ymd", strtotime($trans_date));
         $sqlGetID = $this->db->query("SELECT max(workorder) as kode FROM production_schedules WHERE workorder like '%$datenow%'");
         $rowID = $sqlGetID->row();
@@ -132,8 +136,9 @@ class Production_schedules extends CI_Controller
         }
         $workOrderNo = "WO" . $datenow . "-" . $autoID;
         return $workOrderNo;
-        }
+        //}
     }
+
     public function datatables()
     {
         if ($this->input->post()) {
@@ -153,21 +158,20 @@ class Production_schedules extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            // $this->db->select("a.*, b.number as customer_number, b.name as customer_name, b.type as customer_type, c.number as item_number, c.name as item_name, c.uom, d.name as line_name, (CASE WHEN f.id != '' THEN 2 ELSE a.status END) as status_wo");
-            $this->db->select("a.*, b.number as customer_number, b.name as customer_name, b.type as customer_type, c.number as item_number, c.name as item_name, c.uom, d.name as line_name");
+            $this->db->select("a.*, b.number as customer_number, b.name as customer_name, b.type as customer_type, 
+                c.number as item_number, c.name as item_name, c.uom, d.name as line_name, 
+                (CASE WHEN f.id != '' THEN 2 ELSE a.status END) as status_wo");
             $this->db->from('production_schedules a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
             $this->db->join('line_productions d', 'a.line_id = d.id');
-            // $this->db->join('scan_item_receipts_fg f', 'a.so_number = f.so_number and a.workorder = f.workorder', 'left');
+            $this->db->join('scan_item_receipts_fg f', 'a.so_number = f.so_number and a.workorder = f.workorder', 'left');
             $this->db->where('a.deleted', 0);
             if($filter_status == "0"){
                 $this->db->where("a.status", 0);
             }elseif($filter_status == "1"){
-                $this->db->where("a.status", 1);
                 $this->db->where("f.id is NULL");
             }elseif($filter_status == "2"){
-                $this->db->where("a.status", 1);
                 $this->db->where("f.id != ''");
             }
             $this->db->like('a.month', $filter_month);
@@ -191,6 +195,7 @@ class Production_schedules extends CI_Controller
             echo json_encode($result);
         }
     }
+
     public function create()
     {
         if ($this->input->post()) {
@@ -227,6 +232,7 @@ class Production_schedules extends CI_Controller
             show_error("Cannot Process your request");
         }
     }
+    
     public function update()
     {
         if ($this->input->post()) {
@@ -238,13 +244,15 @@ class Production_schedules extends CI_Controller
             show_error("Cannot Process your request");
         }
     }
+
     public function delete()
     {
         $data = $this->input->post();
         $send = $this->crud->delete('production_schedules', ["id" => $data['id']]);
-        $update = $this->crud->update('sales_orders', ["sales_order_no" => $data['so_number'], "item_fg_id" => $data['item_fg_id']], ["status" => 0]);
+        $update = $this->crud->update('sales_orders', ["number" => $data['so_number'], "item_fg_id" => $data['item_fg_id']], ["status" => 0]);
         echo $send;
-    }   
+    }
+
     public function print_job_order($id)
     {
         //Config
@@ -429,6 +437,7 @@ class Production_schedules extends CI_Controller
             echo "<h1>NOT FOUND JOB ORDER</h1>";
         }
     }
+
     public function print($option = "")
     {
         if ($option == "excel") {

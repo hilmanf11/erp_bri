@@ -31,7 +31,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
-                <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
+                <input style="width:60%;" id="filter_item_id" class="easyui-combogrid">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
@@ -139,7 +139,7 @@
                                 });
                                 var ed2 = dg.datagrid('getEditor', {
                                     index: rowIndex,
-                                    field: 'item_fg_id'
+                                    field: 'item_id'
                                 });
                                 var ed3 = dg.datagrid('getEditor', {
                                     index: rowIndex,
@@ -162,7 +162,7 @@
                         type: 'textbox'
                     }
                 }, {
-                    field: 'item_fg_id',
+                    field: 'item_id',
                     width: 150,
                     hidden: true,
                     halign: 'center',
@@ -189,6 +189,52 @@
                             precision: 2,
                         }
                     }
+                // }, {
+                //     field: 'attachment_upload',
+                //     width: 200,
+                //     halign: 'center',
+                //     title: "Attachment",
+                //     editor:{
+                //         type:'filebox',
+                //         options:{
+                //             // required: true,
+                //             buttonText:'Browse File',
+                //             accept:'.jpg, .png, .pdf',
+                //             onChange: function(){
+                //                 var dg = $('#dg2');
+                //                 var row = dg.datagrid('getSelected');
+                //                 var rowIndex = dg.datagrid('getRowIndex', row);
+
+                //                 var ed = dg.datagrid('getEditor', {
+                //                     index: rowIndex,
+                //                     field: 'attachment'
+                //                 });
+
+                //                 var files = $(this).filebox('files')
+                //                 var formData = new FormData();
+                //                 for(var i=0; i<files.length; i++){
+                //                     var file = files[i];
+                //                     formData.append('file',file,file.name);
+                //                 }
+                //                 $.ajax({
+                //                     url: '<?= base_url('master/mold_details/uploadatt') ?>',
+                //                     type:'post',
+                //                     data: formData,
+                //                     contentType:false,
+                //                     processData:false,
+                //                     dataType: 'json',
+                //                     success:function(data){
+                //                         if(data.success == true){
+                //                             toastr.success(data.message);
+                //                             $(ed.target).textbox('setValue', data.filename);
+                //                         }else{
+                //                             toastr.error(data.message);
+                //                         }
+                //                     }
+                //                 })
+                //             }
+                //         }
+                //     }
                 }, {
                     field: 'depreciation',
                     width: 150,
@@ -294,8 +340,7 @@
                         data: [
                         { value: 'OPEN', text: 'OPEN' },{ value: 'CLOSE', text: 'CLOSE' } ],
                         valueField: 'value',
-                        textField: 'text',
-                        panelHeight: 'auto'
+                        textField: 'text'
                         }
                     }
                 }, {
@@ -367,18 +412,18 @@
 
         var ed = dg.datagrid('getEditor', {
             index: editIndex,
-            field: 'item_fg_id'
+            field: 'item_id'
         });
 
         var customer_id = $("#customer_id").combogrid('getValue');
-        var item_fg_id = $(ed.target).textbox('getValue');
+        var item_id = $(ed.target).textbox('getValue');
 
         $.ajax({
             method: 'post',
             url: '<?= base_url('master/mold_details/delete') ?>',
             data: {
                 customer_id: row.customer_id,
-                item_fg_id: item_fg_id
+                item_id: item_id
             },
             success: function(result) {
                 var result = eval('(' + result + ')');
@@ -457,10 +502,10 @@
     //FILTER DATA
     function filter() {
         var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
-        var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
+        var filter_item_id = $("#filter_item_id").combogrid('getValue');
 
         var url = "?filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id);
+            "&filter_item_id=" + window.btoa(filter_item_id);
 
         $('#dg').datagrid({
             url: '<?= base_url('master/mold_details/datatables') ?>' + url
@@ -478,10 +523,10 @@
     //PRINT EXCEL
     function excel() {
         var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
-        var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
+        var filter_item_id = $("#filter_item_id").combogrid('getValue');
 
         var url = "?filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id);
+            "&filter_item_id=" + window.btoa(filter_item_id);
 
         window.location.assign('<?= base_url('master/mold_details/print/excel') ?>' + url);
     }
@@ -509,10 +554,10 @@
             },
             onExpandRow: function(index, row) {
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
-                var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
+                var filter_item_id = $("#filter_item_id").combogrid('getValue');
 
                 ddv.datagrid({
-                    url: '<?= base_url('master/mold_details/datatableDetails?number=') ?>' + window.btoa(row.customers_number) + "&filter_item_fg_id=" + window.btoa(filter_item_fg_id),
+                    url: '<?= base_url('master/mold_details/datatableDetails?number=') ?>' + window.btoa(row.customers_number) + "&filter_item_id=" + window.btoa(filter_item_id),
                     singleSelect: true,
                     rownumbers: true,
                     columns: [
@@ -593,10 +638,8 @@
                         }, {
                             field: 'status',
                             title: 'Status',
-                            width: 80,
-                            align: 'center',
-                            formatter: cellFormatter,
-                            styler: cellStyler
+                            width: 200,
+                            halign: 'center',
                         }]
                     ],
                     onResize: function() {
@@ -628,14 +671,14 @@
                     endEditing();
 
                     for (let i = 0; i < totalrows; i++) {
-                        if (rows[i].item_fg_id) {
+                        if (rows[i].item_id) {
                             $.ajax({
                                 type: "post",
                                 url: url_save,
                                 data: {
                                     customer_id: customer_id,
                                     id: rows[i].id,
-                                    item_fg_id: rows[i].item_fg_id,
+                                    item_id: rows[i].item_id,
                                     price: rows[i].price,
                                     depreciation: rows[i].depreciation,
                                     qty_depreciation: rows[i].qty_depreciation,
@@ -738,7 +781,7 @@
     });
 
     // combogrid filter items
-    $('#filter_item_fg_id').combogrid({
+    $('#filter_item_id').combogrid({
         url: '<?= base_url('master/item_fg/reads'); ?>',
         panelWidth: 500,
         idField: 'id',
@@ -798,9 +841,9 @@
     //FORMATTER STATUS
     function cellFormatter(value) {
         if (value == 0) {
-            return 'OPEN';
+            return 'Active';
         } else {
-            return 'CLOSE';
+            return 'Not Active';
         }
     };
 
@@ -874,14 +917,14 @@
 
 
     function btnHistories(val, row) {
-        var history = "viewHistories('" + row.customer_id + "','" + row.item_fg_id + "')";
+        var history = "viewHistories('" + row.customer_id + "','" + row.item_id + "')";
         return '<a class="btn btn-primary w-100" onClick="' + history + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
     }
 
-    function viewHistories(customer_id, item_fg_id) {
+    function viewHistories(customer_id, item_id) {
         $("#dlg_history").dialog('open');
         $('#dg_history').datagrid({
-            url: '<?= base_url('master/mold_details/datatableHistories?customer_id=') ?>' + btoa(customer_id) + "&item_fg_id=" + btoa(item_fg_id),
+            url: '<?= base_url('master/mold_details/datatableHistories?customer_id=') ?>' + btoa(customer_id) + "&item_id=" + btoa(item_id),
             pagination: false,
             rownumbers: true,
         });

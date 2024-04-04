@@ -3,20 +3,19 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <!-- <th rowspan="2" data-options="field:'p_month',width:50,align:'center'">Month</th>
-            <th rowspan="2" data-options="field:'p_year',width:50,align:'center'">Year</th>
-            <th rowspan="2" data-options="field:'revision',width:50,align:'center'">Rev</th> -->
             <th rowspan="2" data-options="field:'document_no',width:120,halign:'center'">Document No.</th>
-            <!-- <th rowspan="2" data-options="field:'customer_name',width:250,halign:'center'">customer Name</th> -->
-            <th rowspan="2" data-options="field:'item_fg_id',width:150,halign:'center'">Product ID</th>
             <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
             <th rowspan="2" data-options="field:'item_fg_name',width:150,halign:'center'">Product Name</th>
-            <th rowspan="2" data-options="field:'pp',width:100,align:'center',formatter:numberFormat"> Stock WIP</th>
-            <th rowspan="2" data-options="field:'p3',width:100,align:'center',formatter:numberFormat"> Subcont</th>
+            <th colspan="4" data-options="field:'',width:100,halign:'center'"> Stock WIP</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
+            <th data-options="field:'pp',width:80,align:'center',formatter:numberFormat"> Injection</th>
+            <th data-options="field:'p1',width:80,align:'center',formatter:numberFormat"> Assembly</th>
+            <th data-options="field:'p2',width:80,align:'center',formatter:numberFormat"> On Hold</th>
+            <th data-options="field:'p3',width:80,align:'center',formatter:numberFormat"> Subcont</th>
+
             <th data-options="field:'created_by',width:100,align:'center'"> By</th>
             <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
             <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
@@ -103,13 +102,28 @@
                 <span style="width:35%; display:inline-block;">Product No.</span>
                 <input style="width:60%;" name="item_fg_id" id="item_fg_id" required class="easyui-combogrid">
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Stock WIP</span>
-                <input style="width:40%;" name="pp" id="pp" required class="easyui-numberbox">
+        </fieldset>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+            <legend><b>Quantity Stock</b></legend>
+            <div style="width:50%;float:left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Injection</span>
+                    <input style="width:40%;" name="pp" id="pp" required class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">On Hold</span>
+                    <input style="width:40%;" name="p2" id="p2" required class="easyui-numberbox">
+                </div>
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Subcont</span>
-                <input style="width:40%;" name="p3" id="p3" required class="easyui-numberbox">
+            <div style="width:50%;float:left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Assembly</span>
+                    <input style="width:40%;" name="p1" id="p1" required class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Subcont</span>
+                    <input style="width:40%;" name="p3" id="p3" required class="easyui-numberbox">
+                </div>
             </div>
         </fieldset>
     </form>
@@ -240,7 +254,9 @@
             clientPaging: false,
             remoteFilter: true,
             rownumbers: true,
-            height: '640px',
+            fit: true,
+            pageList: [10, 50, 100, 500, 1000],
+            pageSize: 10,
         });
 
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
@@ -330,7 +346,7 @@
             [{
                 field: 'number',
                 title: 'Product No',
-                width: 170
+                width: 120
             }, {
                 field: 'name',
                 title: 'Product Name',

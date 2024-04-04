@@ -1,6 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+
 class Item_categories extends CI_Controller
 {
     public function __construct()
@@ -11,9 +12,8 @@ class Item_categories extends CI_Controller
         $this->load->library('form_validation');
         $this->load->library('session');
         $this->load->model('crud');
-
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[30]|is_unique[item_categories.number]');
+        $this->form_validation->set_rules('number', 'Category code', 'required|min_length[1]|max_length[20]|is_unique[item_categories.number]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -28,39 +28,23 @@ class Item_categories extends CI_Controller
             redirect('error_access');
         }
     }
-    
     //GET DATA
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
+        // $send = $this->crud->query("SELECT * FROM item_categories WHERE name LIKE '%$post%'AND number != 'FG'");
         $send = $this->crud->reads('item_categories', ["name" => $post]);
         echo json_encode($send);
     }
-
-    public function readsfg()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_categories', [], ["number"=>"FG"]);
-        echo json_encode($send);
-    }
-
+    
     public function readsnotfg()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("select * from item_categories where number != 'FG'");
+        $send = $this->crud->query("SELECT * FROM item_categories WHERE name LIKE '%$post%'AND number != 'FG'");
+        // $send = $this->crud->reads('item_categories', ["name" => $post]);
         echo json_encode($send);
     }
 
-
-    //CODE OTOMATIS
-    public function autoid(){
-        $sql = $this->db->query("SELECT max(`id`) as kode From item_categories");
-        $row = $sql->row();
-        $kode = substr($row->kode, 1);
-        $autoid = "C". sprintf("%02s", $kode + 1);
-        echo $autoid;
-
-    }
     //GET DATATABLES
     public function datatables()
     {
@@ -82,7 +66,7 @@ class Item_categories extends CI_Controller
                     $this->db->like($filter->field, $filter->value);
                 }
             }
-            $this->db->order_by('id', 'ASC');
+            $this->db->order_by('id', 'asc');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -94,6 +78,15 @@ class Item_categories extends CI_Controller
             $result = array_merge($result, ['rows' => $records]);
             echo json_encode($result);
         }
+    }
+    //AUTO ID
+    public function autoid()
+    {
+        $sql = $this->db->query("SELECT max(id) as kode FROM item_categories");
+        $row = $sql->row();
+        $kode = substr($row->kode, 1);
+        $autoid = "C" . sprintf("%02s", $kode + 1);
+        echo $autoid;
     }
     //CREATE DATA
     public function create()
@@ -147,7 +140,6 @@ class Item_categories extends CI_Controller
         $this->db->where('deleted', 0);
         $this->db->order_by('id', 'ASC');
         $records = $this->db->get()->result_array();
-
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">
@@ -157,25 +149,27 @@ class Item_categories extends CI_Controller
                             <img src="' . $config->favicon . '" width="30">
                         </td>
                         <td style="font-size: 14px; text-align: left; margin:2px;">
-                            <b>' . $config->name . '</b><br>
-                            <small>MASTER ITEM CATEGORY</small>
+                            <b>' . $config->name . '</b>
                         </td>
                     </tr>
                 </table>
             </div>
             <div style="float: right; font-size: 12px; text-align: right;">
-                Print Date ' . date("d M Y H:i:s") . ' <br>
+                Print Date ' . date("d M Y H:m:s") . ' <br>
                 Print By ' . $this->session->username . '  
             </div>
+            <br><br>
+            <div style="float: centet; font-size: 16px; text-align: center;">
+                <h3>MASTER CATEGORIES</h3>
+            </div>
         </center>
-        <br><br><br>
         
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
-                <th>Id</th>
-                <th>Code</th>
+                <th>ID</th>
                 <th>Name</th>
+                <th>Category Code</th>
                 <th>Description</th>
             </tr>';
         $no = 1;
@@ -183,8 +177,8 @@ class Item_categories extends CI_Controller
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['id'] . '</td>
-                    <td>' . $data['number'] . '</td>
                     <td>' . $data['name'] . '</td>
+                    <td>' . $data['number'] . '</td>
                     <td>' . $data['description'] . '</td>';
             $no++;
         }

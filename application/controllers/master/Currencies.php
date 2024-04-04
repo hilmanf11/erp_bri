@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
 class Currencies extends CI_Controller
 {
@@ -11,7 +12,7 @@ class Currencies extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('name', 'Code', 'required|min_length[1]|max_length[20]|is_unique[currencies.name]');
+        $this->form_validation->set_rules('name', 'Name', 'required|min_length[1]|max_length[20]|is_unique[currencies.name]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -33,17 +34,6 @@ class Currencies extends CI_Controller
         $send = $this->crud->reads('currencies', ["name" => $post]);
         echo json_encode($send);
     }
-
-     //CODE OTOMATIS
-     public function autoid(){
-        $sql = $this->db->query("SELECT max(`id`) as kode From currencies");
-        $row = $sql->row();
-        $kode = substr($row->kode, 1);
-        $autoid = "C". sprintf("%02s", $kode + 1);
-        echo $autoid;
-
-    }
-
     //GET DATATABLES
     public function datatables()
     {
@@ -65,7 +55,7 @@ class Currencies extends CI_Controller
                     $this->db->like($filter->field, $filter->value);
                 }
             }
-            $this->db->order_by('name', 'ASC');
+            $this->db->order_by('id', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -77,6 +67,14 @@ class Currencies extends CI_Controller
             $result = array_merge($result, ['rows' => $records]);
             echo json_encode($result);
         }
+    }
+    //AUTO ID
+    public function autoid(){
+        $sql = $this->db->query("SELECT max(id) as kode FROM currencies");
+        $row = $sql->row();
+        $kode = substr($row->kode,2);
+        $autoid ="CR". sprintf("%02s", $kode + 1);
+        echo $autoid;
     }
     //CREATE DATA
     public function create()
@@ -127,7 +125,7 @@ class Currencies extends CI_Controller
         $this->db->select('*');
         $this->db->from('currencies');
         $this->db->where('deleted', 0);
-        $this->db->order_by('name', 'ASC');
+        $this->db->order_by('id', 'ASC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
@@ -139,7 +137,6 @@ class Currencies extends CI_Controller
                         </td>
                         <td style="font-size: 14px; text-align: left; margin:2px;">
                             <b>' . $config->name . '</b><br>
-                            <small>MASTER CURRENCY</small>
                         </td>
                     </tr>
                 </table>
@@ -148,16 +145,19 @@ class Currencies extends CI_Controller
                 Print Date ' . date("d M Y H:m:s") . ' <br>
                 Print By ' . $this->session->username . '  
             </div>
+            <br><br>
+            <div style="float: centet; font-size: 16px; text-align: center;">
+                <h3>MASTER CURRENCY</h3>
+            </div>
         </center>
-        <br><br><br>
         
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
                 <th>Code</th>
                 <th>Name</th>
-                <th>Symbol</th>
                 <th>Description</th>
+                <th>Symbol</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
@@ -165,8 +165,8 @@ class Currencies extends CI_Controller
                     <td>' . $no . '</td>
                     <td>' . $data['number'] . '</td>
                     <td>' . $data['name'] . '</td>
-                    <td>' . $data['symbol'] . '</td>
-                    <td>' . $data['description'] . '</td>';
+                    <td>' . $data['description'] . '</td>
+                    <td>' . $data['symbol'] . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';

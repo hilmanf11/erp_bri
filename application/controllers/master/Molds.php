@@ -11,9 +11,8 @@ class Molds extends CI_Controller
         $this->load->library('form_validation');
         $this->load->library('session');
         $this->load->model('crud');
-
         //VALIDASI FORM
-        $this->form_validation->set_rules('name', 'Code', 'required|min_length[1]|max_length[30]|is_unique[molds.name]');
+        // $this->form_validation->set_rules('number', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[molds.number]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -28,26 +27,14 @@ class Molds extends CI_Controller
             redirect('error_access');
         }
     }
-    
     //GET DATA
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('molds', ["name" => $post]);
+        $send = $this->crud->reads('molds', ["id" => $post]);
         echo json_encode($send);
     }
-
-
-    //CODE OTOMATIS
-    public function autoid($type, $model){
-        $code = $type. $model;
-        $sql = $this->db->query("SELECT coalesce(max(`id`),0) as kode From molds where id like '%$code%'");
-        $row = $sql->row();
-        $kode = substr($row->kode, -3);
-        $autoid = "MD".$code."-".sprintf("%03s", $kode + 1);
-        echo $autoid;
-
-    }
+    
     //GET DATATABLES
     public function datatables()
     {
@@ -61,20 +48,20 @@ class Molds extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.name as customer_name');
+            $this->db->select('a.*,c.name as customer_name');
             $this->db->from('molds a');
-            $this->db->join('customers b', 'a.customer_id  = b.id');
+            $this->db->join('customers c', 'a.customer_id = c.id');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
                     if($filter->field == "customer_name"){
-                        $this->db->like("b.name", $filter->value);    
+                        $this->db->like("c.name", $filter->value);
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
                     }
                 }
             }
-            $this->db->order_by('id', 'ASC');
+            $this->db->order_by('a.id', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -87,17 +74,27 @@ class Molds extends CI_Controller
             echo json_encode($result);
         }
     }
+    //AUTO ID
+    public function autoid(){
+        $month = date('my');
+        $format = "M-".$month;
+        $sql = $this->db->query("SELECT max(id) as kode FROM molds WHERE id LIKE '%$format%'");
+        $row = $sql->row();
+        if ($row->kode == ""){
+            $kode = 0;
+        } else {
+            $kode = substr($row->kode,-3);
+        }
+        $autoid =$format. sprintf("%03s", $kode + 1);
+        echo $autoid;
+    }
     //CREATE DATA
     public function create()
     {
         if ($this->input->post()) {
-            if ($this->form_validation->run() == TRUE) {
-                $post   = $this->input->post();
-                $send   = $this->crud->create('molds', $post);
-                echo $send;
-            } else {
-                show_error(validation_errors());
-            }
+            $data = $this->input->post();
+            $send   = $this->crud->create('molds', $data);
+            echo $send;
         } else {
             show_error("Cannot Process your request");
         }
@@ -121,7 +118,6 @@ class Molds extends CI_Controller
         $send = $this->crud->delete('molds', $data);
         echo $send;
     }
-
     //UPLOAD DATA
     public function upload()
     {
@@ -138,12 +134,17 @@ class Molds extends CI_Controller
                 //excel
                 'mold_name' => $data->val($i, 2),
                 'type' => $data->val($i, 3),
-                'customer_number' => $data->val($i, 4),
+                'customer_id' => $data->val($i, 4),
                 'model' => $data->val($i, 5),
-                'project_year' => $data->val($i, 6),
-                'standard_cavity' => $data->val($i, 7),
-                'actual_cavity' => $data->val($i, 8),
-                
+                'mold_size' => $data->val($i, 6),
+                'project_year' => $data->val($i, 7),
+                'cavity_standard' => $data->val($i, 8),
+                'cavity_actual' => $data->val($i, 9),
+                'shoot_standard' => $data->val($i, 10),
+                'shoot_actual' => $data->val($i, 11),
+                'mold_type' => $data->val($i, 12),
+                'remark' => $data->val($i, 13),
+                'status' => $data->val($i, 14)
             );
         }
         $datas['total'] = count($datas);
@@ -163,7 +164,6 @@ class Molds extends CI_Controller
             fclose($textFailed);
         }
     }
-
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
@@ -177,46 +177,49 @@ class Molds extends CI_Controller
         header("Content-Type: text/plain");
         @readfile($file);
     }
-
     //UPLOAD CREATE DATA
     public function uploadcreate()
     {
         if ($this->input->post()) {
-            $data = $this->input->post('data');//field excel
+            $data = $this->input->post('data');
+
+            //Cek Process Number          //table       //field        //field excel
+            // $molds = $this->crud->read('molds', [], ["number" => $data['number']]);
+            // $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
+            $customer = $this->crud->read('customers', [], ["id" => $data['customer_id']]);
 
             //AUTOID
-            $code = $data['type'].$data['model']; 
-            $sql = $this->db->query("SELECT coalesce(max(`id`),0) as kode From molds where id like '%$code%'");
+            $month = date('my');
+            $format = "M-".$month;
+            $sql = $this->db->query("SELECT max(id) as kode FROM molds WHERE id LIKE '%$format%'");
             $row = $sql->row();
-            $kode = substr($row->kode, -3);
-            $autoid = "MD".$code."-".sprintf("%03s", $kode + 1);
+            if ($row->kode == ""){
+                $kode = 0;
+            } else {
+                $kode = substr($row->kode,-3);
+            }
+            $autoid =$format. sprintf("%03s", $kode + 1);
 
-           //Cek Process Number                //table       //field           //field excel
-           $customers = $this->crud->read('customers', [], ["number" => $data['customer_number']]);
-           $molds = $this->crud->read('molds', [], ["name" => $data['mold_name']]);
-           $type = array('IN','EX');
-           $model = array('INJ','TRF','COM');
-
-
-         if (empty($customers->name)) {
-             echo json_encode(array("title" => "Not Found", "message" => "Customer No " . $data['customer_number'] . " is Not Found", "theme" => "error"));
-            } elseif (!in_array($data['type'], $type)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Mold Type " . $data['type'] . " is Not Found", "theme" => "error"));
-            } elseif (!in_array($data['model'], $model)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Mold Model " . $data['model'] . " is Not Found", "theme" => "error"));
-            } elseif (!empty($molds->name)) {
-               echo json_encode(array("title" => "Duplicated", "message" => "Mold Name " . $data['mold_name'] . " Duplicate Data", "theme" => "error"));
+            
+            if (empty($customer->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Customer " . $data['customer_id'] . " Not Found", "theme" => "error"));
             } else {
                 $dataFinal = array(
-                    //field        //excel
+                    //field
                     "id" => $autoid,
-                    "name" => $data['mold_name'],
+                    "mold_name" => $data['mold_name'],
                     "type" => $data['type'],
-                    "customer_id" => $customers->id,//membaca parameter $customers dengan inputan number berdasarkan data inputan dari excel 
+                    "customer_id" => $data['customer_id'],
                     "model" => $data['model'],
+                    "mold_size" => $data['mold_size'],
                     "project_year" => $data['project_year'],
-                    "standard" => $data['standard_cavity'],
-                    "actual" => $data['actual_cavity'],
+                    "cavity_standard" => $data['cavity_standard'],
+                    "cavity_actual" => $data['cavity_actual'],
+                    "shoot_standard" => $data['shoot_standard'],
+                    "shoot_actual" => $data['shoot_actual'],
+                    "mold_type" => $data['mold_type'],
+                    "remark" => $data['remark'],
+                    "status" => $data['status'],
                 );
                 $send   = $this->crud->create('molds', $dataFinal);
                 echo $send;
@@ -236,14 +239,13 @@ class Molds extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.name as customer_name');
+        $this->db->select('a.*,c.name as customer_name');
         $this->db->from('molds a');
-        $this->db->join('customers b', 'a.customer_id  = b.id');
+        $this->db->join('customers c', 'a.customer_id = c.id');
         $this->db->where('a.deleted', 0);
-        $this->db->order_by('id', 'ASC');
+        $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
-
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#molds {border-collapse: collapse;width: 100%;font-size: 12px;}#molds td, #molds th {border: 1px solid #ddd;padding: 2px;}#molds tr:nth-child(even){background-color: #f2f2f2;}#molds tr:hover {background-color: #ddd;}#molds th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">
                 <table style="width: 100%;">
@@ -252,60 +254,57 @@ class Molds extends CI_Controller
                             <img src="' . $config->favicon . '" width="30">
                         </td>
                         <td style="font-size: 14px; text-align: left; margin:2px;">
-                            <b>' . $config->name . '</b><br>
-                            <small>MASTER MOLDS</small>
+                            <b>' . $config->name . '</b>
                         </td>
                     </tr>
                 </table>
             </div>
             <div style="float: right; font-size: 12px; text-align: right;">
-                Print Date ' . date("d M Y H:i:s") . ' <br>
+                Print Date ' . date("d M Y H:m:s") . ' <br>
                 Print By ' . $this->session->username . '  
             </div>
+            <br><br>
+            <div style="float: centet; font-size: 16px; text-align: center;">
+                <h3>MASTER ITEM MOLD</h3>
+            </div>
         </center>
-        <br><br><br>
         
-        <table id="customers" border="1">
+        <table id="molds" border="1">
             <tr>
                 <th width="20">No</th>
-                <th>Id</th>
+                <th>Mold ID</th>
                 <th>Mold Name</th>
                 <th>Type</th>
                 <th>Customer Name</th>
                 <th>Model</th>
+                <th>Mold Size</th>
                 <th>Project Year</th>
                 <th>Standard Cavity</th>
                 <th>Actual Cavity</th>
+                <th>Standard Shoot</th>
+                <th>Actual Shoot</th>
+                <th>Mold Type</th>
+                <th>Remarks</th>
+                <th>Status</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
-            if ($data['type']=="EX"){
-                $type="EXTERNAL";
-            }else if ($data['type']=="IN"){
-                $type="INTERNAL";
-            }else{
-                $type="ERROR!";
-            }
-
-            if ($data['model']=="COM"){
-                $model="COMPRESS";
-            }else if ($data['type']=="INJ"){
-                $type="INJECTION";
-            }else if ($data['type']=="TRF"){
-                $type="TRANSFER";
-            }else{
-                $type="ERROR!";
-            }
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['id'] . '</td>
-                    <td>' . $data['name'] . '</td>
-                    <td>' . $type . '</td>
+                    <td>' . $data['mold_name'] . '</td>
+                    <td>' . $data['type'] . '</td>
                     <td>' . $data['customer_name'] . '</td>
-                    <td>' . $model . '</td>
+                    <td>' . $data['model'] . '</td>
+                    <td>' . $data['mold_size'] . '</td>
                     <td>' . $data['project_year'] . '</td>
-                    <td>' . $data['standard'] . '</td>
-                    <td>' . $data['actual'] . '</td>';
+                    <td>' . $data['cavity_standard'] . '</td>
+                    <td>' . $data['cavity_actual'] . '</td>
+                    <td>' . $data['shoot_standard'] . '</td>
+                    <td>' . $data['shoot_standard'] . '</td>
+                    <td>' . $data['mold_type']. '</td>
+                    <td>' . $data['remark'] . '</td>
+                    <td>' . $data['status'] . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';

@@ -12,8 +12,7 @@ class Item_rm extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[30]|is_unique[item_rm.number]');
-        
+        $this->form_validation->set_rules('number', 'Product No.', 'required|min_length[1]|max_length[100]|is_unique[item_rm.number]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -28,94 +27,85 @@ class Item_rm extends CI_Controller
             redirect('error_access');
         }
     }
-     //GET DATA
-     public function reads()
-     {
-         $post = isset($_POST['q']) ? $_POST['q'] : "";
-         $send = $this->crud->reads('item_rm', ["number" => $post]);
-         echo json_encode($send);
-     }
-
-     public function readsC()
+    //GET DATA
+    public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_rm', ["number" => $post], ["item_family_number"=>"CP"]);
+        $send = $this->crud->query("SELECT a.*, b.name as item_family_name FROM item_rm a JOIN item_familys b ON a.item_family_id = b.id WHERE a.number like '%$post%' or a.name like '$post'");
         echo json_encode($send);
     }
 
-    public function readByProductFamilySubs($item_sub_family_number)
+    public function readsC()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT * FROM item_rm WHERE item_family_sub_number = '$item_sub_family_number' and (`number` like '%$post%' or `name` like '%$post%')");
+        $send = $this->crud->reads('item_rm', ["number" => $post], ["item_family_id" => "P03"]);
         echo json_encode($send);
     }
 
-     //CODE OTOMATIS
-     public function autoid($item_category_number, $item_family_number, $item_family_sub_number = "NA"){
-    
-        $code = $item_category_number . $item_family_number . $item_family_sub_number; 
-        $sql = $this->db->query("SELECT coalesce(max(`id`), 0) as kode From item_rm where id like '%$code%'");
-        $row = $sql->row();
-        $kode = substr($row->kode, -4);
-        $autoid = $code . "-" . sprintf("%04s", $kode + 1);
-        echo $autoid;
-    }
-    
-
-     //GET DATATABLES
-     public function datatables()
-     {
-         if ($this->input->post()) {
-             $filters = json_decode($this->input->post('filterRules'));
-             $page = $this->input->post('page');
-             $rows = $this->input->post('rows');
-             //Pagination 1-10
-             $page   = isset($page) ? intval($page) : 1;
-             $rows   = isset($rows) ? intval($rows) : 10;
-             $offset = ($page - 1) * $rows;
-             $result = array();
-             //Select Query
-            $this->db->select('a.*, b.name as item_category_name , c.name as item_familys_name , d.name as item_family_sub_name');
+    //GET DATATABLES
+    public function datatables()
+    {
+        if ($this->input->post()) {
+            $filters = json_decode($this->input->post('filterRules'));
+            $page = $this->input->post('page');
+            $rows = $this->input->post('rows');
+            //Pagination 1-10
+            $page   = isset($page) ? intval($page) : 1;
+            $rows   = isset($rows) ? intval($rows) : 10;
+            $offset = ($page - 1) * $rows;
+            $result = array();
+            //Select Query
+            $this->db->select('a.*, b.name as item_category_name, c.name as item_family_name, d.number as item_sub_family_number');
             $this->db->from('item_rm a');
-            $this->db->join('item_categories b', 'a.item_category_number = b.number');
-            $this->db->join('item_familys c', 'a.item_family_number = c.number');
-            $this->db->join('item_family_subs d', 'a.item_family_sub_number = d.number','left');
+            $this->db->join('item_categories b', 'a.item_category_id = b.id');
+            $this->db->join('item_familys c', 'a.item_family_id = c.id');
+            $this->db->join('item_family_subs d', 'a.item_sub_family_id = d.id');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
                     if ($filter->field == "item_category_name") {
                         $this->db->like("b.name", $filter->value);
-                    } elseif ($filter->field == "item_familys_name") {
+                    } elseif ($filter->field == "item_family_name") {
                         $this->db->like("c.name", $filter->value);
                     } elseif ($filter->field == "item_sub_family_name") {
-                        $this->db->like("d.id", $filter->value);
-                    } elseif ($filter->field == "status" && strtolower($filter->value) === "active") {
-                        // Tampilkan data dengan status "active" (nilai 0)
-                        $this->db->where("a.status", 0);
-                    } elseif ($filter->field == "status" && strtolower($filter->value) === "inactive") {
-                        // Tampilkan data dengan status "inactive" (nilai 1)
-                        $this->db->where("a.status", 1);
+                        $this->db->like("d.name", $filter->value);
                     } else {
                         $this->db->like("a." . $filter->field, $filter->value);
                     }
                 }
             }
-             $this->db->order_by('a.id', 'ASC');
-             //Total Data
-             $totalRows = $this->db->count_all_results('', false);
-             //Limit 1 - 10
-             $this->db->limit($rows, $offset);
-             //Get Data Array
-             $records = $this->db->get()->result_array();
-             //Mapping Data
-             $result['total'] = $totalRows;
-             $result = array_merge($result, ['rows' => $records]);
-             echo json_encode($result);
-         }
-     }
-     //CREATE DATA
-     public function create()
-     {
+            $this->db->order_by('a.id', 'ASC');
+            //Total Data
+            $totalRows = $this->db->count_all_results('', false);
+            //Limit 1 - 10
+            $this->db->limit($rows, $offset);
+            //Get Data Array
+            $records = $this->db->get()->result_array();
+            //Mapping Data
+            $result['total'] = $totalRows;
+            $result = array_merge($result, ['rows' => $records]);
+            echo json_encode($result);
+        }
+    }
+    //AUTO ID
+    public function autoid($category, $family)
+    {
+        $month = date('my');
+        $combine = $category . "-" . $family;
+        $format = "BPI" . $combine . $month;
+        $sql = $this->db->query("SELECT max(id) as kode FROM item_rm WHERE id LIKE '%$format%'");
+        $row = $sql->row();
+        if ($row->kode == "") {
+            $kode = 0;
+        } else {
+            $kode = substr($row->kode, -4);
+        }
+        $autoid = $format . sprintf("%04s", $kode + 1);
+        echo $autoid;
+    }
+    //CREATE DATA
+    public function create()
+    {
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
@@ -127,12 +117,10 @@ class Item_rm extends CI_Controller
         } else {
             show_error("Cannot Process your request");
         }
-     }
-    
-
-       //UPDATE DATA
-       public function update()
-       {
+    }
+    //UPDATE DATA
+    public function update()
+    {
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
@@ -142,177 +130,119 @@ class Item_rm extends CI_Controller
             show_error("Cannot Process your request");
         }
     }
-
-       public function uploadatt()
+    //DELETE DATA
+    public function delete()
     {
-        // Pastikan file disimpan dalam direktori yang diinginkan
-        $uploadDir = 'assets/image/item_rm/';
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Pastikan ada file yang diunggah dari permintaan
-            if (isset($_FILES['file'])) {
-                $file = $_FILES['file'];
-
-                // Validasi ekstensi file yang diunggah
-                $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
-                $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-
-                if (!in_array($fileExtension, $allowedExtensions)) {
-                    echo json_encode(['success' => false, 'message' => 'Only files with the extension .pdf, .jpg, or .png are allowed.']);
-                    exit; // Menghentikan proses lebih lanjut jika ekstensi tidak valid
-                }
-
-                // Validasi ukuran file yang diunggah (maksimal 5MB)
-                $maxFileSize = 2 * 1024 * 1024; // 5MB dalam bytes
-                if ($file['size'] > $maxFileSize) {
-                    echo json_encode(['success' => false, 'message' => 'Ukuran file terlalu besar. Maksimal 2MB yang diperbolehkan.']);
-                    exit; // Menghentikan proses lebih lanjut jika ukuran terlalu besar
-                }
-
-                // Pastikan tidak ada error dalam proses upload
-                if ($file['error'] === UPLOAD_ERR_OK) {
-                    // Buat nama unik untuk file yang diunggah
-                    $fileName = uniqid() . '_' . $file['name'];
-                    $uploadPath = $uploadDir . $fileName;
-
-                    // Pindahkan file dari temporary directory ke lokasi yang diinginkan
-                    if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-                        // File berhasil diunggah
-                        echo json_encode(['success' => true, 'message' => 'File Upload Success.', 'filename' => $fileName]);
-                    } else {
-                        // Gagal menyimpan file
-                        echo json_encode(['success' => false, 'message' => 'File Upload Failed.']);
-                    }
-                } else {
-                    // Ada error dalam proses upload
-                    echo json_encode(['success' => false, 'message' => 'Error while Upload.']);
-                }
-            } else {
-                // File tidak ditemukan dalam permintaan
-                echo json_encode(['success' => false, 'message' => 'File Not Found.']);
-            }
-        } else {
-            // Metode request yang diperlukan adalah POST
-            echo json_encode(['success' => false, 'message' => 'Metode request yang diperlukan adalah POST.']);
+        $data = $this->input->post();
+        $send = $this->crud->delete('item_rm', $data);
+        echo $send;
+    }
+    //UPLOAD DATA
+    public function upload()
+    {
+        error_reporting(0);
+        require_once 'assets/vendors/excel_reader2.php';
+        $target = basename($_FILES['file_upload']['name']);
+        move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
+        chmod($_FILES['file_upload']['name'], 0777);
+        $file = $_FILES['file_upload']['name'];
+        $data = new Spreadsheet_Excel_Reader($file, false);
+        $total_row = $data->rowcount($sheet_index = 0);
+        for ($i = 3; $i <= $total_row; $i++) {
+            $datas[] = array(
+                //excel
+                'number' => $data->val($i, 2),
+                'name' => $data->val($i, 3),
+                'uom' => $data->val($i, 4),
+                'item_category_id' => $data->val($i, 5),
+                'item_family_id' => $data->val($i, 6),
+                'color' => $data->val($i, 7),
+                'item_sub_family_id' => $data->val($i, 8),
+                'account_number' => $data->val($i, 9),
+                'account_name' => $data->val($i, 10),
+                'description' => $data->val($i, 11),
+                'supply' => $data->val($i, 12),
+                'status' => $data->val($i, 13)
+            );
+        }
+        $datas['total'] = count($datas);
+        echo json_encode($datas);
+        unlink($_FILES['file_upload']['name']);
+    }
+    public function uploadclearFailed()
+    {
+        @unlink('failed/item_rm.txt');
+    }
+    public function uploadcreateFailed()
+    {
+        if ($this->input->post()) {
+            $message = $this->input->post('message');
+            $textFailed = fopen('failed/item_rm.txt', 'a');
+            fwrite($textFailed, $message . "\n");
+            fclose($textFailed);
         }
     }
+    //UPLOAD DOWNLOAD FAILED
+    public function uploadDownloadFailed()
+    {
+        $file = "failed/item_rm.txt";
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
+    }
+    //UPLOAD CREATE DATA
+    public function uploadcreate()
+    {
+        if ($this->input->post()) {
+            $data = $this->input->post('data');
 
-     //DELETE DATA
-     public function delete()
-     {
-         $data = $this->input->post();
-         $send = $this->crud->delete('item_rm', $data);
-         echo $send;
-     }
- 
-     //UPLOAD DATA
-     public function upload()
-     {
-         error_reporting(0);
-         require_once 'assets/vendors/excel_reader2.php';
-         $target = basename($_FILES['file_upload']['name']);
-         move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
-         chmod($_FILES['file_upload']['name'], 0777);
-         $file = $_FILES['file_upload']['name'];
-         $data = new Spreadsheet_Excel_Reader($file, false);
-         $total_row = $data->rowcount($sheet_index = 0);
-         for ($i = 3; $i <= $total_row; $i++) {
-             $datas[] = array(
-                 //excel
-                 'part_no' => $data->val($i, 2),
-                 'part_name' => $data->val($i, 3),
-                 'specification' => $data->val($i, 4),
-                 'part_type' => $data->val($i, 5),
-                 'category' => $data->val($i, 6),
-                 'product_family' => $data->val($i, 7),
-                 'sub_product_family' => $data->val($i, 8),
-                 'unit_of_measure' => $data->val($i, 9),
-                 'leadtime' => $data->val($i, 10),
-                 'lifetime' => $data->val($i, 11),
-                 'safety_stock' => $data->val($i, 12),
-                 'status' => $data->val($i, 13)
-                 
-             );
-         }
-         $datas['total'] = count($datas);
-         echo json_encode($datas);
-         unlink($_FILES['file_upload']['name']);
-     }
-     public function uploadclearFailed()
-     {
-         @unlink('failed/item_rm.txt');
-     }
-     public function uploadcreateFailed()
-     {
-         if ($this->input->post()) {
-             $message = $this->input->post('message');
-             $textFailed = fopen('failed/item_rm.txt', 'a');
-             fwrite($textFailed, $message . "\n");
-             fclose($textFailed);
-         }
-     }
- 
-     //UPLOAD DOWNLOAD FAILED
-     public function uploadDownloadFailed()
-     {
-         $file = "failed/item_rm.txt";
-         header('Content-Description: File Failed');
-         header('Content-Disposition: attachment; filename=' . basename($file));
-         header('Expires: 0');
-         header('Cache-Control: must-revalidate');
-         header('Pragma: public');
-         header('Content-Length: ' . @filesize($file));
-         header("Content-Type: text/plain");
-         @readfile($file);
-     }
- 
-     //UPLOAD CREATE DATA
-     public function uploadcreate()
-     {
-         if ($this->input->post()) {
-             $data = $this->input->post('data');
+            //Cek Process Number          //table       //field        //field excel
+            $item_rm = $this->crud->read('item_rm', [], ["number" => $data['number']]);
+            $category = $this->crud->read('item_categories', [], ["id" => $data['item_category_id']]);
+            $product_family = $this->crud->read('item_familys', [], ["id" => $data['item_family_id']]);
+            $product_family_sub = $this->crud->read('item_family_subs', [], ["id" => $data['item_sub_family_id']]);
 
-            //Cek Process Number        //table                   //field           //field excel
-            $category = $this->crud->read('item_categories', [], ["number" => $data['category']]);
-            $prod_fam = $this->crud->read('item_familys', [], ["number" => $data['product_family']]);
-            // $prod_sub_fam = $this->crud->read('item_family_subs', [], ["number" => $data['sub_product_family']]);
-            $item_rm = $this->crud->read('item_rm', [], ["number" => $data['part_no']]);
+            //AUTOID
+            $month = date('my');
+            $combine = @$category->number . "-" . @$product_family->number;
+            $format = "BPI" . $combine . $month;
+            $sql = $this->db->query("SELECT max(id) as kode FROM item_rm WHERE id LIKE '%$format%'");
+            $row = $sql->row();
+            if ($row->kode == "") {
+                $kode = 0;
+            } else {
+                $kode = substr($row->kode, -4);
+            }
+            $autoid = $format . sprintf("%04s", $kode + 1);
 
             if (empty($category->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Category Code " . $data['category'] . " Not Found", "theme" => "error"));
-            } elseif (empty($prod_fam->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Product Family Code " . $data['product_family'] . " Not Found", "theme" => "error"));
-            // } elseif (empty($prod_sub_fam->number)) {
-            //     echo json_encode(array("title" => "Not Found", "message" => "Sub Product Family Code " . $data['sub_product_family'] . " Not Found", "theme" => "error"));
+                echo json_encode(array("title" => "Not Found", "message" => "Category " . $data['item_category_id'] . " Not Found", "theme" => "error"));
+            } elseif (empty($product_family->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Product Family " . $data['item_family_id'] . " Not Found", "theme" => "error"));
+            } elseif (empty($product_family_sub->name)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Product Family Sub " . $data['item_sub_family_id'] . " Not Found", "theme" => "error"));
             } elseif (!empty($item_rm->number)) {
-                echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['part_no'] . " Duplicate Data", "theme" => "error"));
+                echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['number'] . " is Duplicate Data", "theme" => "error"));
             } else {
-                //autoid
-                
-            if (empty($prod_sub_fam->number)) {
-                $code = $data['category'] . $data['product_family']."NA";
-            }else{
-                $code = $data['category'] . $data['product_family'].$data['sub_product_family'];
-            }
-            $sql = $this->db->query("SELECT coalesce(max(`id`), 0) as kode From item_rm where id like '%$code%'");
-            $row = $sql->row();
-            $kode = substr($row->kode, -4);
-            $autoid = $code . "-" . sprintf("%04s", $kode + 1);
-
                 $dataFinal = array(
-                    //field        //excel
+                    //field
                     "id" => $autoid,
-                    "number" => $data['part_no'],
-                    "name" => $data['part_name'],
-                    "specification" => $data['specification'],
-                    "type" => $data['part_type'],
-                    "item_category_number" => $data['category'],
-                    "item_family_number" => $data['product_family'],
-                    "item_family_sub_number" => $data['sub_product_family'],
-                    "uom" => $data['unit_of_measure'],
-                    "leadtime" => $data['leadtime'],
-                    "lifetime" => $data['lifetime'],
-                    "safety_stock" => $data['safety_stock'],
+                    "number" => $data['number'],
+                    "name" => $data['name'],
+                    "uom" => $data['uom'],
+                    "item_category_id" => $data['item_category_id'],
+                    "item_family_id" => $data['item_family_id'],
+                    "color" => $data['color'],
+                    "item_sub_family_id" => $data['item_sub_family_id'],
+                    "account_number" => $data['account_number'],
+                    "account_name" => $data['account_name'],
+                    "description" => $data['description'],
+                    "supply" => $data['supply'],
                     "status" => $data['status'],
                 );
                 $send   = $this->crud->create('item_rm', $dataFinal);
@@ -320,117 +250,89 @@ class Item_rm extends CI_Controller
             }
         }
     }
- 
-     //PRINT & EXCEL DATA
-     public function print($option = "")
-     {
-         if ($option == "excel") {
-             $format  = date("Ymd");
-             header("Content-type: application/vnd-ms-excel");
-             header("Content-Disposition: attachment; filename=item_rm_$format.xls");
-         }
-         //Config
-         $this->db->select('*');
-         $this->db->from('config');
-         $config = $this->db->get()->row();
-         $config_iso = $this->db->get('config_iso')->row();
- 
-         $this->db->select('a.*, b.name as item_category_name , c.name as item_familys_name , d.name as item_family_sub_name');
-         $this->db->from('item_rm a');
-         $this->db->join('item_categories b', 'a.item_category_number = b.number');
-         $this->db->join('item_familys c', 'a.item_family_number = c.number');
-         $this->db->join('item_family_subs d', 'a.item_family_sub_number = d.number','left');
-         $this->db->where('a.deleted', 0);
-         $this->db->order_by('id', 'ASC');
-         $records = $this->db->get()->result_array();
-         
-         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#item_rm {border-collapse: collapse;width: 100%;font-size: 12px;}#item_rm td, #item_rm th {border: 1px solid #ddd;padding: 2px;}#item_rm tr:nth-child(even){background-color: #f2f2f2;}#item_rm tr:hover {background-color: #ddd;}#item_rm th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
-         <center>
-             <div style="float: left; font-size: 12px; text-align: left;">
-                 <table style="width: 100%;">
-                     <tr>
-                         <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
-                             <img src="' . $config->favicon . '" width="30">
-                         </td>
-                         <td style="font-size: 14px; text-align: left; margin:2px;">
-                             <b>' . $config->name . '</b><br>
-                             <small>MASTER FINISH GOOD</small>
-                         </td>
-                     </tr>
-                 </table>
-             </div>
-             <div style="float: right; font-size: 12px; text-align: right;">
-                 <table style="width:100%; font-size:10px;">
-                     <tr>
-                         <td width="60">Doc No</td>
-                         <td width="5">:</td>
-                         <td width="100">' . $config_iso->doc_customer . '</td>
-                     </tr>
-                     <tr>
-                         <td>Form</td>
-                         <td>:</td>
-                         <td>' . $config_iso->form_customer . '</td>
-                     </tr>
-                     <tr>
-                         <td>Print Date</td>
-                         <td>:</td>
-                         <td>' . date("Y-m-d H:i") . '</td>
-                     </tr>
-                     <tr>
-                         <td>Print By</td>
-                         <td>:</td>
-                         <td>' . $this->session->name . '</td>
-                     </tr>
-                 </table> 
-             </div>
-         </center>
-         <br><br><br><br>
-         
-         <table id="item_rm" border="1">
-             <tr>
-                 <th width="20">No</th>
-                 <th>Id</th>
-                 <th>Part No</th>
-                 <th>Part Name</th>
-                 <th>Specification</th>
-                 <th>Part Type</th>
-                 <th>Category</th>
-                 <th>Product Family</th>
-                 <th>Sub Product Family</th>
-                 <th>Unit Of Measure</th>
-                 <th>Lead Time Production</th>
-                 <th>Lifetime</th>
-                 <th>Safety Stock (%)</th>
-                 <th>Status</th>
-             </tr>';
-         $no = 1;
-         foreach ($records as $data) {
-            $number = $data['number'];
-            if (strpos($data['number'], '0') === 0 || strpos($data['number'], '+') === 0) {
-                $number = "'" . $data['number'];
-            } else {
-                // Leave the data unchanged
-                $number = $data['number'];
-            }
-             $html .= '<tr>
-                         <td>' . $no . '</td>
-                         <td>' . $data['id'] . '</td>
-                         <td>' . $number . '</td>
-                         <td>' . $data['name'] . '</td>
-                         <td>' . $data['specification'] . '</td>
-                         <td>' . $data['type'] . '</td>
-                         <td>' . $data['item_category_name'] . '</td>
-                         <td>' . $data['item_familys_name'] . '</td>
-                         <td>' . $data['item_family_sub_name'] . '</td>
-                         <td>' . $data['uom'] . '</td>
-                         <td>' . $data['leadtime'] . '</td>
-                         <td>' . $data['lifetime'] . '</td>
-                         <td>' . $data['safety_stock'] . '</td>
-                         <td>' . $data['status'] . '</td>
-                     </tr>';
-             $no++;
-         }
-         $html .= '</table></body></html>';
-         echo $html;
-     }
- }
+    //PRINT & EXCEL DATA
+    public function print($option = "")
+    {
+        if ($option == "excel") {
+            $format  = date("Ymd");
+            header("Content-type: application/vnd-ms-excel");
+            header("Content-Disposition: attachment; filename=item_rm_$format.xls");
+        }
+        //Config
+        $this->db->select('*');
+        $this->db->from('config');
+        $config = $this->db->get()->row();
+
+        $this->db->select('a.*, b.name as item_category_name, c.name as item_family_name, d.number as item_sub_family_number');
+        $this->db->from('item_rm a');
+        $this->db->join('item_categories b', 'a.item_category_id = b.id');
+        $this->db->join('item_familys c', 'a.item_family_id = c.id');
+        $this->db->join('item_family_subs d', 'a.item_sub_family_id = d.id');
+        $this->db->where('a.deleted', 0);
+        $this->db->order_by('a.id', 'ASC');
+        $records = $this->db->get()->result_array();
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#item_rm {border-collapse: collapse;width: 100%;font-size: 12px;}#item_rm td, #item_rm th {border: 1px solid #ddd;padding: 2px;}#item_rm tr:nth-child(even){background-color: #f2f2f2;}#item_rm tr:hover {background-color: #ddd;}#item_rm th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        <center>
+            <div style="float: left; font-size: 12px; text-align: left;">
+                <table style="width: 100%;">
+                    <tr>
+                        <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                            <img src="' . $config->favicon . '" width="30">
+                        </td>
+                        <td style="font-size: 14px; text-align: left; margin:2px;">
+                            <b>' . $config->name . '</b>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div style="float: right; font-size: 12px; text-align: right;">
+                Print Date ' . date("d M Y H:m:s") . ' <br>
+                Print By ' . $this->session->username . '  
+            </div>
+            <br><br>
+            <div style="float: centet; font-size: 16px; text-align: center;">
+                <h3>MASTER ITEM RAW MATERIAL</h3>
+            </div>
+        </center>
+        
+        <table id="item_rm" border="1">
+            <tr>
+                <th width="20">No</th>
+                <th>Product ID</th>
+                <th>Product No.</th>
+                <th>Part Name</th>
+                <th>UOM</th>
+                <th>Category</th>
+                <th>Product Family</th>
+                <th>Color</th>
+                <th>Product Family Sub</th>
+                <th>Account No.</th>
+                <th>Account Name</th>
+                <th>Description</th>
+                <th>Supply</th>
+                <th>Status</th>
+            </tr>';
+        $no = 1;
+        foreach ($records as $data) {
+            $html .= '<tr>
+                        <td>' . $no . '</td>
+                        <td>' . $data['id'] . '</td>
+                        <td style="mso-number-format:\@;">' . $data['number'] . '</td>
+                        <td style="mso-number-format:\@;">' . $data['name'] . '</td>
+                        <td>' . $data['uom'] . '</td>
+                        <td>' . $data['item_category_name'] . '</td>
+                        <td>' . $data['item_family_name'] . '</td>
+                        <td>' . $data['color'] . '</td>
+                        <td>' . $data['item_sub_family_number'] . '</td>
+                        <td>' . $data['account_number'] . '</td>
+                        <td>' . $data['account_name'] . '</td>
+                        <td>' . $data['description'] . '</td>
+                        <td>' . $data['supply'] . '</td>
+                        <td>' . $data['status'] . '</td>
+                    </tr>';
+            $no++;
+        }
+        $html .= '</table></body></html>';
+        echo $html;
+    }
+}

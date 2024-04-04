@@ -100,7 +100,7 @@ class Supply_sheets extends CI_Controller
         $filter_period = $this->input->get('filter_period');
         $filter_wp   = $this->input->get('filter_wp');
         $filter_request_no = $this->input->get('filter_request_no');
-        // $filter_operation = $this->input->get('filter_operation');
+        $filter_operation = $this->input->get('filter_operation');
         $page = $this->input->post('page');
         $rows = $this->input->post('rows');
         $sort = $this->input->post('sort');
@@ -141,9 +141,9 @@ class Supply_sheets extends CI_Controller
             if ($filter_request_no != "") {
                 $this->db->where('a.request_no', $filter_request_no);
             }
-            // if ($filter_operation != "") {
-            //     $this->db->where('f.operation', $filter_operation);
-            // }
+            if ($filter_operation != "") {
+                $this->db->where('f.operation', $filter_operation);
+            }
             $this->db->group_by('a.request_no');
             $this->db->group_by('a.item_fg_id');
             $this->db->order_by($sort, $order);
@@ -212,9 +212,9 @@ class Supply_sheets extends CI_Controller
             if ($filter_request_no != "") {
                 $this->db->where('a.request_no', $filter_request_no);
             }
-            // if ($filter_operation != "") {
-            //     $this->db->where('f.operation', $filter_operation);
-            // }
+            if ($filter_operation != "") {
+                $this->db->where('f.operation', $filter_operation);
+            }
             $this->db->group_by('a.workorder');
             $this->db->group_by('a.item_rm_id');
             $this->db->order_by($sort, $order);
@@ -305,7 +305,7 @@ class Supply_sheets extends CI_Controller
                     a.id,
                     (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty,0) - COALESCE(f.qty, 0)) as end_stock
                 FROM item_rm a 
-                JOIN item_familys b ON a.item_family_number = b.number
+                JOIN item_familys b ON a.item_family_id = b.id
                 JOIN uom c ON a.uom = c.name
                 LEFT JOIN purchase_order_receipts d ON a.id = d.item_rm_id and d.receipt_date <= '$dateNow'
                 LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
@@ -677,7 +677,7 @@ class Supply_sheets extends CI_Controller
         $filter_period = $this->input->get('filter_period');
         $filter_wp   = $this->input->get('filter_wp');
         $filter_request_no = $this->input->get('filter_request_no');
-        // $filter_operation = $this->input->get('filter_operation');
+        $filter_operation = $this->input->get('filter_operation');
         //Config
         $this->db->select('*');
         $this->db->from('config');
@@ -720,9 +720,9 @@ class Supply_sheets extends CI_Controller
         if ($filter_request_no != "") {
             $this->db->where('a.request_no', $filter_request_no);
         }
-        // if ($filter_operation != "") {
-        //     $this->db->where('f.operation', $filter_operation);
-        // }
+        if ($filter_operation != "") {
+            $this->db->where('f.operation', $filter_operation);
+        }
         $this->db->group_by('a.workorder');
         $this->db->group_by('a.item_rm_id');
         $records = $this->db->get()->result_array();

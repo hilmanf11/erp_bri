@@ -1009,87 +1009,109 @@
 						}]
 					],
 				}).datagrid('enableFilter');
-			
-			
-			} else if (table == "supplier_items"){
+			} else if (table == "purchase_orders") {
 				$('#dg_approval').datagrid({
 					singleSelect: true,
 					rownumbers: true,
-					url: '<?= base_url('approvals/approvalSupplierItems/') ?>' + approved_to + "/" + created_by,
+					url: '<?= base_url('approvals/approvalPO/') ?>' + approved_to + "/" + created_by,
 					columns: [
 						[{
-							field: 'supplier_id',
-							width: 100,
+							field: 'id',
+							hideen: true,
+							width: 150,
 							halign: 'center',
 							title: "ID",
 						},{
-							field: 'supplier_name',
-							width: 200,
-							halign: 'center',
-							title: "Name",
+							field: 'po_no',
+							width: 150,
+							align: 'center',
+							title: "PO NO",
 						},{
+							field: 'po_date',
+							width: 100,
+							align: 'center',
+							title: "PO Period",
+						}, {
 							field: 'item_number',
 							width: 150,
-							halign: 'center',
-							title: "Item No",
-						},{
+							align: 'center',
+							title: "Product No",
+						}, {
 							field: 'item_name',
+							width: 100,
+							align: 'center',
+							title: "Product Name",
+						}, {
+							field: 'item_family_name',
 							width: 150,
 							halign: 'center',
-							title: "Item Name",
-						},{
-							field: 'item_supplier',
+							title: "Product <br>Family",
+						}, {
+							field: 'uom',
+							width: 80,
+							halign: 'center',
+							title: "UOM",
+						}, {
+							field: 'supplier_name',
 							width: 150,
 							halign: 'center',
-							title: "Item Supplier",
-						},{
+							title: "Supplier"
+						}, {
 							field: 'mpq',
 							width: 80,
 							halign: 'center',
 							title: "MPQ",
-						},{
+						}, {
 							field: 'moq',
 							width: 80,
 							halign: 'center',
 							title: "MOQ",
-						},{
-							field: 'leadtime',
+						}, {
+							field: 'qty',
 							width: 80,
 							halign: 'center',
-							title: "Leadtime",
-						},{
+							title: "QTY",
+						}, {
 							field: 'currency',
 							width: 80,
 							halign: 'center',
 							title: "Currency",
-						},{
+						}, {
+							field: 'discount',
+							width: 80,
+							halign: 'center',
+							title: "Disc %",
+						}, {
 							field: 'price',
-							width: 100,
+							width: 80,
 							halign: 'center',
-							align: 'right',
 							title: "Price",
-							formatter: numberformat
-						},{
-							field: 'safety_stock',
-							width: 100,
+						}, {
+							field: 'total',
+							width: 80,
 							halign: 'center',
-							title: "Safety Stock",
-						},{
-							field: 'calculate',
-							width: 100,
+							title: "Amount",
+						}, {
+							field: 'remarks',
+							width: 80,
 							halign: 'center',
-							title: "Calculate",
-						},{
-							field: 'valid_date',
-							width: 100,
+							title: "Remarks",
+						}, {
+							field: 'month_1',
+							width: 80,
 							halign: 'center',
-							title: "Valid Date",
-						},{
-							field: 'description',
-							width: 150,
+							title: "Month 1",
+						}, {
+							field: 'month_2',
+							width: 80,
 							halign: 'center',
-							title: "Description",
-						},{
+							title: "Month 2",
+						}, {
+							field: 'month_3',
+							width: 80,
+							halign: 'center',
+							title: "Month 3",
+						}, {
 							field: 'action',
 							width: 80,
 							align: 'center',
@@ -1106,253 +1128,7 @@
 						}]
 					],
 				}).datagrid('enableFilter');
-
-
-			} else if (table == "customer_items"){
-				$('#dg_approval').datagrid({
-					singleSelect: true,
-					rownumbers: true,
-					url: '<?= base_url('approvals/approvalCustomerItems/') ?>' + approved_to + "/" + created_by,
-					columns: [
-						[{
-							field: 'customer_id',
-							width: 100,
-							halign: 'center',
-							title: "ID",
-						},{
-							field: 'customer_name',
-							width: 200,
-							halign: 'center',
-							title: "Name",
-						},{
-							field: 'item_number',
-							width: 150,
-							halign: 'center',
-							title: "Item No",
-						},{
-							field: 'item_name',
-							width: 150,
-							halign: 'center',
-							title: "Item Name",
-						},{
-							field: 'item_customer',
-							width: 150,
-							halign: 'center',
-							title: "Item Supplier",
-						},{
-							field: 'currency',
-							width: 80,
-							halign: 'center',
-							title: "Currency",
-						},{
-							field: 'price',
-							width: 100,
-							halign: 'center',
-							align: 'right',
-							title: "Price",
-							formatter: numberformat
-						},{
-							field: 'valid_date',
-							width: 100,
-							halign: 'center',
-							title: "Valid Date",
-						},{
-							field: 'description',
-							width: 150,
-							halign: 'center',
-							title: "Description",
-						},{
-							field: 'action',
-							width: 80,
-							align: 'center',
-							title: "Action",
-							formatter: function(val, row) {
-								if (val != "-") {
-									var approve = "approve('" + row.id + "','" + table + "')";
-									var disapprove = "disapprove('" + row.id + "','" + table + "')";
-									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
-									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
-									return a + " " + b;
-								}
-							}
-						}]
-					],
-				}).datagrid('enableFilter');
-			} else if (table == "customers"){
-				$('#dg_approval').datagrid({
-					singleSelect: true,
-					rownumbers: true,
-					url: '<?= base_url('approvals/approvalCustomers/') ?>' + approved_to + "/" + created_by,
-					columns: [
-						[{
-							field: 'id',
-							width: 150,
-							halign: 'center',
-							title: "ID",
-						},{
-							field: 'name',
-							width: 250,
-							halign: 'center',
-							title: "Name",
-						},{
-							field: 'number',
-							width: 100,
-							halign: 'center',
-							title: "Code",
-						},{
-							field: 'type',
-							width: 80,
-							halign: 'center',
-							title: "Type",
-						},{
-							field: 'taxes',
-							width: 80,
-							halign: 'center',
-							title: "Tax",
-						},{
-							field: 'currency',
-							width: 80,
-							halign: 'center',
-							title: "Currency",
-						},{
-							field: 'payment_term',
-							width: 100,
-							halign: 'center',
-							title: "Payment term",
-						},{
-							field: 'bank_account',
-							width: 100,
-							halign: 'center',
-							title: "Bank Account",
-						},{
-							field: 'bank_name',
-							width: 100,
-							halign: 'center',
-							title: "Bank Name",
-						},{
-							field: 'action',
-							width: 80,
-							align: 'center',
-							title: "Action",
-							formatter: function(val, row) {
-								if (val != "-") {
-									var approve = "approve('" + row.id + "','" + table + "')";
-									var disapprove = "disapprove('" + row.id + "','" + table + "')";
-									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
-									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
-									return a + " " + b;
-								}
-							}
-						}]
-					],
-				}).datagrid('enableFilter');
-
-
-			} else if (table == "suppliers"){
-				$('#dg_approval').datagrid({
-					singleSelect: true,
-					rownumbers: true,
-					url: '<?= base_url('approvals/approvalSuppliers/') ?>' + approved_to + "/" + created_by,
-					columns: [
-						[{
-							field: 'id',
-							width: 150,
-							halign: 'center',
-							title: "ID",
-						},{
-							field: 'name',
-							width: 250,
-							halign: 'center',
-							title: "Name",
-						},{
-							field: 'number',
-							width: 100,
-							halign: 'center',
-							title: "Code",
-						},{
-							field: 'type',
-							width: 80,
-							halign: 'center',
-							title: "Type",
-						},{
-							field: 'address',
-							width: 80,
-							halign: 'center',
-							title: "Address",
-						},{
-							field: 'telp',
-							width: 80,
-							halign: 'center',
-							title: "Telephone",
-						},{
-							field: 'email',
-							width: 80,
-							halign: 'center',
-							title: "Email",
-						},{
-							field: 'website',
-							width: 80,
-							halign: 'center',
-							title: "Website",
-						},{
-							field: 'currency',
-							width: 80,
-							halign: 'center',
-							title: "Currency",
-						},{
-							field: 'payment_term',
-							width: 100,
-							halign: 'center',
-							title: "Payment term",
-						},{
-							field: 'incoterm',
-							width: 100,
-							halign: 'center',
-							title: "Incoterm",
-						},{
-							field: 'vat_status',
-							width: 100,
-							halign: 'center',
-							title: "Vat Status",
-						},{
-							field: 'vat',
-							width: 100,
-							halign: 'center',
-							title: "Vat",
-						},{
-							field: 'tax',
-							width: 100,
-							halign: 'center',
-							title: "Taxes",
-						},{
-							field: 'bank_account',
-							width: 100,
-							halign: 'center',
-							title: "Bank Account",
-						},{
-							field: 'bank_name',
-							width: 100,
-							halign: 'center',
-							title: "Bank Name",
-						},{
-							field: 'action',
-							width: 80,
-							align: 'center',
-							title: "Action",
-							formatter: function(val, row) {
-								if (val != "-") {
-									var approve = "approve('" + row.id + "','" + table + "')";
-									var disapprove = "disapprove('" + row.id + "','" + table + "')";
-									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
-									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
-									return a + " " + b;
-								}
-							}
-						}]
-					],
-			
-				}).datagrid('enableFilter');
-			}	
+			}
 		}
 	}
 

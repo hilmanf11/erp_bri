@@ -1,19 +1,31 @@
+<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" style="width:100%; height: 100%;">
+        <div title="RELATIONS" style="padding: 20px;">
+            <ul>
+                <li>The Data Supplier is taken from <b>Master Data > Material Control > Suppliers</b></li>
+                <li>The Data Part No is taken from <b>Master Data > Engineering > Item Raw Materials</b></li>
+                <li>The Data Currency is taken from <b>Master Data > Material Control > Suppliers > Currency</b></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
-<table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
+<table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar">
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'supplier_id',align:'center',width:100">ID</th>
-            <th rowspan="2" data-options="field:'supplier_name',halign:'center',width:250">Supplier Name</th>
-            <th rowspan="2" data-options="field:'type',halign:'center',width:80">Type</th>
+            <th rowspan="2" data-options="field:'supplier_name',width:550,halign:'center'">Supplier Name</th>
+            <th rowspan="2" data-options="field:'type',width:100,halign:'center'">Type</th>
+            <th rowspan="2" data-options="field:'currency',width:100,halign:'center'">Currency</th>
             <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
+            <th data-options="field:'created_by',width:120,align:'center'"> By</th>
             <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
+            <th data-options="field:'updated_by',width:120,align:'center'"> By</th>
             <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
         </tr>
     </thead>
@@ -27,11 +39,11 @@
             <legend><b>Form Filter Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Supplier</span>
-                <input style="width:60%;" id="filter_supplier_id" class="easyui-combogrid"><!-- ingat untuk edit script pencarian dan datatable -->
+                <input style="width:60%;" id="filter_supplier_id" class="easyui-combogrid">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product No</span>
-                <input style="width:60%;" id="filter_item_rm_id" class="easyui-combogrid"><!-- ingat untuk edit script pencarian dan datatable -->
+                <span style="width:35%; display:inline-block;">Part No</span>
+                <input style="width:60%;" id="filter_item_rm_id" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
@@ -39,6 +51,7 @@
             </div>
         </fieldset>
         <?= $button ?>
+        <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
     </div>
 </div>
 
@@ -48,7 +61,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1200px; height: 600px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1400px; height: 500px; padding:10px; top: 20px; left: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -96,8 +109,6 @@
 <!-- PDF -->
 <iframe id="printout" src="<?= base_url('master/supplier_items/print') ?>" style="width: 100%;" hidden></iframe>
 
-
-<!-- data inputan treegrid -->
 <script>
     //ADD DATA
     function add() {
@@ -105,7 +116,6 @@
         $('#dg2').datagrid('loadData', []);
         url_save = '<?= base_url('master/supplier_items/create') ?>';
         $('#frm_insert').form('clear');
-        $("#supplier_id").combogrid('enable');
     }
 
     function addTable(link = "") {
@@ -114,10 +124,10 @@
             singleSelect: true,
             columns: [
                 [{
-                    field: 'item_number',
+                    field: 'item_rm_number',
                     width: 200,
                     halign: 'center',
-                    title: "Part No",
+                    title: "Part No.",
                     editor: {
                         type: 'combogrid',
                         options: {
@@ -128,11 +138,11 @@
                             textField: 'number',
                             mode: 'remote',
                             fitColumns: true,
-                            prompt: 'Choose Part No',
+                            prompt: 'Choose Part No.',
                             columns: [
                                 [{
                                     field: 'number',
-                                    title: 'Part No',
+                                    title: 'Part No.',
                                     width: 150
                                 }, {
                                     field: 'name',
@@ -147,28 +157,24 @@
 
                                 var ed = dg.datagrid('getEditor', {
                                     index: rowIndex,
-                                    field: 'item_name'
+                                    field: 'item_rm_number'
                                 });
                                 var ed2 = dg.datagrid('getEditor', {
                                     index: rowIndex,
                                     field: 'item_rm_id'
                                 });
+                                var ed3 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'item_family_name'
+                                });
 
-                                $(ed.target).textbox('setValue', rows.name);
+                                $(ed.target).textbox('setValue', rows.number);
                                 $(ed2.target).textbox('setValue', rows.id);
+                                $(ed3.target).textbox('setValue', rows.item_family_name);
                             }
                         }
                     }
                 }, {
-                    field: 'id',
-                    width: 150,
-                    hidden: true,
-                    halign: 'center',
-                    title: "ID",
-                    editor: {
-                        type: 'textbox'
-                    }
-                },{
                     field: 'item_rm_id',
                     width: 150,
                     hidden: true,
@@ -177,11 +183,11 @@
                     editor: {
                         type: 'textbox'
                     }
-                },{
-                    field: 'item_name',
+                }, {
+                    field: 'maker',
                     width: 150,
                     halign: 'center',
-                    title: "Part Name",
+                    title: "Maker",
                     editor: {
                         type: 'textbox'
                     }
@@ -189,35 +195,54 @@
                     field: 'item_supplier',
                     width: 150,
                     halign: 'center',
-                    title: "Part Supplier",
+                    title: "Supplier Product",
                     editor: {
                         type: 'textbox'
+                    }
+                }, {
+                    field: 'item_family_name',
+                    width: 150,
+                    halign: 'center',
+                    title: "Product Family",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
                     }
                 }, {
                     field: 'mpq',
-                    width: 80,
-                    halign: 'center',
+                    width: 100,
+                    align: 'center',
                     title: "MPQ",
                     editor: {
-                        type: 'textbox'
+                        type: 'numberbox'
                     }
                 }, {
                     field: 'moq',
-                    width: 80,
-                    halign: 'center',
+                    width: 100,
+                    align: 'center',
                     title: "MOQ",
                     editor: {
-                        type: 'textbox'
+                        type: 'numberbox'
+                    }
+                }, {
+                    field: 'share_order',
+                    width: 100,
+                    align: 'center',
+                    title: "% Share Order",
+                    editor: {
+                        type: 'numberbox'
                     }
                 }, {
                     field: 'leadtime',
-                    width: 80,
-                    halign: 'center',
-                    title: "Leadtime <br>(Days)",
+                    width: 120,
+                    align: 'center',
+                    title: "Lead Time (Days)",
                     editor: {
-                        type: 'textbox'
+                        type: 'numberbox'
                     }
-                },  {
+                }, {
                     field: 'price',
                     width: 100,
                     align: 'center',
@@ -229,19 +254,11 @@
                         }
                     }
                 }, {
-                    field: 'safety_stock',
-                    width: 100,
-                    halign: 'center',
-                    title: "Safety Stock",
-                    editor: {
-                        type: 'textbox'
-                    }
-                }, {
                     field: 'valid_date',
-                    width: 100,
+                    width: 180,
                     halign: 'center',
                     align: 'right',
-                    title: "Valid Date",
+                    title: "Valid Date Until",
                     editor: {
                         type: 'datebox',
                         options: {
@@ -250,26 +267,33 @@
                         }
                     }
                 }, {
+                    field: 'safety_stock',
+                    width: 100,
+                    align: 'center',
+                    title: "Safety Stock %",
+                    editor: {
+                        type: 'numberbox'
+                    }
+                }, {
                     field: 'calculate',
-                    width: 80,
+                    width: 120,
                     halign: 'center',
-                    title: "Calculate",
+                    title: "Calculate MPQ",
                     editor: {
                         type: 'combobox',
                         options: {
-                        data: [
-                        { value: 'YES', text: 'YES' },{ value: 'NO', text: 'NO' } ],
-                        valueField: 'value',
-                        textField: 'text'
+                            valueField: 'name',
+                            textField: 'name',
+                            prompt: 'Choose Calculate MPQ',
+                            panelHeight: true,
+                            data: [{
+                                    name: "YES"
+                                },
+                                {
+                                    name: "NO"
+                                },
+                            ]
                         }
-                    }
-                }, {
-                    field: 'description',
-                    width: 200,
-                    halign: 'center',
-                    title: "Description",
-                    editor: {
-                        type: 'textbox'
                     }
                 }]
             ],
@@ -367,9 +391,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            $("#supplier_id").combogrid('disable');
-            url_save = '<?= base_url('master/supplier_items/update') ?>'
-            
+            $("#item_rm_id").combogrid('disable');
 
             addTable('<?= base_url('master/supplier_items/datatableUpdates?supplier_id=') ?>' + window.btoa(row.supplier_id));
         } else {
@@ -456,16 +478,17 @@
     }
 
     $(function() {
-   
+        //ADD DATA
         addTable();
 
-        //SETTING DATAGRID DETAIL
+        //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
             url: '<?= base_url('master/supplier_items/datatables') ?>',
             pagination: true,
             rownumbers: true,
-            fitColumns: true,
             fit: true,
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
             view: detailview,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.supplier_name + '"></table></div>';
@@ -480,44 +503,60 @@
                     rownumbers: true,
                     columns: [
                         [{
-                            field: 'item_number',
+                            field: 'item_rm_id',
+                            title: 'Part ID',
+                            halign: 'center',
+                            width: 150
+                        }, {
+                            field: 'item_rm_number',
                             title: 'Part No.',
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'item_name',
+                            field: 'item_rm_name',
                             title: 'Part Name',
                             halign: 'center',
                             width: 200
                         }, {
+                            field: 'maker',
+                            title: 'Maker',
+                            halign: 'center',
+                            width: 150
+                        }, {
                             field: 'item_supplier',
-                            title: 'Part Supplier',
+                            title: 'Supplier Product',
+                            halign: 'center',
+                            width: 150
+                        }, {
+                            field: 'item_family_name',
+                            title: 'Product Family',
                             halign: 'center',
                             width: 150
                         }, {
                             field: 'mpq',
                             title: 'MPQ',
                             halign: 'center',
-                            width: 50
+                            width: 80
                         }, {
                             field: 'moq',
                             title: 'MOQ',
                             halign: 'center',
-                            width: 50
+                            width: 80
+                        }, {
+                            field: 'share_order',
+                            title: 'Share Order %',
+                            halign: 'center',
+                            width: 100
                         }, {
                             field: 'leadtime',
                             title: 'Leadtime',
                             halign: 'center',
-                            width: 70
-                        }, {
-                            field: 'currency',
-                            title: 'Currency',
-                            halign: 'center',
-                            width: 80
+                            width: 100
                         }, {
                             field: 'price',
                             title: 'Price',
                             halign: 'center',
+                            align: 'right',
                             width: 100,
                             formatter: priceformat
                         }, {
@@ -527,42 +566,20 @@
                             width: 80,
                             formatter: btnHistories
                         }, {
-                            field: 'safety_stock',
-                            title: 'Safety<br>Stock',
-                            halign: 'center',
-                            width: 60,
-                        }, {
-                            field: 'calculate',
-                            title: 'Calculate <br> MPQ',
-                            halign: 'center',
-                            width: 70
-                        }, {
                             field: 'valid_date',
                             title: 'Valid Date',
                             halign: 'center',
-                            width: 80
-                        }, {
-                            field: 'description',
-                            title: 'Description',
-                            halign: 'center',
-                            width: 220
-                        }, {
-                            field: 'approved_to',
-                            title: 'Approved',
-                            align: 'center',
-                            width: 100,
-                            styler: styleApproved, 
-                            formatter: formatApproved
-                        }, {
-                            field: 'approved_by',
-                            title: 'Approved By',
-                            halign: 'center',
                             width: 100
                         }, {
-                            field: 'approved_date',
-                            title: 'Approved Date',
+                            field: 'safety_stock',
+                            title: 'Safet Stock %',
+                            width: 100,
                             halign: 'center',
-                            width: 150
+                        }, {
+                            field: 'calculate',
+                            title: 'Calculate MPQ',
+                            width: 100,
+                            halign: 'center',
                         }]
                     ],
                     onResize: function() {
@@ -591,24 +608,23 @@
                     endEditing();
 
                     for (let i = 0; i < totalrows; i++) {
-                        // alert(rows[i].item_rm_id);
                         if (rows[i].item_rm_id) {
                             $.ajax({
                                 type: "post",
-                                url: url_save,
+                                url: '<?= base_url('master/supplier_items/create') ?>',
                                 data: {
                                     supplier_id: supplier_id,
-                                    id: rows[i].id,
                                     item_rm_id: rows[i].item_rm_id,
+                                    maker: rows[i].maker,
                                     item_supplier: rows[i].item_supplier,
-                                    price: rows[i].price,
                                     mpq: rows[i].mpq,
                                     moq: rows[i].moq,
+                                    share_order: rows[i].share_order,
                                     leadtime: rows[i].leadtime,
-                                    safety_stock: rows[i].safety_stock,
-                                    calculate: rows[i].calculate,
+                                    price: rows[i].price,
                                     valid_date: rows[i].valid_date,
-                                    description: rows[i].description
+                                    safety_stock: rows[i].safety_stock,
+                                    calculate: rows[i].calculate
                                 },
                                 dataType: "json",
                                 success: function(result) {
@@ -636,15 +652,14 @@
         });
     });
 
-
     $('#supplier_id').combogrid({
-        url: '<?= base_url('master/suppliers/readsA/'); ?>',
+        url: '<?= base_url('master/suppliers/reads/'); ?>',
         panelWidth: 420,
         idField: 'id',
         textField: 'name',
         mode: 'remote',
         fitColumns: true,
-        prompt: "Choose Supplier...",
+        prompt: "Choose Supplier",
         columns: [
             [{
                 field: 'number',
@@ -662,9 +677,8 @@
         ]
     });
 
-    // combogrid filter suppliers
     $('#filter_supplier_id').combogrid({
-        url: '<?= base_url('master/suppliers/readsA'); ?>',
+        url: '<?= base_url('master/suppliers/reads'); ?>',
         panelWidth: 750,
         idField: 'id',
         textField: 'name',
@@ -702,7 +716,6 @@
         }],
     });
 
-    // combogrid filter items
     $('#filter_item_rm_id').combogrid({
         url: '<?= base_url('master/item_rm/reads'); ?>',
         panelWidth: 500,
@@ -724,6 +737,10 @@
                 field: 'name',
                 title: 'Part Name',
                 width: 150
+            }, {
+                field: 'item_family_id',
+                title: 'Product Family',
+                width: 180
             }, ]
         ],
         icons: [{
@@ -751,24 +768,6 @@
         }
     };
 
-     //CELLSTYLE APPROVE
-     function styleApproved(value, row, index) {
-        if (value == "" || value === null ) {
-            return 'background: #53D636; color:white;';
-        } else {
-            return 'background: #FF5F5F; color:white;';
-        }
-    }
-    //FORMATTER APPROVE
-    function formatApproved(value) {
-        if (value == "" || value === null ) {
-            return 'Approved';
-        } else {
-            return 'Checking';
-        }
-    };
-
-    
     // FORMAT tahun-bulan-tanggal
     function myformatter(date) {
         var y = date.getFullYear();
@@ -790,33 +789,40 @@
         }
     }
 
-    function priceformat(value, row) {
-        if (row.currency == "USD") {
-            var digits = 4;
-            var currency = 'USD';
-            var format = "en-IN";
-        } else if (row.currency == "JPY") {
-            var digits = 2;
-            var currency = 'JPY';
-            var format = "ja-JP";
-        } else if (row.currency == "EUR") {
-            var digits = 2;
-            var currency = 'EUR';
-            var format = "de-DE";
-        } else {
-            var digits = 0;
-            var currency = 'IDR';
-            var format = "id-ID";
-        }
+    // function priceformat(value, row) {
+    //     if (row.currency == "USD") {
+    //         var digits = 4;
+    //         var currency = 'USD';
+    //         var format = "en-IN";
+    //     } else if (row.currency == "JPY") {
+    //         var digits = 2;
+    //         var currency = 'JPY';
+    //         var format = "ja-JP";
+    //     } else if (row.currency == "EUR") {
+    //         var digits = 2;
+    //         var currency = 'EUR';
+    //         var format = "de-DE";
+    //     } else {
+    //         var digits = 0;
+    //         var currency = 'IDR';
+    //         var format = "id-ID";
+    //     }
 
-        if (value != null) {
-            const formatter = new Intl.NumberFormat(format, {
-                style: 'currency',
-                currency: currency,
-                minimumFractionDigits: digits
-            });
-            return "<b>" + formatter.format(value) + "</b>";
-        }
+    //     if (value != null) {
+    //         const formatter = new Intl.NumberFormat(format, {
+    //             style: 'currency',
+    //             currency: currency,
+    //             minimumFractionDigits: digits
+    //         });
+    //         return "<b>" + formatter.format(value) + "</b>";
+    //     }
+    // }
+
+    function priceformat(value, row) {
+        const formatter = new Intl.NumberFormat('id-ID', {
+            minimumFractionDigits: 2
+        });
+        return "<b>" + formatter.format(value) + "</b>";
     }
 
     function btnHistories(val, row) {
@@ -913,4 +919,3 @@
         }]
     });
 </script>
-
