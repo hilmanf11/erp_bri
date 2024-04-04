@@ -69,11 +69,12 @@ class Item_process_flow extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid(){
+    public function autoid()
+    {
         $sql = $this->db->query("SELECT max(id) as kode FROM item_process_flow");
         $row = $sql->row();
-        $kode = substr($row->kode,2);
-        $autoid ="TP". sprintf("%02s", $kode + 1);
+        $kode = substr($row->kode, 2);
+        $autoid = "TP" . sprintf("%02s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA
@@ -154,13 +155,17 @@ class Item_process_flow extends CI_Controller
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
-                <th>Type ID</th>
-                <th>Type Name</th>
-                <th>INJECTION</th>
-                <th>ASSEMBLY</th>
+                <th>Process ID</th>
+                <th>Process Name</th>
+                <th>WEIGHING</th>
+                <th>MIXING</th>
+                <th>CUTTING</th>
+                <th>BONDING</th>
+                <th>PRESS</th>
+                <th>FINISHING</th>
+                <th>VISUAL CHECK</th>
                 <th>SUBCONT</th>
-                <th>RECEIVING SUBCONT</th>
-                <th>PACKAGING</th>
+                <th>PACKING</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
@@ -172,7 +177,12 @@ class Item_process_flow extends CI_Controller
                     <td>' . $data['process_b'] . '</td>
                     <td>' . $data['process_c'] . '</td>
                     <td>' . $data['process_d'] . '</td>
-                    <td>' . $data['process_e'] . '</td>';
+                    <td>' . $data['process_e'] . '</td>
+                    <td>' . $data['process_f'] . '</td>
+                    <td>' . $data['process_g'] . '</td>
+                    <td>' . $data['process_h'] . '</td>
+                    <td>' . $data['process_i'] . '</td>
+                    ';
             $no++;
         }
         $html .= '</table></body></html>';

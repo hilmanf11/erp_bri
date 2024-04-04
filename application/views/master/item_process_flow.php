@@ -3,13 +3,17 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:80,align:'center'">Type ID</th>
-            <th rowspan="2" data-options="field:'name',width:100,halign:'center'">Type Name</th>
-            <th rowspan="2" data-options="field:'process_a',width:150,halign:'center'">INJECTION</th>
-            <th rowspan="2" data-options="field:'process_b',width:150,halign:'center'">ASSEMBLY</th>
-            <th rowspan="2" data-options="field:'process_c',width:150,halign:'center'">SUBCONT</th>
-            <th rowspan="2" data-options="field:'process_d',width:150,halign:'center'">RECEIVING SUBCONT</th>
-            <th rowspan="2" data-options="field:'process_e',width:150,halign:'center'">PACKAGING</th>
+            <th rowspan="2" data-options="field:'id',width:80,align:'center'">Process ID</th>
+            <th rowspan="2" data-options="field:'name',width:100,halign:'center'">Process Name</th>
+            <th rowspan="2" data-options="field:'process_a',width:150,halign:'center'">WEIGHING</th>
+            <th rowspan="2" data-options="field:'process_b',width:150,halign:'center'">MIXING</th>
+            <th rowspan="2" data-options="field:'process_c',width:150,halign:'center'">CUTTING</th>
+            <th rowspan="2" data-options="field:'process_d',width:150,halign:'center'">BONDING</th>
+            <th rowspan="2" data-options="field:'process_e',width:150,halign:'center'">PRESS</th>
+            <th rowspan="2" data-options="field:'process_f',width:150,halign:'center'">FINISHING</th>
+            <th rowspan="2" data-options="field:'process_g',width:150,halign:'center'">VISUAL CHECK</th>
+            <th rowspan="2" data-options="field:'process_h',width:150,halign:'center'">SUBCONT</th>
+            <th rowspan="2" data-options="field:'process_i',width:150,halign:'center'">PACKING</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -31,32 +35,48 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Type ID</span>
+                <span style="width:35%; display:inline-block;">Process ID</span>
                 <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Type Name</span>
+                <span style="width:35%; display:inline-block;">Process Name</span>
                 <input style="width:60%;" name="name" id="item_process_id" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">INJECTION</span>
+                <span style="width:35%; display:inline-block;">WEIGHING</span>
                 <input style="width:60%;" name="process_a" id="process_a" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">ASSEMBLY</span>
+                <span style="width:35%; display:inline-block;">MIXING</span>
                 <input style="width:60%;" name="process_b" id="process_b" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">SUBCONT</span>
+                <span style="width:35%; display:inline-block;">CUTTING</span>
                 <input style="width:60%;" name="process_c" id="process_c" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">RECEIVING SUBCONT</span>
+                <span style="width:35%; display:inline-block;">BONDING</span>
                 <input style="width:60%;" name="process_d" id="process_d" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">PACKAGING</span>
+                <span style="width:35%; display:inline-block;">PRESS</span>
                 <input style="width:60%;" name="process_e" id="process_e" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">FINISHING</span>
+                <input style="width:60%;" name="process_f" id="process_f" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">VISUAL CHECK</span>
+                <input style="width:60%;" name="process_g" id="process_g" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">SUBCONT</span>
+                <input style="width:60%;" name="process_h" id="process_h" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">PACKING</span>
+                <input style="width:60%;" name="process_i" id="process_i" class="easyui-textbox">
             </div>
         </fieldset>
     </form>
@@ -69,12 +89,12 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/item_process_flow/create') ?>';
         $('#frm_insert').form('clear');
-        
+
         $.ajax({
-            type : "post",
-            url : "<?= base_url('master/item_process_flow/autoid')?>",
-            dataType : "html",
-            success : function(response){
+            type: "post",
+            url: "<?= base_url('master/item_process_flow/autoid') ?>",
+            dataType: "html",
+            success: function(response) {
                 $('#id').textbox('setValue', response);
             }
         });
@@ -164,7 +184,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
+
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
