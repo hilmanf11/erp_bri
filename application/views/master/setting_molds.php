@@ -18,7 +18,7 @@
             <th rowspan="2" data-options="field:'priority',align:'center',width:100">Priority</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
-            
+
         </tr>
         <tr>
             <th data-options="field:'created_by',width:100,align:'center'"> By</th>
@@ -65,9 +65,9 @@
                 <span style="width:35%; display:inline-block;">Priority</span>
                 <input style="width:60%;" name="priority" class="easyui-numberbox">
             </div>
-        </div>
-        </fieldset>
-    </form>
+</div>
+</fieldset>
+</form>
 </div>
 <!-- Upload -->
 <div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
@@ -143,69 +143,69 @@
     }
 
     $('#item_fg_id').combogrid({
-            url: '<?= base_url('master/item_fg/reads') ?>',
-            panelWidth: 420,
-            idField: 'id',
-            textField: 'number',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Choose Product No",
-            columns: [
-                [{
-                    field: 'number',
-                    title: 'Product No',
-                    width: 100
-                }, {
-                    field: 'name',
-                    title: 'Product Name',
-                    width: 100
-                }, ]
-            ]
-        });
+        url: '<?= base_url('master/item_fg/reads') ?>',
+        panelWidth: 420,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Product No",
+        columns: [
+            [{
+                field: 'number',
+                title: 'Product No',
+                width: 100
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 100
+            }, ]
+        ]
+    });
 
-        $('#machine_id').combogrid({
-            url: '<?= base_url('master/machines/reads') ?>',
-            panelWidth: 420,
-            idField: 'id',
-            textField: 'number',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Choose Machine No",
-            columns: [
-                [{
-                    field: 'number',
-                    title: 'Machine No',
-                    width: 100
-                },{
-                    field: 'name',
-                    title: 'Machine Name',
-                    width: 100
-                },]
-            ]
-        });
+    $('#machine_id').combogrid({
+        url: '<?= base_url('master/machines/reads') ?>',
+        panelWidth: 420,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Machine No",
+        columns: [
+            [{
+                field: 'number',
+                title: 'Machine No',
+                width: 100
+            }, {
+                field: 'name',
+                title: 'Machine Name',
+                width: 100
+            }, ]
+        ]
+    });
 
-        $('#mold_id').combogrid({
-            url: '<?= base_url('master/molds/reads') ?>',
-            panelWidth: 420,
-            idField: 'id',
-            textField: 'name',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Choose Molds Name",
-            columns: [
-                [{
-                    field: 'name',
-                    title: 'Molds Name',
-                    width: 100
-                }, {
-                    field: 'type',
-                    title: 'Molds Type',
-                    width: 100
-                }, ]
-            ]
-        });
+    $('#mold_id').combogrid({
+        url: '<?= base_url('master/molds/reads') ?>',
+        panelWidth: 420,
+        idField: 'id',
+        textField: 'name',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Molds Name",
+        columns: [
+            [{
+                field: 'mold_name',
+                title: 'Molds Name',
+                width: 100
+            }, {
+                field: 'type',
+                title: 'Molds Type',
+                width: 100
+            }, ]
+        ]
+    });
 
-   //Upload Data
+    //Upload Data
     function upload() {
         $('#dlg_upload').dialog('open');
     }
@@ -221,7 +221,7 @@
     function excel() {
         window.location.assign('<?= base_url('master/setting_molds/print/excel') ?>');
     }
-    
+
     //RELOAD
     function reload() {
         window.location.reload();
@@ -306,8 +306,8 @@
             ]
         });
 
-         //Upload Data
-         $('#dlg_upload').dialog({
+        //Upload Data
+        $('#dlg_upload').dialog({
             buttons: [{
                 text: 'List Failed',
                 handler: function() {

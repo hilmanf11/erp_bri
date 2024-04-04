@@ -36,6 +36,14 @@ class Customers extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readsA()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        // $send = $this->crud->reads('customers', ["name" => $post], ["status" => "0","approved_to" =>null ]);
+        $send = $this->crud->query("SELECT * FROM customers WHERE name LIKE '%$post%' AND `status` = '0' AND (`approved_to` IS NULL OR `approved_to` = '')");
+        echo json_encode($send);
+    }
+
     public function readAddress($customer_id)
     {
         $send = $this->crud->query("SELECT * FROM customer_address WHERE customer_id = '$customer_id'");
@@ -365,7 +373,7 @@ class Customers extends CI_Controller
         }
     }
 
-    
+
     //PRINT & EXCEL DATA
     public function print($option = "")
     {
@@ -412,6 +420,7 @@ class Customers extends CI_Controller
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
+                <th>ID</th>
                 <th>Customer Name</th>
                 <th>Customer Code</th>
                 <th>Type</th>
@@ -432,7 +441,7 @@ class Customers extends CI_Controller
             </tr>';
         $no = 1;
         foreach ($records as $data) {
-            
+
             if ($data['status'] == 0) {
                 $status = 'Active';
             } else {
@@ -441,6 +450,7 @@ class Customers extends CI_Controller
 
             $html .= '<tr>
                     <td>' . $no . '</td>
+                    <td>' . $data['customer_id'] . '</td>
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['number'] . '</td>
                     <td>' . $data['type'] . '</td>
