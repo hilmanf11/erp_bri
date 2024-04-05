@@ -3,10 +3,10 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'item_fg_id',align:'center',width:100">Product No</th>
-            <th rowspan="2" data-options="field:'item_fg_name',align:'center',width:100">Product Name</th>
-            <th rowspan="2" data-options="field:'item_rm_id',align:'center',width:100">Part ID</th>
-            <th rowspan="2" data-options="field:'item_rm_name',align:'center',width:100">Part Name</th>
+            <th rowspan="2" data-options="field:'item_fg_id',align:'center',width:150">Product ID</th>
+            <th rowspan="2" data-options="field:'item_fg_no',align:'center',width:150">Product No</th>
+            <th rowspan="2" data-options="field:'item_rm_id',align:'center',width:150">Part ID</th>
+            <th rowspan="2" data-options="field:'item_rm_no',align:'center',width:150">Part No</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
             

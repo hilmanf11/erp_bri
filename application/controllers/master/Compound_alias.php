@@ -50,7 +50,7 @@ class Compound_alias extends CI_Controller
              $offset = ($page - 1) * $rows;
              $result = array();
              //Select Query
-             $this->db->select('a.*, b.number as item_fg_no, b.name as item_fg_name, c.number as item_rm_no, c.name as item_rm_name');
+             $this->db->select('a.*, b.id as item_fg_id, b.number as item_fg_no, c.id as item_rm_id, c.number as item_rm_no');
              $this->db->from('compound_alias a');
              $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
              $this->db->join('item_rm c', 'a.item_rm_id = c.id', 'left');       
@@ -222,7 +222,7 @@ class Compound_alias extends CI_Controller
         $config = $this->db->get()->row();
         $config_iso = $this->db->get('config_iso')->row();
 
-        $this->db->select('a.*, b.number as item_fg_no, b.name as item_fg_name, c.number as item_rm_no, c.name as item_rm_name');
+        $this->db->select('a.*, b.id as item_fg_id, b.number as item_fg_no, c.id as item_rm_id, c.number as item_rm_no');
         $this->db->from('compound_alias a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id', 'left');
