@@ -38,36 +38,36 @@ class Supplier_items extends CI_Controller
 
     public function readItems()
     {
-       $post = isset($_POST['q']) ? $_POST['q'] : "";
-       $item_family_id = explode(",", $this->input->get('item_family_id'));
-       
-       $this->db->select('a.*, b.currency, c.number as item_number, c.name as item_name');//c.specification
-       $this->db->from('supplier_items a');
-       $this->db->join('suppliers b', 'a.supplier_id = b.id');
-       $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-       $this->db->where_in('c.item_family_id', $item_family_id);
-       $this->db->like('c.number', $post);
-       $this->db->group_by('a.id');
-       $this->db->order_by('a.id', 'ASC');
-       $records = $this->db->get()->result_array();
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $item_family_id = explode(",", $this->input->get('item_family_id'));
+
+        $this->db->select('a.*, b.currency, c.number as item_number, c.name as item_name'); //c.specification
+        $this->db->from('supplier_items a');
+        $this->db->join('suppliers b', 'a.supplier_id = b.id');
+        $this->db->join('item_rm c', 'a.item_rm_id = c.id');
+        $this->db->where_in('c.item_family_id', $item_family_id);
+        $this->db->like('c.number', $post);
+        $this->db->group_by('a.id');
+        $this->db->order_by('a.id', 'ASC');
+        $records = $this->db->get()->result_array();
 
         echo json_encode($records);
     }
 
     public function readItem()
     {
-       $post = isset($_POST['q']) ? $_POST['q'] : "";
-       $supplier_id = $this->input->get('supplier_id');
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $supplier_id = $this->input->get('supplier_id');
 
-       $this->db->select('a.*, b.currency, c.number as item_number, c.name as item_name');//c.specification
-       $this->db->from('supplier_items a');
-       $this->db->join('suppliers b', 'a.supplier_id = b.id');
-       $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-       $this->db->where('a.supplier_id', $supplier_id);
-       $this->db->like('c.number', $post);
-       $this->db->group_by('a.id');
-       $this->db->order_by('a.id', 'ASC');
-       $records = $this->db->get()->result_array();
+        $this->db->select('a.*, b.currency, c.number as item_number, c.name as item_name'); //c.specification
+        $this->db->from('supplier_items a');
+        $this->db->join('suppliers b', 'a.supplier_id = b.id');
+        $this->db->join('item_rm c', 'a.item_rm_id = c.id');
+        $this->db->where('a.supplier_id', $supplier_id);
+        $this->db->like('c.number', $post);
+        $this->db->group_by('a.id');
+        $this->db->order_by('a.id', 'ASC');
+        $records = $this->db->get()->result_array();
 
         echo json_encode($records);
     }
@@ -139,7 +139,7 @@ class Supplier_items extends CI_Controller
             $number = base64_decode($this->input->get('number'));
             $filter_supplier_id = base64_decode($this->input->get('filter_supplier_id'));
 
-            $this->db->select('a.*, b.number as supplier_number, b.name as supplier_name, c.number as item_rm_number, c.item_family_id as item_rm_family, d.name as item_family_name');
+            $this->db->select('a.*, b.number as supplier_number, b.name as supplier_name, c.number as item_rm_number, c.name as item_rm_name, c.item_family_id as item_rm_family, d.name as item_family_name');
             $this->db->from('supplier_items a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
@@ -199,7 +199,7 @@ class Supplier_items extends CI_Controller
 
             $supplier_items = $this->crud->read("supplier_items", [], ["supplier_id" => $post['supplier_id'], "item_rm_id" => $post['item_rm_id']]);
             $supplier_item_histories = $this->crud->read("supplier_item_histories", [], ["supplier_id" => $post['supplier_id'], "item_rm_id" => $post['item_rm_id'], "price" => $post['price']]);
-            
+
             if (@$supplier_items->supplier_id != "") {
                 $send = $this->crud->update('supplier_items', ["supplier_id" => $post['supplier_id'], "item_rm_id" => $post['item_rm_id']], $post);
                 if (@$supplier_item_histories->supplier_id == "") {
@@ -247,9 +247,9 @@ class Supplier_items extends CI_Controller
                 'leadtime' => $data->val($i, 9),
                 'currency' => $data->val($i, 10),
                 'price' => $data->val($i, 11),
-                'valid_date' => $data->val($i, 12),
-                'safety_stock' => $data->val($i, 13),
-                'calculate' => $data->val($i, 14)
+                'safety_stock' => $data->val($i, 12),
+                'calculate' => $data->val($i, 13),
+                'valid_date' => $data->val($i, 14)
             );
         }
         $datas['total'] = count($datas);
@@ -302,7 +302,6 @@ class Supplier_items extends CI_Controller
                 "moq" => $data['moq'],
                 "share_order" => $data['share_order'],
                 "leadtime" => $data['leadtime'],
-                "currency" => $data['currency'],
                 "price" => $data['price'],
                 "valid_date" => $data['valid_date'],
                 "safety_stock" => $data['safety_stock'],

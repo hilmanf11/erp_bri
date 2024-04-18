@@ -167,10 +167,15 @@
                                     index: rowIndex,
                                     field: 'item_family_name'
                                 });
+                                var ed4 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'item_rm_name'
+                                });
 
                                 $(ed.target).textbox('setValue', rows.number);
                                 $(ed2.target).textbox('setValue', rows.id);
                                 $(ed3.target).textbox('setValue', rows.item_family_name);
+                                $(ed4.target).textbox('setValue', rows.name);
                             }
                         }
                     }
@@ -182,6 +187,17 @@
                     title: "Part ID",
                     editor: {
                         type: 'textbox'
+                    }
+                }, {
+                    field: 'item_rm_name',
+                    width: 150,
+                    halign: 'center',
+                    title: "Part Name",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
                     }
                 }, {
                     field: 'maker',
