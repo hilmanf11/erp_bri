@@ -15,17 +15,22 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
+            <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>
             <th rowspan="2" data-options="field:'id',width:150,align:'center'">Part ID</th>
             <th rowspan="2" data-options="field:'number',width:200,halign:'center'">Part No</th>
             <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Part Name</th>
             <th rowspan="2" data-options="field:'uom',width:100,halign:'center'">Uom</th>
+            <th rowspan="2" data-options="field:'type',width:150,halign:'center'">Type</th>
             <th rowspan="2" data-options="field:'item_category_name',width:150,halign:'center'">Category</th>
             <th rowspan="2" data-options="field:'item_family_name',width:150,halign:'center'">Product Family</th>
-            <th rowspan="2" data-options="field:'color',width:100,halign:'center'">Color</th>
             <th rowspan="2" data-options="field:'item_sub_family_name',width:150,halign:'center'">Sub Product Family</th>
             <th rowspan="2" data-options="field:'account_number',width:150,halign:'center'">Account No</th>
             <th rowspan="2" data-options="field:'account_name',width:150,halign:'center'">Account Name</th>
             <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
+            <th rowspan="2" data-options="field:'specification',width:150,halign:'center'">Specification</th>
+            <th rowspan="2" data-options="field:'leadtime',width:150,halign:'center',align:'right',width:130">Leadtime Production</th>
+            <th rowspan="2" data-options="field:'lifetime',width:150,halign:'center',align:'right'">Lifetime</th>
+            <th rowspan="2" data-options="field:'safety_stock',width:150,halign:'center',align:'right',width:130">Safety Stock (%)</th>
             <th rowspan="2" data-options="field:'supply',width:80,halign:'center', styler:cellStyler, formatter:cellFormatterSup">Supply</th>
             <th rowspan="2" data-options="field:'status',width:80,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -46,7 +51,7 @@
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; padding:10px; top: 20px;">
-    <form id="frm_insert" method="post" novalidate>
+    <form id="frm_insert" method="post" enctype="multipart/form-data" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div style="width: 50%; float: left;">
@@ -67,6 +72,13 @@
                     <input style="width:60%;" name="uom" id="uom" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Part Type</span>
+                    <select style="width:60%;" name="type" class="easyui-combobox" panelHeight="auto">
+                        <option value="IMPORT">IMPORT</option>
+                        <option value="LOCAL">LOCAL</option>
+                    </select>
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Category</span>
                     <input style="width:60%;" name="item_category_id" id="item_category_id" required="" class="easyui-combobox">
                 </div>
@@ -75,13 +87,6 @@
                     <input style="width:60%;" name="item_family_id" id="item_family_id" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Color</span>
-                    <input style="width:60%;" name="color" id="color" class="easyui-textbox">
-                </div>
-            </div>
-
-            <div style="width: 50%; float: left;">
-                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Family Sub</span>
                     <input style="width:60%;" name="item_sub_family_id" id="item_sub_family_id" required="" class="easyui-combobox">
                 </div>
@@ -89,6 +94,9 @@
                     <span style="width:35%; display:inline-block;">Account No</span>
                     <input style="width:60%;" name="account_number" id="account_number" class="easyui-textbox">
                 </div>
+            </div>
+
+            <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Account Name</span>
                     <input style="width:60%;" name="account_name" id="account_name" class="easyui-textbox">
@@ -96,6 +104,30 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Description</span>
                     <input style="width:60%;" name="description" id="description" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Specification</span>
+                    <input style="width:60%;" name="specification" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Leadtime Production</span>
+                    <input style="width:60%;" name="leadtime" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Lifetime</span>
+                    <input style="width:60%;" name="lifetime" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Safety Stock (%)</span>
+                    <input style="width:60%;" name="safety_stock" class="easyui-numberbox">
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Attachment</span>
+                    <input style="width:60%;" name="attachment" id="attachment" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Attachment</span>
+                    <input style="width:60%;" name="attachment_upload" id="attachment_upload" class="easyui-filebox" accept=".jpg, .png, .jpeg, .pdf">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Supply</span>
@@ -144,18 +176,20 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/item_rm/create') ?>';
         $('#frm_insert').form('clear');
-        
+
         $('#status').combobox('setValue', '0');
     }
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
 
-        setTimeout(function() { 
+        setTimeout(function() {
             $('#id').textbox('setValue', row.id);
-            $('#item_sub_family_id').textbox('setValue', row.item_sub_family_id);
+            $('#item_sub_family_id').combobox('setValue', row.item_sub_family_id);
+            $('#item_sub_family_id').combobox('setText', row.item_sub_family_name);
         }, 500);
 
+        $('#attachment_upload').filebox('clear');
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
@@ -216,6 +250,16 @@
     function reload() {
         window.location.reload();
     }
+
+    function btnDetails(val, row, index) {
+        var attachment = row.attachment;
+
+        if (attachment != null && attachment != '') {
+            return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/item_rm/') ?>' + row.attachment + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+        } else {
+            return '-';
+        }
+    }
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
@@ -247,7 +291,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
+
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
@@ -255,73 +299,16 @@
                 }
             }]
         });
-    });
 
-    $('#uom').combobox({
-        url:'<?= base_url('master/uom/reads'); ?>',
-        valueField:'name',
-        textField:'name',
-        prompt: 'Choose Unit of Measure',
-    });
+        $('#uom').combobox({
+            url: '<?= base_url('master/uom/reads'); ?>',
+            valueField: 'name',
+            textField: 'name',
+            prompt: 'Choose Unit of Measure',
+        });
 
-    $('#item_category_id').combobox({
-        url:'<?= base_url('master/item_categories/readsnotfg'); ?>',
-        valueField:'id',
-        textField:'name',
-        prompt: 'Choose Category',
-        onSelect: function(category){
-            $('#item_family_id').combobox({
-                url:'<?= base_url('master/item_familys/reads/'); ?>' + category.id,
-                valueField:'id',
-                textField:'name',
-                prompt: 'Choose Product Family',
-                onSelect: function(family) {
-                    $('#item_sub_family_id').combobox({
-                        url:'<?= base_url('master/item_family_subs/reads/'); ?>' + family.id,
-                        valueField:'id',
-                        textField:'name',
-                        prompt: 'Choose Sub Product Family',
-                    });
-                    $.ajax({
-                        type : "post",
-                        url : "<?= base_url('master/item_rm/autoid/')?>" + category.number + "/" + family.number,
-                        dataType : "html",
-                        success : function(response){
-                            $('#id').textbox('setValue', response);
-                        }
-                    });
-                }
-            });
-        }
-    });
-
-    //CELLSTYLE STATUS
-    function cellStyler(value, row, index) {
-        if (value == 0) {
-            return 'background: #53D636; color:white;';
-        } else {
-            return 'background: #FF5F5F; color:white;';
-        }
-    }
-    //FORMATTER STATUS
-    function cellFormatter(value) {
-        if (value == 0) {
-            return 'Active';
-        } else {
-            return 'Not Active';
-        }
-    };
-     //FORMATTER STATUS
-     function cellFormatterSup(value) {
-        if (value == 0) {
-            return 'YES';
-        } else {
-            return 'NO';
-        }
-    };
-
-    // UPLOAD DATA
-    $('#dlg_upload').dialog({
+        // UPLOAD DATA
+        $('#dlg_upload').dialog({
             buttons: [{
                 text: 'List Failed',
                 handler: function() {
@@ -399,4 +386,92 @@
                 }
             }]
         });
+
+        $('#attachment_upload').filebox({
+            buttonText: 'Browse File',
+            accept: '.jpg, .png, .pdf',
+            onChange: function() {
+                var files = $(this).filebox('files');
+                var formData = new FormData();
+
+                for (var i = 0; i < files.length; i++) {
+                    var file = files[i];
+                    formData.append('file', file, file.name);
+                }
+
+                $.ajax({
+                    url: '<?= base_url('master/item_rm/uploadatt') ?>',
+                    type: 'post',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.success == true) {
+                            toastr.success(data.message);
+                            $('#attachment').textbox('setValue', data.filename); // Mengatur nilai pada textbox
+                        } else {
+                            toastr.error(data.message);
+                        }
+                    }
+                });
+            }
+        });
+    });
+
+    //CELLSTYLE STATUS
+    function cellStyler(value, row, index) {
+        if (value == 0) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+    //FORMATTER STATUS
+    function cellFormatter(value) {
+        if (value == 0) {
+            return 'Active';
+        } else {
+            return 'Not Active';
+        }
+    };
+    //FORMATTER STATUS
+    function cellFormatterSup(value) {
+        if (value == 0) {
+            return 'YES';
+        } else {
+            return 'NO';
+        }
+    };
+
+    $('#item_category_id').combobox({
+        url: '<?= base_url('master/item_categories/readsnotfg'); ?>',
+        valueField: 'id',
+        textField: 'name',
+        prompt: 'Choose Category',
+        onSelect: function(category) {
+            $('#item_family_id').combobox({
+                url: '<?= base_url('master/item_familys/reads/'); ?>' + category.id,
+                valueField: 'id',
+                textField: 'name',
+                prompt: 'Choose Product Family',
+                onSelect: function(family) {
+                    $('#item_sub_family_id').combobox({
+                        url: '<?= base_url('master/item_family_subs/reads/'); ?>' + family.id,
+                        valueField: 'id',
+                        textField: 'name',
+                        prompt: 'Choose Sub Product Family',
+                    });
+                    $.ajax({
+                        type: "post",
+                        url: "<?= base_url('master/item_rm/autoid/') ?>" + category.number + "/" + family.number,
+                        dataType: "html",
+                        success: function(response) {
+                            $('#id').textbox('setValue', response);
+                        }
+                    });
+                }
+            });
+        }
+    });
 </script>

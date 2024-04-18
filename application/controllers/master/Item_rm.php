@@ -55,7 +55,7 @@ class Item_rm extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.name as item_category_name, c.name as item_family_name, d.number as item_sub_family_number');
+            $this->db->select('a.*, b.name as item_category_name, c.name as item_family_name, d.number as item_sub_family_number, d.name as item_sub_family_name');
             $this->db->from('item_rm a');
             $this->db->join('item_categories b', 'a.item_category_id = b.id');
             $this->db->join('item_familys c', 'a.item_family_id = c.id');
@@ -92,7 +92,7 @@ class Item_rm extends CI_Controller
     {
         $month = date('my');
         $combine = $category . "-" . $family;
-        $format = "BPI" . $combine . $month;
+        $format = "BRI" . $combine . $month;
         $sql = $this->db->query("SELECT max(id) as kode FROM item_rm WHERE id LIKE '%$format%'");
         $row = $sql->row();
         if ($row->kode == "") {
@@ -130,6 +130,61 @@ class Item_rm extends CI_Controller
             show_error("Cannot Process your request");
         }
     }
+
+    public function uploadatt()
+    {
+        // Pastikan file disimpan dalam direktori yang diinginkan
+        $uploadDir = 'assets/image/item_rm/';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Pastikan ada file yang diunggah dari permintaan
+            if (isset($_FILES['file'])) {
+                $file = $_FILES['file'];
+
+                // Validasi ekstensi file yang diunggah
+                $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+                $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+                if (!in_array($fileExtension, $allowedExtensions)) {
+                    echo json_encode(['success' => false, 'message' => 'Only files with the extension .pdf, .jpg, or .png are allowed.']);
+                    exit; // Menghentikan proses lebih lanjut jika ekstensi tidak valid
+                }
+
+                // Validasi ukuran file yang diunggah (maksimal 5MB)
+                $maxFileSize = 2 * 1024 * 1024; // 5MB dalam bytes
+                if ($file['size'] > $maxFileSize) {
+                    echo json_encode(['success' => false, 'message' => 'Ukuran file terlalu besar. Maksimal 2MB yang diperbolehkan.']);
+                    exit; // Menghentikan proses lebih lanjut jika ukuran terlalu besar
+                }
+
+                // Pastikan tidak ada error dalam proses upload
+                if ($file['error'] === UPLOAD_ERR_OK) {
+                    // Buat nama unik untuk file yang diunggah
+                    $fileName = uniqid() . '_' . $file['name'];
+                    $uploadPath = $uploadDir . $fileName;
+
+                    // Pindahkan file dari temporary directory ke lokasi yang diinginkan
+                    if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+                        // File berhasil diunggah
+                        echo json_encode(['success' => true, 'message' => 'File Upload Success.', 'filename' => $fileName]);
+                    } else {
+                        // Gagal menyimpan file
+                        echo json_encode(['success' => false, 'message' => 'File Upload Failed.']);
+                    }
+                } else {
+                    // Ada error dalam proses upload
+                    echo json_encode(['success' => false, 'message' => 'Error while Upload.']);
+                }
+            } else {
+                // File tidak ditemukan dalam permintaan
+                echo json_encode(['success' => false, 'message' => 'File Not Found.']);
+            }
+        } else {
+            // Metode request yang diperlukan adalah POST
+            echo json_encode(['success' => false, 'message' => 'Metode request yang diperlukan adalah POST.']);
+        }
+    }
+
     //DELETE DATA
     public function delete()
     {
@@ -154,15 +209,19 @@ class Item_rm extends CI_Controller
                 'number' => $data->val($i, 2),
                 'name' => $data->val($i, 3),
                 'uom' => $data->val($i, 4),
-                'item_category_id' => $data->val($i, 5),
-                'item_family_id' => $data->val($i, 6),
-                'color' => $data->val($i, 7),
+                'type' => $data->val($i, 5),
+                'item_category_id' => $data->val($i, 6),
+                'item_family_id' => $data->val($i, 7),
                 'item_sub_family_id' => $data->val($i, 8),
                 'account_number' => $data->val($i, 9),
                 'account_name' => $data->val($i, 10),
                 'description' => $data->val($i, 11),
-                'supply' => $data->val($i, 12),
-                'status' => $data->val($i, 13)
+                'specification' => $data->val($i, 12),
+                'leadtime' => $data->val($i, 13),
+                'lifetime' => $data->val($i, 14),
+                'safety_stock' => $data->val($i, 15),
+                'supply' => $data->val($i, 16),
+                'status' => $data->val($i, 17)
             );
         }
         $datas['total'] = count($datas);
@@ -210,7 +269,7 @@ class Item_rm extends CI_Controller
             //AUTOID
             $month = date('my');
             $combine = @$category->number . "-" . @$product_family->number;
-            $format = "BPI" . $combine . $month;
+            $format = "BRI" . $combine . $month;
             $sql = $this->db->query("SELECT max(id) as kode FROM item_rm WHERE id LIKE '%$format%'");
             $row = $sql->row();
             if ($row->kode == "") {
@@ -235,13 +294,17 @@ class Item_rm extends CI_Controller
                     "number" => $data['number'],
                     "name" => $data['name'],
                     "uom" => $data['uom'],
+                    "type" => $data['type'],
                     "item_category_id" => $data['item_category_id'],
                     "item_family_id" => $data['item_family_id'],
-                    "color" => $data['color'],
                     "item_sub_family_id" => $data['item_sub_family_id'],
                     "account_number" => $data['account_number'],
                     "account_name" => $data['account_name'],
                     "description" => $data['description'],
+                    "specification" => $data['specification'],
+                    "leadtime" => $data['leadtime'],
+                    "lifetime" => $data['lifetime'],
+                    "safety_stock" => $data['safety_stock'],
                     "supply" => $data['supply'],
                     "status" => $data['status'],
                 );
@@ -302,13 +365,17 @@ class Item_rm extends CI_Controller
                 <th>Product No.</th>
                 <th>Part Name</th>
                 <th>UOM</th>
+                <th>Type</th>
                 <th>Category</th>
                 <th>Product Family</th>
-                <th>Color</th>
                 <th>Product Family Sub</th>
                 <th>Account No.</th>
                 <th>Account Name</th>
                 <th>Description</th>
+                <th>Specification</th>
+                <th>Leadtime</th>
+                <th>Lifetime</th>
+                <th>Safety Stock (%)</th>
                 <th>Supply</th>
                 <th>Status</th>
             </tr>';
@@ -320,13 +387,17 @@ class Item_rm extends CI_Controller
                         <td style="mso-number-format:\@;">' . $data['number'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['name'] . '</td>
                         <td>' . $data['uom'] . '</td>
+                        <td>' . $data['type'] . '</td>
                         <td>' . $data['item_category_name'] . '</td>
                         <td>' . $data['item_family_name'] . '</td>
-                        <td>' . $data['color'] . '</td>
                         <td>' . $data['item_sub_family_number'] . '</td>
                         <td>' . $data['account_number'] . '</td>
                         <td>' . $data['account_name'] . '</td>
                         <td>' . $data['description'] . '</td>
+                        <td>' . $data['specification'] . '</td>
+                        <td>' . $data['leadtime'] . '</td>
+                        <td>' . $data['lifetime'] . '</td>
+                        <td>' . $data['safety_stock'] . '</td>
                         <td>' . $data['supply'] . '</td>
                         <td>' . $data['status'] . '</td>
                     </tr>';
