@@ -79,7 +79,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Address</span>
-                    <input style="width:60%;" name="address" id="address" class="easyui-textbox">
+                    <input style="width:60%;" name="address" id="address" required="" class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Telepon</span>
