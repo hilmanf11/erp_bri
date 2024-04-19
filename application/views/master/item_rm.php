@@ -57,7 +57,7 @@
             <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Part ID</span>
-                    <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+                    <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" data-options="prompt:'Auto Generate'" readonly>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Part No</span>
@@ -88,7 +88,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Family Sub</span>
-                    <input style="width:60%;" name="item_sub_family_id" id="item_sub_family_id" required="" class="easyui-combobox">
+                    <input style="width:60%;" name="item_sub_family_id" id="item_sub_family_id" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Account No</span>
@@ -461,6 +461,16 @@
                         valueField: 'id',
                         textField: 'name',
                         prompt: 'Choose Sub Product Family',
+                        onSelect: function(subfamily) {
+                            $.ajax({
+                                type: "post",
+                                url: '<?php echo base_url('master/item_rm/autoid/'); ?>' + category.number + '/' + family.number + '/' + subfamily.number,
+                                dataType: "html",
+                                success: function(response) {
+                                    $('#id').textbox('setValue', response);
+                                }
+                            });
+                        }
                     });
                     $.ajax({
                         type: "post",

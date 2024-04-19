@@ -59,7 +59,7 @@ class Item_rm extends CI_Controller
             $this->db->from('item_rm a');
             $this->db->join('item_categories b', 'a.item_category_id = b.id');
             $this->db->join('item_familys c', 'a.item_family_id = c.id');
-            $this->db->join('item_family_subs d', 'a.item_sub_family_id = d.id');
+            $this->db->join('item_family_subs d', 'a.item_sub_family_id = d.id', 'left');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
@@ -87,20 +87,14 @@ class Item_rm extends CI_Controller
             echo json_encode($result);
         }
     }
-    //AUTO ID
-    public function autoid($category, $family)
+    //CODE OTOMATIS
+    public function autoid($item_category_number, $item_family_number, $item_family_sub_number = "NA")
     {
-        $month = date('my');
-        $combine = $category . "-" . $family;
-        $format = "BRI" . $combine . $month;
-        $sql = $this->db->query("SELECT max(id) as kode FROM item_rm WHERE id LIKE '%$format%'");
+        $code = $item_category_number . $item_family_number . $item_family_sub_number;
+        $sql = $this->db->query("SELECT coalesce(max(`id`), 0) as kode From item_rm where id like '%$code%'");
         $row = $sql->row();
-        if ($row->kode == "") {
-            $kode = 0;
-        } else {
-            $kode = substr($row->kode, -4);
-        }
-        $autoid = $format . sprintf("%04s", $kode + 1);
+        $kode = substr($row->kode, -4);
+        $autoid = $code . "-" . sprintf("%04s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA
@@ -206,13 +200,13 @@ class Item_rm extends CI_Controller
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
                 //excel
-                'number' => $data->val($i, 2),
+                'part_no' => $data->val($i, 2),
                 'name' => $data->val($i, 3),
-                'uom' => $data->val($i, 4),
+                'unit_of_measure' => $data->val($i, 4),
                 'type' => $data->val($i, 5),
-                'item_category_id' => $data->val($i, 6),
-                'item_family_id' => $data->val($i, 7),
-                'item_sub_family_id' => $data->val($i, 8),
+                'category' => $data->val($i, 6),
+                'product_family' => $data->val($i, 7),
+                'sub_product_family' => $data->val($i, 8),
                 'account_number' => $data->val($i, 9),
                 'account_name' => $data->val($i, 10),
                 'description' => $data->val($i, 11),
@@ -260,44 +254,42 @@ class Item_rm extends CI_Controller
         if ($this->input->post()) {
             $data = $this->input->post('data');
 
-            //Cek Process Number          //table       //field        //field excel
-            $item_rm = $this->crud->read('item_rm', [], ["number" => $data['number']]);
-            $category = $this->crud->read('item_categories', [], ["id" => $data['item_category_id']]);
-            $product_family = $this->crud->read('item_familys', [], ["id" => $data['item_family_id']]);
-            $product_family_sub = $this->crud->read('item_family_subs', [], ["id" => $data['item_sub_family_id']]);
-
-            //AUTOID
-            $month = date('my');
-            $combine = @$category->number . "-" . @$product_family->number;
-            $format = "BRI" . $combine . $month;
-            $sql = $this->db->query("SELECT max(id) as kode FROM item_rm WHERE id LIKE '%$format%'");
-            $row = $sql->row();
-            if ($row->kode == "") {
-                $kode = 0;
-            } else {
-                $kode = substr($row->kode, -4);
-            }
-            $autoid = $format . sprintf("%04s", $kode + 1);
+            //Cek Process Number        //table                   //field           //field excel
+            $category = $this->crud->read('item_categories', [], ["number" => $data['category']]);
+            $prod_fam = $this->crud->read('item_familys', [], ["number" => $data['product_family']]);
+            $prod_sub_fam = $this->crud->read('item_family_subs', [], ["number" => $data['sub_product_family']]);
+            $item_rm = $this->crud->read('item_rm', [], ["number" => $data['part_no']]);
 
             if (empty($category->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Category " . $data['item_category_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty($product_family->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Product Family " . $data['item_family_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty($product_family_sub->name)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Product Family Sub " . $data['item_sub_family_id'] . " Not Found", "theme" => "error"));
+                echo json_encode(array("title" => "Not Found", "message" => "Category Code " . $data['category'] . " Not Found", "theme" => "error"));
+            } elseif (empty($prod_fam->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Product Family Code " . $data['product_family'] . " Not Found", "theme" => "error"));
+                // } elseif (empty($prod_sub_fam->number)) {
+                //     echo json_encode(array("title" => "Not Found", "message" => "Sub Product Family Code " . $data['sub_product_family'] . " Not Found", "theme" => "error"));
             } elseif (!empty($item_rm->number)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['number'] . " is Duplicate Data", "theme" => "error"));
+                echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['part_no'] . " Duplicate Data", "theme" => "error"));
             } else {
+                //autoid
+
+                if (empty($prod_sub_fam->number)) {
+                    $code = $data['category'] . $data['product_family'] . "NA";
+                } else {
+                    $code = $data['category'] . $data['product_family'] . $data['sub_product_family'];
+                }
+                $sql = $this->db->query("SELECT coalesce(max(`id`), 0) as kode From item_rm where id like '%$code%'");
+                $row = $sql->row();
+                $kode = substr($row->kode, -4);
+                $autoid = $code . "-" . sprintf("%04s", $kode + 1);
                 $dataFinal = array(
                     //field
                     "id" => $autoid,
-                    "number" => $data['number'],
+                    "number" => $data['part_no'],
                     "name" => $data['name'],
-                    "uom" => $data['uom'],
+                    "uom" => $data['unit_of_measure'],
                     "type" => $data['type'],
-                    "item_category_id" => $data['item_category_id'],
-                    "item_family_id" => $data['item_family_id'],
-                    "item_sub_family_id" => $data['item_sub_family_id'],
+                    "item_category_id" => @$category->id,
+                    "item_family_id" => @$prod_fam->id,
+                    "item_sub_family_id" => @$prod_sub_fam->id,
                     "account_number" => $data['account_number'],
                     "account_name" => $data['account_name'],
                     "description" => $data['description'],
@@ -330,7 +322,7 @@ class Item_rm extends CI_Controller
         $this->db->from('item_rm a');
         $this->db->join('item_categories b', 'a.item_category_id = b.id');
         $this->db->join('item_familys c', 'a.item_family_id = c.id');
-        $this->db->join('item_family_subs d', 'a.item_sub_family_id = d.id');
+        $this->db->join('item_family_subs d', 'a.item_sub_family_id = d.id', 'left');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
