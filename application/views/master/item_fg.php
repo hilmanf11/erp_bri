@@ -7,6 +7,9 @@
                 <li>The Data Box is taken from <b>Master Data > Engineering > Boxs</b></li>
                 <li>The Data Colors is taken from <b>Master Data > Engineering > Colors</b></li>
                 <li>The Data UoM is taken from <b>Master Data > General Master > Unit of Measure</b></li>
+                <li>The Data Category is taken from <b>Master Data > General Master > Category</b></li>
+                <li>The Data Product Family is taken from <b>Master Data > Engineering > Product Family</b></li>
+                <li>The Data Product Family Sub is taken from <b>Master Data > Engineering > Product Family Sub</b></li>
             </ul>
         </div>
     </div>
@@ -16,6 +19,7 @@
     <thead data-options="frozen:true">
         <tr>
             <th field="ck" checkbox="true"></th>
+            <th data-options="field:'attachment',width:100,halign:'center',formatter:cellbutton">Attachment</th>
             <th data-options="field:'id',width:150,align:'center'">Product ID</th>
             <th data-options="field:'number',width:150,halign:'center'">Product No.</th>
             <th data-options="field:'name',width:150,halign:'center'">Product Name</th>
@@ -24,21 +28,17 @@
 
     <thead>
         <tr>
-            <th rowspan="2" data-options="field:'number_customer',width:150,halign:'center'">Product Customer</th>
-            <th rowspan="2" data-options="field:'alias',width:150,halign:'center'">Product Alias</th>
+            <th rowspan="2" data-options="field:'specification',width:100,align:'center'">Specification</th>
             <th rowspan="2" data-options="field:'total_mold',width:50,align:'center'">Total <br>Mold</th>
             <th rowspan="2" data-options="field:'process',width:80,align:'center'">Process <br>Type</th>
-            <th rowspan="2" data-options="field:'division_name',width:100,halign:'center'">Division</th>
-            <th rowspan="2" data-options="field:'control_id',width:100,halign:'center'">Control</th>
-            <th rowspan="2" data-options="field:'boxs',width:200,halign:'center'">Box</th>
-            <th rowspan="2" data-options="field:'polybag',width:150,align:'center'">Polybag <br>Label</th>
-            <th rowspan="2" data-options="field:'box_label',width:70,align:'center'">Box <br>Label</th>
+            <th rowspan="2" data-options="field:'product_type',width:80,align:'center'">Product <br>Type</th>
+            <th rowspan="2" data-options="field:'item_category_name',width:100,align:'center'">Category</th>
+            <th rowspan="2" data-options="field:'item_family_name',width:150,align:'center'">Product Family</th>
+            <th rowspan="2" data-options="field:'item_family_sub_name',width:150,align:'center'">Sub Product Family</th>
             <th rowspan="2" data-options="field:'lot',width:100,align:'center'">Lot</th>
-            <th rowspan="2" data-options="field:'ng_ration',width:90,align:'center'">NG Ratio (%)</th>
-            <th rowspan="2" data-options="field:'is_no',width:100,halign:'center'">IS No.</th>
             <th rowspan="2" data-options="field:'weight',width:100,align:'center'">Weight (gram)</th>
-            <th rowspan="2" data-options="field:'color',width:100,halign:'center'">Color</th>
             <th rowspan="2" data-options="field:'leadtime',width:80,align:'center'">Lead Time <br>(Day)</th>
+            <th rowspan="2" data-options="field:'lifetime',width:80,align:'center'">Life Time <br>(Day)</th>
             <th rowspan="2" data-options="field:'mpq',width:50,align:'center'">MPQ</th>
             <th rowspan="2" data-options="field:'moq',width:50,align:'center'">MOQ</th>
             <th rowspan="2" data-options="field:'uom',width:50,align:'center'">UoM</th>
@@ -47,13 +47,10 @@
             <!-- <th rowspan="2" data-options="field:'safety_stock',width:100,halign:'center'">Safety Stock</th> -->
             <th rowspan="2" data-options="field:'min',width:50,align:'center'">Min</th>
             <th rowspan="2" data-options="field:'max',width:50,align:'center'">Max</th>
-            <th rowspan="2" data-options="field:'attachment',width:100,halign:'center',formatter:cellbutton">Attachment</th>
-            <th rowspan="2" data-options="field:'type',width:50,align:'center'">Type</th>
-            <th rowspan="2" data-options="field:'logo',width:100,align:'center', styler:cellStyler, formatter:cellFormatterLogo">Logo</th>
             <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
-            <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', styler:styleApproved, formatter:formatApproved">Approved To</th>
+            <!-- <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', styler:styleApproved, formatter:formatApproved">Approved To</th>
             <th rowspan="2" data-options="field:'approved_by',width:100,halign:'center'">Approved by</th>
-            <th rowspan="2" data-options="field:'approved_date',width:100,halign:'center'">Approved date</th>
+            <th rowspan="2" data-options="field:'approved_date',width:100,halign:'center'">Approved date</th> -->
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -71,12 +68,12 @@
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 95%; height: 500px; padding:10px; top: 10px; left: 10px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1000px; height: auto; padding:10px; top: 10px;">
     <form id="frm_insert" method="post" novalidate enctype="multipart/form-data">
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
 
-            <div style="float:left; width:33%;">
+            <div style="float:left; width:50%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product ID</span>
                     <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
@@ -90,79 +87,50 @@
                     <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product Customer</span>
-                    <input style="width:60%;" name="number_customer" id="number_customer" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product Alias</span>
-                    <input style="width:60%;" name="alias" id="alias" class="easyui-textbox">
+                    <span style="width:35%; display:inline-block;">Specification</span>
+                    <input style="width:60%;" name="specification" class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Process Type</span>
                     <input style="width:60%;" name="process" id="process" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Division</span>
-                    <input style="width:60%;" name="division_id" id="division_id" required="" class="easyui-combobox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Control</span>
-                    <input style="width:60%;" name="control_id" id="control_id" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Type</span>
-                    <select style="width:60%;" name="type" id="type" class="easyui-combobox" panelHeight="auto">
-                        <option value="FG">FG</option>
-                        <option value="RM">RM</option>
+                    <span style="width:35%; display:inline-block;">Product Type</span>
+                    <select style="width:60%;" name="product_type" class="easyui-combobox" panelHeight="auto">
+                        <option value="EXPORT">EXPORT</option>
+                        <option value="IMPORT">IMPORT</option>
+                        <option value="LOCAL">LOCAL</option>
                     </select>
                 </div>
-            </div>
-
-            <div style="float:left; width:33%;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Box</span>
-                    <input style="width:60%;" name="boxs" id="boxs" required="" class="easyui-combobox">
+                    <span style="width:35%; display:inline-block;">Category</span>
+                    <input style="width:60%;" name="item_category_number" id="item_category_number" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product Family</span>
+                    <input style="width:60%;" name="item_family_number" id="item_family_number" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Sub Product Family</span>
+                    <input style="width:60%;" name="item_family_sub_number" id="item_family_sub_number" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Lot</span>
                     <input style="width:60%;" name="lot" id="lot" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Polybag</span>
-                    <select style="width:60%;" name="polybag" id="polybag" required="" panelHeight="auto" class="easyui-combobox">
-                        <option value="Label Manual Logo BPI">Label Manual Logo BPI</option>
-                        <option value="Label Manual Logo Askara">Label Manual Logo Askara</option>
-                        <option value="Tidak Pakai Label Manual">Tidak Pakai Label Manual</option>
-                    </select>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Box Label</span>
-                    <select style="width:60%;" name="box_label" id="box_label" required="" panelHeight="auto" class="easyui-combobox">
-                        <option value="YES">YES</option>
-                        <option value="NO">NO</option>
-                    </select>
-                </div>
-                <div class="fitem">
-                        <span style="width:35%; display:inline-block;">NG Ratio (%)</span>
-                        <input style="width:30%;" name="ng_ration" id="ng_ration" precision="5" class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">IS No.</span>
-                    <input style="width:60%;" name="is_no" id="is_no" class="easyui-textbox">
-                </div>
-                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Weight (Gram)</span>
                     <input style="width:30%;" name="weight" id="weight" precision="2" class="easyui-numberbox">
                 </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Color</span>
-                    <input style="width:60%;" name="color" id="color" required="" class="easyui-textbox">
-                </div>
             </div>
-            <div style="float:left; width:33%;">
+            <div style="float:left; width:50%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Leadtime (Day)</span>
                     <input style="width:60%;" name="leadtime" id="leadtime" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Lifetime</span>
+                    <input style="width:60%;" name="lifetime" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">MPQ</span>
@@ -171,6 +139,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">MOQ</span>
                     <input style="width:60%;" name="moq" id="moq" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Safety Stock (%)</span>
+                    <input style="width:60%;" name="safety_stock" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">UoM</span>
@@ -187,13 +159,6 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Attachment</span>
                     <input style="width:60%;" name="attachment" id="attachment" class="easyui-filebox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Logo</span>
-                    <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
-                        <option value="0">YES</option>
-                        <option value="1">NO</option>
-                    </select>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status</span>
@@ -240,14 +205,17 @@
         $('#box_label').combobox('setValue', 'YES');
         $('#status').combobox('setValue', '0');
         $('#type').combobox('setValue', 'FG');
+        $('#id').textbox('setValue', 'Auto Generate');
     }
 
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
 
-        setTimeout(function() { 
+        setTimeout(function() {
             $('#id').textbox('setValue', row.id);
+            $('#item_family_sub_number').combobox('setValue', row.item_family_sub_number);
+            $('#item_family_sub_number').combobox('setText', row.item_family_sub_name);
         }, 500);
 
         if (row) {
@@ -360,42 +328,53 @@
         prompt: 'Choose Process Type',
     });
 
-    $('#boxs').combobox({
-        url: '<?= base_url('master/item_boxs/reads'); ?>',
-        valueField: 'name',
-        textField: 'name',
-        prompt: 'Choose Boxs',
-    });
-
-    $('#color').combobox({
-        url: '<?= base_url('master/item_colors/reads'); ?>',
-        valueField: 'name',
-        textField: 'name',
-        prompt: 'Choose Colors',
-    });
-
-    $('#division_id').combobox({
-        url: '<?= base_url('master/divisions/reads/'); ?>',
-        valueField: 'id',
-        textField: 'name',
-        prompt: 'Choose Division',
-        onSelect: function(division) {
-            $.ajax({
-                type: "post",
-                url: "<?= base_url('master/item_fg/autoid/') ?>" + "/" + division.number,
-                dataType: "html",
-                success: function(response) {
-                    $('#id').textbox('setValue', response);
-                }
-            });
-        }
-    });
-
     $('#uom').combobox({
         url: '<?= base_url('master/uom/reads'); ?>',
         valueField: 'name',
         textField: 'name',
         prompt: 'Choose Unit of Measure',
+    });
+
+    $('#item_category_number').combobox({
+        url: '<?php echo base_url('master/item_categories/readsfgrm'); ?>',
+        valueField: 'number',
+        textField: 'name',
+        prompt: "Choose Product Category",
+        onSelect: function(item_categories) {
+            $('#item_family_number').combobox({
+                url: '<?php echo base_url('master/item_familys/readsbynumber/'); ?>' + item_categories.number,
+                valueField: 'number',
+                textField: 'name',
+                prompt: "Choose Product Family",
+                onSelect: function(item_family_subs) {
+                    $.ajax({
+                        type: "post",
+                        url: '<?php echo base_url('master/item_fg/autoid/'); ?>' + item_categories.number + '/' + item_family_subs.number,
+                        dataType: "html",
+                        success: function(response) {
+                            $('#id').textbox('setValue', response);
+                        }
+                    });
+
+                    $('#item_family_sub_number').combobox({
+                        url: '<?php echo base_url('master/item_family_subs/readsByNumber'); ?>/' + item_family_subs.number,
+                        valueField: 'number',
+                        textField: 'name',
+                        prompt: "Choose Sub Family Product",
+                        onSelect: function(item_family) {
+                            $.ajax({
+                                type: "post",
+                                url: '<?php echo base_url('master/item_fg/autoid/'); ?>' + item_categories.number + '/' + item_family_subs.number + '/' + item_family.number,
+                                dataType: "html",
+                                success: function(response) {
+                                    $('#id').textbox('setValue', response);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
     });
 
     //CELLSTYLE STATUS
@@ -415,8 +394,8 @@
         }
     };
 
-     //FORMATTER LOGO
-     function cellFormatterLogo(value) {
+    //FORMATTER LOGO
+    function cellFormatterLogo(value) {
         if (value == 0) {
             return 'YES';
         } else {
@@ -426,7 +405,7 @@
 
     //CELLSTYLE APPROVE
     function styleApproved(value, row, index) {
-        if (value == "" || value === null ) {
+        if (value == "" || value === null) {
             return 'background: #53D636; color:white;';
         } else {
             return 'background: #FF5F5F; color:white;';
@@ -434,7 +413,7 @@
     }
     //FORMATTER APPROVE
     function formatApproved(value) {
-        if (value == "" || value === null ) {
+        if (value == "" || value === null) {
             return 'Approved';
         } else {
             return 'Checking';

@@ -31,7 +31,16 @@ class Item_familys extends CI_Controller
     public function reads($item_category_id)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_familys', ["name" => $post],["item_category_id" => $item_category_id]);
+        $send = $this->crud->reads('item_familys', ["name" => $post], ["item_category_id" => $item_category_id]);
+        echo json_encode($send);
+    }
+
+    //GET DATA
+    public function readsByNumber($item_category_number)
+    {
+        $category = $this->crud->read('item_categories', [], ["number" => $item_category_number]);
+        $send = $this->crud->reads('item_familys', [], ["item_category_id" => $category->id]);
+        // print_r($this->db->last_query());
         echo json_encode($send);
     }
 
@@ -56,7 +65,7 @@ class Item_familys extends CI_Controller
         $send = $this->crud->reads('item_familys', ["name" => $post], ["item_category_id" => $category_number]);
         echo json_encode($send);
     }
-    
+
     //GET DATATABLES
     public function datatables()
     {
@@ -76,10 +85,10 @@ class Item_familys extends CI_Controller
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if($filter->field == "item_category_name"){
+                    if ($filter->field == "item_category_name") {
                         $this->db->like("b.name", $filter->value);
-                    }else{
-                        $this->db->like("a.".$filter->field, $filter->value);
+                    } else {
+                        $this->db->like("a." . $filter->field, $filter->value);
                     }
                 }
             }
@@ -97,11 +106,12 @@ class Item_familys extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid(){
+    public function autoid()
+    {
         $sql = $this->db->query("SELECT max(id) as kode FROM item_familys");
         $row = $sql->row();
-        $kode = substr($row->kode,1);
-        $autoid ="P". sprintf("%02s", $kode + 1);
+        $kode = substr($row->kode, 1);
+        $autoid = "P" . sprintf("%02s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA

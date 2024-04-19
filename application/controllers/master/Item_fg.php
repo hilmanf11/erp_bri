@@ -48,24 +48,24 @@ class item_fg extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.name as division_name, count(c.item_fg_id) as total_mold, f.min, f.max');
+            $this->db->select('a.*, b.name as item_category_name, c.name as item_family_name,  d.name as item_family_sub_name, count(e.item_fg_id) as total_mold, h.min, h.max');
             $this->db->from('item_fg a');
-            $this->db->join('divisions b', 'a.division_id = b.id');
-            $this->db->join('mold_items c', 'a.id = c.item_fg_id', 'left');
-            $this->db->join('customer_items d', 'd.item_fg_id = a.id', 'left');
-            $this->db->join('customers e', 'd.customer_id = e.id', 'left');
-            $this->db->join('setting_stocks f', "e.type = f.kind AND f.item_category_id = 'C03'", 'left');
+            $this->db->join('item_categories b', 'a.item_category_number = b.number');
+            $this->db->join('item_familys c', 'a.item_family_number = c.number');
+            $this->db->join('item_family_subs d', 'a.item_family_sub_number = d.number', 'left');
+            $this->db->join('mold_items e', 'a.id = e.item_fg_id', 'left');
+            $this->db->join('customer_items f', 'f.item_fg_id = a.id', 'left');
+            $this->db->join('customers g', 'f.customer_id = g.id', 'left');
+            $this->db->join('setting_stocks h', "g.type = h.kind AND h.item_category_id = 'C01'", 'left');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if ($filter->field == "division_name") {
-                        $this->db->like("b.name", $filter->value);
-                    } elseif ($filter->field == "total_mold") {
-                        $this->db->like("count(c.item_fg_id)", $filter->value);
+                    if ($filter->field == "total_mold") {
+                        $this->db->like("count(e.item_fg_id)", $filter->value);
                     } elseif ($filter->field == "min") {
-                        $this->db->like("f.min", $filter->value);
+                        $this->db->like("h.min", $filter->value);
                     } elseif ($filter->field == "max") {
-                        $this->db->like("f.max", $filter->value);
+                        $this->db->like("h.max", $filter->value);
                     } else {
                         $this->db->like("a." . $filter->field, $filter->value);
                     }
@@ -85,24 +85,21 @@ class item_fg extends CI_Controller
             echo json_encode($result);
         }
     }
-    //AUTO ID
-    public function autoid($division)
+
+    //CODE OTOMATIS
+    public function autoid($item_category_number, $item_family_number, $item_family_sub_number = "NA")
     {
-        $month = date('my');
-        $combine = "FG-" . $division;
-        $format = "BPI" . $combine . $month;
-        $sql = $this->db->query("SELECT max(id) as kode FROM item_fg WHERE id LIKE '%$format%'");
+
+        $code = $item_category_number . $item_family_number . $item_family_sub_number;
+        $sql = $this->db->query("SELECT coalesce(max(`id`), 0) as kode From item_fg where id like '%$code%'");
         $row = $sql->row();
-        if ($row->kode == "") {
-            $kode = 0;
-        } else {
-            $kode = substr($row->kode, -4);
-        }
-        $autoid = $format . sprintf("%04s", $kode + 1);
+        $kode = substr($row->kode, -4);
+        $autoid = $code . "-" . sprintf("%04s", $kode + 1);
         echo $autoid;
     }
     //MIN STOCK
-    public function min_stock(){
+    public function min_stock()
+    {
         $sql = $this->db->query("SELECT min FROM setting_stocks WHERE item_category_id = 'FINISHED GOOD' GROUP BY item_category_id ASC");
         $row = $sql->row();
         echo $row;
@@ -113,7 +110,7 @@ class item_fg extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
-                $attachment = $this->crud->upload('attachment', ["pdf"], 'assets/documents/item_fg/', ["id" => $post['id']], "item_fg", "attachment");
+                $attachment = $this->crud->upload('attachment', ["pdf", "jpg", "jpeg", "png"], 'assets/image/item_fg/', ["id" => $post['id']], "item_fg", "attachment");
                 $postFinal = array_merge($post, ["attachment" => $attachment]);
                 $send   = $this->crud->create('item_fg', $postFinal);
                 echo $send;
@@ -130,8 +127,35 @@ class item_fg extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $attachment = $this->crud->upload('attachment', ["pdf"], 'assets/documents/item_fg/', ["id" => $post['id']], "item_fg", "attachment");
-            $postFinal = array_merge($post, ["attachment" => $attachment]);
+
+            $dataFinal = array(
+                'number' =>  $post['number'],
+                'name' => $post['name'],
+                'specification' => $post['specification'],
+                'process' => $post['process'],
+                'product_type' => $post['product_type'],
+                'item_category_number' => $post['item_category_number'],
+                'item_family_number' => $post['item_family_number'],
+                'item_family_sub_number' => $post['item_family_sub_number'],
+                'lot' => $post['lot'],
+                'weight' => $post['weight'],
+                'leadtime' => $post['leadtime'],
+                'lifetime' => $post['lifetime'],
+                'mpq' => $post['mpq'],
+                'moq' => $post['moq'],
+                'safety_stock' => $post['safety_stock'],
+                'uom' => $post['uom'],
+                'qty_box' => $post['qty_box'],
+                'box_sub' => $post['box_sub'],
+                'status' => $post['status']
+            );
+            // cek apakah data uploadan di isi
+            if ($post['number'] == null && $post['number'] == '') {
+                // non action
+            } else {
+                $attachment = $this->crud->upload('attachment', ["pdf", "jpg", "jpeg", "png"], 'assets/image/item_fg/', ["id" => $post['id']], "item_fg", "attachment");
+                $postFinal = array_merge($dataFinal, ["attachment" => $attachment]);
+            }
             $send = $this->crud->update('item_fg', ["id" => $id], $postFinal);
             echo $send;
         } else {
@@ -175,29 +199,25 @@ class item_fg extends CI_Controller
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
                 //excel
-                'number' => $data->val($i, 2),
+                'product_no' => $data->val($i, 2),
                 'name' => $data->val($i, 3),
-                'number_customer' => $data->val($i, 4),
-                'alias' => $data->val($i, 5),
-                'process' => $data->val($i, 6),
-                'division_id' => $data->val($i, 7),
-                'control_id' => $data->val($i, 8),
-                'boxs' => $data->val($i, 9),
+                'spesification' => $data->val($i, 4),
+                'process' => $data->val($i, 5),
+                'product_type' => $data->val($i, 6),
+                'category' => $data->val($i, 7),
+                'product_family' => $data->val($i, 8),
+                'sub_product_family' => $data->val($i, 9),
                 'lot' => $data->val($i, 10),
-                'polybag' => $data->val($i, 11),
-                'box_label' => $data->val($i, 12),
-                'ng_ration' => $data->val($i, 13),
-                'is_no' => $data->val($i, 14),
-                'weight' => $data->val($i, 15),
-                'color' => $data->val($i, 16),
-                'leadtime' => $data->val($i, 17),
-                'mpq' => $data->val($i, 18),
-                'moq' => $data->val($i, 19),
-                'uom' => $data->val($i, 20),
-                'qty_box' => $data->val($i, 21),
-                'box_sub' => $data->val($i, 22),
-                'logo' => $data->val($i, 23),
-                'status' => $data->val($i, 24)
+                'weight' => $data->val($i, 11),
+                'lead_time_production' => $data->val($i, 12),
+                'lifetime' => $data->val($i, 13),
+                'mpq' => $data->val($i, 14),
+                'moq' => $data->val($i, 15),
+                'safety_stock' => $data->val($i, 16),
+                'unit_of_measure' => $data->val($i, 17),
+                'qty_box' => $data->val($i, 18),
+                'box_sub' => $data->val($i, 19),
+                'status' => $data->val($i, 20)
             );
         }
         $datas['total'] = count($datas);
@@ -236,53 +256,54 @@ class item_fg extends CI_Controller
         if ($this->input->post()) {
             $data = $this->input->post('data');
 
-            //Cek Process Number          //table       //field        //field excel
-            $item_fg = $this->crud->read('item_fg', [], ["number" => $data['number']]);
-            $division = $this->crud->read('divisions', [], ["id" => $data['division_id']]);
+            //Cek Process Number        //table                   //field           //field excel
+            $category = $this->crud->read('item_categories', [], ["number" => $data['category']]);
+            $prod_fam = $this->crud->read('item_familys', [], ["number" => $data['product_family']]);
+            $prod_sub_fam = $this->crud->read('item_family_subs', [], ["number" => $data['sub_product_family']]);
+            $item_fg = $this->crud->read('item_fg', [], ["number" => $data['product_no']]);
 
-            //AUTOID
-            $month = date('my');
-            $combine = "FG-" . @$division->number;
-            $format = "BPI" . $combine . $month;
-            $sql = $this->db->query("SELECT max(id) as kode FROM item_fg WHERE id LIKE '%$format%'");
-            $row = $sql->row();
-            if ($row->kode == "") {
-                $kode = 0;
-            } else {
-                $kode = substr($row->kode, -4);
-            }
-            $autoid = $format . sprintf("%04s", $kode + 1);
-
-            if (empty($division->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => " Division " . $data['division_id'] . " Not Found", "theme" => "error"));
+            if (empty($category->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Category Code " . $data['category'] . " Not Found", "theme" => "error"));
+            } elseif (empty($prod_fam->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Product Family Code " . $data['product_family'] . " Not Found", "theme" => "error"));
+                // } elseif (empty($prod_sub_fam->number)) {
+                //     echo json_encode(array("title" => "Not Found", "message" => "Sub Product Family Code " . $data['sub_product_family'] . " Not Found", "theme" => "error"));
             } elseif (!empty($item_fg->number)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['number'] . " is Duplicate Data", "theme" => "error"));
+                echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['product_no'] . " Duplicate Data", "theme" => "error"));
             } else {
+                //autoid
+                if (empty($prod_sub_fam->number)) {
+                    $code = $data['category'] . $data['product_family'] . "NA";
+                } else {
+                    $code = $data['category'] . $data['product_family'] . $data['sub_product_family'];
+                }
+                $sql = $this->db->query("SELECT coalesce(max(`id`), 0) as kode From item_fg where id like '%$code%'");
+                $row = $sql->row();
+                $kode = substr($row->kode, -4);
+                $autoid = $code . "-" . sprintf("%04s", $kode + 1);
+
+
                 $dataFinal = array(
-                    //field
+                    //field        //excel
                     "id" => $autoid,
-                    "number" => $data['number'],
-                    "name" => $data['name'],
-                    "number_customer" => $data['number_customer'],
-                    "alias"=> $data['alias'],
+                    "number" => $data['product_no'],
+                    "name" => $data['product_name'],
+                    "specification" => $data['specification'],
                     "process" => $data['process'],
-                    "division_id" => $data['division_id'],
-                    "control_id" => $data['control_id'],
-                    "boxs" => $data['boxs'],
+                    "product_type" => $data['product_type'],
+                    "item_category_number" => $data['category'],
+                    "item_family_number" => $data['product_family'],
+                    "item_family_sub_number" => $data['sub_product_family'],
                     "lot" => $data['lot'],
-                    "polybag" => $data['polybag'],
-                    "box_label" => $data['box_label'],
-                    "ng_ration" => $data['ng_ration'],
-                    "is_no" => $data['is_no'],
                     "weight" => $data['weight'],
-                    "color" => $data['color'],
-                    "leadtime" => $data['leadtime'],
+                    "leadtime" => $data['lead_time_production'],
+                    "lifetime" => $data['lifetime'],
                     "mpq" => $data['mpq'],
                     "moq" => $data['moq'],
-                    "uom" => $data['uom'],
+                    "safety_stock" => $data['safety_stock'],
+                    "uom" => $data['unit_of_measure'],
                     "qty_box" => $data['qty_box'],
                     "box_sub" => $data['box_sub'],
-                    "logo" => $data['logo'],
                     "status" => $data['status'],
                 );
                 $send   = $this->crud->create('item_fg', $dataFinal);
@@ -303,13 +324,15 @@ class item_fg extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.name as division_name, count(c.item_fg_id) as total_mold, f.min, f.max');
+        $this->db->select('a.*, b.name as item_category_name, c.name as item_family_name,  d.name as item_family_sub_name, count(e.item_fg_id) as total_mold, h.min, h.max');
         $this->db->from('item_fg a');
-        $this->db->join('divisions b', 'a.division_id = b.id');
-        $this->db->join('mold_items c', 'a.id = c.item_fg_id', 'left');
-        $this->db->join('customer_items d', 'd.item_fg_id = a.id', 'left');
-        $this->db->join('customers e', 'd.customer_id = e.id', 'left');
-        $this->db->join('setting_stocks f', "e.type = f.kind AND f.item_category_id = 'C03'", 'left');
+        $this->db->join('item_categories b', 'a.item_category_number = b.number');
+        $this->db->join('item_familys c', 'a.item_family_number = c.number');
+        $this->db->join('item_family_subs d', 'a.item_family_sub_number = d.number', 'left');
+        $this->db->join('mold_items e', 'a.id = e.item_fg_id', 'left');
+        $this->db->join('customer_items f', 'f.item_fg_id = a.id', 'left');
+        $this->db->join('customers g', 'f.customer_id = g.id', 'left');
+        $this->db->join('setting_stocks h', "g.type = h.kind AND h.item_category_id = 'C01'", 'left');
         $this->db->where('a.deleted', 0);
         $this->db->group_by('a.id');
         $this->db->order_by('a.id', 'ASC');
@@ -345,28 +368,22 @@ class item_fg extends CI_Controller
                 <th>Product No.</th>
                 <th>Product Name</th>
                 <th>Total Mold</th>
-                <th>Product Customer</th>
-                <th>Product Alias</th>
                 <th>Process Type</th>
-                <th>Division</th>
-                <th>Control</th>
-                <th>Box</th>
+                <th>Product Type</th>
+                <th>Category</th>
+                <th>Product Family</th>
+                <th>Sub Product Family</th>
                 <th>Lot</th>
-                <th>Polybag Label</th>
-                <th>Box Label</th>
-                <th>NG Ratio (%)</th>
-                <th>IS No.</th>
                 <th>Weight (Gram)</th>
-                <th>Color</th>
                 <th>Leadtime (Day)</th>
+                <th>Lifetime (Day)</th>
                 <th>MPQ</th>
                 <th>MOQ</th>
+                <th>Uom</th>
                 <th>Qty/Box</th>
                 <th>Qty/Sub Box</th>
-                <th>Uom</th>
                 <th>Min</th>
                 <th>Max</th>
-                <th>Logo</th>
                 <th>Status</th>
             </tr>';
         $no = 1;
@@ -377,28 +394,22 @@ class item_fg extends CI_Controller
                         <td style="mso-number-format:\@;">' . $data['number'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['name'] . '</td>
                         <td>' . $data['total_mold'] . '</td>
-                        <td style="mso-number-format:\@;">' . $data['number_customer'] . '</td>
-                        <td>' . $data['alias'] . '</td>
                         <td>' . $data['process'] . '</td>
-                        <td>' . $data['division_name'] . '</td>
-                        <td>' . $data['control_id'] . '</td>
-                        <td>' . $data['boxs'] . '</td>
+                        <td>' . $data['product_type'] . '</td>
+                        <td>' . $data['item_category_name'] . '</td>
+                        <td>' . $data['item_family_name'] . '</td>
+                        <td>' . $data['item_family_sub_name'] . '</td>
                         <td>' . $data['lot'] . '</td>
-                        <td>' . $data['polybag'] . '</td>
-                        <td>' . $data['box_label'] . '</td>
-                        <td>' . $data['ng_ration'] . '</td>
-                        <td>' . $data['is_no'] . '</td>
                         <td>' . $data['weight'] . '</td>
-                        <td>' . $data['color'] . '</td>
                         <td>' . $data['leadtime'] . '</td>
+                        <td>' . $data['lifetime'] . '</td>
                         <td>' . $data['mpq'] . '</td>
                         <td>' . $data['moq'] . '</td>
+                        <td>' . $data['uom'] . '</td>
                         <td>' . $data['qty_box'] . '</td>
                         <td>' . $data['box_sub'] . '</td>
-                        <td>' . $data['uom'] . '</td>
                         <td>' . $data['min'] . '</td>
                         <td>' . $data['max'] . '</td>
-                        <td>' . $data['logo'] . '</td>
                         <td>' . $data['status'] . '</td>
                     </tr>';
             $no++;
