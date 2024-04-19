@@ -82,7 +82,7 @@ class Customer_items extends CI_Controller
             $number = base64_decode($this->input->get('number'));
             $filter_customer_id = base64_decode($this->input->get('filter_customer_id'));
 
-            $this->db->select('a.*, b.number as customer_number, b.name as customer_name, b.currency, c.number as item_fg_number, c.number_customer as item_fg_customer, c.name as item_fg_name');
+            $this->db->select('a.*, b.number as customer_number, b.name as customer_name, b.currency, c.number as item_fg_number, c.name as item_fg_name');
             $this->db->from('customer_items a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
@@ -102,7 +102,7 @@ class Customer_items extends CI_Controller
         if ($this->input->get()) {
             $customer_id = base64_decode($this->input->get('customer_id'));
 
-            $this->db->select('a.*, b.number as item_fg_number, b.number_customer as item_fg_customer, c.currency');
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_name, c.currency');
             $this->db->from('customer_items a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('customers c', 'a.customer_id = c.id');
@@ -121,14 +121,69 @@ class Customer_items extends CI_Controller
             $customer_id = base64_decode($this->input->get('customer_id'));
             $item_fg_id = base64_decode($this->input->get('item_fg_id'));
 
-            $this->db->select('*');
-            $this->db->from('customer_item_histories');
-            $this->db->where('customer_id', $customer_id);
-            $this->db->where('item_fg_id', $item_fg_id);
-            $this->db->order_by('valid_date', 'DESC');
+            $this->db->select('a.*,  c.number as item_fg_number');
+            $this->db->from('customer_item_histories a');
+            $this->db->join('item_fg c', 'a.item_fg_id = c.id');
+            $this->db->where('a.customer_id', $customer_id);
+            $this->db->where('a.item_fg_id', $item_fg_id);
+            $this->db->order_by('a.valid_date', 'DESC');
             $records = $this->db->get()->result_array();
 
             echo json_encode($records);
+        }
+    }
+
+    public function uploadatt()
+    {
+        // Pastikan file disimpan dalam direktori yang diinginkan
+        $uploadDir = 'assets/image/customer_items/';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Pastikan ada file yang diunggah dari permintaan
+            if (isset($_FILES['file'])) {
+                $file = $_FILES['file'];
+
+                // Validasi ekstensi file yang diunggah
+                $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+                $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+                if (!in_array($fileExtension, $allowedExtensions)) {
+                    echo json_encode(['success' => false, 'message' => 'Only files with the extension .pdf, .jpg, or .png are allowed.']);
+                    exit; // Menghentikan proses lebih lanjut jika ekstensi tidak valid
+                }
+
+                // Validasi ukuran file yang diunggah (maksimal 5MB)
+                $maxFileSize = 2 * 1024 * 1024; // 5MB dalam bytes
+                if ($file['size'] > $maxFileSize) {
+                    echo json_encode(['success' => false, 'message' => 'Ukuran file terlalu besar. Maksimal 2MB yang diperbolehkan.']);
+                    exit; // Menghentikan proses lebih lanjut jika ukuran terlalu besar
+                }
+
+                // Pastikan tidak ada error dalam proses upload
+                if ($file['error'] === UPLOAD_ERR_OK) {
+                    // Buat nama unik untuk file yang diunggah
+                    $fileName = uniqid() . '_' . $file['name'];
+                    $uploadPath = $uploadDir . $fileName;
+
+                    // Pindahkan file dari temporary directory ke lokasi yang diinginkan
+                    if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+                        // File berhasil diunggah
+                        echo json_encode(['success' => true, 'message' => 'File Upload Success.', 'filename' => $fileName]);
+                    } else {
+                        // Gagal menyimpan file
+                        echo json_encode(['success' => false, 'message' => 'File Upload Failed.']);
+                    }
+                } else {
+                    // Ada error dalam proses upload
+                    echo json_encode(['success' => false, 'message' => 'Error while Upload.']);
+                }
+            } else {
+                // File tidak ditemukan dalam permintaan
+                echo json_encode(['success' => false, 'message' => 'File Not Found.']);
+            }
+        } else {
+            // Metode request yang diperlukan adalah POST
+            echo json_encode(['success' => false, 'message' => 'Metode request yang diperlukan adalah POST.']);
         }
     }
 
@@ -178,10 +233,11 @@ class Customer_items extends CI_Controller
             $datas[] = array(
                 //excel
                 'customer_id' => $data->val($i, 2),
-                'item_fg_id' => $data->val($i, 3),
-                'price' => $data->val($i, 4),
-                'valid_date' => $data->val($i, 5),
-                'remark' => $data->val($i, 6)
+                'product_no' => $data->val($i, 3),
+                'product_customer' => $data->val($i, 4),
+                'price' => $data->val($i, 5),
+                'valid_date' => $data->val($i, 6),
+                'remark' => $data->val($i, 7)
             );
         }
         $datas['total'] = count($datas);
@@ -227,15 +283,23 @@ class Customer_items extends CI_Controller
             //Cek Process Number          //table       //field        //field excel
             $customer_items = $this->crud->read('customer_items', [], ["customer_id" => $data['customer_id'], "item_fg_id" => $data['item_fg_id']]);
 
-            if (!empty($customer_items->customer_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Customer " . $data['customer_id'] . " is Duplicate Data", "theme" => "error"));
-            } elseif (!empty($customer_items->item_fg_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['item_fg_id'] . " is Duplicate Data", "theme" => "error"));
+            //Cek Process Number     //table        //field           //field excel
+            $item = $this->crud->read('item_fg', [], ["id" => $data['product_no']]);
+            $customer = $this->crud->read('customers', [], ["number" => $data['customer_id']]);
+            $customer_items = $this->crud->read('customer_items', [], ["item_id" => @$item->id, "customer_id" => $data['customer_id']]);
+
+            if (empty($item->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Product ID " . $data['product_no'] . " Not Found", "theme" => "error"));
+            } elseif (empty($customer->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Customer " . $data['customer_id'] . " Not Found", "theme" => "error"));
+            } elseif (!empty($customer_items->item_id)) {
+                echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['product_no'] . " Duplicate Data", "theme" => "error"));
             } else {
                 $dataFinal = array(
                     //field
                     "customer_id" => $data['customer_id'],
-                    "item_fg_id" => $data['item_fg_id'],
+                    "item_fg_id" => $data['product_no'],
+                    "item_fg_customer" => $data['product_customer'],
                     "price" => $data['price'],
                     "valid_date" => $data['valid_date'],
                     "remark" => $data['remark'],
@@ -264,7 +328,7 @@ class Customer_items extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.number as customer_number, b.name as customer_name, b.currency, c.number as item_fg_number, c.name as item_fg_name, c.number_customer as item_fg_customer');
+        $this->db->select('a.*, b.number as customer_number, b.name as customer_name, b.currency, c.number as item_fg_number, c.name as item_fg_name');
         $this->db->from('customer_items a');
         $this->db->join('customers b', 'a.customer_id = b.id');
         $this->db->join('item_fg c', 'a.item_fg_id = c.id');
