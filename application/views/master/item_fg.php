@@ -30,7 +30,7 @@
         <tr>
             <th rowspan="2" data-options="field:'specification',width:100,align:'center'">Specification</th>
             <th rowspan="2" data-options="field:'total_mold',width:50,align:'center'">Total <br>Mold</th>
-            <th rowspan="2" data-options="field:'process',width:80,align:'center'">Process <br>Type</th>
+            <th rowspan="2" data-options="field:'process',width:80,align:'center'">Flow <br>Type</th>
             <th rowspan="2" data-options="field:'product_type',width:80,align:'center'">Product <br>Type</th>
             <th rowspan="2" data-options="field:'item_category_name',width:100,align:'center'">Category</th>
             <th rowspan="2" data-options="field:'item_family_name',width:150,align:'center'">Product Family</th>
@@ -91,7 +91,7 @@
                     <input style="width:60%;" name="specification" class="easyui-textbox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Process Type</span>
+                    <span style="width:35%; display:inline-block;">Flow Type</span>
                     <input style="width:60%;" name="process" id="process" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
