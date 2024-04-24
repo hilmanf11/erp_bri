@@ -16,6 +16,7 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'customer_id',align:'center',width:100">ID</th>
+            <th rowspan="2" data-options="field:'customer_number',width:550,halign:'center'">Customer Code</th>
             <th rowspan="2" data-options="field:'customer_name',width:550,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'type',width:100,align:'center'">Type</th>
             <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
