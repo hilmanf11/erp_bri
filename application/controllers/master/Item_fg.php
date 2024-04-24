@@ -61,11 +61,15 @@ class item_fg extends CI_Controller
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
                     if ($filter->field == "total_mold") {
-                        $this->db->like("count(e.item_fg_id)", $filter->value);
+                        $this->db->having("count(e.item_fg_id)", $filter->value);
                     } elseif ($filter->field == "min") {
                         $this->db->like("h.min", $filter->value);
                     } elseif ($filter->field == "max") {
                         $this->db->like("h.max", $filter->value);
+                    } elseif ($filter->field == "item_family_name") {
+                        $this->db->like("c.name", $filter->value);
+                    } elseif ($filter->field == "item_family_sub_name") {
+                        $this->db->like("d.name", $filter->value);
                     } else {
                         $this->db->like("a." . $filter->field, $filter->value);
                     }

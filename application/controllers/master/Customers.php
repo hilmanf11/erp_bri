@@ -387,7 +387,7 @@ class Customers extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.*');
+        $this->db->select('a.*, a.id as id_customers, b.*');
         $this->db->from('customers a');
         $this->db->join('customer_address b', 'a.id = b.customer_id', 'left');
         $this->db->order_by('a.id', 'ASC');
@@ -450,7 +450,7 @@ class Customers extends CI_Controller
 
             $html .= '<tr>
                     <td>' . $no . '</td>
-                    <td>' . $data['customer_id'] . '</td>
+                    <td>' . $data['id_customers'] . '</td>
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['number'] . '</td>
                     <td>' . $data['type'] . '</td>

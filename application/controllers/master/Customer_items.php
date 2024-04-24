@@ -281,24 +281,24 @@ class Customer_items extends CI_Controller
             $data = $this->input->post('data');
 
             //Cek Process Number          //table       //field        //field excel
-            $customer_items = $this->crud->read('customer_items', [], ["customer_id" => $data['customer_id'], "item_fg_id" => $data['item_fg_id']]);
+            $customer_items = $this->crud->read('customer_items', [], ["customer_id" => $data['customer_id'], "item_fg_id" => $data['product_no']]);
 
             //Cek Process Number     //table        //field           //field excel
-            $item = $this->crud->read('item_fg', [], ["id" => $data['product_no']]);
+            $item = $this->crud->read('item_fg', [], ["number" => $data['product_no']]);
             $customer = $this->crud->read('customers', [], ["number" => $data['customer_id']]);
-            $customer_items = $this->crud->read('customer_items', [], ["item_id" => @$item->id, "customer_id" => $data['customer_id']]);
+            $customer_items = $this->crud->read('customer_items', [], ["item_fg_id" => @$item->id, "customer_id" => $data['customer_id']]);
 
             if (empty($item->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Product ID " . $data['product_no'] . " Not Found", "theme" => "error"));
             } elseif (empty($customer->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Customer " . $data['customer_id'] . " Not Found", "theme" => "error"));
-            } elseif (!empty($customer_items->item_id)) {
+            } elseif (!empty($customer_items->item_fg_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['product_no'] . " Duplicate Data", "theme" => "error"));
             } else {
                 $dataFinal = array(
                     //field
-                    "customer_id" => $data['customer_id'],
-                    "item_fg_id" => $data['product_no'],
+                    "customer_id" => @$customer->id,
+                    "item_fg_id" => @$item->id,
                     "item_fg_customer" => $data['product_customer'],
                     "price" => $data['price'],
                     "valid_date" => $data['valid_date'],
