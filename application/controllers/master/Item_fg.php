@@ -201,7 +201,7 @@ class item_fg extends CI_Controller
                 //excel
                 'product_no' => $data->val($i, 2),
                 'name' => $data->val($i, 3),
-                'spesification' => $data->val($i, 4),
+                'specification' => $data->val($i, 4),
                 'process' => $data->val($i, 5),
                 'product_type' => $data->val($i, 6),
                 'category' => $data->val($i, 7),
@@ -287,7 +287,7 @@ class item_fg extends CI_Controller
                     //field        //excel
                     "id" => $autoid,
                     "number" => $data['product_no'],
-                    "name" => $data['product_name'],
+                    "name" => $data['name'],
                     "specification" => $data['specification'],
                     "process" => $data['process'],
                     "product_type" => $data['product_type'],

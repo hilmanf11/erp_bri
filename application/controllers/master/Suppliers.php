@@ -130,8 +130,8 @@ class Suppliers extends CI_Controller
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
                 //excel
-                'name' => $data->val($i, 2),
-                'number' => $data->val($i, 3),
+                'number' => $data->val($i, 2),
+                'name' => $data->val($i, 3),
                 'type' => $data->val($i, 4),
                 'address' => $data->val($i, 5),
                 'contact_person' => $data->val($i, 6),

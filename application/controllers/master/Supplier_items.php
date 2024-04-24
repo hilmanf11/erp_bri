@@ -220,6 +220,7 @@ class Supplier_items extends CI_Controller
     {
         $data = $this->input->post();
         $send = $this->crud->delete('supplier_items', $data);
+        $send = $this->crud->delete('supplier_item_histories', $data);
         echo $send;
     }
 
@@ -245,11 +246,10 @@ class Supplier_items extends CI_Controller
                 'moq' => $data->val($i, 7),
                 'share_order' => $data->val($i, 8),
                 'leadtime' => $data->val($i, 9),
-                'currency' => $data->val($i, 10),
-                'price' => $data->val($i, 11),
-                'safety_stock' => $data->val($i, 12),
-                'calculate' => $data->val($i, 13),
-                'valid_date' => $data->val($i, 14)
+                'price' => $data->val($i, 10),
+                'safety_stock' => $data->val($i, 11),
+                'calculate' => $data->val($i, 12),
+                'valid_date' => $data->val($i, 13)
             );
         }
         $datas['total'] = count($datas);
@@ -292,10 +292,16 @@ class Supplier_items extends CI_Controller
         if ($this->input->post()) {
             $data = $this->input->post('data');
 
+            //Cek Process Number          //table       //field        //field excel
+            $supplier = $this->crud->read('suppliers', [], ["number" => $data['supplier_id']]);
+            $item_rm = $this->crud->read('item_rm', [], ["number" => $data['item_rm_id']]);
+            $supplier_items = $this->crud->read('supplier_items', [], ["supplier_id" => @$supplier->id, "item_rm_id" => @$item_rm->id]);
+            $supplier_item_histories = $this->crud->read("supplier_item_histories", [], ["supplier_id" => @$supplier->id, "item_rm_id" => @$item_rm->id, "price" => $data['price']]);
+
             $dataFinal = array(
                 //field
-                "supplier_id" => $data['supplier_id'],
-                "item_rm_id" => $data['item_rm_id'],
+                "supplier_id" => @$supplier->id,
+                "item_rm_id" => @$item_rm->id,
                 "maker" => $data['maker'],
                 "item_supplier" => $data['item_supplier'],
                 "mpq" => $data['mpq'],
@@ -303,28 +309,30 @@ class Supplier_items extends CI_Controller
                 "share_order" => $data['share_order'],
                 "leadtime" => $data['leadtime'],
                 "price" => $data['price'],
-                "valid_date" => $data['valid_date'],
                 "safety_stock" => $data['safety_stock'],
                 "calculate" => $data['calculate'],
+                "valid_date" => $data['valid_date'],
             );
 
-            //Cek Process Number          //table       //field        //field excel
-            $supplier_items = $this->crud->read('supplier_items', [], ["supplier_id" => $data['supplier_id'], "item_rm_id" => $data['item_rm_id']]);
-            $supplier = $this->crud->read('suppliers', [], ["id" => $data['supplier_id']]);
-            $item_rm = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
-            $supplier_item_histories = $this->crud->read("supplier_item_histories", [], ["supplier_id" => $data['supplier_id'], "item_rm_id" => $data['item_rm_id'], "price" => $data['price']]);
-
-
-            if (@$supplier_items->supplier_id != "") {
-                $send = $this->crud->update('supplier_items', ["supplier_id" => $dataFinal['supplier_id'], "item_rm_id" => $dataFinal['item_rm_id']], $dataFinal);
-                if (@$supplier_item_histories->supplier_id == "") {
+            if (empty($supplier->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Supplier Code " . $data['supplier_id'] . " Not Found", "theme" => "error"));
+            } elseif (empty($item_rm->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Part No " . $data['item_rm_id'] . " Not Found", "theme" => "error"));
+            } else {
+                // print_r($dataFinal);
+                if (@$supplier_items->supplier_id != "") {
+                    // echo @$supplier_items->supplier_id;
+                    // die();
+                    $send = $this->crud->update('supplier_items', ["supplier_id" => $dataFinal['supplier_id'], "item_rm_id" => $dataFinal['item_rm_id']], $dataFinal);
+                    if (@$supplier_item_histories->supplier_id == "") {
+                        $send2 = $this->crud->create('supplier_item_histories', $dataFinal);
+                    }
+                } else {
+                    $send = $this->crud->create('supplier_items', $dataFinal);
                     $send2 = $this->crud->create('supplier_item_histories', $dataFinal);
                 }
-            } else {
-                $send = $this->crud->create('supplier_items', $dataFinal);
-                $send2 = $this->crud->create('supplier_item_histories', $dataFinal);
+                echo $send;
             }
-            echo $send;
         } else {
             show_error("Cannot Process your request");
         }
