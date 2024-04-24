@@ -3,8 +3,8 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:80,align:'center'">Process ID</th>
-            <th rowspan="2" data-options="field:'name',width:100,halign:'center'">Process Name</th>
+            <th rowspan="2" data-options="field:'id',width:80,align:'center'">Flow ID</th>
+            <th rowspan="2" data-options="field:'name',width:100,halign:'center'">Flow Type</th>
             <th rowspan="2" data-options="field:'process_a',width:150,halign:'center'">WEIGHING</th>
             <th rowspan="2" data-options="field:'process_b',width:150,halign:'center'">MIXING</th>
             <th rowspan="2" data-options="field:'process_c',width:150,halign:'center'">CUTTING</th>
@@ -13,7 +13,9 @@
             <th rowspan="2" data-options="field:'process_f',width:150,halign:'center'">FINISHING</th>
             <th rowspan="2" data-options="field:'process_g',width:150,halign:'center'">VISUAL CHECK</th>
             <th rowspan="2" data-options="field:'process_h',width:150,halign:'center'">SUBCONT</th>
-            <th rowspan="2" data-options="field:'process_i',width:150,halign:'center'">PACKING</th>
+            <th rowspan="2" data-options="field:'process_i',width:150,halign:'center'">SLITTING</th>
+            <th rowspan="2" data-options="field:'process_j',width:150,halign:'center'">POST CURE</th>
+            <th rowspan="2" data-options="field:'process_k',width:150,halign:'center'">PACKING</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -75,8 +77,16 @@
                 <input style="width:60%;" name="process_h" id="process_h" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">PACKING</span>
+                <span style="width:35%; display:inline-block;">SLITTING</span>
                 <input style="width:60%;" name="process_i" id="process_i" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">POST CURE</span>
+                <input style="width:60%;" name="process_j" id="process_j" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">PACKING</span>
+                <input style="width:60%;" name="process_k" id="process_k" class="easyui-textbox">
             </div>
         </fieldset>
     </form>

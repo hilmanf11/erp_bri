@@ -165,6 +165,8 @@ class Item_process_flow extends CI_Controller
                 <th>FINISHING</th>
                 <th>VISUAL CHECK</th>
                 <th>SUBCONT</th>
+                <th>SLITTING</th>
+                <th>POST CURE</th>
                 <th>PACKING</th>
             </tr>';
         $no = 1;
@@ -182,6 +184,8 @@ class Item_process_flow extends CI_Controller
                     <td>' . $data['process_g'] . '</td>
                     <td>' . $data['process_h'] . '</td>
                     <td>' . $data['process_i'] . '</td>
+                    <td>' . $data['process_j'] . '</td>
+                    <td>' . $data['process_k'] . '</td>
                     ';
             $no++;
         }
