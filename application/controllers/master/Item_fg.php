@@ -150,13 +150,15 @@ class item_fg extends CI_Controller
                 'status' => $post['status']
             );
             // cek apakah data uploadan di isi
-            if ($post['number'] == null && $post['number'] == '') {
-                // non action
+
+            $file = $_FILES['attachment']["name"];
+            if ($file == null && $file == '') {
+                $send = $this->crud->update('item_fg', ["id" => $id], $dataFinal);
             } else {
                 $attachment = $this->crud->upload('attachment', ["pdf", "jpg", "jpeg", "png"], 'assets/image/item_fg/', ["id" => $post['id']], "item_fg", "attachment");
                 $postFinal = array_merge($dataFinal, ["attachment" => $attachment]);
+                $send = $this->crud->update('item_fg', ["id" => $id], $postFinal);
             }
-            $send = $this->crud->update('item_fg', ["id" => $id], $postFinal);
             echo $send;
         } else {
             show_error("Cannot Process your request");

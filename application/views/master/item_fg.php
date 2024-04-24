@@ -201,15 +201,13 @@
         url_save = '<?= base_url('master/item_fg/create') ?>';
         $('#frm_insert').form('clear');
 
-        $('#polybag').combobox('setValue', 'Label Manual Logo BPI');
-        $('#box_label').combobox('setValue', 'YES');
         $('#status').combobox('setValue', '0');
-        $('#type').combobox('setValue', 'FG');
         $('#id').textbox('setValue', 'Auto Generate');
     }
 
     //EDIT DATA
     function update() {
+        $('#frm_insert').form('clear');
         var row = $('#dg').datagrid('getSelected');
 
         setTimeout(function() {
