@@ -1,36 +1,152 @@
-Product Id FGCDNA-0001 Duplicate Data
-Product Id FGCDNA-0001 Duplicate Data
-Product Id FGCDNA-0002 Duplicate Data
-Product Id FGCDNA-0002 Duplicate Data
-Product Id FGCDNA-0003 Duplicate Data
-Product Id FGCDNA-0003 Duplicate Data
-Product Id FGCDNA-0004 Duplicate Data
-Product Id FGCDNA-0004 Duplicate Data
-Product Id FGCDNA-0006 Duplicate Data
-Product Id FGCDNA-0006 Duplicate Data
-Product Id FGCDNA-0007 Duplicate Data
-Product Id FGCDNA-0007 Duplicate Data
-Product Id FGCDNA-0008 Duplicate Data
-Product Id FGCDNA-0008 Duplicate Data
-Product Id FGCDNA-0010 Duplicate Data
-Product Id FGCDNA-0010 Duplicate Data
-Product Id FGCDNA-0013 Duplicate Data
-Product Id FGCDNA-0013 Duplicate Data
-Product Id FGCDNA-0014 Duplicate Data
-Product Id FGCDNA-0014 Duplicate Data
-Product Id FGCDNA-0015 Duplicate Data
-Product Id FGCDNA-0015 Duplicate Data
-Product Id FGCDNA-0017 Duplicate Data
-Product Id FGCDNA-0017 Duplicate Data
-Product Id FGCDNA-0018 Duplicate Data
-Product Id FGCDNA-0018 Duplicate Data
-Product Id FGCDNA-0067 Duplicate Data
-Product Id FGCDNA-0067 Duplicate Data
-Product Id FGCDNA-0064 Duplicate Data
-Product Id FGCDNA-0064 Duplicate Data
-Product Id FGCDNA-0065 Duplicate Data
-Product Id FGCDNA-0065 Duplicate Data
-Product Id FGCDNA-0066 Duplicate Data
-Product Id FGCDNA-0066 Duplicate Data
-Product Id FGCDNA-0067 Duplicate Data
-Product Id FGCDNA-0067 Duplicate Data
+Machine Id ASMCMIX-0007 Not Found
+Machine Id ASMCMIX-0010 Not Found
+Machine Id ASMCMIX-0007 Not Found
+Machine Id ASMCMIX-0010 Not Found
+Machine Id ASMCMIX-0007 Not Found
+Machine Id ASMCMIX-0010 Not Found
+Machine Id ASMCMIX-0007 Not Found
+Machine Id ASMCMIX-0010 Not Found
+Machine Id ASMCMIX-0007 Not Found
+Machine Id ASMCMIX-0010 Not Found
+Machine Id ASMCMIX-0007 Not Found
+Machine Id ASMCMIX-0010 Not Found
+Machine Id ASMCMIX-0007 Not Found
+Machine Id ASMCMIX-0010 Not Found
+Machine Id ASMCMIX-0007 Not Found
+Machine Id ASMCMIX-0010 Not Found
+Machine Id ASMCMIX-0007 Not Found
+Machine Id ASMCMIX-0010 Not Found
+Machine Id ASMCMIX-0007 Not Found
+Machine Id ASMCMIX-0010 Not Found
+Machine Id ASMCMIX-0007 Not Found
+Machine Id ASMCMIX-0010 Not Found
+Machine Id ASMCMIX-0007 Not Found
+Machine Id ASMCMIX-0010 Not Found
+Machine Id ASMCMIX-0007 Not Found
+Machine Id ASMCMIX-0010 Not Found
+Product Id RMCPNA-0008 Not Found
+Product Id RMCPNA-0008 Not Found
+Product Id RMCPNA-0009 Not Found
+Product Id RMCPNA-0009 Not Found
+Product Id RMCPNA-0010 Not Found
+Product Id RMCPNA-0010 Not Found
+Product Id RMCPNA-0011 Not Found
+Product Id RMCPNA-0011 Not Found
+Product Id RMCPNA-0012 Not Found
+Product Id RMCPNA-0012 Not Found
+Product Id RMCPNA-0013 Not Found
+Product Id RMCPNA-0013 Not Found
+Product Id RMCPNA-0014 Not Found
+Product Id RMCPNA-0014 Not Found
+Product Id RMCPNA-0015 Not Found
+Product Id RMCPNA-0015 Not Found
+Product Id RMCPNA-0016 Not Found
+Product Id RMCPNA-0016 Not Found
+Product Id RMCPNA-0017 Not Found
+Product Id RMCPNA-0017 Not Found
+Product Id RMCPNA-0018 Not Found
+Product Id RMCPNA-0018 Not Found
+Product Id RMCPNA-0019 Not Found
+Product Id RMCPNA-0019 Not Found
+Product Id RMCPNA-0021 Not Found
+Product Id RMCPNA-0021 Not Found
+Product Id RMCPNA-0022 Not Found
+Product Id RMCPNA-0022 Not Found
+Product Id RMCPNA-0023 Not Found
+Product Id RMCPNA-0023 Not Found
+Product Id RMCPNA-0024 Not Found
+Product Id RMCPNA-0024 Not Found
+Product Id RMCPNA-0028 Not Found
+Product Id RMCPNA-0028 Not Found
+Product Id RMCPNA-0032 Not Found
+Product Id RMCPNA-0032 Not Found
+Product Id RMCPNA-0034 Not Found
+Product Id RMCPNA-0034 Not Found
+Product Id RMCPNA-0038 Not Found
+Product Id RMCPNA-0038 Not Found
+Product Id RMCPNA-0039 Not Found
+Product Id RMCPNA-0039 Not Found
+Product Id RMCPNA-0040 Not Found
+Product Id RMCPNA-0040 Not Found
+Product Id RMCPNA-0041 Not Found
+Product Id RMCPNA-0041 Not Found
+Product Id RMCPNA-0042 Not Found
+Product Id RMCPNA-0042 Not Found
+Product Id RMCPNA-0043 Not Found
+Product Id RMCPNA-0043 Not Found
+Product Id RMCPNA-0044 Not Found
+Product Id RMCPNA-0044 Not Found
+Product Id RMCPNA-0045 Not Found
+Product Id RMCPNA-0045 Not Found
+Product Id RMCPNA-0047 Not Found
+Product Id RMCPNA-0047 Not Found
+Product Id RMCPNA-0049 Not Found
+Product Id RMCPNA-0049 Not Found
+Product Id RMCPNA-0061 Not Found
+Product Id RMCPNA-0061 Not Found
+Product Id RMCPNA-0020 Not Found
+Product Id RMCPNA-0020 Not Found
+Product Id RMCPNA-0029 Not Found
+Product Id RMCPNA-0029 Not Found
+Product Id RMCPNA-0030 Not Found
+Product Id RMCPNA-0030 Not Found
+Product Id RMCPNA-0035 Not Found
+Product Id RMCPNA-0035 Not Found
+Product Id RMCPNA-0036 Not Found
+Product Id RMCPNA-0036 Not Found
+Product Id RMCPNA-0060 Not Found
+Product Id RMCPNA-0060 Not Found
+Product Id RMCPNA-0063 Not Found
+Product Id RMCPNA-0063 Not Found
+Product Id RMCPNA-0064 Not Found
+Product Id RMCPNA-0064 Not Found
+Product Id RMCPNA-0051 Not Found
+Product Id RMCPNA-0051 Not Found
+Product Id RMCPNA-0052 Not Found
+Product Id RMCPNA-0052 Not Found
+Product Id RMCPNA-0053 Not Found
+Product Id RMCPNA-0053 Not Found
+Product Id RMCPNA-0054 Not Found
+Product Id RMCPNA-0054 Not Found
+Product Id RMCPNA-0055 Not Found
+Product Id RMCPNA-0055 Not Found
+Product Id RMCPNA-0056 Not Found
+Product Id RMCPNA-0056 Not Found
+Product Id RMCPNA-0057 Not Found
+Product Id RMCPNA-0057 Not Found
+Product Id RMCPNA-0058 Not Found
+Product Id RMCPNA-0058 Not Found
+Product Id RMCPNA-0059 Not Found
+Product Id RMCPNA-0059 Not Found
+Product Id RMCPNA-0059 Not Found
+Product Id RMCPNA-0059 Not Found
+Product Id RMCPNA-0056 Not Found
+Product Id RMCPNA-0056 Not Found
+Product Id RMCPNA-0057 Not Found
+Product Id RMCPNA-0057 Not Found
+Product Id RMCPNA-0058 Not Found
+Product Id RMCPNA-0058 Not Found
+Product Id RMCPNA-0059 Not Found
+Product Id RMCPNA-0059 Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found
+Product Id  Not Found

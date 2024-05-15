@@ -59,8 +59,8 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Type</span>
                 <select style="width:60%;" name="type" id="type" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="INTERNAL">INTERNAL</option>
-                    <option value="CUSTOMER PROPERTY">CUSTOMER PROPERTY</option>
+                    <option value="EX">EXTERNAL</option>
+                    <option value="IN">INTERNAL</option>
                 </select>
             </div>
             <div class="fitem">
@@ -69,7 +69,11 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Model</span>
-                <input style="width:60%;" name="model" id="model" class="easyui-textbox">
+                <select style="width:60%;" name="model" id="model" required="" panelHeight="auto" class="easyui-combobox">
+                    <option value="COM">COMPRESSION</option>
+                    <option value="INJ">INJECTION</option>
+                    <option value="TRF">TRANSFER</option>
+                </select>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Mold Size</span>
@@ -77,7 +81,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Project Year</span>
-                <input style="width:60%;" name="project_year" id="project_year" class="easyui-numberbox">
+                <input style="width:60%;" name="project_year" data-options="formatter:myformatter,parser:myparser" required="" class="easyui-datebox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Standard Cavity</span>
@@ -145,23 +149,21 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/molds/create') ?>';
         $('#frm_insert').form('clear');
-        
-        $('#type').combobox('setValue', 'INTERNAL');
         $('#mold_type').combobox('setValue', 'SINGLE');
         $('#status').combobox('setValue', '0');
         $('#cavity_standard').numberbox('setValue', '1');
         $('#cavity_actual').numberbox('setValue', '1');
 
         $.ajax({
-            type : "post",
-            url : "<?= base_url('master/molds/autoid')?>",
-            dataType : "html",
-            success : function(response){
+            type: "post",
+            url: "<?= base_url('master/molds/autoid') ?>",
+            dataType: "html",
+            success: function(response) {
                 $('#id').textbox('setValue', response);
             }
         });
     }
-    
+
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
@@ -211,7 +213,7 @@
     }
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_mold.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_molds.xls') ?>');
     }
     //PRINT PDF
     function pdf() {
@@ -225,6 +227,29 @@
     function reload() {
         window.location.reload();
     }
+
+    // FORMAT tahun-bulan-tanggal
+    function myformatter(date) {
+        var y = date.getFullYear();
+        var m = date.getMonth(); // Mengambil indeks bulan (0 - Januari, 11 - Desember)
+        var monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+        return monthNames[m] + ' ' + y;
+    }
+
+    function myparser(s) {
+        if (!s) return new Date();
+        var parts = s.split(' ');
+        if (parts.length === 2) {
+            var monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+            var m = monthNames.indexOf(parts[0]); // Mencari indeks bulan dari nama bulan
+            var y = parseInt(parts[1]);
+            if (m !== -1 && !isNaN(y)) {
+                return new Date(y, m);
+            }
+        }
+        return new Date();
+    }
+
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
@@ -255,7 +280,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
+
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
@@ -263,14 +288,49 @@
                 }
             }]
         });
+
+        $('#type').combobox({
+            url: '<?php echo base_url('master/molds/type'); ?>',
+            valueField: 'value',
+            textField: 'name',
+            prompt: "Choose Type",
+            onSelect: function(selectedOption_type) {
+                // Ambil nilai yang dipilih dari combobox
+                var selectedValue_type = selectedOption_type.value;
+                var selectedName_type = selectedOption_type.name;
+
+                $('#model').combobox({
+                    url: '<?php echo base_url('master/molds/model'); ?>',
+                    valueField: 'value',
+                    textField: 'name',
+                    prompt: "Choose Model",
+                    onSelect: function(selectedOption_model) {
+                        // Ambil nilai yang dipilih dari combobox
+                        var selectedValue_model = selectedOption_model.value;
+                        var selectedName_model = selectedOption_model.name;
+
+                        // Lakukan permintaan AJAX untuk mendapatkan ID berdasarkan nilai yang dipilih
+                        $.ajax({
+                            type: "post",
+                            url: '<?php echo base_url('master/molds/autoid/'); ?>' + selectedValue_type + '/' + selectedValue_model,
+                            dataType: "html",
+                            success: function(response) {
+                                // Set nilai response ke elemen dengan ID '#id'
+                                $('#id').textbox('setValue', response);
+                            }
+                        });
+                    }
+                });
+            }
+        });
     });
 
-   
+
 
     $('#customer_id').combobox({
-        url:'<?= base_url('master/customers/reads'); ?>',
-        valueField:'id',
-        textField:'name',
+        url: '<?= base_url('master/customers/reads'); ?>',
+        valueField: 'id',
+        textField: 'name',
         prompt: 'Choose Customer',
     });
 
@@ -293,81 +353,81 @@
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
-            buttons: [{
-                text: 'List Failed',
-                handler: function() {
-                    window.open('<?= base_url('master/molds/uploadDownloadFailed') ?>', '_blank');
-                }
-            }, {
-                text: 'Upload',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/molds/upload') ?>',
-                        onSubmit: function() {
-                            if ($(this).form('validate') == false) {
-                                return $(this).form('validate');
-                            } else {
-                                $.messager.progress({
-                                    title: 'Please Wait',
-                                    msg: 'Importing Excel to Database'
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('master/molds/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('master/molds/upload') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('master/molds/uploadclearFailed') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload').progressbar('setValue', value);
+                                $('#p_start').html(number);
+                                $('#p_finish').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('master/molds/uploadCreate') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('master/molds/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks").append(title + "<br>");
+                                    }
                                 });
                             }
-                        },
-                        success: function(result) {
-                            $.messager.progress('close');
-                            //Clear File
-                            $.ajax({
-                                url: "<?= base_url('master/molds/uploadclearFailed') ?>"
-                            });
-                            var json = eval('(' + result + ')');
-                            requestData(json.total, json);
-
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
-
-                                    $.ajax({
-                                        type: "POST",
-                                        async: true,
-                                        url: "<?= base_url('master/molds/uploadCreate') ?>",
-                                        data: {
-                                            "data": json[number - 1]
-                                        },
-                                        cache: false,
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (result.theme == "success") {
-                                                $('#p_success').html(success);
-                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                //Json Failed
-                                                $.ajax({
-                                                    type: "POST",
-                                                    async: true,
-                                                    url: "<?= base_url('master/molds/uploadcreateFailed') ?>",
-                                                    data: {
-                                                        data: json[number - 1],
-                                                        message: result.message
-                                                    },
-                                                    cache: false
-                                                });
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                            }
-                                            $("#p_remarks").append(title + "<br>");
-                                        }
-                                    });
-                                }
-                            }
                         }
-                    });
-                }
-            }]
-        });
+                    }
+                });
+            }
+        }]
+    });
 </script>

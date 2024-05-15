@@ -1,40 +1,27 @@
-<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
-    <div class="easyui-accordion" style="width:100%; height: 100%;">
-        <div title="RELATIONS" style="padding: 20px;">
-            <ul>
-                <li>The Data Unit of Measure is taken from <b>Master Data > General Master > Unit of Measure</b></li>
-            </ul>
-        </div>
-    </div>
-</div>
-
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:150,align:'center'">Machine ID</th>
-            <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Machine No.</th>
-            <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Name Of Machine</th>
-            <th rowspan="2" data-options="field:'specification',width:100,halign:'center'">Spesification</th>
-            <th rowspan="2" data-options="field:'purchase_date',width:150,halign:'center'">Purchase Date</th>
-            <th rowspan="2" data-options="field:'manufacturing_date',width:150,halign:'center'">Manufacturing Date</th>
-            <th rowspan="2" data-options="field:'maker',width:150,halign:'center'">Maker</th>
-            <th rowspan="2" data-options="field:'toonage',width:150,halign:'center'">Toonage Of Machine</th>
-            <th rowspan="2" data-options="field:'tiebar',width:100,halign:'center'">Tie Bar</th>
-            <th rowspan="2" data-options="field:'uom_tiebar',width:80,halign:'center'">UOM</th>
-            <th rowspan="2" data-options="field:'min_closing',width:140,halign:'center'">Minimum Closing</th>
-            <th rowspan="2" data-options="field:'uom_min',width:80,halign:'center'">UOM</th>
-            <th rowspan="2" data-options="field:'max_open',width:140,halign:'center'">Maximum Open</th>
-            <th rowspan="2" data-options="field:'uom_max',width:80,halign:'center'">UOM</th>
-            <th rowspan="2" data-options="field:'volume',width:140,halign:'center'">Barrel Volume</th>
-            <th rowspan="2" data-options="field:'uom_volume',width:80,halign:'center'">UOM</th>
-            <th rowspan="2" data-options="field:'diameter',width:140,halign:'center'">Screw Diameter</th>
-            <th rowspan="2" data-options="field:'uom_diameter',width:80,halign:'center'">UOM</th>
-            <th rowspan="2" data-options="field:'brand',width:150,halign:'center'">Brand</th>
-            <th rowspan="2" data-options="field:'status',width:150,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'id',align:'center',width:120">Machine ID</th>
+            <!-- <th rowspan="2" data-options="field:'asset_id',halign:'center',width:150">Asset No</th> -->
+            <th rowspan="2" data-options="field:'number',halign:'center',width:100">Machine No</th>
+            <th rowspan="2" data-options="field:'name',halign:'center',width:150">Name Of Machine</th>
+            <th rowspan="2" data-options="field:'item_type_process_name',halign:'center',width:100">Process Type</th>
+            <th rowspan="2" data-options="field:'specification',halign:'center',width:100">Specification</th>
+            <th rowspan="2" data-options="field:'purchase_date',halign:'center',width:100">Purchase <br>Date</th>
+            <th rowspan="2" data-options="field:'manufactur_date',halign:'center',width:100">Manufacturing <br>Date</th>
+            <th rowspan="2" data-options="field:'maker',halign:'center',width:100">Maker</th>
+            <th rowspan="2" data-options="field:'toonage',halign:'center',width:100">Toneage Of <br>Machine</th>
+            <th rowspan="2" data-options="field:'uom',halign:'center',width:80">Uom</th>
+            <th rowspan="2" data-options="field:'vacum',halign:'center',width:100">Vacum</th>
+            <th rowspan="2" data-options="field:'rt',halign:'center',width:80">RT</th>
+            <th rowspan="2" data-options="field:'item_type_name',width:100,halign:'center'">Type</th>
+            <th rowspan="2" data-options="field:'brand',width:100,halign:'center'">Brand</th>
+            <th rowspan="2" data-options="field:'status',width:100, styler:cellStyler, align:'center', formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
+            
         </tr>
         <tr>
             <th data-options="field:'created_by',width:100,align:'center'"> By</th>
@@ -47,104 +34,91 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
-    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
-            <div style="float:left; width:50%;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Machine ID</span>
-                    <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Machine No.</span>
-                    <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Machine Name</span>
-                    <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Spesification</span>
-                    <input style="width:60%;" name="specification" id="specification" required="" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Purchase Date</span>
-                    <input style="width:60%;" name="purchase_date" id="purchase_date" data-options="formatter:myformatter,parser:myparser" class="easyui-datebox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Manufacturing Date</span>
-                    <input style="width:60%;" name="manufacturing_date" id="manufacturing_date" data-options="formatter:myformatter,parser:myparser" class="easyui-datebox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Maker</span>
-                    <input style="width:60%;" name="maker" id="maker" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Toonage of Machine</span>
-                    <input style="width:60%;" name="toonage" id="toonage" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Brand</span>
-                    <input style="width:60%;" name="brand" id="brand" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Status</span>
-                    <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
-                        <option value="0">Active</option>
-                        <option value="1">Not Active</option>
-                    </select>
-                </div>
+            <div style="width:50%;float:left">
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">ID</span>
+                <input style="width:30%;" name="id" id="id" readonly class="easyui-textbox">
             </div>
-            <div style="float:left; width:50%;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Tie of Bar</span>
-                    <input style="width:60%;" name="tiebar" id="tiebar" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Unit of Measure</span>
-                    <input style="width:60%;" name="uom_tiebar" id="uom_tiebar" class="easyui-combobox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Min Closing</span>
-                    <input style="width:60%;" name="min_closing" id="min_closing" class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Unit of Measure</span>
-                    <input style="width:60%;" name="uom_min" id="uom_min" class="easyui-combobox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Max Open</span>
-                    <input style="width:60%;" name="max_open" id="max_open" class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Unit of Measure</span>
-                    <input style="width:60%;" name="uom_max" id="uom_max" class="easyui-combobox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Barel Volume</span>
-                    <input style="width:60%;" name="volume" id="volume" class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Unit of Measure</span>
-                    <input style="width:60%;" name="uom_volume" id="uom_volume" class="easyui-combobox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Screw Diameter</span>
-                    <input style="width:60%;" name="diameter" id="diameter" class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Unit of Measure</span>
-                    <input style="width:60%;" name="uom_diameter" id="uom_diameter" class="easyui-combobox">
-                </div>
+            <!-- <div class="fitem">
+                <span style="width:35%; display:inline-block;">Asset No</span>
+                <input style="width:60%;" name="asset_id" required="" class="easyui-textbox">
+            </div> -->
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Machine No</span>
+                <input style="width:60%;" name="number" required="" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Machine Name</span>
+                <input style="width:60%;" name="name" required="" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Process Type</span>
+                <input style="width:60%;" name="type_process_id" id="type_process_id" required="" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Specification</span>
+                <input style="width:60%;" name="specification" required="" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Purchase Date</span>
+                <input style="width:60%;" name="purchase_date" data-options="formatter:myformatter,parser:myparser" required="" class="easyui-datebox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Manufacturing Date</span>
+                <input style="width:60%;" name="manufactur_date" data-options="formatter:myformatter,parser:myparser" required="" class="easyui-datebox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Maker</span>
+                <input style="width:60%;" name="maker" class="easyui-textbox">
+            </div>
+            </div>
+
+            <div style="width:50%;float:left">
+            
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Tonage of Machine</span>
+                <input style="width:60%;" name="toonage" class="easyui-numberbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Unit of Measure</span>
+                <input style="width:60%;" name="uom" id="uom" required="" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+            <span style="width:35%; display:inline-block;">Vacum</span>
+                <select style="width:60%;" name="vacum" class="easyui-combobox" panelHeight="auto">
+                    <option value="YES">YES</option>
+                    <option value="NO">NO</option>
+                </select>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">RT</span>
+                <input style="width:60%;" name="rt" class="easyui-numberbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Type</span>
+                <input style="width:60%;" name="type_id" id="type_id" required="" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Brand</span>
+                <input style="width:60%;" name="brand" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Status</span>
+                <select style="width:60%;" name="status" required="" panelHeight="auto" class="easyui-combobox">
+                    <option value="0">Active</option>
+                    <option value="1">Inactive</option>
+                </select>
+            </div>
             </div>
         </fieldset>
     </form>
 </div>
-
 <!-- Upload -->
 <div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
     <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
@@ -173,17 +147,6 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/machines/create') ?>';
         $('#frm_insert').form('clear');
-
-        $('#status').combobox('setValue', '0');
-
-        $.ajax({
-            type : "post",
-            url : "<?= base_url('master/machines/autoid')?>",
-            dataType : "html",
-            success : function(response){
-                $('#id').textbox('setValue', response);
-            }
-        });
 
     }
     //EDIT DATA
@@ -215,8 +178,8 @@
                                 var result = eval('(' + result + ')');
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error(jqXHR.statusText);
-                                $.messager.alert("Error", jqXHR.statusText, 'error');
+                                toastr.error("This item cannot be deleted, Please make sure it didn't have any relation");
+                                // $.messager.alert("Error", jqXHR.statusText, 'error');
                             },
                             complete: function(data) {
                                 $('#dg').datagrid('reload');
@@ -229,11 +192,12 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
-    // UPLOAD DATA
+
+   //Upload Data
     function upload() {
         $('#dlg_upload').dialog('open');
     }
-    // DOWNLOAD
+
     function download_excel() {
         window.location.assign('<?= base_url('template/tmp_machines.xls') ?>');
     }
@@ -245,10 +209,52 @@
     function excel() {
         window.location.assign('<?= base_url('master/machines/print/excel') ?>');
     }
+    
     //RELOAD
     function reload() {
         window.location.reload();
     }
+
+     //CELLSTYLE STATUS
+     function cellStyler(value, row, index) {
+        if (value == 0) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+    //FORMATTER STATUS
+    function cellFormatter(value) {
+        if (value == 0) {
+            return 'Active';
+        } else {
+            return 'Inactive';
+        }
+    };
+
+    // FORMAT tahun-bulan-tanggal
+    function myformatter(date) {
+        var y = date.getFullYear();
+        var m = date.getMonth(); // Mengambil indeks bulan (0 - Januari, 11 - Desember)
+        var monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+        return monthNames[m] + ' ' + y;
+    }
+
+    function myparser(s) {
+        if (!s) return new Date();
+        var parts = s.split(' ');
+        if (parts.length === 2) {
+            var monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+            var m = monthNames.indexOf(parts[0]); // Mencari indeks bulan dari nama bulan
+            var y = parseInt(parts[1]);
+            if (m !== -1 && !isNaN(y)) {
+                return new Date(y, m);
+            }
+        }
+        return new Date();
+    }
+
+
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
@@ -256,10 +262,8 @@
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
-            rownumbers: true,
             fit: true,
-            pageList: [20, 50, 100, 500, 1000],
-            pageSize: 20,
+            rownumbers: true
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({
@@ -279,7 +283,6 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
@@ -287,82 +290,9 @@
                 }
             }]
         });
-    });
-
-    $('#uom_tiebar').combobox({
-        url:'<?= base_url('master/uom/reads'); ?>',
-        valueField:'name',
-        textField:'name',
-        prompt: 'Choose Unit of Measure',
-    });
-
-    $('#uom_min').combobox({
-        url:'<?= base_url('master/uom/reads'); ?>',
-        valueField:'name',
-        textField:'name',
-        prompt: 'Choose Unit of Measure',
-    });
-
-    $('#uom_max').combobox({
-        url:'<?= base_url('master/uom/reads'); ?>',
-        valueField:'name',
-        textField:'name',
-        prompt: 'Choose Unit of Measure',
-    });
-
-    $('#uom_volume').combobox({
-        url:'<?= base_url('master/uom/reads'); ?>',
-        valueField:'name',
-        textField:'name',
-        prompt: 'Choose Unit of Measure',
-    });
-
-    $('#uom_diameter').combobox({
-        url:'<?= base_url('master/uom/reads'); ?>',
-        valueField:'name',
-        textField:'name',
-        prompt: 'Choose Unit of Measure',
-    });
-
-    // FORMAT tahun-bulan-tanggal
-    function myformatter(date){
-        var y = date.getFullYear();
-        var m = date.getMonth()+1;
-        var d = date.getDate();
-        return y+'-'+(m<10?('0'+m):m)+'-'+(d<10?('0'+d):d);
-    }
-    function myparser(s){
-        if (!s) return new Date();
-        var ss = (s.split('-'));
-        var y = parseInt(ss[0],10);
-        var m = parseInt(ss[1],10);
-        var d = parseInt(ss[2],10);
-        if (!isNaN(y) && !isNaN(m) && !isNaN(d)){
-            return new Date(y,m-1,d);
-        } else {
-            return new Date();
-        }
-    }
-
-    //CELLSTYLE STATUS
-    function cellStyler(value, row, index) {
-        if (value == 0) {
-            return 'background: #53D636; color:white;';
-        } else {
-            return 'background: #FF5F5F; color:white;';
-        }
-    }
-    //FORMATTER STATUS
-    function cellFormatter(value) {
-        if (value == 0) {
-            return 'Active';
-        } else {
-            return 'Not Active';
-        }
-    };
-
-    // UPLOAD DATA
-    $('#dlg_upload').dialog({
+       
+         //Upload Data
+         $('#dlg_upload').dialog({
             buttons: [{
                 text: 'List Failed',
                 handler: function() {
@@ -440,4 +370,38 @@
                 }
             }]
         });
+
+    
+        $('#type_process_id').combobox({
+            url: '<?php echo base_url('master/type_process/reads'); ?>',
+            valueField: 'id',
+            textField: 'name',
+            prompt: "Choose Process Type",
+            onSelect: function(machine) {
+                $.ajax({
+                    type: "post",
+                    url: '<?php echo base_url('master/machines/autoid/'); ?>' + machine.number,
+                    dataType: "html",
+                    success: function (response) {
+                        $('#id').textbox('setValue', response);
+                    }
+                });
+            }
+        });
+    
+
+        $('#type_id').combobox({
+            url: '<?= base_url('master/types/reads') ?>',
+            valueField: 'id',
+            textField: 'name',
+            prompt: "Choose Type"
+         });
+
+        $('#uom').combobox({
+            url: '<?= base_url('master/uom/reads') ?>',
+            valueField: 'name',
+            textField: 'name',
+            prompt: "Choose Unit Of Measure"
+        });
+    });
 </script>

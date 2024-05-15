@@ -36,24 +36,24 @@ class Bom extends CI_Controller
         echo json_encode($send);
     }
 
-     //GET DATA
-     public function readWeight()
-     {
+    //GET DATA
+    public function readWeight()
+    {
         $post = $this->input->post();
-        $item_fg = $this->crud->read("item_fg", [] ,["id" => $post['item_fg_id']]);
+        $item_fg = $this->crud->read("item_fg", [], ["id" => $post['item_fg_id']]);
         echo json_encode($item_fg);
     }
 
     //GET DATA
     public function readRunner()
     {
-       $post = $this->input->post();
-       $item_fg_id = $post['item_fg_id'];
-       $menu_loading = $this->crud->query("SELECT SUM(a.runner) as runner, b.cavity_standard
+        $post = $this->input->post();
+        $item_fg_id = $post['item_fg_id'];
+        $menu_loading = $this->crud->query("SELECT SUM(a.runner) as runner, b.cavity_standard
        FROM menu_loadings a JOIN molds b on a.mold_id = b.id
        WHERE a.item_fg_id = '$item_fg_id' group by a.item_fg_id");
-       echo json_encode($menu_loading);
-   }
+        echo json_encode($menu_loading);
+    }
 
     //GET DATATABLES
     public function datatables()
@@ -174,10 +174,11 @@ class Bom extends CI_Controller
                 //excel
                 'item_fg_id' => $data->val($i, 2),
                 'item_rm_id' => $data->val($i, 3),
-                'type' => $data->val($i, 4),
-                'recyle' => $data->val($i, 5),
-                'composition' => $data->val($i, 6),
-                'remark' => $data->val($i, 7)
+                'process_flow_id' => $data->val($i, 4),
+                'type' => $data->val($i, 5),
+                'recyle' => $data->val($i, 6),
+                'composition' => $data->val($i, 7),
+                'priority' => $data->val($i, 8)
             );
         }
         $datas['total'] = count($datas);
@@ -221,27 +222,30 @@ class Bom extends CI_Controller
             $data = $this->input->post('data');
             $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
             $item_rm = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
+            $item_process_flow = $this->crud->read('item_process_flow', [], ["id" => $data['process_flow_id']]);
 
             $item_fg_id = $data['item_fg_id'];
             $menu_loading = $this->crud->query("SELECT a.item_fg_id, SUM(a.runner) as runner, b.cavity_standard
             FROM menu_loadings a JOIN molds b on a.mold_id = b.id
             WHERE a.item_fg_id = '$item_fg_id' group by a.item_fg_id");
 
-            
+
             $bom = $this->crud->read('bom', [], ["item_fg_id" => $data['item_fg_id'], "item_rm_id" => $data['item_rm_id']]);
 
             if (empty($item_fg->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_fg_id'] ." Not Found", "theme" => "error"));
+                echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_fg_id'] . " Not Found", "theme" => "error"));
             } elseif (empty($item_rm->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_rm_id'] ." Not Found", "theme" => "error"));
+                echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_rm_id'] . " Not Found", "theme" => "error"));
+            } elseif (empty($item_process_flow->id)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Process Flow ID" . $data['process_flow_id'] . " Not Found", "theme" => "error"));
             } elseif (empty($menu_loading[0]->item_fg_id)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_fg_id'] . " in Menu Loading Not Found", "theme" => "error"));
             } elseif ($item_rm->item_family_id == 'P06' && $data['composition'] != "") {
-                echo json_encode(array("title" => "Alert", "message" => "Part ID" . $data['item_rm_id'] ." Product Family is VIRGIN ", "theme" => "error"));
+                echo json_encode(array("title" => "Alert", "message" => "Part ID" . $data['item_rm_id'] . " Product Family is VIRGIN ", "theme" => "error"));
             } elseif (!empty($bom->item_rm_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => "Part ID" . $data['item_rm_id'] . " is Duplicate Data", "theme" => "error"));
             } else {
-                 // Hitung nilai untuk field composition
+                // Hitung nilai untuk field composition
                 $weight = $item_fg->weight;
                 $runner = $menu_loading[0]->runner;
                 $cavity_standard = $menu_loading[0]->cavity_standard;
@@ -256,13 +260,18 @@ class Bom extends CI_Controller
                     //field
                     "item_fg_id" => $data['item_fg_id'],
                     "item_rm_id" => $data['item_rm_id'],
+                    "process_id" => $data['process_flow_id'],
                     "type" => $data['type'],
                     "recyle" => $data['recyle'],
-                    "remark" => $data['remark'],
+                    "priority" => $data['priority'],
                 );
 
                 if ($item_rm->item_family_id == 'P06') {
-                    $dataFinal['composition'] = (floatval($weight) + floatval($runner / $cavity_standard));
+                    if ($runner == 0) {
+                        $dataFinal['composition'] = 0;
+                    } else {
+                        $dataFinal['composition'] = (floatval($weight) + floatval($runner / $cavity_standard));
+                    }
                 } elseif ($item_rm->item_family_id != 'P06') {
                     $dataFinal['composition'] = $data['composition'];
                 }
@@ -338,7 +347,7 @@ class Bom extends CI_Controller
                 <th>Product Family</th>
                 <th>Unit Of Measure</th>
                 <th>Composition</th>
-                <th>Remarks</th>
+                <th>Priority</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
@@ -355,7 +364,7 @@ class Bom extends CI_Controller
                     <td>' . $data['product_family_name'] . '</td>
                     <td>' . $data['uom'] . '</td>
                     <td>' . $data['composition'] . '</td>
-                    <td>' . $data['remark'] . '</td>';
+                    <td>' . $data['priority'] . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';

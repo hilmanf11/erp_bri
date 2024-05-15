@@ -144,7 +144,7 @@
                                     width: 200
                                 }]
                             ],
-                            onSelect: function (value, rows) {
+                            onSelect: function(value, rows) {
                                 var dg = $('#dg2');
                                 var row = dg.datagrid('getSelected');
                                 var rowIndex = dg.datagrid('getRowIndex', row);
@@ -160,28 +160,37 @@
                                         url: "<?= base_url('master/bom/readWeight'); ?>",
                                         data: "item_fg_id=" + item_fg_id,
                                         dataType: "json",
-                                        success: function (item_fg) {
+                                        success: function(item_fg) {
                                             weight = item_fg.weight;
                                         }
                                     }),
-                                    
+
                                     $.ajax({
                                         type: "post",
                                         url: "<?= base_url('master/bom/readRunner'); ?>",
                                         data: "item_fg_id=" + item_fg_id,
                                         dataType: "json",
-                                        success: function (menu_loading) {
-                                            runner = menu_loading[0].runner;
-                                            cavity_standard = menu_loading[0].cavity_standard;
+                                        success: function(menu_loading) {
+                                            if (menu_loading.length > 0) {
+                                                runner = menu_loading[0].runner;
+                                                cavity_standard = menu_loading[0].cavity_standard;
+                                            } else {
+                                                runner = 0;
+                                                cavity_standard = 0;
+                                            }
                                         }
                                     })
-                                ).then(function () {
+                                ).then(function() {
                                     // Both AJAX requests are complete, perform the calculation
                                     var item_family_name = rows.item_family_name;
                                     var calculatedComposition;
 
                                     if (item_family_name == 'VIRGIN') {
-                                        calculatedComposition = ((parseFloat(weight) + parseFloat(runner / cavity_standard)) / 1000);
+                                        if (runner == 0) {
+                                            calculatedComposition = "";
+                                        } else {
+                                            calculatedComposition = ((parseFloat(weight) + parseFloat(runner / cavity_standard)) / 1000);
+                                        }
                                     } else {
                                         calculatedComposition = "";
                                     }
@@ -259,6 +268,21 @@
                         }
                     }
                 }, {
+                    field: 'process_id',
+                    width: 150,
+                    halign: 'center',
+                    title: "Process Name",
+                    editor: {
+                        type: 'combobox',
+                        options: {
+                            url: '<?= base_url('master/item_process_flow/reads'); ?>',
+                            required: true,
+                            valueField: 'id',
+                            textField: 'name',
+                            prompt: 'Choose Process'
+                        }
+                    }
+                }, {
                     field: 'type',
                     width: 120,
                     halign: 'center',
@@ -325,12 +349,12 @@
                         }
                     }
                 }, {
-                    field: 'remark',
-                    width: 200,
-                    halign: 'center',
-                    title: "Remarks",
+                    field: 'priority',
+                    width: 80,
+                    align: 'center',
+                    title: "Priority",
                     editor: {
-                        type: 'textbox'
+                        type: 'numberbox',
                     }
                 }]
             ],
@@ -540,53 +564,56 @@
                     rownumbers: true,
                     columns: [
                         [{
-                            field: 'item_rm_id',
-                            title: 'Part ID',
-                            halign: 'center',
-                            width: 150
-                        }, {
-                            field: 'item_rm_number',
-                            title: 'Part No',
-                            halign: 'center',
-                            width: 150
-                        }, {
-                            field: 'item_rm_name',
-                            title: 'Part Name',
-                            halign: 'center',
-                            width: 200
-                        }, {
-                            field: 'type',
-                            title: 'Type',
-                            halign: 'center',
-                            width: 100
-                        }, {
-                            field: 'recyle',
-                            title: 'Recyle',
-                            width: 100,
-                            halign: 'center',
-                            align: 'right',
-                        }, {
-                            field: 'product_family_name',
-                            title: 'Product Family',
-                            halign: 'center',
-                            width: 150
-                        }, {
-                            field: 'uom',
-                            title: 'UoM',
-                            align: 'center',
-                            width: 80
-                        }, {
-                            field: 'composition',
-                            title: 'Composition',
-                            width: 100,
-                            halign: 'center',
-                            align: 'right',
-                        }, {
-                            field: 'remark',
-                            title: 'Remarks',
-                            width: 200,
-                            halign: 'center',
-                        }]
+                                field: 'item_rm_id',
+                                title: 'Part ID',
+                                halign: 'center',
+                                width: 150
+                            }, {
+                                field: 'item_rm_number',
+                                title: 'Part No',
+                                halign: 'center',
+                                width: 150
+                            }, {
+                                field: 'item_rm_name',
+                                title: 'Part Name',
+                                halign: 'center',
+                                width: 200
+                            }, {
+                                field: 'type',
+                                title: 'Type',
+                                halign: 'center',
+                                width: 100
+                            }, {
+                                field: 'recyle',
+                                title: 'Recyle',
+                                width: 100,
+                                halign: 'center',
+                                align: 'right',
+                            }, {
+                                field: 'product_family_name',
+                                title: 'Product Family',
+                                halign: 'center',
+                                width: 150
+                            }, {
+                                field: 'uom',
+                                title: 'UoM',
+                                align: 'center',
+                                width: 80
+                            }, {
+                                field: 'composition',
+                                title: 'Composition',
+                                width: 100,
+                                halign: 'center',
+                                align: 'right',
+                            },
+                            {
+                                field: 'priority',
+                                title: 'Priority',
+                                width: 100,
+                                halign: 'center',
+                                align: 'right',
+                            }
+                        ]
                     ],
                     onResize: function() {
                         $('#dg').datagrid('fixDetailRowHeight', index);
@@ -621,10 +648,11 @@
                                 data: {
                                     item_fg_id: item_fg_id,
                                     item_rm_id: rows[i].item_rm_id,
+                                    process_id: rows[i].process_id,
                                     type: rows[i].type,
                                     recyle: rows[i].recyle,
                                     composition: rows[i].composition,
-                                    remark: rows[i].remark
+                                    priority: rows[i].priority
                                 },
                                 dataType: "json",
                                 success: function(result) {

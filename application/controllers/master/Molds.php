@@ -34,7 +34,7 @@ class Molds extends CI_Controller
         $send = $this->crud->reads('molds', ["id" => $post]);
         echo json_encode($send);
     }
-    
+
     //GET DATATABLES
     public function datatables()
     {
@@ -54,10 +54,10 @@ class Molds extends CI_Controller
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if($filter->field == "customer_name"){
+                    if ($filter->field == "customer_name") {
                         $this->db->like("c.name", $filter->value);
-                    }else{
-                        $this->db->like("a.".$filter->field, $filter->value);
+                    } else {
+                        $this->db->like("a." . $filter->field, $filter->value);
                     }
                 }
             }
@@ -75,17 +75,13 @@ class Molds extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid(){
-        $month = date('my');
-        $format = "M-".$month;
-        $sql = $this->db->query("SELECT max(id) as kode FROM molds WHERE id LIKE '%$format%'");
+    public function autoid($type, $model)
+    {
+        $code = $type . $model;
+        $sql = $this->db->query("SELECT coalesce(max(`id`),0) as kode From molds where id like '%$code%'");
         $row = $sql->row();
-        if ($row->kode == ""){
-            $kode = 0;
-        } else {
-            $kode = substr($row->kode,-3);
-        }
-        $autoid =$format. sprintf("%03s", $kode + 1);
+        $kode = substr($row->kode, -3);
+        $autoid = "MD" . $code . "-" . sprintf("%03s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA
@@ -134,7 +130,7 @@ class Molds extends CI_Controller
                 //excel
                 'mold_name' => $data->val($i, 2),
                 'type' => $data->val($i, 3),
-                'customer_id' => $data->val($i, 4),
+                'customer_number' => $data->val($i, 4),
                 'model' => $data->val($i, 5),
                 'mold_size' => $data->val($i, 6),
                 'project_year' => $data->val($i, 7),
@@ -186,30 +182,25 @@ class Molds extends CI_Controller
             //Cek Process Number          //table       //field        //field excel
             // $molds = $this->crud->read('molds', [], ["number" => $data['number']]);
             // $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
-            $customer = $this->crud->read('customers', [], ["id" => $data['customer_id']]);
+            $customer = $this->crud->read('customers', [], ["number" => $data['customer_number']]);
 
             //AUTOID
-            $month = date('my');
-            $format = "M-".$month;
-            $sql = $this->db->query("SELECT max(id) as kode FROM molds WHERE id LIKE '%$format%'");
+            $code = $data['type'] . $data['model'];
+            $sql = $this->db->query("SELECT coalesce(max(`id`),0) as kode From molds where id like '%$code%'");
             $row = $sql->row();
-            if ($row->kode == ""){
-                $kode = 0;
-            } else {
-                $kode = substr($row->kode,-3);
-            }
-            $autoid =$format. sprintf("%03s", $kode + 1);
+            $kode = substr($row->kode, -3);
+            $autoid = "MD" . $code . "-" . sprintf("%03s", $kode + 1);
 
-            
+
             if (empty($customer->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Customer " . $data['customer_id'] . " Not Found", "theme" => "error"));
+                echo json_encode(array("title" => "Not Found", "message" => "Customer " . $data['customer_number'] . " Not Found", "theme" => "error"));
             } else {
                 $dataFinal = array(
                     //field
                     "id" => $autoid,
                     "mold_name" => $data['mold_name'],
                     "type" => $data['type'],
-                    "customer_id" => $data['customer_id'],
+                    "customer_id" => @$customer->id,
                     "model" => $data['model'],
                     "mold_size" => $data['mold_size'],
                     "project_year" => $data['project_year'],
@@ -302,7 +293,7 @@ class Molds extends CI_Controller
                     <td>' . $data['cavity_actual'] . '</td>
                     <td>' . $data['shoot_standard'] . '</td>
                     <td>' . $data['shoot_standard'] . '</td>
-                    <td>' . $data['mold_type']. '</td>
+                    <td>' . $data['mold_type'] . '</td>
                     <td>' . $data['remark'] . '</td>
                     <td>' . $data['status'] . '</td>';
             $no++;
