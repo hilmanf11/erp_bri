@@ -228,26 +228,47 @@
         window.location.reload();
     }
 
+    // // FORMAT tahun-bulan-tanggal
+    // function myformatter(date) {
+    //     var y = date.getFullYear();
+    //     var m = date.getMonth(); // Mengambil indeks bulan (0 - Januari, 11 - Desember)
+    //     var monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    //     return monthNames[m] + ' ' + y;
+    // }
+
+    // function myparser(s) {
+    //     if (!s) return new Date();
+    //     var parts = s.split(' ');
+    //     if (parts.length === 2) {
+    //         var monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    //         var m = monthNames.indexOf(parts[0]); // Mencari indeks bulan dari nama bulan
+    //         var y = parseInt(parts[1]);
+    //         if (m !== -1 && !isNaN(y)) {
+    //             return new Date(y, m);
+    //         }
+    //     }
+    //     return new Date();
+    // }
+
     // FORMAT tahun-bulan-tanggal
     function myformatter(date) {
         var y = date.getFullYear();
-        var m = date.getMonth(); // Mengambil indeks bulan (0 - Januari, 11 - Desember)
-        var monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-        return monthNames[m] + ' ' + y;
+        var m = date.getMonth() + 1;
+        var d = date.getDate();
+        return y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
     }
 
     function myparser(s) {
         if (!s) return new Date();
-        var parts = s.split(' ');
-        if (parts.length === 2) {
-            var monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-            var m = monthNames.indexOf(parts[0]); // Mencari indeks bulan dari nama bulan
-            var y = parseInt(parts[1]);
-            if (m !== -1 && !isNaN(y)) {
-                return new Date(y, m);
-            }
+        var ss = (s.split('-'));
+        var y = parseInt(ss[0], 10);
+        var m = parseInt(ss[1], 10);
+        var d = parseInt(ss[2], 10);
+        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+            return new Date(y, m - 1, d);
+        } else {
+            return new Date();
         }
-        return new Date();
     }
 
     $(function() {

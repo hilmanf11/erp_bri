@@ -98,11 +98,12 @@ class Bom extends CI_Controller
             $number = base64_decode($this->input->get('number'));
             $filter_item_rm_id = base64_decode($this->input->get('filter_item_rm_id'));
 
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.name as item_rm_name, c.uom as uom, c.item_family_id as product_family, d.name as product_family_name');
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.name as item_rm_name, e.name as process_name, c.uom as uom, c.item_family_id as product_family, d.name as product_family_name');
             $this->db->from('bom a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
             $this->db->join('item_familys d', 'c.item_family_id = d.id');
+            $this->db->join('item_process e', 'a.process_id = e.id');
             $this->db->where('b.number', $number);
             $this->db->like('a.item_rm_id', $filter_item_rm_id);
             $this->db->group_by('a.id');
@@ -174,7 +175,7 @@ class Bom extends CI_Controller
                 //excel
                 'item_fg_id' => $data->val($i, 2),
                 'item_rm_id' => $data->val($i, 3),
-                'process_flow_id' => $data->val($i, 4),
+                'item_process_id' => $data->val($i, 4),
                 'type' => $data->val($i, 5),
                 'recyle' => $data->val($i, 6),
                 'composition' => $data->val($i, 7),
@@ -222,7 +223,7 @@ class Bom extends CI_Controller
             $data = $this->input->post('data');
             $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
             $item_rm = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
-            $item_process_flow = $this->crud->read('item_process_flow', [], ["id" => $data['process_flow_id']]);
+            $item_process = $this->crud->read('item_process', [], ["id" => $data['item_process_id']]);
 
             $item_fg_id = $data['item_fg_id'];
             $menu_loading = $this->crud->query("SELECT a.item_fg_id, SUM(a.runner) as runner, b.cavity_standard
@@ -236,8 +237,8 @@ class Bom extends CI_Controller
                 echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_fg_id'] . " Not Found", "theme" => "error"));
             } elseif (empty($item_rm->id)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_rm_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty($item_process_flow->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Process Flow ID" . $data['process_flow_id'] . " Not Found", "theme" => "error"));
+            } elseif (empty($item_process->id)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Process Flow ID" . $data['item_process_id'] . " Not Found", "theme" => "error"));
             } elseif (empty($menu_loading[0]->item_fg_id)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_fg_id'] . " in Menu Loading Not Found", "theme" => "error"));
             } elseif ($item_rm->item_family_id == 'P06' && $data['composition'] != "") {
@@ -260,7 +261,7 @@ class Bom extends CI_Controller
                     //field
                     "item_fg_id" => $data['item_fg_id'],
                     "item_rm_id" => $data['item_rm_id'],
-                    "process_id" => $data['process_flow_id'],
+                    "process_id" => $data['item_process_id'],
                     "type" => $data['type'],
                     "recyle" => $data['recyle'],
                     "priority" => $data['priority'],
@@ -300,11 +301,12 @@ class Bom extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.name as item_rm_name, c.item_family_id as product_family, c.uom as uom, , d.name as product_family_name');
+        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.name as item_rm_name, e.name as process_name, c.item_family_id as product_family, c.uom as uom, , d.name as product_family_name');
         $this->db->from('bom a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
         $this->db->join('item_familys d', 'c.item_family_id = d.id');
+        $this->db->join('item_process e', 'a.process_id = e.id');
         $this->db->like('a.item_fg_id', $filter_item_fg_id);
         $this->db->like('a.item_rm_id', $filter_item_rm_id);
         $this->db->order_by('a.id', 'ASC');
@@ -342,6 +344,7 @@ class Bom extends CI_Controller
                 <th>Part ID</th>
                 <th>Part No</th>
                 <th>Part Name</th>
+                <th>Process Name</th>
                 <th>Type of Product</th>
                 <th>% Recycle Part</th>
                 <th>Product Family</th>
@@ -359,6 +362,7 @@ class Bom extends CI_Controller
                     <td>' . $data['item_rm_id'] . '</td>
                     <td>' . $data['item_rm_number'] . '</td>
                     <td>' . $data['item_rm_name'] . '</td>
+                    <td>' . $data['process_name'] . '</td>
                     <td>' . $data['type'] . '</td>
                     <td>' . $data['recyle'] . '</td>
                     <td>' . $data['product_family_name'] . '</td>

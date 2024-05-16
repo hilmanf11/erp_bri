@@ -22,7 +22,7 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'item_fg_id',width:150,align:'center'">Product ID</th>
+            <th rowspan="2" data-options="field:'item_fg_id',width:200,align:'center'">Product ID</th>
             <th rowspan="2" data-options="field:'item_fg_number',width:250,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_fg_name',width:300,halign:'center'">Product Name</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -275,7 +275,7 @@
                     editor: {
                         type: 'combobox',
                         options: {
-                            url: '<?= base_url('master/item_process_flow/reads'); ?>',
+                            url: '<?= base_url('master/item_process/reads'); ?>',
                             required: true,
                             valueField: 'id',
                             textField: 'name',
@@ -577,6 +577,11 @@
                                 field: 'item_rm_name',
                                 title: 'Part Name',
                                 halign: 'center',
+                                width: 180
+                            }, {
+                                field: 'process_name',
+                                title: 'Process Name',
+                                halign: 'center',
                                 width: 200
                             }, {
                                 field: 'type',
@@ -586,7 +591,7 @@
                             }, {
                                 field: 'recyle',
                                 title: 'Recyle',
-                                width: 100,
+                                width: 80,
                                 halign: 'center',
                                 align: 'right',
                             }, {
@@ -609,7 +614,7 @@
                             {
                                 field: 'priority',
                                 title: 'Priority',
-                                width: 100,
+                                width: 80,
                                 halign: 'center',
                                 align: 'right',
                             }
