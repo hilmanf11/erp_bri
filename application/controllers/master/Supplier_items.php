@@ -112,7 +112,7 @@ class Supplier_items extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('b.id as supplier_id, b.number as supplier_number, b.name as supplier_name, b.currency, b.type, b.status, a.created_by, a.created_date, a.updated_by, a.updated_date');
+            $this->db->select('b.id as supplier_id, b.number as supplier_number, b.name as supplier_name, b.currency, b.type, b.status, a.created_by, a.created_date, a.updated_by, a.updated_date, a.approved_by, a.approved_date');
             $this->db->from('supplier_items a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
             $this->db->like('a.supplier_id', $filter_supplier_id);

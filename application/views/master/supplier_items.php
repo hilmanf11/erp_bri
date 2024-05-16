@@ -19,14 +19,18 @@
             <th rowspan="2" data-options="field:'type',width:100,halign:'center'">Type</th>
             <th rowspan="2" data-options="field:'currency',width:100,halign:'center'">Currency</th>
             <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', align:'center', styler:styleApproved, formatter:formatApproved">Approval</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
+            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Approved</th>
         </tr>
         <tr>
             <th data-options="field:'created_by',width:120,align:'center'"> By</th>
             <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
             <th data-options="field:'updated_by',width:120,align:'center'"> By</th>
             <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'approved_by',width:120,align:'center'"> By</th>
+            <th data-options="field:'approved_date',width:150,align:'center'"> Date</th>
         </tr>
     </thead>
 </table>
@@ -934,4 +938,21 @@
             }
         }]
     });
+
+    //CELLSTYLE APPROVE
+    function styleApproved(value, row, index) {
+        if (value == "" || value === null) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+    //FORMATTER APPROVE
+    function formatApproved(value) {
+        if (value == "" || value === null) {
+            return 'Approved';
+        } else {
+            return 'Checking';
+        }
+    };
 </script>

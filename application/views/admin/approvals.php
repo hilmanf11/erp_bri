@@ -37,6 +37,9 @@
                     <option value="stock_wip">Upload WIP</option>
                     <option value="os_os">Upload OS SO</option>
                     <option value="os_mpp">Upload OS MPP</option>
+                    <option value="suppliers">Suppliers</option>
+                    <option value="supplier_items">Supplier Items</option>
+                    <option value="purchase_requests">Purchase Request</option>
                     <option value="purchase_orders">Purchase Orders</option>
                 </select>
             </div>

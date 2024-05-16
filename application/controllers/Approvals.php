@@ -129,12 +129,12 @@ class Approvals extends CI_Controller
         $data = json_decode($read->approved_data, false);
 
         /* Default */
-        if(empty($data)){
+        if (empty($data)) {
             $send = $this->crud->delete($tablename, ["id" => $id]);
-        }else{
+        } else {
             $send = $this->db->update($tablename, $data, ["id" => $id]);
         }
-        
+
         echo json_encode(array("title" => "Disapproved", "message" => "Data Disapproved Successfully", "theme" => "success"));
     }
 
@@ -173,9 +173,11 @@ class Approvals extends CI_Controller
         // $os_so = $this->crud->reads('os_so', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         // $os_mpp = $this->crud->reads('os_mpp', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $purchase_orders = $this->crud->reads('purchase_orders', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $suppliers = $this->crud->reads('suppliers', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $supplier_items = $this->crud->reads('supplier_items', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
 
 
-        $totalRows = (count($users) + count($purchase_orders)); //+ count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) 
+        $totalRows = (count($users) + count($purchase_orders) + count($suppliers) + count($supplier_items)); //+ count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) 
         if ($totalRows > 0) {
             echo '<span class="badge">' . $totalRows . '</span>';
         } else {
@@ -193,6 +195,8 @@ class Approvals extends CI_Controller
         // $os_so = $this->crud->reads('os_so', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         // $os_mpp = $this->crud->reads('os_mpp', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $purchase_orders = $this->crud->reads('purchase_orders', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $suppliers = $this->crud->reads('suppliers', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $supplier_items = $this->crud->reads('supplier_items', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
 
 
         foreach ($users as $user) {
@@ -221,6 +225,12 @@ class Approvals extends CI_Controller
 
         foreach ($purchase_orders as $po) {
             $this->approvalMessage($po->approved_by, $po->approved_to, $po->created_by, "purchase_orders");
+        }
+        foreach ($suppliers as $supplier) {
+            $this->approvalMessage($supplier->approved_by, $supplier->approved_to, $supplier->created_by, "suppliers");
+        }
+        foreach ($supplier_items as $supplier_item) {
+            $this->approvalMessage($supplier_item->approved_by, $supplier_item->approved_to, $supplier_item->created_by, "supplier_items");
         }
     }
 
@@ -356,15 +366,40 @@ class Approvals extends CI_Controller
                     SUM(a.price) as price, 
                     SUM(a.total) as total,
                     a.total_sub');
-                $this->db->from('purchase_orders a');
-                $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-                $this->db->join('item_familys c', 'b.item_family_id = c.id');
-                $this->db->join('suppliers d', 'a.supplier_id = d.id');
-                $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
-                $this->db->join('(SELECT po_no, COUNT(status) as total_status_close FROM purchase_orders WHERE status = 1 GROUP BY po_no) g', 'a.po_no = g.po_no', 'left');
+        $this->db->from('purchase_orders a');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+        $this->db->join('item_familys c', 'b.item_family_id = c.id');
+        $this->db->join('suppliers d', 'a.supplier_id = d.id');
+        $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
+        $this->db->join('(SELECT po_no, COUNT(status) as total_status_close FROM purchase_orders WHERE status = 1 GROUP BY po_no) g', 'a.po_no = g.po_no', 'left');
         $this->db->where('a.approved_to', $approved_to);
         $this->db->where('a.created_by', $created_by);
         $this->db->order_by('a.created_date', 'DESC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalSuppliers($approved_to, $created_by)
+    {
+        $this->db->select('*');
+        $this->db->from('suppliers');
+        $this->db->where('deleted', 0);
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.created_by', $created_by);
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+    public function approvalSupplierItems($approved_to, $created_by)
+    {
+        $this->db->select('a.*, b.number as supplier_number, b.name as supplier_name, b.currency, b.type, b.status');
+        $this->db->from('supplier_items a');
+        $this->db->join('suppliers b', 'a.supplier_id = b.id');
+        $this->db->order_by('b.id', 'ASC');
+        $this->db->where('a.deleted', 0);
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.created_by', $created_by);
         $records = $this->db->get()->result_array();
 
         die(json_encode($records));

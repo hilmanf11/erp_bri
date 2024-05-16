@@ -1021,12 +1021,12 @@
 							width: 150,
 							halign: 'center',
 							title: "ID",
-						},{
+						}, {
 							field: 'po_no',
 							width: 150,
 							align: 'center',
 							title: "PO NO",
-						},{
+						}, {
 							field: 'po_date',
 							width: 100,
 							align: 'center',
@@ -1111,6 +1111,245 @@
 							width: 80,
 							halign: 'center',
 							title: "Month 3",
+						}, {
+							field: 'action',
+							width: 80,
+							align: 'center',
+							title: "Action",
+							formatter: function(val, row) {
+								if (val != "-") {
+									var approve = "approve('" + row.id + "','" + table + "')";
+									var disapprove = "disapprove('" + row.id + "','" + table + "')";
+									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
+									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
+									return a + " " + b;
+								}
+							}
+						}]
+					],
+				}).datagrid('enableFilter');
+			} else if (table == "suppliers") {
+				$('#dg_approval').datagrid({
+					singleSelect: true,
+					rownumbers: true,
+					url: '<?= base_url('approvals/approvalSuppliers/') ?>' + approved_to + "/" + created_by,
+					columns: [
+						[{
+							field: 'id',
+							hideen: true,
+							width: 150,
+							halign: 'center',
+							title: "ID",
+						}, {
+							field: 'number',
+							width: 150,
+							align: 'center',
+							title: "Cust. Number",
+						}, {
+							field: 'name',
+							width: 100,
+							align: 'center',
+							title: "Cust. Name",
+						}, {
+							field: 'type',
+							width: 150,
+							align: 'center',
+							title: "Type",
+						}, {
+							field: 'address',
+							width: 100,
+							align: 'center',
+							title: "Address",
+						}, {
+							field: 'contact_person',
+							width: 150,
+							halign: 'center',
+							title: "Contact <br>Person",
+						}, {
+							field: 'telp',
+							width: 80,
+							halign: 'center',
+							title: "Telp",
+						}, {
+							field: 'fax',
+							width: 150,
+							halign: 'center',
+							title: "Fax"
+						}, {
+							field: 'email',
+							width: 80,
+							halign: 'center',
+							title: "Email",
+						}, {
+							field: 'website',
+							width: 80,
+							halign: 'center',
+							title: "Website",
+						}, {
+							field: 'currency',
+							width: 80,
+							halign: 'center',
+							title: "Currency",
+						}, {
+							field: 'payment_terms',
+							width: 80,
+							halign: 'center',
+							title: "Payment Terms",
+						}, {
+							field: 'incoterm',
+							width: 80,
+							halign: 'center',
+							title: "Incoterm",
+						}, {
+							field: 'vat',
+							width: 80,
+							halign: 'center',
+							title: "Vat",
+						}, {
+							field: 'vat_status',
+							width: 80,
+							halign: 'center',
+							title: "Vat Status",
+						}, {
+							field: 'tax',
+							width: 80,
+							halign: 'center',
+							title: "Tax",
+						}, {
+							field: 'bank_account',
+							width: 80,
+							halign: 'center',
+							title: "Bank Account",
+						}, {
+							field: 'bank_name',
+							width: 80,
+							halign: 'center',
+							title: "Bank Name",
+						}, {
+							field: 'status',
+							width: 80,
+							halign: 'center',
+							title: "Status",
+						}, {
+							field: 'action',
+							width: 80,
+							align: 'center',
+							title: "Action",
+							formatter: function(val, row) {
+								if (val != "-") {
+									var approve = "approve('" + row.id + "','" + table + "')";
+									var disapprove = "disapprove('" + row.id + "','" + table + "')";
+									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
+									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
+									return a + " " + b;
+								}
+							}
+						}]
+					],
+				}).datagrid('enableFilter');
+			} else if (table == "supplier_items") {
+				$('#dg_approval').datagrid({
+					singleSelect: true,
+					rownumbers: true,
+					url: '<?= base_url('approvals/approvalSupplierItems/') ?>' + approved_to + "/" + created_by,
+					columns: [
+						[{
+							field: 'id',
+							hideen: true,
+							width: 150,
+							halign: 'center',
+							title: "ID",
+						}, {
+							field: 'item_rm_id',
+							title: 'Part ID',
+							halign: 'center',
+							width: 150
+						}, {
+							field: 'item_rm_number',
+							title: 'Part No.',
+							halign: 'center',
+							width: 150
+						}, {
+							field: 'item_rm_name',
+							title: 'Part Name',
+							halign: 'center',
+							width: 200
+						}, {
+							field: 'maker',
+							title: 'Maker',
+							halign: 'center',
+							width: 150
+						}, {
+							field: 'item_supplier',
+							title: 'Supplier Product',
+							halign: 'center',
+							width: 150
+						}, {
+							field: 'item_family_name',
+							title: 'Product Family',
+							halign: 'center',
+							width: 150
+						}, {
+							field: 'supplier_name',
+							title: 'Supplier Name',
+							halign: 'center',
+							width: 80
+						}, {
+							field: 'type',
+							title: 'Type',
+							halign: 'center',
+							width: 80
+						}, {
+							field: 'currency',
+							title: 'Currency',
+							halign: 'center',
+							width: 80
+						}, {
+							field: 'mpq',
+							title: 'MPQ',
+							halign: 'center',
+							width: 80
+						}, {
+							field: 'moq',
+							title: 'MOQ',
+							halign: 'center',
+							width: 80
+						}, {
+							field: 'share_order',
+							title: 'Share Order %',
+							halign: 'center',
+							width: 100
+						}, {
+							field: 'leadtime',
+							title: 'Leadtime',
+							halign: 'center',
+							width: 100
+						}, {
+							field: 'price',
+							title: 'Price',
+							halign: 'center',
+							align: 'right',
+							width: 100
+						}, {
+							field: 'btn',
+							title: 'History',
+							halign: 'center',
+							width: 80
+						}, {
+							field: 'valid_date',
+							title: 'Valid Date',
+							halign: 'center',
+							width: 100
+						}, {
+							field: 'safety_stock',
+							title: 'Safet Stock %',
+							width: 100,
+							halign: 'center',
+						}, {
+							field: 'calculate',
+							title: 'Calculate MPQ',
+							width: 100,
+							halign: 'center',
 						}, {
 							field: 'action',
 							width: 80,
