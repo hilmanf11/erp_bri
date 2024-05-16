@@ -1017,7 +1017,7 @@
 					columns: [
 						[{
 							field: 'id',
-							hideen: true,
+							hidden: true,
 							width: 150,
 							halign: 'center',
 							title: "ID",
@@ -1136,7 +1136,7 @@
 					columns: [
 						[{
 							field: 'id',
-							hideen: true,
+							hidden: true,
 							width: 150,
 							halign: 'center',
 							title: "ID",
@@ -1255,7 +1255,7 @@
 					columns: [
 						[{
 							field: 'id',
-							hideen: true,
+							hidden: true,
 							width: 150,
 							halign: 'center',
 							title: "ID",
@@ -1350,6 +1350,90 @@
 							title: 'Calculate MPQ',
 							width: 100,
 							halign: 'center',
+						}, {
+							field: 'action',
+							width: 80,
+							align: 'center',
+							title: "Action",
+							formatter: function(val, row) {
+								if (val != "-") {
+									var approve = "approve('" + row.id + "','" + table + "')";
+									var disapprove = "disapprove('" + row.id + "','" + table + "')";
+									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
+									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
+									return a + " " + b;
+								}
+							}
+						}]
+					],
+				}).datagrid('enableFilter');
+			} else if (table == "purchase_requests") {
+				$('#dg_approval').datagrid({
+					singleSelect: true,
+					rownumbers: true,
+					url: '<?= base_url('approvals/approvalPurchaseRequests/') ?>' + approved_to + "/" + created_by,
+					columns: [
+						[{
+							field: 'id',
+							hidden: true,
+							width: 150,
+							halign: 'center',
+							title: "ID",
+						}, {
+							field: 'request_no',
+							title: 'Request No',
+							halign: 'center',
+							width: 150
+						}, {
+							field: 'request_date',
+							title: 'Request Date',
+							halign: 'center',
+							width: 150
+						}, {
+							field: 'expected_date',
+							title: 'Expected Date',
+							halign: 'center',
+							width: 150
+						}, {
+							field: 'request_name',
+							title: 'Request Name',
+							halign: 'center',
+							width: 150
+						}, {
+							field: 'item_number',
+							title: 'Product No',
+							halign: 'center',
+							width: 150
+						}, {
+							field: 'item_name',
+							title: 'Product Name',
+							halign: 'center',
+							width: 200
+						}, {
+							field: 'category_name',
+							title: 'Product Family',
+							halign: 'center',
+							width: 80
+						}, {
+							field: 'uom',
+							title: 'UoM',
+							halign: 'center',
+							width: 80
+						}, {
+							field: 'qty',
+							title: 'Qty',
+							halign: 'center',
+							width: 80
+						}, {
+							field: 'remarks',
+							title: 'Remarks',
+							halign: 'center',
+							width: 80
+						}, {
+							field: 'po_no',
+							title: 'PO No',
+							halign: 'center',
+							width: 80
 						}, {
 							field: 'action',
 							width: 80,

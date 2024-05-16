@@ -4,10 +4,10 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'request_no',width:200,halign:'center'">Request No</th>
             <th rowspan="2" data-options="field:'status',width:120,align:'center',formatter:statusformat,styler:statusStyle">Status</th>
+            <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', align:'center', styler:styleApproved, formatter:formatApproved">Approval</th>
             <th rowspan="2" data-options="field:'request_date',width:100,halign:'center'">Request Date</th>
             <th rowspan="2" data-options="field:'expected_date',width:100,halign:'center'">Expected Date</th>
             <th rowspan="2" data-options="field:'request_name',width:150,halign:'center'">Request Name</th>
-            <th rowspan="2" data-options="field:'division',width:150,halign:'center'">Division</th>
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Product Name</th>
             <th rowspan="2" data-options="field:'category_name',width:150,halign:'center'">Product Family</th>
@@ -17,12 +17,15 @@
             <th rowspan="2" data-options="field:'po_no',width:120,align:'center'">Po No</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
+            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Approved</th>
         </tr>
         <tr>
             <th data-options="field:'created_by',width:100,align:'center'"> By</th>
             <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
             <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
             <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'approved_by',width:100,align:'center'"> By</th>
+            <th data-options="field:'approved_date',width:150,align:'center'"> Date</th>
         </tr>
     </thead>
 </table>
@@ -82,10 +85,6 @@
                     <span style="width:35%; display:inline-block;">Request Name</span>
                     <input style="width:60%;" name="request_name" id="request_name" value="<?= $this->session->name ?>" readonly class="easyui-textbox">
                 </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Division</span>
-                    <input style="width:60%;" name="division" id="division" class="easyui-combobox">
-                </div>
             </div>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
@@ -136,7 +135,7 @@
         $("#item_family_id").combobox('enable');
         $('#request_no').textbox('clear');
         $('#item_family_id').combobox('clear');
-        url_save= '<?= base_url('purchase/purchase_requests/create') ?>';
+        url_save = '<?= base_url('purchase/purchase_requests/create') ?>';
     }
 
     function addTable(item_family_id, link = "") {
@@ -155,7 +154,7 @@
                     editor: {
                         type: 'textbox'
                     }
-                },{
+                }, {
                     field: 'item_number',
                     width: 250,
                     halign: 'center',
@@ -368,7 +367,7 @@
                     $("#expected_date").combobox('disable');
 
 
-                    url_save= '<?= base_url('purchase/purchase_requests/update') ?>';
+                    url_save = '<?= base_url('purchase/purchase_requests/update') ?>';
 
                     setTimeout(function() {
                         $('#request_no').textbox('setValue', row.request_no);
@@ -537,7 +536,6 @@
                     var request_date = $("#request_date").datebox('getValue');
                     var request_name = $("#request_name").textbox('getValue');
                     var expected_date = $("#expected_date").datebox('getValue');
-                    var division = $("#division").combobox('getValue');
 
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
@@ -553,7 +551,6 @@
                                     request_no: request_no,
                                     request_date: request_date,
                                     request_name: request_name,
-                                    division: division,
                                     qty: rows[i].qty,
                                     expected_date: expected_date,
                                     remarks: rows[i].remarks
@@ -660,14 +657,6 @@
             }]
         });
 
-        $('#division').combobox({
-            url: '<?= base_url('master/divisions/reads'); ?>',
-            valueField: 'number',
-            textField: 'number',
-            panelHeight: 'panelHeight',
-            prompt: 'Choose Division',
-        }); 
-
         $("#item_category_id").combobox({
             url: '<?= base_url('master/item_categories/readsnotfg') ?>',
             valueField: 'id',
@@ -687,12 +676,12 @@
                     url: '<?= base_url('master/item_familys/reads/') ?>' + category.id,
                     valueField: 'id',
                     textField: 'name',
-                    multiple:true,
+                    multiple: true,
                     prompt: "Select Product Family",
                     onChange: function(row) {
                         var selectedRows = $("#item_family_id").combobox('getValues');
 
-                        addTable(selectedRows); 
+                        addTable(selectedRows);
                     }
                 });
             }
@@ -781,4 +770,21 @@
             return 'background-color:#C8FFCC;';
         }
     }
+
+    //CELLSTYLE APPROVE
+    function styleApproved(value, row, index) {
+        if (value == "" || value === null) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+    //FORMATTER APPROVE
+    function formatApproved(value) {
+        if (value == "" || value === null) {
+            return 'Approved';
+        } else {
+            return 'Checking';
+        }
+    };
 </script>

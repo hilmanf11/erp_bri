@@ -104,7 +104,7 @@ class Purchase_requests extends CI_Controller
         //Select Query
         $id = $_POST['id'];
         if ($id === "0") {
-            $this->db->select('request_no, request_date, expected_date, request_name, division, sum(a.qty) as qty, a.status, c.id as item_family_id, c.number as item_family_number');
+            $this->db->select('request_no, request_date, expected_date, request_name, sum(a.qty) as qty, a.status, c.id as item_family_id, c.number as item_family_number');
             $this->db->from('purchase_requests a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('item_familys c', 'b.item_family_id = c.id');
@@ -134,7 +134,6 @@ class Purchase_requests extends CI_Controller
                     "request_date" => $record['request_date'],
                     "expected_date" => $record['expected_date'],
                     "request_name" => $record['request_name'],
-                    "division" => $record['division'],
                     "qty" => $record['qty'],
                     "status" => $record['status'],
                     "state" => "closed",
@@ -203,8 +202,7 @@ class Purchase_requests extends CI_Controller
             $post = $this->input->post();
             $send = $this->crud->update('purchase_requests', ["id" => $id], [
                 "qty" => $post['qty'], 
-                "remarks" => $post['remarks'],
-                "division" => $post['division']
+                "remarks" => $post['remarks']
             ]);
 
             echo $send;
@@ -251,10 +249,9 @@ class Purchase_requests extends CI_Controller
                     'request_date' => $data->val($i, 2),
                     'expected_date' => $data->val($i, 3),
                     'request_name' => $data->val($i, 4),
-                    'division' => $data->val($i, 5),
-                    'product_number' => $data->val($i, 6),
-                    'qty' => $data->val($i, 7),
-                    'remarks' => $data->val($i, 8)
+                    'product_number' => $data->val($i, 5),
+                    'qty' => $data->val($i, 6),
+                    'remarks' => $data->val($i, 7)
                 );
             }
             $datas['total'] = count($datas);
@@ -505,7 +502,6 @@ class Purchase_requests extends CI_Controller
                 <th>Request Date</th>
                 <th>Expected Date</th>
                 <th>Request Name</th>
-                <th>Division</th>
                 <th>Product No</th>
                 <th>Product Name</th>
                 <th>Qty</th>
@@ -527,7 +523,6 @@ class Purchase_requests extends CI_Controller
                         <td>' . $data['request_date'] . '</td>
                         <td>' . $data['expected_date'] . '</td>
                         <td>' . $data['request_name'] . '</td>
-                        <td>' . $data['division'] . '</td>
                         <td>' . $data['item_rm_id'] . '</td>
                         <td>' . $data['item_name'] . '</td>
                         <td>' . number_format($data['qty'], 2) . '</td>
