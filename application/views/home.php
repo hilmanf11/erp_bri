@@ -186,13 +186,13 @@
 		<a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="export_excel()"><i class="fa fa-file"></i> Export Excel</a>
 	</div>
 
-	<div id="dlg_approval_detail" class="easyui-window" title="Approval Confirmation" data-options="closed: true,minimizable:false,collapsible:false" style="width: 1000px; height: 400px; top: 60px;">
+	<div id="dlg_approval_detail" class="easyui-window" title="Approval Confirmation" data-options="closed: true,minimizable:false,collapsible:false" style="width: 1000px; height: 500px; top: 60px;">
 		<div hidden>
 			<input class="easyui-textbox" id="table_name" />
 			<input class="easyui-textbox" id="approved_to" />
 			<input class="easyui-textbox" id="created_by" />
 		</div>
-		<table id="dg_approval" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar_approval" data-options="fitColumns: true, rownumbers: true"></table>
+		<table id="dg_approval" class="easyui-datagrid" style="width:100%;height:460px;" toolbar="#toolbar_approval" data-options="fitColumns: false, rownumbers: true"></table>
 	</div>
 
 	<!-- NOTIFICATIONS -->
