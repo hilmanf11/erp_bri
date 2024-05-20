@@ -226,9 +226,9 @@ class Bom extends CI_Controller
             $item_process = $this->crud->read('item_process', [], ["id" => $data['item_process_id']]);
 
             $item_fg_id = $data['item_fg_id'];
-            $menu_loading = $this->crud->query("SELECT a.item_fg_id, SUM(a.runner) as runner, b.cavity_standard
-            FROM menu_loadings a JOIN molds b on a.mold_id = b.id
-            WHERE a.item_fg_id = '$item_fg_id' group by a.item_fg_id");
+            // $menu_loading = $this->crud->query("SELECT a.item_fg_id, SUM(a.runner) as runner, b.cavity_standard
+            // FROM menu_loadings a JOIN molds b on a.mold_id = b.id
+            // WHERE a.item_fg_id = '$item_fg_id' group by a.item_fg_id");
 
 
             $bom = $this->crud->read('bom', [], ["item_fg_id" => $data['item_fg_id'], "item_rm_id" => $data['item_rm_id']]);
@@ -239,17 +239,21 @@ class Bom extends CI_Controller
                 echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_rm_id'] . " Not Found", "theme" => "error"));
             } elseif (empty($item_process->id)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Process Flow ID" . $data['item_process_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty($menu_loading[0]->item_fg_id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_fg_id'] . " in Menu Loading Not Found", "theme" => "error"));
+                // } elseif (empty($menu_loading[0]->item_fg_id)) {
+                //     echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_fg_id'] . " in Menu Loading Not Found", "theme" => "error"));
             } elseif ($item_rm->item_family_id == 'P06' && $data['composition'] != "") {
                 echo json_encode(array("title" => "Alert", "message" => "Part ID" . $data['item_rm_id'] . " Product Family is VIRGIN ", "theme" => "error"));
             } elseif (!empty($bom->item_rm_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => "Part ID" . $data['item_rm_id'] . " is Duplicate Data", "theme" => "error"));
             } else {
                 // Hitung nilai untuk field composition
+                // $weight = $item_fg->weight;
+                // $runner = $menu_loading[0]->runner;
+                // $cavity_standard = $menu_loading[0]->cavity_standard;
+
                 $weight = $item_fg->weight;
-                $runner = $menu_loading[0]->runner;
-                $cavity_standard = $menu_loading[0]->cavity_standard;
+                $runner = 0;
+                $cavity_standard = 0;
 
                 // if ($item_rm->item_family_id == 'P06') {
                 //     $dataFinal['composition'] = (floatval($weight) + floatval($runner / $cavity_standard));
