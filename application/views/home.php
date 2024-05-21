@@ -36,6 +36,8 @@
 
 	<!-- MAIN MENU -->
 	<div data-options="region:'west',split:false, collapsed:true, hideCollapsedContent:false, title:'Main Menu'" style="width:250px; padding:10px;">
+		<input id="searchMenu" placeholder="Search Menus" onkeyup="searchMenu(this.value)" title="Type for Search Menu" style="width:100%; padding: 5px;">
+		<br><br>
 		<ul class="easyui-tree" id="menu" data-options="url:'<?= base_url('home/menus') ?>', method:'get',animate:true, lines:true"></ul>
 	</div>
 
@@ -236,6 +238,9 @@
 </body>
 
 <script>
+	function searchMenu(e) {
+		menu(e);
+	};
 	$(function() {
 		var isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
@@ -312,46 +317,50 @@
 				}
 			}
 		});
+
+		menu();
 	});
 
-	$('#menu').tree({
-		url: '<?= base_url('home/menus') ?>',
-		method: 'get',
-		animate: 'true',
-		lines: 'true',
-		loadFilter: function(rows) {
-			return convert(rows);
-		},
-		onSelect: function(node) {
-			var node = $(this).tree('getSelected');
-			if (node) {
-				var nama = node.text;
-				var link = node.link;
-				var id = node.id;
-				if (node.attributes) {
-					link += "," + node.attributes.p1 + "," + node.attributes.p2;
-					nama += "," + node.attributes.p1 + "," + node.attributes.p2;
-					id += "," + node.attributes.p1 + "," + node.attributes.p2;
-				}
-				if ($('#tabs').tabs('exists', nama)) {
-					$('#tabs').tabs('select', nama);
-				} else {
-					if (link == null || link == "") {
-						return false;
+	function menu(searchName = "") {
+		$('#menu').tree({
+			url: '<?= base_url('home/menus?name=') ?>' + searchName,
+			method: 'get',
+			animate: 'true',
+			lines: 'true',
+			loadFilter: function(rows) {
+				return convert(rows);
+			},
+			onSelect: function(node) {
+				var node = $(this).tree('getSelected');
+				if (node) {
+					var nama = node.text;
+					var link = node.link;
+					var id = node.id;
+					if (node.attributes) {
+						link += "," + node.attributes.p1 + "," + node.attributes.p2;
+						nama += "," + node.attributes.p1 + "," + node.attributes.p2;
+						id += "," + node.attributes.p1 + "," + node.attributes.p2;
+					}
+					if ($('#tabs').tabs('exists', nama)) {
+						$('#tabs').tabs('select', nama);
 					} else {
-						var content = '<iframe src="' + link + '/index/' + window.btoa(id) + '" scrolling="yes" id="page" style="border: 0; width: 100%; height: 99%; margin:0;"></iframe>';
-						//$('#form').panel('setTitle', nama);
-						$('#tabs').tabs('add', {
-							title: nama,
-							content: content,
-							closable: true,
-							iconCls: node.iconCls
-						});
+						if (link == null || link == "") {
+							return false;
+						} else {
+							var content = '<iframe src="' + link + '/index/' + window.btoa(id) + '" scrolling="yes" id="page" style="border: 0; width: 100%; height: 99%; margin:0;"></iframe>';
+							//$('#form').panel('setTitle', nama);
+							$('#tabs').tabs('add', {
+								title: nama,
+								content: content,
+								closable: true,
+								iconCls: node.iconCls
+							});
+						}
 					}
 				}
 			}
-		}
-	});
+		});
+	}
 
 	function convert(rows) {
 		function exists(rows, parentId) {

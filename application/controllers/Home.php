@@ -55,6 +55,7 @@ class Home extends CI_Controller
     {
         if ($this->session->username != "") {
             $username = $this->session->username;
+            $searchName = $this->input->get('name');
             $this->db->select('a.*');
             $this->db->from('menus a');
             $this->db->join('setting_users b', 'a.id = b.menus_id');
@@ -62,6 +63,10 @@ class Home extends CI_Controller
             $this->db->where('a.deleted', 0);
             $this->db->where('c.username', $username);
             $this->db->where('b.v_view', 1);
+            if ($searchName != "") {
+                $this->db->like('a.name', $searchName);
+                $this->db->where('a.state', '');
+            }
             $this->db->order_by('a.sort', 'ASC');
             $menus = $this->db->get()->result_array();
 

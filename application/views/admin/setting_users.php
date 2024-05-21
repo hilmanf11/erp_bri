@@ -46,6 +46,15 @@
                                     width: 250,
                                     align: 'left'
                                 }, {
+                                    field: 'v_all',
+                                    title: 'ALL',
+                                    width: 80,
+                                    align: 'center',
+                                    formatter: function(hasil, row) {
+                                        var action = "save_all('" + row.id_user_set + "')";
+                                        return '<a class="btn btn-primary" id="v_all' + row.id_user_set + '"onClick="' + action + '" style="pointer-events: visible; opacity:1;" data-toggle="tooltip" data-placement="top"  title="Click to set All Access"></i>ALL</a>';
+                                    }
+                                }, {
                                     field: 'v_view',
                                     title: 'View',
                                     width: 80,
@@ -183,6 +192,78 @@
             ]
         });
     });
+
+    function save_all(data) {
+        var users_id = $("#users_id").val();
+        var id = data;
+        $("#v_view" + data).prop('checked', true);
+        $("#v_add" + data).prop('checked', true);
+        $("#v_edit" + data).prop('checked', true);
+        $("#v_delete" + data).prop('checked', true);
+        $("#v_upload" + data).prop('checked', true);
+        $("#v_download" + data).prop('checked', true);
+        $("#v_print" + data).prop('checked', true);
+        $("#v_excel" + data).prop('checked', true);
+
+        if ($("#v_view" + data).is(':checked')) {
+            var h_v_view = "1";
+        } else {
+            var h_v_view = "0";
+        }
+        if ($("#v_add" + data).is(':checked')) {
+            var h_v_add = "1";
+        } else {
+            var h_v_add = "0";
+        }
+        if ($("#v_edit" + data).is(':checked')) {
+            var h_v_edit = "1";
+        } else {
+            var h_v_edit = "0";
+        }
+        if ($("#v_delete" + data).is(':checked')) {
+            var h_v_delete = "1";
+        } else {
+            var h_v_delete = "0";
+        }
+        if ($("#v_upload" + data).is(':checked')) {
+            var h_v_upload = "1";
+        } else {
+            var h_v_upload = "0";
+        }
+        if ($("#v_download" + data).is(':checked')) {
+            var h_v_download = "1";
+        } else {
+            var h_v_download = "0";
+        }
+        if ($("#v_print" + data).is(':checked')) {
+            var h_v_print = "1";
+        } else {
+            var h_v_print = "0";
+        }
+        if ($("#v_excel" + data).is(':checked')) {
+            var h_v_excel = "1";
+        } else {
+            var h_v_excel = "0";
+        }
+
+        $.ajax({
+            url: '<?= base_url('admin/setting_users/update/') ?>?id=' + window.btoa(id),
+            type: 'post',
+            data: '&v_view=' + h_v_view + '&v_add=' + h_v_add + '&v_edit=' + h_v_edit + '&v_delete=' + h_v_delete +
+                '&v_upload=' + h_v_upload + '&v_download=' + h_v_download + '&v_print=' + h_v_print + '&v_excel=' + h_v_excel,
+            success: function(msg) {
+                var result = eval('(' + msg + ')');
+                if (result.theme == "success") {
+                    toastr.success(result.message, result.title);
+                } else {
+                    toastr.error(result.message, result.title);
+                }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                toastr.error(jqXHR.statusText);
+            }
+        });
+    }
 
     function save_data(data) {
         var users_id = $("#users_id").val();
