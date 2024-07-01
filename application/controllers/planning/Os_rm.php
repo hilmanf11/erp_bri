@@ -65,7 +65,7 @@ class Os_rm extends CI_Controller
             $this->db->join('item_categories c', 'b.item_category_id = c.id');
             $this->db->join('item_familys d', 'b.item_family_id = d.id');
             $this->db->join('item_family_subs e', 'b.item_sub_family_id = e.id');
-            if($filter_from != "" && $filter_to != ""){
+            if ($filter_from != "" && $filter_to != "") {
                 $this->db->where('a.trans_date >=', $filter_from);
                 $this->db->where('a.trans_date <=', $filter_to);
             }
@@ -139,10 +139,10 @@ class Os_rm extends CI_Controller
 
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
-                'item_rm_id' => $data->val($i, 2),
-                'trans_date' => $data->val($i, 8),
-                'qty' => $data->val($i, 9),
-                'location' => $data->val($i, 10)
+                'item_rm_name' => $data->val($i, 2),
+                'trans_date' => $data->val($i, 3),
+                'qty' => $data->val($i, 4),
+                'location' => $data->val($i, 5)
             );
         }
 
@@ -186,17 +186,17 @@ class Os_rm extends CI_Controller
         if ($this->input->post()) {
             $data = $this->input->post('data');
 
+            $item_rm = $this->crud->read('item_rm', [], ["name" => $data['item_rm_name']]);
+
             $os_rm = $this->crud->read('os_rm', [], [
-                "item_rm_id" => $data['item_rm_id'],
+                "item_rm_id" => $item_rm->id,
                 "trans_date" => $data['trans_date'],
             ]);
 
-            $item_rm = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
-
             if (!empty($os_rm->item_rm_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => "Part ID " . $data['item_rm_id'] . " is Duplicate Data", "theme" => "error"));
-            }elseif(empty($item_rm->id)){
-                echo json_encode(array("title" => "Not Found", "message" => "Part ID " . $data['item_rm_id'] . " is Not Found", "theme" => "error"));
+                echo json_encode(array("title" => "Duplicated", "message" => "Part ID " . $data['item_rm_name'] . " is Duplicate Data", "theme" => "error"));
+            } elseif (empty($item_rm->id)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Part ID " . $data['item_rm_name'] . " is Not Found", "theme" => "error"));
             } else {
                 $send = $this->crud->create('os_rm', $data);
                 echo $send;
@@ -233,7 +233,7 @@ class Os_rm extends CI_Controller
         $this->db->join('item_categories c', 'b.item_category_id = c.id');
         $this->db->join('item_familys d', 'b.item_family_id = d.id');
         $this->db->join('item_family_subs e', 'b.item_sub_family_id = e.id');
-        if($filter_from != "" && $filter_to != ""){
+        if ($filter_from != "" && $filter_to != "") {
             $this->db->where('a.trans_date >=', $filter_from);
             $this->db->where('a.trans_date <=', $filter_to);
         }
@@ -244,7 +244,7 @@ class Os_rm extends CI_Controller
         $this->db->order_by('a.trans_date', 'DESC');
         $records = $this->db->get()->result_array();
 
-            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#os_rm {border-collapse: collapse;width: 100%;font-size: 12px;}#os_rm td, #os_rm th {border: 1px solid #ddd;padding: 2px;}#os_rm tr:nth-child(even){background-color: #f2f2f2;}#os_rm tr:hover {background-color: #ddd;}#os_rm th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#os_rm {border-collapse: collapse;width: 100%;font-size: 12px;}#os_rm td, #os_rm th {border: 1px solid #ddd;padding: 2px;}#os_rm tr:nth-child(even){background-color: #f2f2f2;}#os_rm tr:hover {background-color: #ddd;}#os_rm th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
             <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
                     <table style="width: 100%;">
@@ -296,9 +296,9 @@ class Os_rm extends CI_Controller
                     <th>Location</th>
                     <th>Qty</th>
                 </tr>';
-            $no = 1;
-            foreach ($records as $data) {
-                $html .= '<tr>
+        $no = 1;
+        foreach ($records as $data) {
+            $html .= '<tr>
                             <td>' . $no . '</td>
                             <td>' . $data['item_rm_id'] . '</td>
                             <td>' . $data['item_rm_number'] . '</td>
@@ -310,9 +310,9 @@ class Os_rm extends CI_Controller
                             <td>' . $data['location'] . '</td>
                             <td>' . number_format($data['qty']) . '</td>
                         </tr>';
-                $no++;
-            }
-            $html .= '</table></body></html>';
-            echo $html;
-    }   
+            $no++;
+        }
+        $html .= '</table></body></html>';
+        echo $html;
+    }
 }

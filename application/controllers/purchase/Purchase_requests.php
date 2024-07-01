@@ -167,7 +167,8 @@ class Purchase_requests extends CI_Controller
         }
     }
 
-    public function datatable_updates(){
+    public function datatable_updates()
+    {
         $request_no = base64_decode($this->input->get('request_no'));
         $records = $this->crud->query("SELECT a.id, c.number as item_number, c.name as item_name, c.id as item_rm_id, a.qty, a.remarks
             FROM purchase_requests a
@@ -180,16 +181,15 @@ class Purchase_requests extends CI_Controller
     public function create()
     {
         if ($this->input->post()) {
-                $post   = $this->input->post();
-                $purchase_request_item = $this->crud->read('purchase_requests', [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']]);
-                if (@$purchase_request_item->id != "") {
-                    $send = $this->crud->update('purchase_requests', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], $post);
-                } else {
-                    $send = $this->crud->create('purchase_requests', $post);
-                }
+            $post   = $this->input->post();
+            $purchase_request_item = $this->crud->read('purchase_requests', [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']]);
+            if (@$purchase_request_item->id != "") {
+                $send = $this->crud->update('purchase_requests', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], $post);
+            } else {
+                $send = $this->crud->create('purchase_requests', $post);
+            }
 
-                echo $send;
-        
+            echo $send;
         } else {
             show_error("Cannot Process your request");
         }
@@ -201,7 +201,7 @@ class Purchase_requests extends CI_Controller
             $id   = $this->input->post('id');
             $post = $this->input->post();
             $send = $this->crud->update('purchase_requests', ["id" => $id], [
-                "qty" => $post['qty'], 
+                "qty" => $post['qty'],
                 "remarks" => $post['remarks']
             ]);
 
@@ -248,10 +248,9 @@ class Purchase_requests extends CI_Controller
                     'request_no' => $request_no,
                     'request_date' => $data->val($i, 2),
                     'expected_date' => $data->val($i, 3),
-                    'request_name' => $data->val($i, 4),
-                    'product_number' => $data->val($i, 5),
-                    'qty' => $data->val($i, 6),
-                    'remarks' => $data->val($i, 7)
+                    'product_name' => $data->val($i, 4),
+                    'qty' => $data->val($i, 5),
+                    'remarks' => $data->val($i, 6)
                 );
             }
             $datas['total'] = count($datas);
@@ -266,7 +265,7 @@ class Purchase_requests extends CI_Controller
     {
         @unlink('failed/purchase_requests.txt');
     }
-    
+
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
@@ -296,15 +295,22 @@ class Purchase_requests extends CI_Controller
             $data       = $this->input->post('data');
 
             //Cek Process Number
-            $item = $this->crud->read('item_rm', [], ["number" => $data['product_number']]);
+            $item = $this->crud->read('item_rm', [], ["name" => $data['product_name']]);
             $purchase_requests = $this->crud->read('purchase_requests', [], ["request_no" => $data['request_no'], "item_rm_id" => $item->id]);
-            
+
             if (empty($item->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Product No " . $data['product_number'] . " Not Found", "theme" => "error"));
+                echo json_encode(array("title" => "Not Found", "message" => "Product No " . $data['product_name'] . " Not Found", "theme" => "error"));
             } elseif (!empty($purchase_requests->id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['product_number'] . " Duplicate Data", "theme" => "error"));
+                echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['product_name'] . " Duplicate Data", "theme" => "error"));
             } else {
-                $send   = $this->crud->create('purchase_requests',(["item_rm_id" => $item->id, "request_no" => $data['request_no'], "request_date" => $data['request_date'],"request_name" => $data['request_name'] ,"qty" => $data['qty'], "remarks" => $data['remarks']]));
+                $send   = $this->crud->create('purchase_requests', ([
+                    "item_rm_id" => $item->id,
+                    "request_no" => $data['request_no'],
+                    "request_date" => $data['request_date'],
+                    "request_name" => $this->session->name,
+                    "qty" => $data['qty'],
+                    "remarks" => $data['remarks']
+                ]));
                 echo $send;
             }
         }
@@ -443,7 +449,7 @@ class Purchase_requests extends CI_Controller
         $html .= '</div><script>window.print()</script>';
         die($html);
     }
-    
+
     public function print($option = "")
     {
         if ($option == "excel") {

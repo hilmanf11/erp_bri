@@ -71,6 +71,7 @@ class Login extends CI_Controller
                             "number" => $user->number,
                             "name" => $user->name,
                             "username" => $user->username,
+                            "password" => $user->password,
                             "position" => $user->position
                         );
                         //List data yang akan di create Logins
