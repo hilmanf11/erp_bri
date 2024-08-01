@@ -34,14 +34,28 @@ class Purchase_requests extends CI_Controller
     {
         $request_no = $this->input->get('request_no');
         //Select Query
-        $this->db->select('a.*, 
+        $this->db->select("a.*, 
             b.number as item_number, 
             b.name as item_name, 
             b.uom, 
-            c.name as category_name');
+            c.name as category_name,
+            d.supplier_id,
+            d.mpq, d.moq,
+            e.name as supplier_name,
+            e.currency,
+            '0' as discount,
+            '0' as month_1,
+            '0' as month_2,
+            '0' as month_3,
+            '0' as month_4,
+            d.price,
+            (a.qty * d.price) as amount,
+            (a.request_date + INTERVAL d.leadtime DAY) as delivery_date");
         $this->db->from('purchase_requests a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('item_familys c', 'b.item_family_id = c.id');
+        $this->db->join('supplier_items d', 'a.item_rm_id = d.item_rm_id', 'left');
+        $this->db->join('suppliers e', 'd.supplier_id = e.id', 'left');
         $this->db->where('a.deleted', 0);
         $this->db->where('a.status', 0);
         $this->db->where('a.request_no', $request_no);

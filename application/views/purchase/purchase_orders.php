@@ -322,7 +322,7 @@
                                 halign: 'center',
                                 title: "UOM"
                             }, {
-                                field: 'supplier_number',
+                                field: 'supplier_name',
                                 width: 250,
                                 halign: 'center',
                                 title: "Supplier",
