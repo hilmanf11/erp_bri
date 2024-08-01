@@ -59,6 +59,7 @@ class Purchase_requests extends CI_Controller
         $this->db->where('a.deleted', 0);
         $this->db->where('a.status', 0);
         $this->db->where('a.request_no', $request_no);
+        $this->db->group_by('b.number');
         $this->db->order_by('b.number', 'ASC');
         $records = $this->db->get()->result_array();
         echo json_encode($records);
@@ -213,15 +214,39 @@ class Purchase_requests extends CI_Controller
     {
         if ($this->input->post()) {
             $id   = $this->input->post('id');
-            $post = $this->input->post();
-            $send = $this->crud->update('purchase_requests', ["id" => $id], [
-                "qty" => $post['qty'],
-                "remarks" => $post['remarks']
-            ]);
+            $qty  = $this->input->post('qty');
+            $remarks = $this->input->post('remarks');
 
-            echo $send;
+            // Validate inputs
+            if (empty($id) || empty($qty)) {
+                echo json_encode(array("title" => "Error", "message" => "ID and Quantity are required", "theme" => "error"));
+                return;
+            }
+
+            // Prepare data for update
+            $data = array(
+                "qty" => $qty,
+                "remarks" => $remarks
+            );
+
+            try {
+                // Execute update query
+                $send = $this->crud->update('purchase_requests', ["id" => $id], $data);
+
+                if ($send) {
+                    echo json_encode(array("title" => "Success", "message" => "Data successfully updated", "theme" => "success"));
+                } else {
+                    echo json_encode(array("title" => "Error", "message" => "Failed to update data", "theme" => "error"));
+                }
+            } catch (Exception $e) {
+                // Log exception
+                log_message('error', 'Update failed: ' . $e->getMessage());
+
+                // Return error response
+                echo json_encode(array("title" => "Error", "message" => "An error occurred while updating data", "theme" => "error"));
+            }
         } else {
-            show_error("Cannot Process your request");
+            show_error("Cannot process your request");
         }
     }
 
@@ -236,27 +261,29 @@ class Purchase_requests extends CI_Controller
     {
         error_reporting(0);
         require_once 'assets/vendors/excel_reader2.php';
+
         $target = basename($_FILES['file_upload']['name']);
-        move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
-        chmod($_FILES['file_upload']['name'], 0777);
-        $file = $_FILES['file_upload']['name'];
-        $data = new Spreadsheet_Excel_Reader($file, false);
+        if (!move_uploaded_file($_FILES['file_upload']['tmp_name'], $target)) {
+            echo json_encode(array("title" => "Error", "message" => "Failed to upload file", "theme" => "error"));
+            return;
+        }
+
+        chmod($target, 0777);
+        $data = new Spreadsheet_Excel_Reader($target, false);
         $total_row = $data->rowcount($sheet_index = 0);
         $category = $data->val(2, 3);
         $item_categories = $this->crud->read('item_categories', [], ["number" => $category]);
+
         if (!empty($item_categories)) {
-            $datenow    = $item_categories->number . date("ymd");
-            $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM purchase_requests WHERE request_no like '%$datenow%'");
-            $rowID      = $sqlGetID->row();
-            $kode       = $rowID->kode;
-            if ($kode == NULL) {
-                $autoID = sprintf("%04s", $kode + 1);
-            } else {
-                $urutan = (int) substr($kode, -4);
-                $urutan++;
-                $autoID = sprintf("%04s", $urutan);
-            }
+            $datenow = $item_categories->number . date("ymd");
+            $sqlGetID = $this->db->query("SELECT max(request_no) as kode FROM purchase_requests WHERE request_no like '%$datenow%'");
+            $rowID = $sqlGetID->row();
+            $kode = $rowID->kode;
+
+            $autoID = ($kode == NULL) ? sprintf("%04s", 1) : sprintf("%04s", (int)substr($kode, -4) + 1);
             $request_no = "PR-" . $datenow . "-" . $autoID;
+
+            $datas = [];
             for ($i = 4; $i <= $total_row; $i++) {
                 $datas[] = array(
                     'request_no' => $request_no,
@@ -267,12 +294,14 @@ class Purchase_requests extends CI_Controller
                     'remarks' => $data->val($i, 6)
                 );
             }
+
             $datas['total'] = count($datas);
             echo json_encode($datas);
         } else {
-            echo json_encode(array("title" => "Not Found", "message" => "Product Family " . $category . " Not Found Data", "theme" => "error"));
+            echo json_encode(array("title" => "Not Found", "message" => "Product Family " . $category . " not found", "theme" => "error"));
         }
-        unlink($_FILES['file_upload']['name']);
+
+        unlink($target);
     }
 
     public function uploadclearFailed()
@@ -293,7 +322,7 @@ class Purchase_requests extends CI_Controller
     public function uploadDownloadFailed()
     {
         $file = "failed/purchase_requests.txt";
-        header('Content-Description: File Failed');
+        header('Content-Description: File Transfer');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
         header('Cache-Control: must-revalidate');
@@ -306,26 +335,55 @@ class Purchase_requests extends CI_Controller
     public function uploadcreate()
     {
         if ($this->input->post()) {
-            $data       = $this->input->post('data');
+            $data = $this->input->post('data');
 
-            //Cek Process Number
-            $item = $this->crud->read('item_rm', [], ["name" => $data['product_name']]);
+            // Validasi kolom yang kosong
+            $required_fields = [
+                'product_name' => 'Product Name'
+            ];
+            $missing_fields = [];
+
+            foreach ($required_fields as $field => $field_name) {
+                if (empty($data[$field])) {
+                    $missing_fields[] = $field_name;
+                }
+            }
+
+            if (!empty($missing_fields)) {
+                echo json_encode(array("title" => "Error", "message" => "Fields cannot be empty: " . implode(', ', $missing_fields), "theme" => "error"));
+                return;
+            }
+
+            // Cek Process Number
+            $product_name = trim($data['product_name']);
+            $item = $this->crud->read('item_rm', [], ["name" => $product_name]);
+
+            if (empty($item)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Product " . $product_name . " not found", "theme" => "error"));
+                return;
+            }
+
             $purchase_requests = $this->crud->read('purchase_requests', [], ["request_no" => $data['request_no'], "item_rm_id" => $item->id]);
 
-            if (empty($item->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Product No " . $data['product_name'] . " Not Found", "theme" => "error"));
-            } elseif (!empty($purchase_requests->id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['product_name'] . " Duplicate Data", "theme" => "error"));
+            if (!empty($purchase_requests)) {
+                echo json_encode(array("title" => "Duplicated", "message" => "Product " . $data['product_name'] . " already exists", "theme" => "error"));
+                return;
             } else {
-                $send   = $this->crud->create('purchase_requests', ([
+                $send = $this->crud->create('purchase_requests', [
                     "item_rm_id" => $item->id,
                     "request_no" => $data['request_no'],
                     "request_date" => $data['request_date'],
+                    "expected_date" => $data['expected_date'],
                     "request_name" => $this->session->name,
                     "qty" => $data['qty'],
                     "remarks" => $data['remarks']
-                ]));
-                echo $send;
+                ]);
+
+                if ($send) {
+                    echo json_encode(array("title" => "Success", "message" => "Data successfully inserted", "theme" => "success"));
+                } else {
+                    echo json_encode(array("title" => "Error", "message" => "Failed to insert data", "theme" => "error"));
+                }
             }
         }
     }
