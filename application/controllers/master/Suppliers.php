@@ -69,17 +69,18 @@ class Suppliers extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid(){
+    public function autoid()
+    {
         $month = date('my');
-        $format = "SP-".$month;
+        $format = "SP-" . $month;
         $sql = $this->db->query("SELECT max(id) as kode FROM suppliers WHERE id LIKE '%$format%'");
         $row = $sql->row();
-        if ($row->kode == ""){
+        if ($row->kode == "") {
             $kode = 0;
         } else {
-            $kode = substr($row->kode,-3);
+            $kode = substr($row->kode, -3);
         }
-        $autoid =$format. sprintf("%03s", $kode + 1);
+        $autoid = $format . sprintf("%03s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA
@@ -116,6 +117,7 @@ class Suppliers extends CI_Controller
         $send = $this->crud->delete('suppliers', $data);
         echo $send;
     }
+
     //UPLOAD DATA
     public function upload()
     {
@@ -138,23 +140,29 @@ class Suppliers extends CI_Controller
                 'telp' => $data->val($i, 7),
                 'fax' => $data->val($i, 8),
                 'email' => $data->val($i, 9),
-                'website' => $data->val($i, 10),
-                'currency' => $data->val($i, 11),
-                'payment_term' => $data->val($i, 12),
-                'incoterm' => $data->val($i, 13),
-                'bank_account' => $data->val($i, 14),
-                'bank_name' => $data->val($i, 15),
-                'status' => $data->val($i, 16)
+                'attention' => $data->val($i, 10),
+                'website' => $data->val($i, 11),
+                'currency' => $data->val($i, 12),
+                'payment_term' => $data->val($i, 13),
+                'incoterm' => $data->val($i, 14),
+                'vat_status' => $data->val($i, 15),
+                'vat' => $data->val($i, 16),
+                'tax' => $data->val($i, 17),
+                'bank_account' => $data->val($i, 18),
+                'bank_name' => $data->val($i, 19),
+                'status' => $data->val($i, 20)
             );
         }
         $datas['total'] = count($datas);
         echo json_encode($datas);
         unlink($_FILES['file_upload']['name']);
     }
+
     public function uploadclearFailed()
     {
         @unlink('failed/suppliers.txt');
     }
+
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
@@ -164,6 +172,7 @@ class Suppliers extends CI_Controller
             fclose($textFailed);
         }
     }
+
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
@@ -177,26 +186,71 @@ class Suppliers extends CI_Controller
         header("Content-Type: text/plain");
         @readfile($file);
     }
+
     //UPLOAD CREATE DATA
     public function uploadcreate()
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
 
-            //Cek Process Number          //table       //field        //field excel
+            // Validasi kolom yang kosong
+            $required_fields = [
+                'number' => 'Supplier Code',
+                'address' => 'Address',
+                'currency' => 'Currency',
+                'vat' => 'Vat',
+                'status' => 'Status'
+            ];
+            $missing_fields = [];
+
+            foreach ($required_fields as $field => $label) {
+                if (!isset($data[$field]) || $data[$field] === '') {
+                    $missing_fields[] = $label;
+                }
+            }
+
+            if (!empty($missing_fields)) {
+                echo json_encode(array("title" => "Error", "message" => "Column Cannot Be Empty: " . implode(', ', $missing_fields), "theme" => "error"));
+                return;
+            }
+
+            // Validasi format data
+            if (!is_numeric($data['payment_term'])) {
+                echo json_encode(array("title" => "Error", "message" => "Payment Term must be a number", "theme" => "error"));
+                return;
+            }
+
+            if (!is_numeric($data['vat'])) {
+                echo json_encode(array("title" => "Error", "message" => "VAT must be a number", "theme" => "error"));
+                return;
+            }
+
+            // Validasi panjang Supplier Code
+            if (strlen($data['number']) != 3) {
+                echo json_encode(array("title" => "Error", "message" => "Supplier Code Entered Must Be 3 Characters!", "theme" => "error"));
+                return;
+            }
+
+            // Validasi status (harus 0 atau 1)
+            if (!in_array($data['status'], ['0', '1'])) {
+                echo json_encode(array("title" => "Error", "message" => "Status must be 0 (Active) or 1 (Not Active)", "theme" => "error"));
+                return;
+            }
+
+            //Cek Process Number
             $suppliers = $this->crud->read('suppliers', [], ["number" => $data['number']]);
 
             //AUTOID
             $month = date('my');
-            $format = "SP-".$month;
+            $format = "SP-" . $month;
             $sql = $this->db->query("SELECT max(id) as kode FROM suppliers WHERE id LIKE '%$format%'");
             $row = $sql->row();
-            if ($row->kode == ""){
+            if ($row->kode == "") {
                 $kode = 0;
             } else {
-                $kode = substr($row->kode,-3);
+                $kode = substr($row->kode, -3);
             }
-            $autoid =$format. sprintf("%03s", $kode + 1);
+            $autoid = $format . sprintf("%03s", $kode + 1);
 
             if (!empty($suppliers->number)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Supplier Code " . $data['number'] . " is Duplicate Data", "theme" => "error"));
@@ -212,19 +266,24 @@ class Suppliers extends CI_Controller
                     "telp" => $data['telp'],
                     "fax" => $data['fax'],
                     "email" => $data['email'],
+                    "attention" => $data['attention'],
                     "website" => $data['website'],
                     "currency" => $data['currency'],
                     "payment_term" => $data['payment_term'],
                     "incoterm" => $data['incoterm'],
+                    "vat_status" => $data['vat_status'],
+                    "vat" => $data['vat'],
+                    "tax" => $data['tax'],
                     "bank_account" => $data['bank_account'],
                     "bank_name" => $data['bank_name'],
-                    "status" => $data['status'],
+                    "status" => $data['status'], // Menyimpan 0 atau 1 langsung
                 );
-                $send   = $this->crud->create('suppliers', $dataFinal);
+                $send = $this->crud->create('suppliers', $dataFinal);
                 echo $send;
             }
         }
     }
+
     //PRINT & EXCEL DATA
     public function print($option = "")
     {
@@ -280,6 +339,7 @@ class Suppliers extends CI_Controller
                 <th>Fax</th>
                 <th>Email</th>
                 <th>Website</th>
+                <th>Attention</th>
                 <th>Currency</th>
                 <th>Payment Term (Day)</th>
                 <th>Incoterm</th>
@@ -301,6 +361,7 @@ class Suppliers extends CI_Controller
                     <td>' . $data['fax'] . '</td>
                     <td>' . $data['email'] . '</td>
                     <td>' . $data['website'] . '</td>
+                    <td>' . $data['attention'] . '</td>
                     <td>' . $data['currency'] . '</td>
                     <td>' . $data['payment_term'] . '</td>
                     <td>' . $data['incoterm'] . '</td>

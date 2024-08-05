@@ -541,7 +541,7 @@
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
                     endEditing();
-                    
+
                     for (let i = 0; i < totalrows; i++) {
                         if (rows[i].item_rm_id) {
                             $.ajax({

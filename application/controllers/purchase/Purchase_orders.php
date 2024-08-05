@@ -568,7 +568,7 @@ class Purchase_orders extends CI_Controller
 
 
         //Config Page
-        $rows = 8;
+        $rows = 15;
         $page = ceil(count($purchase_orders_total) / $rows);
         //Generate QRcode
         $this->createQrcode($purchase_orders->po_no, "assets/image/qrcode/");
@@ -613,7 +613,8 @@ class Purchase_orders extends CI_Controller
                                 <h1>Press CTRL + P for Print</h1>
                             </center>
                         </div>
-                        <div class="print">';
+                        <div class="print">
+                        <div style="border: 1px solid black; width:100%;">';
         //Loop Page
         $no = 1;
         $hal = 1;
@@ -627,7 +628,7 @@ class Purchase_orders extends CI_Controller
             $this->db->where('a.deleted', 0);
             $this->db->where('a.po_no', base64_decode($po_no));
             $this->db->order_by('b.number', 'asc');
-            $this->db->limit(8, ($i * 8));
+            $this->db->limit(15, ($i * 15));
             $records = $this->db->get()->result_array();
 
             if ($purchase_orders->updated_date != null) {
@@ -671,7 +672,6 @@ class Purchase_orders extends CI_Controller
                                 </th>
                             </tr>
                         </table>
-                        <div style="border: 1px solid black; width:100%;">
                             <div style="padding:10px;">
                                 <center>
                                     <br>
@@ -683,12 +683,14 @@ class Purchase_orders extends CI_Controller
                                         <td width="80">Supplier</td>
                                         <td width="10">:</td>
                                         <td width="30%"><b>' . @$supplier->name . '</b></td>
-                                        <td style="text-align:right; padding-right: 20px;" rowspan="7">
-                                            Page <b>' . $hal  . '</b> of <b> ' . $page . '</b><br><br>
-                                            PO Date:<br><b>' . date("d F Y", strtotime($purchase_orders->po_date)) . '</b><br>
-                                            Revision:<br><b>' . $purchase_orders->revision . '</b><br>
-                                            Revision Date:<br><b>' . date("d F Y", strtotime($revision_date)) . '</b><br>
-                                            Payment Terms:<br><b>' . $supplier->payment_term . ' Days</b>
+                                        <td style="text-align:right; padding-left: 450px;" rowspan="7">
+                                            <div style="text-align:left;">
+                                                Page <b>' . $hal . '</b> of <b>' . $page . '</b><br><br>
+                                                PO Date: <b>' . date("d F Y", strtotime($purchase_orders->po_date)) . '</b><br>
+                                                Revision: <b>' . $purchase_orders->revision . '</b><br>
+                                                Revision Date: <b>' . date("d F Y", strtotime($revision_date)) . '</b><br>
+                                                Payment Terms: <b>' . $supplier->payment_term . ' Days</b>
+                                            </div>
                                         </td>
                                     </tr>
                                     <tr>
@@ -782,7 +784,7 @@ class Purchase_orders extends CI_Controller
                 $this->db->where('a.deleted', 0);
                 $this->db->where('a.po_no', base64_decode($po_no));
                 $this->db->order_by('b.number', 'asc');
-                $this->db->limit(8, ($i * 8));
+                $this->db->limit(15, ($i * 15));
                 $remarks = $this->db->get()->result_array();
 
                 $html .= '  <tr>
@@ -835,35 +837,22 @@ class Purchase_orders extends CI_Controller
             } else {
                 // Memindahkan informasi approval ke sini
                 $html .= '<div style="width:100%; display: grid; grid-template-columns: auto auto auto;">
-    <div style="width:40%; position: absolute; right: 50px;">
-        <table id="customers" style="margin-top:20px;">
-            <tr>
-                <th colspan="3" width="200" style="text-align:center;">PT. BANSHU PLASTIC INDONESIA</th>
-            </tr>
-            <tr>
-                <th width="200" style="text-align:center;">Approved By</th>
-                <th width="200" style="text-align:center;">Checked By</th>
-                <th width="200" style="text-align:center;">Prepared By</th>
-            </tr>
-            <tr>
-                <th style="height:100px;">' . $users_3 . '</th>
-                <th style="height:100px;">' . $users_2 . '</th>
-                <th style="height:100px;">' . $users_1 . '</th>
-            </tr>
-            <tr>
-                <th style="height:20px; text-align:center;">' . $user_3->name . '</th>
-                <th style="height:20px; text-align:center;">' . $user_2->name . '</th>
-                <th style="height:20px; text-align:center;">' . $user_1->name . '</th>
-            </tr>
-            <tr>
-                <th width="200" style="text-align:center;">President Director</th>
-                <th width="200" style="text-align:center;">General Manager</th>
-                <th width="200" style="text-align:center;">Assistant Manager</th>
-            </tr>
-        </table>
-            <div style="text-align:left; font-size: 15px; margin-top: 20px; border: none;">
-                <i>Electronic Auto Generating Approval No Need Signature</i>
-            </div>
+    <div style="width:100%; display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+    <div style="text-align: center;">
+        <div style="margin-top: 30px;">Supplier Approval</div>
+        <div></div>
+        <div style="margin-top: 100px;">(.........................)</div>
+    </div>
+    <div style="text-align: center;">
+        <div style="margin-top: 30px;">Approved By</div>
+        <div style="margin-top: 10px;">' . $users_1 . '</div>
+        <div style="margin-top: 10px;">' . $user_1->name . '</div>
+        <div>President Director</div>
+    </div>
+</div>
+<div style="text-align: right; margin-top: 240px; font-style: italic;">
+    Electronic Auto Generating Approval No Need Signature
+</div>
     </div>
 </div>
 
@@ -876,7 +865,7 @@ class Purchase_orders extends CI_Controller
 <table style="width:100%; font-size:12px; margin-top:20px;">
     <tr>
         <td width="20">1.</td>
-        <td>Please sign, stamp & reply email to : mcl@banshuplastic.com. Maximum one day after PO received.</td>
+        <td>Please sign, stamp & reply email to : mcl@banshu-rubber.com. Maximum one day after PO received.</td>
     </tr>
     <tr>
         <td>2.</td>

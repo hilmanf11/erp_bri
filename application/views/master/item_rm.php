@@ -73,7 +73,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Part Type</span>
-                    <select style="width:60%;" name="type" class="easyui-combobox" panelHeight="auto">
+                    <select style="width:60%;" name="type" required="" class="easyui-combobox" panelHeight="auto">
                         <option value="IMPORT">IMPORT</option>
                         <option value="LOCAL">LOCAL</option>
                     </select>

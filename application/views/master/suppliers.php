@@ -23,6 +23,7 @@
             <th rowspan="2" data-options="field:'fax',width:120,halign:'center'">Fax</th>
             <th rowspan="2" data-options="field:'email',width:200,halign:'center'">Email</th>
             <th rowspan="2" data-options="field:'website',width:150,halign:'center'">Website</th>
+            <th rowspan="2" data-options="field:'attention',width:150,halign:'center'">Attention</th>
             <th rowspan="2" data-options="field:'currency',width:80,align:'center'">Currency</th>
             <th rowspan="2" data-options="field:'payment_term',width:80,halign:'center',align:'right'">Payment<br>Term (Day)</th>
             <th rowspan="2" data-options="field:'incoterm',width:80,align:'center'">Incoterm</th>
@@ -68,7 +69,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Supplier Code</span>
-                    <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox">
+                    <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox" validType="length[3,3]">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Type</span>
@@ -100,6 +101,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Website</span>
                     <input style="width:60%;" name="website" id="website" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Attention</span>
+                    <input style="width:60%;" name="attention" id="attention" class="easyui-textbox">
                 </div>
             </div>
             <div style="float:left; width:50%;">
@@ -191,6 +196,7 @@
             }
         });
     }
+
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
@@ -202,6 +208,7 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
+
     //DELETE DATA
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
@@ -234,26 +241,32 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
-    // UPLOAD DATA
+
+    //UPLOAD DATA
     function upload() {
         $('#dlg_upload').dialog('open');
     }
-    // DOWNLOAD
+
+    //DOWNLOAD
     function download_excel() {
         window.location.assign('<?= base_url('template/tmp_suppliers.xls') ?>');
     }
+
     //PRINT PDF
     function pdf() {
         $("#printout").get(0).contentWindow.print();
     }
+
     //PRINT EXCEL
     function excel() {
         window.location.assign('<?= base_url('master/suppliers/print/excel') ?>');
     }
+
     //RELOAD
     function reload() {
         window.location.reload();
     }
+
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
@@ -266,12 +279,19 @@
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
         }).datagrid('enableFilter');
+
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
                 text: 'Save',
                 iconCls: 'icon-ok',
                 handler: function() {
+                    var supplierCode = $('#number').textbox('getValue');
+                    if (supplierCode.length !== 3) {
+                        $.messager.alert('Error', 'Supplier Code Entered Must Be 3 Characters!', 'error');
+                        return;
+                    }
+
                     $('#frm_insert').form('submit', {
                         url: url_save,
                         onSubmit: function() {
@@ -301,6 +321,7 @@
             return 'background: #FF5F5F; color:white;';
         }
     }
+
     //FORMATTER STATUS
     function cellFormatter(value) {
         if (value == 0) {
@@ -308,7 +329,7 @@
         } else {
             return 'Not Active';
         }
-    };
+    }
 
     $('#currency').combobox({
         url: '<?= base_url('master/currencies/reads'); ?>',
@@ -317,7 +338,7 @@
         prompt: 'Choose Currencies',
     });
 
-    // UPLOAD
+    //UPLOAD
     $('#dlg_upload').dialog({
         buttons: [{
             text: 'List Failed',
@@ -405,6 +426,7 @@
             return 'background: #FF5F5F; color:white;';
         }
     }
+
     //FORMATTER APPROVE
     function formatApproved(value) {
         if (value == "" || value === null) {
@@ -412,5 +434,16 @@
         } else {
             return 'Checking';
         }
-    };
+    }
+
+    $(document).ready(function() {
+        $('#number').textbox({
+            validType: 'length[3,3]'
+        }).textbox('textbox').on('input', function() {
+            var value = $(this).val();
+            if (value.length > 3) {
+                $(this).val(value.slice(0, 3));
+            }
+        });
+    });
 </script>

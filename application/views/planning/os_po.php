@@ -13,7 +13,7 @@
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">Uom</th>
             <th rowspan="2" data-options="field:'qty',width:100,halign:'center',align:'right',formatter:numberFormat">Qty <br>Outstanding</th>
             <th rowspan="2" data-options="field:'currency',width:80,halign:'center'">Currency</th>
-            <th rowspan="2" data-options="field:'price',width:100,halign:'center'">Price</th>
+            <!-- <th rowspan="2" data-options="field:'price',width:100,halign:'center',formatter:numberformat">Price</th> -->
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -69,11 +69,11 @@
             <legend><b>Form Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Po Date</span>
-                <input style="width:60%;" name="po_date"  id="po_date" value="<?= date("Y-m-d") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                <input style="width:60%;" name="po_date" id="po_date" value="<?= date("Y-m-d") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Part No</span>
-                <input style="width:60%;" name="item_rm_id"  id="item_rm_id" class="easyui-combogrid">
+                <input style="width:60%;" name="item_rm_id" id="item_rm_id" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Supplier</span>
@@ -87,10 +87,10 @@
                 <span style="width:35%; display:inline-block;">Qty</span>
                 <input style="width:60%;" name="qty" id="qty" data-options="precision:2" required class="easyui-numberbox">
             </div>
-            <div class="fitem">
+            <!-- <div class="fitem">
                 <span style="width:35%; display:inline-block;">Price</span>
-                <input style="width:60%;" name="price" id="price" data-options="precision:2" required class="easyui-numberbox">
-            </div>
+                <input style="width:60%;" name="price" id="price" required data-options="buttonText:'Rp', buttonAlign:'left',precision:0, groupSeparator:'.',decimalSeparator:','" class="easyui-numberbox">
+            </div> -->
         </fieldset>
     </form>
 </div>
@@ -199,7 +199,7 @@
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_suppliers=" + window.btoa(filter_suppliers) +
-            "&filter_po_no=" + window.btoa(filter_po_no) + 
+            "&filter_po_no=" + window.btoa(filter_po_no) +
             "&filter_item_rm=" + window.btoa(filter_item_rm);
 
         $('#dg').datagrid({
@@ -208,7 +208,7 @@
             clientPaging: false,
             remoteFilter: true,
             rownumbers: true,
-            fit:true
+            fit: true
         });
 
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
@@ -231,7 +231,7 @@
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_suppliers=" + window.btoa(filter_suppliers) +
-            "&filter_po_no=" + window.btoa(filter_po_no) + 
+            "&filter_po_no=" + window.btoa(filter_po_no) +
             "&filter_item_rm=" + window.btoa(filter_item_rm);
 
         window.location.assign('<?= base_url('planning/os_po/print/excel') ?>' + url);
@@ -273,8 +273,7 @@
         });
     });
 
-
-    $('#filter_item_rm').combogrid({
+    $('#item_rm_id').combogrid({
         url: '<?= base_url('master/item_rm/reads/'); ?>',
         panelWidth: 450,
         idField: 'id',
@@ -282,12 +281,6 @@
         mode: 'remote',
         fitColumns: true,
         prompt: "Choose Part No",
-        icons: [{
-            iconCls: 'icon-clear',
-            handler: function(e) {
-                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-            }
-        }],
         columns: [
             [{
                 field: 'id',
@@ -303,41 +296,45 @@
                 width: 100
             }]
         ],
-    });
-
-    $('#supplier_id').combobox({
-        url: '<?= base_url('master/suppliers/reads'); ?>',
-        valueField: 'id',
-        textField: 'name',
-        prompt: 'Select Supplier',
+        onSelect: function(index, row) {
+            $('#supplier_id').combobox({
+                url: '<?= base_url('master/supplier_items/readSuppliers?item_rm_id='); ?>' + row.id,
+                valueField: 'id',
+                textField: 'name',
+                prompt: 'Select Supplier',
+                onLoadSuccess: function(value) {
+                    $('#supplier_id').combobox('setValue', value);
+                }
+            });
+        }
     });
 
     $("#filter_suppliers").combobox({
-            url: '<?= base_url('master/suppliers/reads') ?>',
-            valueField: 'id',
-            textField: 'name',
-            prompt: "Select Supplier",
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }],
-            onSelect: function(supp) {
-                $("#filter_po_no").combobox({
-                    url: '<?= base_url('planning/os_po/readPono?supplier_id=') ?>' + supp.id,
-                    valueField: 'po_no',
-                    textField: 'po_no',
-                    prompt: "Select Purchase Order No",
-                    icons: [{
-                        iconCls: 'icon-clear',
-                        handler: function(e) {
-                            $(e.data.target).combobox('clear').combobox('textbox').focus();
-                        }
-                    }],
-                });
+        url: '<?= base_url('master/suppliers/reads') ?>',
+        valueField: 'id',
+        textField: 'name',
+        prompt: "Select Supplier",
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
             }
-        });
+        }],
+        onSelect: function(supp) {
+            $("#filter_po_no").combobox({
+                url: '<?= base_url('planning/os_po/readPono?supplier_id=') ?>' + supp.id,
+                valueField: 'po_no',
+                textField: 'po_no',
+                prompt: "Select Purchase Order No",
+                icons: [{
+                    iconCls: 'icon-clear',
+                    handler: function(e) {
+                        $(e.data.target).combobox('clear').combobox('textbox').focus();
+                    }
+                }],
+            });
+        }
+    });
 
     $('#item_rm_id').combogrid({
         url: '<?= base_url('master/item_rm/reads/'); ?>',
@@ -472,4 +469,14 @@
             }
         }]
     });
+
+    function numberformat(value, row) {
+        const formatter = new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0
+        });
+
+        return formatter.format(value);
+    }
 </script>

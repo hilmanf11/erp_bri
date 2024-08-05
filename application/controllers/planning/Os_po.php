@@ -1,22 +1,18 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+
 class Os_po extends CI_Controller
 {
     public function __construct()
     {
         parent::__construct();
-        $this->load->helper('url');
         $this->load->helper(array('form', 'url'));
-        $this->load->library('form_validation');
-        $this->load->library('session');
+        $this->load->library(array('form_validation', 'session'));
         $this->load->model('crud');
-
-        //VALIDASI FORM
-        $this->form_validation->set_rules('item_rm_id', 'Item RM', 'required|min_length[1]|max_length[30]|is_unique[os_po.item_rm_id]');
     }
 
-    //HALAMAN UTAMA
+    // HALAMAN UTAMA
     public function index()
     {
         if (empty($this->session->username)) {
@@ -30,7 +26,7 @@ class Os_po extends CI_Controller
         }
     }
 
-    //GET DATA
+    // GET DATA
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
@@ -47,62 +43,73 @@ class Os_po extends CI_Controller
         $this->db->from('os_po a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
         $this->db->where('a.deleted', 0);
-        // $this->db->where('a.status', 0);
         $this->db->like('a.supplier_id', $supplier_id);
         $this->db->like('a.po_no', $post);
         $this->db->group_by('a.po_no');
         $this->db->order_by('a.created_date', 'desc');
-        
+
         $records = $this->db->get()->result_object();
         echo json_encode($records);
     }
 
-    //GET DATATABLES
+    // GET DATATABLES
     public function datatables()
     {
         if ($this->input->post()) {
             $get = $this->input->get();
-            $filter_from = @base64_decode($get['filter_from']);
-            $filter_to = @base64_decode($get['filter_to']);
-            $filter_suppliers = @base64_decode($get['filter_suppliers']);
-            $filter_po_no = @base64_decode($get['filter_po_no']);
-            $filter_item_rm = @base64_decode($get['filter_item_rm']);
+            $filter_from = isset($get['filter_from']) ? base64_decode($get['filter_from']) : "";
+            $filter_to = isset($get['filter_to']) ? base64_decode($get['filter_to']) : "";
+            $filter_suppliers = isset($get['filter_suppliers']) ? base64_decode($get['filter_suppliers']) : "";
+            $filter_po_no = isset($get['filter_po_no']) ? base64_decode($get['filter_po_no']) : "";
+            $filter_item_rm = isset($get['filter_item_rm']) ? base64_decode($get['filter_item_rm']) : "";
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
-            //Pagination 1-10
+            // Pagination 1-10
             $page   = isset($page) ? intval($page) : 1;
             $rows   = isset($rows) ? intval($rows) : 10;
             $offset = ($page - 1) * $rows;
             $result = array();
 
-            //Select Query
+            // Select Query
             $this->db->select('a.*, b.uom, b.number as item_rm_number, b.name as item_rm_name, c.name as supplier_name, c.currency');
             $this->db->from('os_po a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('suppliers c', 'a.supplier_id = c.id');
-            if($filter_from != "" && $filter_to != ""){
+
+            if (!empty($filter_from) && !empty($filter_to)) {
                 $this->db->where('a.po_date >=', $filter_from);
                 $this->db->where('a.po_date <=', $filter_to);
             }
-            $this->db->like('c.id', $filter_suppliers);
-            $this->db->like('b.id', $filter_item_rm);
+
+            if (!empty($filter_suppliers)) {
+                $this->db->like('c.id', $filter_suppliers);
+            }
+
+            if (!empty($filter_po_no)) {
+                $this->db->like('a.po_no', $filter_po_no);
+            }
+
+            if (!empty($filter_item_rm)) {
+                $this->db->like('b.id', $filter_item_rm);
+            }
+
             $this->db->order_by('a.po_date', 'DESC');
 
-            //Total Data
+            // Total Data
             $totalRows = $this->db->count_all_results('', false);
-            //Limit 1 - 10
+            // Limit 1 - 10
             $this->db->limit($rows, $offset);
-            //Get Data Array
+            // Get Data Array
             $records = $this->db->get()->result_array();
-            //Mapping Data
+            // Mapping Data
             $result['total'] = $totalRows;
-            $result = array_merge($result, ['rows' => $records]);
+            $result['rows'] = $records;
             echo json_encode($result);
         }
     }
 
-    //CREATE DATA
+    // CREATE DATA
     public function create()
     {
         if ($this->input->post()) {
@@ -118,7 +125,7 @@ class Os_po extends CI_Controller
         }
     }
 
-    //UPDATE DATA
+    // UPDATE DATA
     public function update()
     {
         if ($this->input->post()) {
@@ -131,7 +138,7 @@ class Os_po extends CI_Controller
         }
     }
 
-    //DELETE DATA
+    // DELETE DATA
     public function delete()
     {
         $data = $this->input->post();
@@ -139,7 +146,7 @@ class Os_po extends CI_Controller
         echo $send;
     }
 
-    //UPLOAD DATA
+    // UPLOAD DATA
     public function upload()
     {
         error_reporting(0);
@@ -156,9 +163,8 @@ class Os_po extends CI_Controller
                 'po_no' => $data->val($i, 2),
                 'po_date' => $data->val($i, 3),
                 'supplier_id' => $data->val($i, 4),
-                'item_rm_id' => $data->val($i, 6),
-                'qty' => $data->val($i, 10),
-                'price' => $data->val($i, 12)
+                'item_rm_id' => $data->val($i, 5),
+                'qty' => $data->val($i, 6),
             );
         }
 
@@ -182,7 +188,7 @@ class Os_po extends CI_Controller
         }
     }
 
-    //UPLOAD DOWNLOAD FAILED
+    // UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
         $file = "failed/os_po.txt";
@@ -196,28 +202,55 @@ class Os_po extends CI_Controller
         @readfile($file);
     }
 
-    //UPLOAD CREATE DATA
+    // UPLOAD CREATE DATA
     public function uploadcreate()
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
 
+            // Validate mandatory fields
+            $required_fields = [
+                'supplier_id' => 'Supplier Code',
+                'item_rm_id' => 'Part Name',
+                'qty' => 'QTY'
+            ];
+            $missing_fields = [];
+
+            foreach ($required_fields as $field => $field_name) {
+                if (empty($data[$field])) {
+                    $missing_fields[] = $field_name;
+                }
+            }
+
+            if (!empty($missing_fields)) {
+                echo json_encode(array("title" => "Error", "message" => "Fields cannot be empty: " . implode(', ', $missing_fields), "theme" => "error"));
+                return;
+            }
+
+            $item_rm = $this->crud->read('item_rm', [], ["name" => $data['item_rm_id']]);
+            $suppliers = $this->crud->read('suppliers', [], ["number" => $data['supplier_id']]);
+
             $os_po = $this->crud->read('os_po', [], [
-                "item_rm_id" => $data['item_rm_id'],
+                "item_rm_id" => @$item_rm->id,
+                "supplier_id" => @$suppliers->id,
                 "po_date" => $data['po_date'],
             ]);
 
-            $item_rm = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
-            $suppliers = $this->crud->read('suppliers', [], ["id" => $data['supplier_id']]);
-
             if (!empty($os_po->item_rm_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => "Part ID " . $data['item_rm_id'] . " is Duplicate Data", "theme" => "error"));
-            }elseif(empty($suppliers->id)){
+            } elseif (empty($suppliers->id)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Suppliers ID " . $data['supplier_id'] . " is Not Found", "theme" => "error"));
-            }elseif(empty($item_rm->id)){
+            } elseif (empty($item_rm->id)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Part ID " . $data['item_rm_id'] . " is Not Found", "theme" => "error"));
             } else {
-                $send = $this->crud->create('os_po', $data);
+                $send = $this->crud->create('os_po', [
+                    "po_no" => $data['po_no'],
+                    "item_rm_id" => $item_rm->id,
+                    "supplier_id" => $suppliers->id,
+                    "po_date" => $data['po_date'],
+                    "qty" => $data['qty'],
+                ]);
+
                 echo $send;
             }
         }
@@ -249,7 +282,7 @@ class Os_po extends CI_Controller
         $this->db->from('os_po a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('suppliers c', 'a.supplier_id = c.id');
-        if($filter_from != "" && $filter_to != ""){
+        if ($filter_from != "" && $filter_to != "") {
             $this->db->where('a.po_date >=', $filter_from);
             $this->db->where('a.po_date <=', $filter_to);
         }
@@ -258,7 +291,7 @@ class Os_po extends CI_Controller
         $this->db->order_by('a.po_date', 'DESC');
         $records = $this->db->get()->result_array();
 
-            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#os_po {border-collapse: collapse;width: 100%;font-size: 12px;}#os_po td, #os_po th {border: 1px solid #ddd;padding: 2px;}#os_po tr:nth-child(even){background-color: #f2f2f2;}#os_po tr:hover {background-color: #ddd;}#os_po th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#os_po {border-collapse: collapse;width: 100%;font-size: 12px;}#os_po td, #os_po th {border: 1px solid #ddd;padding: 2px;}#os_po tr:nth-child(even){background-color: #f2f2f2;}#os_po tr:hover {background-color: #ddd;}#os_po th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
             <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
                     <table style="width: 100%;">
@@ -310,11 +343,10 @@ class Os_po extends CI_Controller
                     <th>Uom</th>
                     <th>Qty Outstanding</th>
                     <th>Currency</th>
-                    <th>Price</th>
                 </tr>';
-            $no = 1;
-            foreach ($records as $data) {
-                $html .= '<tr>
+        $no = 1;
+        foreach ($records as $data) {
+            $html .= '<tr>
                             <td>' . $no . '</td>
                             <td>' . $data['po_no'] . '</td>
                             <td>' . $data['po_date'] . '</td>
@@ -326,11 +358,10 @@ class Os_po extends CI_Controller
                             <td>' . $data['uom'] . '</td>
                             <td>' . number_format($data['qty']) . '</td>
                             <td>' . $data['currency'] . '</td>
-                            <td>' . $data['price'] . '</td>
                         </tr>';
-                $no++;
-            }
-            $html .= '</table></body></html>';
-            echo $html;
-    }   
+            $no++;
+        }
+        $html .= '</table></body></html>';
+        echo $html;
+    }
 }

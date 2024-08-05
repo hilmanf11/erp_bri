@@ -69,6 +69,20 @@ class Item_rm extends CI_Controller
                         $this->db->like("c.name", $filter->value);
                     } elseif ($filter->field == "item_sub_family_name") {
                         $this->db->like("d.name", $filter->value);
+                    } elseif ($filter->field == "status") {
+                        // Menambahkan filter untuk kolom status
+                        if ($filter->value == "Active") {
+                            $this->db->where("a.status", 0);
+                        } elseif ($filter->value == "Not Active") {
+                            $this->db->where("a.status", 1);
+                        }
+                    } elseif ($filter->field == "supply") {
+                        // Menambahkan filter untuk kolom supply
+                        if ($filter->value == "YES") {
+                            $this->db->where("a.supply", 0);
+                        } elseif ($filter->value == "NO") {
+                            $this->db->where("a.supply", 1);
+                        }
                     } else {
                         $this->db->like("a." . $filter->field, $filter->value);
                     }
@@ -186,46 +200,70 @@ class Item_rm extends CI_Controller
         $send = $this->crud->delete('item_rm', $data);
         echo $send;
     }
+
     //UPLOAD DATA
     public function upload()
     {
         error_reporting(0);
         require_once 'assets/vendors/excel_reader2.php';
+
         $target = basename($_FILES['file_upload']['name']);
         move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
-        chmod($_FILES['file_upload']['name'], 0777);
-        $file = $_FILES['file_upload']['name'];
+        chmod($target, 0777); // Perbaikan: Menggunakan nama file yang benar
+
+        $file = $target;
         $data = new Spreadsheet_Excel_Reader($file, false);
         $total_row = $data->rowcount($sheet_index = 0);
+        $datas = [];
+
         for ($i = 3; $i <= $total_row; $i++) {
+            $part_no = $data->val($i, 2);
+            $name = $data->val($i, 3);
+            $unit_of_measure = $data->val($i, 4);
+            $type = $data->val($i, 5);
+            $category = $data->val($i, 6);
+            $product_family = $data->val($i, 7);
+            $sub_product_family = $data->val($i, 8);
+            $account_number = $data->val($i, 9);
+            $account_name = $data->val($i, 10);
+            $description = $data->val($i, 11);
+            $specification = $data->val($i, 12);
+            $leadtime = $data->val($i, 13);
+            $lifetime = $data->val($i, 14);
+            $safety_stock = $data->val($i, 15);
+            $supply = $data->val($i, 16);
+            $status = $data->val($i, 17);
+
             $datas[] = array(
-                //excel
-                'part_no' => $data->val($i, 2),
-                'name' => $data->val($i, 3),
-                'unit_of_measure' => $data->val($i, 4),
-                'type' => $data->val($i, 5),
-                'category' => $data->val($i, 6),
-                'product_family' => $data->val($i, 7),
-                'sub_product_family' => $data->val($i, 8),
-                'account_number' => $data->val($i, 9),
-                'account_name' => $data->val($i, 10),
-                'description' => $data->val($i, 11),
-                'specification' => $data->val($i, 12),
-                'leadtime' => $data->val($i, 13),
-                'lifetime' => $data->val($i, 14),
-                'safety_stock' => $data->val($i, 15),
-                'supply' => $data->val($i, 16),
-                'status' => $data->val($i, 17)
+                'part_no' => $part_no,
+                'name' => $name,
+                'unit_of_measure' => $unit_of_measure,
+                'type' => $type,
+                'category' => $category,
+                'product_family' => $product_family,
+                'sub_product_family' => $sub_product_family,
+                'account_number' => $account_number,
+                'account_name' => $account_name,
+                'description' => $description,
+                'specification' => $specification,
+                'leadtime' => $leadtime,
+                'lifetime' => $lifetime,
+                'safety_stock' => $safety_stock,
+                'supply' => $supply,
+                'status' => $status
             );
         }
+
         $datas['total'] = count($datas);
         echo json_encode($datas);
-        unlink($_FILES['file_upload']['name']);
+        unlink($file);
     }
+
     public function uploadclearFailed()
     {
         @unlink('failed/item_rm.txt');
     }
+
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
@@ -235,6 +273,7 @@ class Item_rm extends CI_Controller
             fclose($textFailed);
         }
     }
+
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
@@ -248,13 +287,56 @@ class Item_rm extends CI_Controller
         header("Content-Type: text/plain");
         @readfile($file);
     }
+
     //UPLOAD CREATE DATA
     public function uploadcreate()
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
 
-            //Cek Process Number        //table                   //field           //field excel
+            // Validasi kolom yang kosong
+            $required_fields = [
+                'part_no' => 'Part No',
+                'name' => 'Part Name',
+                'unit_of_measure' => 'Unit of Measure',
+                'type' => 'Part Type',
+                'category' => 'Category',
+                'product_family' => 'Product Family',
+                'supply' => 'Supply',
+                'status' => 'Status'
+            ];
+            $missing_fields = [];
+
+            foreach ($required_fields as $field => $field_name) {
+                if (!isset($data[$field]) || $data[$field] === '') {
+                    $missing_fields[] = $field_name;
+                }
+            }
+
+            if (!empty($missing_fields)) {
+                echo json_encode(array("title" => "Error", "message" => "Column Cannot Be Empty : " . implode(', ', $missing_fields), "theme" => "error"));
+                return;
+            }
+
+            // Validasi kategori tidak boleh FG
+            if ($data['category'] === 'FG') {
+                echo json_encode(array("title" => "Error", "message" => "Category 'FG' is not allowed", "theme" => "error"));
+                return;
+            }
+
+            // Validasi status (harus 0 atau 1)
+            if (!in_array($data['status'], ['0', '1'])) {
+                echo json_encode(array("title" => "Error", "message" => "Status must be 0 (Active) atau 1 (Not Active)", "theme" => "error"));
+                return;
+            }
+
+            // Validasi supply (harus 0 atau 1)
+            if (!in_array($data['supply'], ['0', '1'])) {
+                echo json_encode(array("title" => "Error", "message" => "Supply must be 0 or 1", "theme" => "error"));
+                return;
+            }
+
+            //Cek Process Number
             $category = $this->crud->read('item_categories', [], ["number" => $data['category']]);
             $prod_fam = $this->crud->read('item_familys', [], ["number" => $data['product_family']]);
             $prod_sub_fam = $this->crud->read('item_family_subs', [], ["number" => $data['sub_product_family']]);
@@ -264,13 +346,10 @@ class Item_rm extends CI_Controller
                 echo json_encode(array("title" => "Not Found", "message" => "Category Code " . $data['category'] . " Not Found", "theme" => "error"));
             } elseif (empty($prod_fam->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Product Family Code " . $data['product_family'] . " Not Found", "theme" => "error"));
-                // } elseif (empty($prod_sub_fam->number)) {
-                //     echo json_encode(array("title" => "Not Found", "message" => "Sub Product Family Code " . $data['sub_product_family'] . " Not Found", "theme" => "error"));
             } elseif (!empty($item_rm->number)) {
                 echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['part_no'] . " Duplicate Data", "theme" => "error"));
             } else {
                 //autoid
-
                 if (empty($prod_sub_fam->number)) {
                     $code = $data['category'] . $data['product_family'] . "NA";
                 } else {
@@ -300,11 +379,12 @@ class Item_rm extends CI_Controller
                     "supply" => $data['supply'],
                     "status" => $data['status'],
                 );
-                $send   = $this->crud->create('item_rm', $dataFinal);
+                $send = $this->crud->create('item_rm', $dataFinal);
                 echo $send;
             }
         }
     }
+
     //PRINT & EXCEL DATA
     public function print($option = "")
     {

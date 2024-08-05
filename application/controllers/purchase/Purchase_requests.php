@@ -33,12 +33,12 @@ class Purchase_requests extends CI_Controller
     public function reads()
     {
         $request_no = $this->input->get('request_no');
-        //Select Query
+        // Select Query
         $this->db->select("a.*, 
-            b.number as item_number, 
-            b.name as item_name, 
-            b.uom, 
-            c.name as category_name,
+        b.number as item_number, 
+        b.name as item_name, 
+        b.uom, 
+        c.name as category_name,
             d.supplier_id,
             d.mpq, d.moq,
             e.name as supplier_name,
@@ -119,7 +119,7 @@ class Purchase_requests extends CI_Controller
         //Select Query
         $id = $_POST['id'];
         if ($id === "0") {
-            $this->db->select('request_no, request_date, expected_date, request_name, sum(a.qty) as qty, a.status, c.id as item_family_id, c.number as item_family_number');
+            $this->db->select('request_no, request_date, expected_date, request_name, sum(a.qty) as qty, a.status, a.approved_to, c.id as item_family_id, c.number as item_family_number');
             $this->db->from('purchase_requests a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('item_familys c', 'b.item_family_id = c.id');
@@ -151,6 +151,7 @@ class Purchase_requests extends CI_Controller
                     "request_name" => $record['request_name'],
                     "qty" => $record['qty'],
                     "status" => $record['status'],
+                    "approved_to" => $record['approved_to'],
                     "state" => "closed",
                     "datatable" => 1
                 );
@@ -339,7 +340,11 @@ class Purchase_requests extends CI_Controller
 
             // Validasi kolom yang kosong
             $required_fields = [
-                'product_name' => 'Product Name'
+                'product_name' => 'Product Name',
+                'request_no' => 'Request Number',
+                'request_date' => 'Request Date',
+                'expected_date' => 'Expected Date',
+                'qty' => 'Quantity'
             ];
             $missing_fields = [];
 
@@ -351,6 +356,12 @@ class Purchase_requests extends CI_Controller
 
             if (!empty($missing_fields)) {
                 echo json_encode(array("title" => "Error", "message" => "Fields cannot be empty: " . implode(', ', $missing_fields), "theme" => "error"));
+                return;
+            }
+
+            // Validasi kategori tidak boleh FG
+            if (isset($data['category']) && $data['category'] === 'FG') {
+                echo json_encode(array("title" => "Error", "message" => "Category 'FG' is not allowed", "theme" => "error"));
                 return;
             }
 
@@ -380,7 +391,7 @@ class Purchase_requests extends CI_Controller
                 ]);
 
                 if ($send) {
-                    echo json_encode(array("title" => "Success", "message" => "Data successfully inserted", "theme" => "success"));
+                    echo json_encode(array("title" => "Success", "message" => "Data Saved Successfully", "theme" => "success"));
                 } else {
                     echo json_encode(array("title" => "Error", "message" => "Failed to insert data", "theme" => "error"));
                 }

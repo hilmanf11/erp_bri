@@ -43,7 +43,7 @@
 <div id="toolbar" style="height: 270px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-    <fieldset style="width: 50%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">    
+        <fieldset style="width: 50%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Period</span>
@@ -104,7 +104,7 @@
         <div id="frm_calculate" style="width: 30%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex; float: right; margin-top:20px;">
             <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px;">
                 <div style="width: 100%; float: right; margin-top: 10px;">
-                <!-- <a style="width: 100%;" class="easyui-linkbutton c2" onclick="calculate()">Calculate</a> -->
+                    <!-- <a style="width: 100%;" class="easyui-linkbutton c2" onclick="calculate()">Calculate</a> -->
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">SUB TOTAL</b>
                         <input style="width:60%; text-align:right;" id="total_sub" name="total_sub" readonly class="easyui-numberbox" value="0" readonly data-options="precision:2,groupSeparator:','">
@@ -169,7 +169,9 @@
                 $.ajax({
                     type: 'POST',
                     url: '<?= base_url('purchase/purchase_orders/checkPassword') ?>', // Ganti dengan URL endpoint Anda
-                    data: {password: encodedPassword},
+                    data: {
+                        password: encodedPassword
+                    },
                     dataType: 'json',
                     success: function(response) {
                         if (response.success) {
@@ -231,7 +233,7 @@
         if (row) {
             console.log(row);
             if (row.datatable == "1") {
-                if (row.status_pi == "0" || row.status_pi == null ) {
+                if (row.status_pi == "0" || row.status_pi == null) {
                     $('#dlg_insert').dialog('open');
                     $('#frm_insert').form('load', row);
                     $('#frm_calculate').show();
@@ -248,13 +250,13 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
-    
+
 
     function preview(url = "") {
         var request_no = $("#request_no").combobox('getValue');
         var po_date = $("#po_date").datebox('getValue');
 
-        if(url == ""){
+        if (url == "") {
             var url = '<?= base_url('purchase/purchase_requests/reads') ?>?request_no=' + request_no;
         }
 
@@ -478,7 +480,7 @@
                                 editor: {
                                     type: 'numberbox',
                                 }
-                            },{
+                            }, {
                                 field: 'item_rm_id',
                                 width: 150,
                                 hidden: true,
@@ -514,7 +516,7 @@
                                     var qty = $(editors[6].target).numberbox('getValue');
                                     var discount = $(editors[8].target).numberbox('getValue');
                                     var price = $(editors[9].target).numberbox('getValue');
-                                    var total = ((qty * price)-((qty * price)*(discount/100)));
+                                    var total = ((qty * price) - ((qty * price) * (discount / 100)));
                                     editors[10].target.numberbox('setValue', total);
                                 }
                             });
@@ -524,7 +526,7 @@
                                     var qty = $(editors[6].target).numberbox('getValue');
                                     var discount = $(editors[8].target).numberbox('getValue');
                                     var price = $(editors[9].target).numberbox('getValue');
-                                    var total = ((qty * price)-((qty * price)*(discount/100)));
+                                    var total = ((qty * price) - ((qty * price) * (discount / 100)));
                                     editors[10].target.numberbox('setValue', total);
                                 }
                             });
@@ -549,28 +551,28 @@
                                         width: 250
                                     }]
                                 ],
-                                onLoadSuccess: function(supp){
+                                onLoadSuccess: function(supp) {
                                     console.log(supp);
-                                    if(supp.rows[0].share_order == "100"){
+                                    if (supp.rows[0].share_order == "100") {
                                         supplier_id.combogrid('setValue', supp.rows[0].name);
 
-                                    $(editors[3].target).textbox('setValue', supp.rows[0].id);
-                                    $(editors[4].target).textbox('setValue', supp.rows[0].mpq);
-                                    $(editors[5].target).textbox('setValue', supp.rows[0].moq);
-                                    $(editors[7].target).textbox('setValue', supp.rows[0].currency);
-                                    $(editors[8].target).textbox('setValue', 0);
-                                    $(editors[9].target).textbox('setValue', supp.rows[0].price);
-                                    var qty = parseFloat($(editors[6].target).textbox('getValue'));
-                                    var price = parseFloat($(editors[9].target).textbox('getValue'));
-                                    var discount = parseFloat($(editors[8].target).textbox('getValue') || 0);
+                                        $(editors[3].target).textbox('setValue', supp.rows[0].id);
+                                        $(editors[4].target).textbox('setValue', supp.rows[0].mpq);
+                                        $(editors[5].target).textbox('setValue', supp.rows[0].moq);
+                                        $(editors[7].target).textbox('setValue', supp.rows[0].currency);
+                                        $(editors[8].target).textbox('setValue', 0);
+                                        $(editors[9].target).textbox('setValue', supp.rows[0].price);
+                                        var qty = parseFloat($(editors[6].target).textbox('getValue'));
+                                        var price = parseFloat($(editors[9].target).textbox('getValue'));
+                                        var discount = parseFloat($(editors[8].target).textbox('getValue') || 0);
 
-                                    var totalDiscountedPrice = (qty * price) - ((qty * price) * (discount / 100));
-                                    $(editors[10].target).numberbox('setValue', totalDiscountedPrice);
-                                    // $(editors[11].target).textbox('setValue', " ");
-                                    } else{
+                                        var totalDiscountedPrice = (qty * price) - ((qty * price) * (discount / 100));
+                                        $(editors[10].target).numberbox('setValue', totalDiscountedPrice);
+                                        // $(editors[11].target).textbox('setValue', " ");
+                                    } else {
                                         toastr.warning("Please Input Product No in Supplier Items");
                                     }
-                                    
+
                                 },
                                 onSelect: function(value, rows) {
                                     $(editors[3].target).textbox('setValue', rows.id);
@@ -601,7 +603,7 @@
 
                             delivery_date.datebox('setValue', row.delivery_date);
                         },
-                        onLoadSuccess: function(){
+                        onLoadSuccess: function() {
                             var rows = $('#dg_request').datagrid('getRows');
                             endEditing();
                             var totalrows = rows.length;
@@ -620,7 +622,7 @@
                                         var disc_pr = $("#disc_pr").numberbox('getValue');
                                         var income_tax = $("#income_tax").numberbox('getValue');
                                         var total_dp = $("#total_dp").numberbox('getValue');
-                                        
+
                                         calculateTotal(total_subs, disc_pr, income_tax, total_dp);
                                     }
                                 });
@@ -630,7 +632,7 @@
                                         var disc_pr = $("#disc_pr").numberbox('getValue');
                                         var income_tax = $("#income_tax").numberbox('getValue');
                                         var total_dp = $("#total_dp").numberbox('getValue');
-                                        
+
                                         calculateTotal(total_subs, disc_pr, income_tax, total_dp);
                                     }
                                 });
@@ -640,22 +642,22 @@
                                         var disc_pr = $("#disc_pr").numberbox('getValue');
                                         var income_tax = $("#income_tax").numberbox('getValue');
                                         var total_dp = $("#total_dp").numberbox('getValue');
-                                        
+
                                         calculateTotal(total_subs, disc_pr, income_tax, total_dp);
                                     }
                                 });
-                                
+
                             } else {
                                 toastr.error("Data in Sales order List Empty");
                             }
                         }
                     });
-                }            
+                }
             });
         }
     }
 
-    function calculateTotal(total_subs, disc_pr = 0, income_tax = 0, total_dp = 0){
+    function calculateTotal(total_subs, disc_pr = 0, income_tax = 0, total_dp = 0) {
         var discount_total = (total_subs * (disc_pr / 100));
         $("#discount_total").numberbox('setValue', discount_total);
 
@@ -681,7 +683,7 @@
         var tr = $(target).closest('tr.datagrid-row');
         return parseInt(tr.attr('datagrid-row-index'));
     }
-    
+
     function editrow(target) {
         $('#dg_request').datagrid('selectRow', getRowIndex(target));
         $('#dg_request').datagrid('beginEdit', getRowIndex(target));
@@ -695,7 +697,7 @@
         var editors = $('#dg_request').datagrid('getEditors', getRowIndex(target));
         var rows = $('#dg_request').datagrid('getRows');
 
-        var item_rm_id = rows[getRowIndex(target)].item_rm_id;//item_number
+        var item_rm_id = rows[getRowIndex(target)].item_rm_id; //item_number
         var supplier_id = rows[getRowIndex(target)].supplier_id;
 
         $.ajax({
@@ -831,83 +833,83 @@
         window.location.assign('<?= base_url('purchase/purchase_orders/print/excel') ?>' + url);
     }
 
-    function complete_po(){
+    function complete_po() {
         var rows = $('#dg').treegrid('getSelections');
 
         if (rows.length > 0) {
             // $.messager.confirm('Warning', 'Are you sure you want to completed this data?', function(r) {
             //     if (r) {
-                    for (var i = 0; i < rows.length; i++) {
-                        var row = rows[i];
-                        if (row.datatable == "1") {
-                            toastr.error("Please Select Detail of PO <br>" + row.po_no);
-                        } else {
-                            if (row.status == "0") {
-                                Swal.fire({
-                                    title: "Are you sure?",
-                                    text: "You want to Complete this data!",
-                                    icon: "warning",
-                                    showCancelButton: true,
-                                    confirmButtonColor: "#3085d6",
-                                    cancelButtonColor: "#d33",
-                                    confirmButtonText: "Yes",
-                                }).then((result) => {
-                                    if (result.isConfirmed) {
-                                        $.ajax({
-                                            method: 'post',
-                                            url: '<?= base_url('purchase/purchase_orders/completePo') ?>',
-                                            data: {
-                                                id: row.id,
-                                            },
-                                            success: function(result) {
-                                                var result = eval('(' + result + ')');
-                                                toastr.success(result.message);
-                                            },
-                                            error: function(jqXHR, textStatus, errorThrown) {
-                                                toastr.error(jqXHR.statusText);
-                                                $.messager.alert("Error", jqXHR.statusText, 'error');
-                                            },
-                                            complete: function(data) {
-                                                $('#dg').treegrid('reload');
-                                            }
-                                        });
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                if (row.datatable == "1") {
+                    toastr.error("Please Select Detail of PO <br>" + row.po_no);
+                } else {
+                    if (row.status == "0") {
+                        Swal.fire({
+                            title: "Are you sure?",
+                            text: "You want to Complete this data!",
+                            icon: "warning",
+                            showCancelButton: true,
+                            confirmButtonColor: "#3085d6",
+                            cancelButtonColor: "#d33",
+                            confirmButtonText: "Yes",
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                $.ajax({
+                                    method: 'post',
+                                    url: '<?= base_url('purchase/purchase_orders/completePo') ?>',
+                                    data: {
+                                        id: row.id,
+                                    },
+                                    success: function(result) {
+                                        var result = eval('(' + result + ')');
+                                        toastr.success(result.message);
+                                    },
+                                    error: function(jqXHR, textStatus, errorThrown) {
+                                        toastr.error(jqXHR.statusText);
+                                        $.messager.alert("Error", jqXHR.statusText, 'error');
+                                    },
+                                    complete: function(data) {
+                                        $('#dg').treegrid('reload');
                                     }
                                 });
-                            } else {
-                                toastr.error("this data has been Completed");
-                                // Swal.fire({
-                                //     title: "Are you sure?",
-                                //     text: "You want to Unompleted this data!",
-                                //     icon: "warning",
-                                //     showCancelButton: true,
-                                //     confirmButtonColor: "#3085d6",
-                                //     cancelButtonColor: "#d33",
-                                //     confirmButtonText: "Yes",
-                                // }).then((result) => {
-                                //     if (result.isConfirmed) {
-                                //         $.ajax({
-                                //             method: 'post',
-                                //             url: '<?= base_url('purchase/purchase_orders/uncompletePo') ?>',
-                                //             data: {
-                                //                 id: row.id,
-                                //             },
-                                //             success: function(result) {
-                                //                 var result = eval('(' + result + ')');
-                                //                 toastr.success(result.message);
-                                //             },
-                                //             error: function(jqXHR, textStatus, errorThrown) {
-                                //                 toastr.error(jqXHR.statusText);
-                                //                 $.messager.alert("Error", jqXHR.statusText, 'error');
-                                //             },
-                                //             complete: function(data) {
-                                //                 $('#dg').treegrid('reload');
-                                //             }
-                                //         });
-                                //     }
-                                // });
                             }
-                        }
+                        });
+                    } else {
+                        toastr.error("this data has been Completed");
+                        // Swal.fire({
+                        //     title: "Are you sure?",
+                        //     text: "You want to Unompleted this data!",
+                        //     icon: "warning",
+                        //     showCancelButton: true,
+                        //     confirmButtonColor: "#3085d6",
+                        //     cancelButtonColor: "#d33",
+                        //     confirmButtonText: "Yes",
+                        // }).then((result) => {
+                        //     if (result.isConfirmed) {
+                        //         $.ajax({
+                        //             method: 'post',
+                        //             url: '<?= base_url('purchase/purchase_orders/uncompletePo') ?>',
+                        //             data: {
+                        //                 id: row.id,
+                        //             },
+                        //             success: function(result) {
+                        //                 var result = eval('(' + result + ')');
+                        //                 toastr.success(result.message);
+                        //             },
+                        //             error: function(jqXHR, textStatus, errorThrown) {
+                        //                 toastr.error(jqXHR.statusText);
+                        //                 $.messager.alert("Error", jqXHR.statusText, 'error');
+                        //             },
+                        //             complete: function(data) {
+                        //                 $('#dg').treegrid('reload');
+                        //             }
+                        //         });
+                        //     }
+                        // });
                     }
+                }
+            }
             //     }
             // });
         }
@@ -1011,7 +1013,7 @@
                                         for (var i = 0; i < totalrows; i++) {
                                             var row = rows[i];
 
-                                            var item_rm_id = row.item_rm_id;//item_number
+                                            var item_rm_id = row.item_rm_id; //item_number
                                             var po_no = row.po_no;
                                             var supplier_id = row.supplier_id;
                                             var qty = row.qty;
@@ -1035,9 +1037,9 @@
                                             var total_grand = $("#total_grand").numberbox('getValue');
 
 
-                                            if(po_no == ""){
+                                            if (po_no == "") {
                                                 var url_save = "<?= base_url('purchase/purchase_orders/create') ?>";
-                                            }else{
+                                            } else {
                                                 var url_save = "<?= base_url('purchase/purchase_orders/update') ?>";
                                             }
 
@@ -1233,9 +1235,9 @@
         }
     }
 
-     //CELLSTYLE APPROVE
-     function styleApproved(value, row, index) {
-        if (value == "" || value === null ) {
+    //CELLSTYLE APPROVE
+    function styleApproved(value, row, index) {
+        if (value == "" || value === null) {
             return 'background: #53D636; color:white;';
         } else {
             return 'background: #FF5F5F; color:white;';
@@ -1244,7 +1246,7 @@
 
     //FORMATTER APPROVE
     function formatApproved(value) {
-        if (value == "" || value === null ) {
+        if (value == "" || value === null) {
             return 'Approved';
         } else {
             return 'Checking';
