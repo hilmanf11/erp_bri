@@ -103,7 +103,7 @@ class Supplier_items extends CI_Controller
             $get = $this->input->get();
             $filter_supplier_id = @base64_decode($get['filter_supplier_id']);
             $filter_item_rm_id = @base64_decode($get['filter_item_rm_id']);
-
+            if(!empty($filter_supplier_id)){
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -112,11 +112,20 @@ class Supplier_items extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('b.id as supplier_id, b.number as supplier_number, b.name as supplier_name, b.currency, b.type, b.status, a.created_by, a.created_date, a.updated_by, a.updated_date, a.approved_by, a.approved_date');
+            $this->db->select('b.id as supplier_id, b.number as supplier_number, b.name as supplier_name, b.currency, b.type, b.status, a.created_by, a.created_date, a.updated_by, a.updated_date, a.approved_by, a.approved_date,
+            (CASE WHEN a.approved = (SELECT (CASE WHEN i.user_approval_1 IS NOT NULL AND i.user_approval_1 != "" THEN 1 ELSE 0 END +
+                    CASE WHEN i.user_approval_2 IS NOT NULL AND i.user_approval_2 != "" THEN 1 ELSE 0 END +
+                    CASE WHEN i.user_approval_3 IS NOT NULL AND i.user_approval_3 != "" THEN 1 ELSE 0 END +
+                    CASE WHEN i.user_approval_4 IS NOT NULL AND i.user_approval_4 != "" THEN 1 ELSE 0 END +
+                    CASE WHEN i.user_approval_5 IS NOT NULL AND i.user_approval_5 != "" THEN 1 ELSE 0 END) as status_approval FROM approvals i WHERE table_name = "supplier_items") THEN 1 ELSE 0 END) as status_approval');
             $this->db->from('supplier_items a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
-            $this->db->like('a.supplier_id', $filter_supplier_id);
-            $this->db->like('a.item_rm_id', $filter_item_rm_id);
+            // $this->db->like('a.supplier_id', $filter_supplier_id);
+            // $this->db->like('a.item_rm_id', $filter_item_rm_id);
+            $this->db->where('a.supplier_id', $filter_supplier_id);
+            if(!empty($filter_item_rm_id)){
+                $this->db->where('a.item_rm_id', $filter_item_rm_id);
+                }
             $this->db->group_by('b.name');
             $this->db->order_by('b.id', 'ASC');
             //Total Data
@@ -128,8 +137,16 @@ class Supplier_items extends CI_Controller
             //Mapping Data
             $result['total'] = $totalRows;
             $result = array_merge($result, ['rows' => $records]);
-            echo json_encode($result);
+            //echo json_encode($result);
         }
+        else{
+            $result = array(
+                'total' => 0,
+                'rows'  => array()
+            );
+        }
+        echo json_encode($result);
+    }
     }
 
     //GET DATATABLES DETAILS
@@ -138,6 +155,7 @@ class Supplier_items extends CI_Controller
         if ($this->input->get()) {
             $number = base64_decode($this->input->get('number'));
             $filter_supplier_id = base64_decode($this->input->get('filter_supplier_id'));
+            $filter_item_rm_id = base64_decode($this->input->get('filter_item_rm_id'));
 
             $this->db->select('a.*, b.number as supplier_number, b.name as supplier_name, c.number as item_rm_number, c.name as item_rm_name, c.item_family_id as item_rm_family, d.name as item_family_name');
             $this->db->from('supplier_items a');
@@ -145,7 +163,10 @@ class Supplier_items extends CI_Controller
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
             $this->db->join('item_familys d', 'c.item_family_id = d.id');
             $this->db->where('b.number', $number);
-            $this->db->like('a.supplier_id', $filter_supplier_id);
+            // $this->db->like('a.supplier_id', $filter_supplier_id);
+            if(!empty($filter_item_rm_id)){
+                $this->db->where('a.item_rm_id', $filter_item_rm_id);
+            }
             $this->db->group_by('a.id');
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
@@ -350,7 +371,7 @@ class Supplier_items extends CI_Controller
         $get = $this->input->get();
         $filter_supplier_id = @base64_decode($get['filter_supplier_id']);
         $filter_item_rm_id = @base64_decode($get['filter_item_rm_id']);
-
+        if(!empty($filter_supplier_id)){
         //Config
         $this->db->select('*');
         $this->db->from('config');
@@ -361,8 +382,10 @@ class Supplier_items extends CI_Controller
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
         $this->db->join('item_familys d', 'c.item_family_id = d.id');
-        $this->db->like('a.supplier_id', $filter_supplier_id);
-        $this->db->like('a.item_rm_id', $filter_item_rm_id);
+        $this->db->where('a.supplier_id', $filter_supplier_id);
+        if(!empty($filter_item_rm_id)){
+            $this->db->where('a.item_rm_id', $filter_item_rm_id);
+            }
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#supplier_items {border-collapse: collapse;width: 100%;font-size: 12px;}#supplier_items td, #supplier_items th {border: 1px solid #ddd;padding: 2px;}#supplier_items tr:nth-child(even){background-color: #f2f2f2;}#supplier_items tr:hover {background-color: #ddd;}#supplier_items th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
@@ -433,6 +456,53 @@ class Supplier_items extends CI_Controller
                     <td>' . $data['calculate'] . '</td>';
             $no++;
         }
+    }else{
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#supplier_items {border-collapse: collapse;width: 100%;font-size: 12px;}#supplier_items td, #supplier_items th {border: 1px solid #ddd;padding: 2px;}#supplier_items tr:nth-child(even){background-color: #f2f2f2;}#supplier_items tr:hover {background-color: #ddd;}#supplier_items th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+    <center>
+        <div style="float: left; font-size: 12px; text-align: left;">
+            <table style="width: 100%;">
+                <tr>
+                    <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                        <img src="' . $config->favicon . '" width="30">
+                    </td>
+                    <td style="font-size: 14px; text-align: left; margin:2px;">
+                        <b>' . $config->name . '</b>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div style="float: right; font-size: 12px; text-align: right;">
+            Print Date ' . date("d M Y H:m:s") . ' <br>
+            Print By ' . $this->session->username . '  
+        </div>
+        <br><br>
+        <div style="float: centet; font-size: 16px; text-align: center;">
+            <h3>MASTER SUPPLIER ITEM</h3>
+        </div>
+    </center>
+    
+    <table id="supplier_items" border="1">
+        <tr>
+            <th width="20">No</th>
+            <th>Supplier ID</th>
+            <th>Supplier Code</th>
+            <th>Supplier Name</th>
+            <th>Part ID</th>
+            <th>Part No.</th>
+            <th>Part Name</th>
+            <th>Maker</th>
+            <th>Product Family</th>
+            <th>MPQ</th>
+            <th>MOQ</th>
+            <th>Share Order %</th>
+            <th>Lead Time (Days)</th>
+            <th>Currency</th>
+            <th>Price</th>
+            <th>Valid Date</th>
+            <th>Safety Stock</th>
+            <th>Calculate</th>
+        </tr>';
+    }
         $html .= '</table></body></html>';
         echo $html;
     }

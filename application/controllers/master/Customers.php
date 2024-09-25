@@ -387,7 +387,7 @@ class Customers extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, a.id as id_customers, b.*');
+       $this->db->select('a.*, a.id as id_customers, b.*');
         $this->db->from('customers a');
         $this->db->join('customer_address b', 'a.id = b.customer_id', 'left');
         $this->db->order_by('a.id', 'ASC');

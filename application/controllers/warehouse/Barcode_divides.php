@@ -37,6 +37,7 @@ class Barcode_divides extends CI_Controller
             $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
             $this->db->join('item_rm c', 'b.item_rm_id = c.id');
             $this->db->where('a.deleted', 0);
+            $this->db->where('a.status', 1);
             $this->db->where('a.label_no', $label_no);
             $records = $this->db->get()->result_array();
             if (!$records) {

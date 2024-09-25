@@ -385,6 +385,36 @@ class Approvals extends CI_Controller
         die(json_encode($records));
     }
 
+    public function approvalPOByID($approved_to, $created_by)
+    {
+        $this->db->select('a.*, 
+                    b.number as item_number,
+                    b.name as item_name,
+                    b.uom,
+                    c.name as item_family_name, 
+                    d.name as supplier_name, 
+                    d.currency, 
+                    e.mpq, 
+                    e.moq,
+                    f.max_status as status_pi,
+                    a.price,
+                    a.status,
+                    (a.qty * a.price) as total_price');
+                $this->db->from('purchase_orders a');
+                $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+                $this->db->join('item_familys c', 'b.item_family_id= c.id');
+                $this->db->join('suppliers d', 'a.supplier_id = d.id');
+                $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
+                $this->db->join('(SELECT po_no, item_rm_id, MAX(status) AS max_status FROM purchase_order_receipts GROUP BY po_no, item_rm_id) f', 'a.po_no = f.po_no and a.item_rm_id = f.item_rm_id', 'left');
+                $this->db->where('a.deleted', 0);
+                $this->db->where('a.approved_to', $approved_to);
+                $this->db->where('a.po_no', $created_by);
+                $this->db->order_by('a.po_no', 'DESC');
+                $records = $this->db->get()->result_array();
+                
+        die(json_encode($records));
+    }
+
     public function approvalSuppliers($approved_to, $created_by)
     {
         $this->db->select('*');
