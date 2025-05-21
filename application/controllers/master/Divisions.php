@@ -226,16 +226,16 @@ class divisions extends CI_Controller
             </div>
             <br><br>
             <div style="float: centet; font-size: 16px; text-align: center;">
-                <h3>MASTER DIVISIONS</h3>
+                <h3>MASTER PLANTS</h3>
             </div>
         </center>
         
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
-                <th>Division ID</th>
-                <th>Division Name</th>
-                <th>Division Code</th>
+                <th>Plant ID</th>
+                <th>Plant Name</th>
+                <th>Plant Code</th>
                 <th>Description</th>
             </tr>';
         $no = 1;

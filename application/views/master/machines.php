@@ -3,31 +3,31 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',align:'center',width:120">Machine ID</th>
+            <th rowspan="2" data-options="field:'id',align:'center',width:120,sortable:true">Machine ID</th>
             <!-- <th rowspan="2" data-options="field:'asset_id',halign:'center',width:150">Asset No</th> -->
-            <th rowspan="2" data-options="field:'number',halign:'center',width:100">Machine No</th>
-            <th rowspan="2" data-options="field:'name',halign:'center',width:150">Name Of Machine</th>
-            <th rowspan="2" data-options="field:'item_type_process_name',halign:'center',width:100">Process Type</th>
-            <th rowspan="2" data-options="field:'specification',halign:'center',width:100">Specification</th>
-            <th rowspan="2" data-options="field:'purchase_date',halign:'center',width:100">Purchase <br>Date</th>
-            <th rowspan="2" data-options="field:'manufactur_date',halign:'center',width:100">Manufacturing <br>Date</th>
-            <th rowspan="2" data-options="field:'maker',halign:'center',width:100">Maker</th>
-            <th rowspan="2" data-options="field:'toonage',halign:'center',width:100">Toneage Of <br>Machine</th>
-            <th rowspan="2" data-options="field:'uom',halign:'center',width:80">Uom</th>
-            <th rowspan="2" data-options="field:'vacum',halign:'center',width:100">Vacum</th>
-            <th rowspan="2" data-options="field:'rt',halign:'center',width:80">RT</th>
-            <th rowspan="2" data-options="field:'item_type_name',width:100,halign:'center'">Type</th>
-            <th rowspan="2" data-options="field:'brand',width:100,halign:'center'">Brand</th>
-            <th rowspan="2" data-options="field:'status',width:100, styler:cellStyler, align:'center', formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'number',halign:'center',width:100,sortable:true">Machine No</th>
+            <th rowspan="2" data-options="field:'name',halign:'center',width:150,sortable:true">Name Of Machine</th>
+            <th rowspan="2" data-options="field:'item_type_process_name',halign:'center',width:100,sortable:true">Process Type</th>
+            <th rowspan="2" data-options="field:'specification',halign:'center',width:100,sortable:true">Specification</th>
+            <th rowspan="2" data-options="field:'purchase_date',halign:'center',width:100,sortable:true">Purchase <br>Date</th>
+            <th rowspan="2" data-options="field:'manufactur_date',halign:'center',width:100,sortable:true">Manufacturing <br>Date</th>
+            <th rowspan="2" data-options="field:'maker',halign:'center',width:100,sortable:true">Maker</th>
+            <th rowspan="2" data-options="field:'toonage',halign:'center',width:100,sortable:true">Toneage Of <br>Machine</th>
+            <th rowspan="2" data-options="field:'uom',halign:'center',width:80,sortable:true">Uom</th>
+            <th rowspan="2" data-options="field:'vacum',halign:'center',width:100,sortable:true">Vacum</th>
+            <th rowspan="2" data-options="field:'rt',halign:'center',width:80,sortable:true">RT</th>
+            <th rowspan="2" data-options="field:'item_type_name',width:100,halign:'center',sortable:true">Type</th>
+            <th rowspan="2" data-options="field:'brand',width:100,halign:'center',sortable:true">Brand</th>
+            <th rowspan="2" data-options="field:'status',width:100, styler:cellStyler, align:'center', formatter:cellFormatter,sortable:true">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
 
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -284,7 +284,9 @@
             clientPaging: false,
             remoteFilter: true,
             fit: true,
-            rownumbers: true
+            rownumbers: true,
+            resizable: true,
+            remoteSort: false
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({

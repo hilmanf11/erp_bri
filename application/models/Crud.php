@@ -45,6 +45,54 @@ class Crud extends CI_Model
         return $records;
     }
 
+    function queryUpdateOSPO($label_no)
+    {
+        if ($this->session->username != "") {
+            $username = $this->session->username;
+            $date = date('Y-m-d H:i:s');
+            // Prepare the raw SQL query
+            $query = "UPDATE os_po
+                      SET qty_receipt = (
+                          SELECT qty_receipt
+                          FROM purchase_order_receipts
+                          WHERE receipt_id = (
+                              SELECT receipt_id
+                              FROM purchase_order_labels
+                              WHERE label_no = '$label_no'
+                          )
+                      ),
+                      updated_by='$username',
+                      updated_date='$date'
+                      WHERE po_no = (
+                          SELECT po_no
+                          FROM purchase_order_receipts
+                          WHERE receipt_id = (
+                              SELECT receipt_id
+                              FROM purchase_order_labels
+                              WHERE label_no = '$label_no'
+                          )
+                      ) AND item_rm_id=(
+                          SELECT item_rm_id
+                          FROM purchase_order_receipts
+                          WHERE receipt_id = (
+                              SELECT receipt_id
+                              FROM purchase_order_labels
+                              WHERE label_no = '$label_no'
+                          )
+                      )";
+
+            // Execute the raw SQL query
+            if ($this->db->query($query)) {
+                log_message('info', 'Update query executed with label_no: ' . $label_no);
+                return json_encode(array("title" => "Good Job", "message" => "Query Executed Successfully", "theme" => "success"));
+            } else {
+                return json_encode(array("title" => "Error", "message" => "There was an error executing the query", "theme" => "error"));
+            }
+        } else {
+            return json_encode(array("title" => "Error", "message" => "Your Session has been Expired", "theme" => "error"));
+        }
+    }
+
     function read($table, $like = [], $where = [], $limit = "", $orderfield = "", $orderby = "", $groupby = [])
     {
         $this->db->select('*');
@@ -91,6 +139,21 @@ class Crud extends CI_Model
         return $records;
     }
 
+    function get($table, $conditions = [], $column = null) {
+        $this->db->where($conditions);
+        if ($column !== null) {
+            $this->db->select($column);
+        }
+        $query = $this->db->get($table);
+
+        if ($query->num_rows() > 0) {
+            $result = $query->row();
+            return $column ? $result->$column : $result;
+        }
+
+        return null;
+    }
+
     function create($table, $values)
     {
         if ($this->session->username != "") {
@@ -116,6 +179,171 @@ class Crud extends CI_Model
             if ($this->db->insert($table, $data)) {
                 $this->logs("Create", json_encode($data), $table);
                 $this->approvals($table, $id, []);
+                return json_encode(array("title" => "Good Job", "message" => "Data Saved Successfully", "theme" => "success"));
+                //return $id;
+            } else {
+                return log_message('error', 'There is an error in your system or data');
+            }
+        } else {
+            return log_message('error', 'Your Session has been Expired');
+        }
+    }
+
+    function createNotLog($table, $values)
+    {
+        if ($this->session->username != "") {
+            $id = $this->autoid($table);
+
+            if (@$values['id'] != "") {
+                $data = array_merge($values, [
+                    "created_by" => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            } else {
+                $data = array_merge($values, [
+                    "id" => $id,
+                    "created_by" => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            }
+
+            if ($this->db->insert($table, $data)) {
+                // $this->logs("Create", json_encode($data), $table);
+                // $this->approvals($table, $id);
+                return json_encode(array("title" => "Good Job", "message" => "Data Saved Successfully", "theme" => "success"));
+            } else {
+                return log_message('error', 'There is an error in your system or data');
+            }
+        } else {
+            return log_message('error', 'Your Session has been Expired');
+        }
+    }
+
+    function create_return_id($table, $values)
+    {
+        if ($this->session->username != "") {
+            if(empty($values['id'])){
+                $id = $this->autoid($table);
+            }else{
+                $id = $values['id'];
+            }
+
+            if (@$values['id'] != "") {
+                $data = array_merge($values, [
+                    "created_by" => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            } else {
+                $data = array_merge($values, [
+                    "id" => $id,
+                    "created_by" => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            }
+
+            if ($this->db->insert($table, $data)) {
+                $this->logs("Create", json_encode($data), $table);
+                $this->approvals($table, $id, []);
+                return $id;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    function createDO($table, $values)
+    {
+        if ($this->session->username != "") {
+            if(empty($values['id'])){
+                $id = $this->autoid($table);
+            }else{
+                $id = $values['id'];
+            }
+
+            if (@$values['id'] != "") {
+                $data = array_merge($values, [
+                    "created_by" => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            } else {
+                $data = array_merge($values, [
+                    "id" => $id,
+                    "created_by" => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            }
+
+            if ($this->db->insert($table, $data)) {
+                $this->logs("Create", json_encode($data), $table);
+                $this->approvals($table, $id, []);
+                return json_encode(array("title" => "Good Job", "message" => "Data Saved Successfully", "theme" => "success"));
+            } else {
+                return log_message('error', 'There is an error in your system or data');
+            }
+        } else {
+            return log_message('error', 'Your Session has been Expired');
+        }
+    }
+    function createPO($table, $table_approval, $values)
+    {
+        if ($this->session->username != "") {
+            if(empty($values['id'])){
+                $id = $this->autoid($table);
+            }else{
+                $id = $values['id'];
+            }
+
+            if (@$values['id'] != "") {
+                $data = array_merge($values, [
+                    "created_by" => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            } else {
+                $data = array_merge($values, [
+                    "id" => $id,
+                    "created_by" => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            }
+
+            if ($this->db->insert($table, $data)) {
+                $this->logs("Create", json_encode($data), $table);
+                $this->approvalsPO($table, $table_approval, $id, []);
+                return json_encode(array("title" => "Good Job", "message" => "Data Saved Successfully", "theme" => "success"));
+            } else {
+                return log_message('error', 'There is an error in your system or data');
+            }
+        } else {
+            return log_message('error', 'Your Session has been Expired');
+        }
+    }
+
+    function create_new($table, $values)
+    {
+        if ($this->session->username != "") {
+            if(empty($values['id'])){
+                $id = $this->autoid($table);
+            }else{
+                $id = $values['id'];
+            }
+
+            if (@$values['id'] != "") {
+                $data = array_merge($values, [
+                    "created_by" => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            } else {
+                $data = array_merge($values, [
+                    "id" => $id,
+                    "created_by" => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            }
+
+            if ($this->db->insert($table, $data)) {
+                $this->logs("Create", json_encode($data), $table);
                 return json_encode(array("title" => "Good Job", "message" => "Data Saved Successfully", "theme" => "success"));
             } else {
                 return log_message('error', 'There is an error in your system or data');
@@ -231,6 +459,37 @@ class Crud extends CI_Model
 
         // $user = $this->read('users', [], ["username" => $this->session->username]);
         $approval = $this->read('approvals', [], ["table_name" => $table]);
+
+        $fieldExists = false;
+        foreach ($fields as $field) {
+            if ($field['Field'] == "approved") {
+                $fieldExists = true;
+                break;
+            }
+        }
+
+        if ($fieldExists) {
+            if (!empty($approval)) {
+                $formApprove = [
+                    "approved" => 1,
+                    "approved_to" => $approval->user_approval_1,
+                    "approved_by" => $this->session->username,
+                    "approved_data" => json_encode($data),
+                ];
+
+                $this->db->where(["id" => $table_id]);
+                $this->db->update($table, $formApprove);
+            }
+        }
+    }
+    
+    function approvalsPO($table, $table_approval, $table_id, $data)
+    {
+        $query = $this->db->query("DESCRIBE $table");
+        $fields = $query->result_array();
+
+        // $user = $this->read('users', [], ["username" => $this->session->username]);
+        $approval = $this->read('approvals', [], ["table_name" => $table_approval]);
 
         $fieldExists = false;
         foreach ($fields as $field) {

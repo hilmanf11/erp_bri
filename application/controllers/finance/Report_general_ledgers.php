@@ -130,6 +130,11 @@ class Report_general_ledgers extends CI_Controller
         $begin_balance_local = (@$account_coa->local_debit + $account_coa->local_kredit);
         $begin_balance_ori = (@$account_coa->original_debit + $account_coa->original_kredit);
 
+        $journal_end_ori_debit = 0;
+        $journal_end_ori_credit = 0;
+        $journal_end_local_debit = 0;
+        $journal_end_local_credit = 0;
+
         if(in_array($begin_account_no[0], ["1","5"])){
             if(in_array($begin_account_no, ["5311001","5311006"])){
                 if((($begin_balance_local + @$journal_local_credit) - @$journal_local_debit) > 0){

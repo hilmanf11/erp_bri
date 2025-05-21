@@ -14,26 +14,26 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:100,align:'center'">Subcont ID</th>
-            <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Subcont Name</th>
-            <th rowspan="2" data-options="field:'number',width:100,halign:'center'">Subcont Code</th>
-            <th rowspan="2" data-options="field:'subcont_type_name',width:250,halign:'center'">Type</th>
-            <th rowspan="2" data-options="field:'address',width:150,halign:'center'">Address</th>
-            <th rowspan="2" data-options="field:'delivery_area_name',width:150,halign:'center'">Area</th>
-            <th rowspan="2" data-options="field:'contact_person',width:150,halign:'center'">Contact Person</th>
-            <th rowspan="2" data-options="field:'telp',width:150,halign:'center'">Telepon</th>
-            <th rowspan="2" data-options="field:'fax',width:150,halign:'center'">Fax</th>
-            <th rowspan="2" data-options="field:'email',width:150,halign:'center'">Email</th>
-            <th rowspan="2" data-options="field:'website',width:150,halign:'center'">Website</th>
-            <th rowspan="2" data-options="field:'status',width:150,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'id',width:100,align:'center',sortable:true">Subcont ID</th>
+            <th rowspan="2" data-options="field:'name',width:200,halign:'center',sortable:true">Subcont Name</th>
+            <th rowspan="2" data-options="field:'number',width:100,halign:'center',sortable:true">Subcont Code</th>
+            <th rowspan="2" data-options="field:'subcont_type_name',width:250,halign:'center',sortable:true">Type</th>
+            <th rowspan="2" data-options="field:'address',width:150,halign:'center',sortable:true">Address</th>
+            <th rowspan="2" data-options="field:'delivery_area_name',width:150,halign:'center',sortable:true">Area</th>
+            <th rowspan="2" data-options="field:'contact_person',width:150,halign:'center',sortable:true">Contact Person</th>
+            <th rowspan="2" data-options="field:'telp',width:150,halign:'center',sortable:true">Telepon</th>
+            <th rowspan="2" data-options="field:'fax',width:150,halign:'center',sortable:true">Fax</th>
+            <th rowspan="2" data-options="field:'email',width:150,halign:'center',sortable:true">Email</th>
+            <th rowspan="2" data-options="field:'website',width:150,halign:'center',sortable:true">Website</th>
+            <th rowspan="2" data-options="field:'status',width:150,halign:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -130,14 +130,14 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/subconts/create') ?>';
         $('#frm_insert').form('clear');
-        
+
         $('#status').combobox('setValue', '0');
 
         $.ajax({
-            type : "post",
-            url : "<?= base_url('master/subconts/autoid')?>",
-            dataType : "html",
-            success : function(response){
+            type: "post",
+            url: "<?= base_url('master/subconts/autoid') ?>",
+            dataType: "html",
+            success: function(response) {
                 $('#id').textbox('setValue', response);
             }
         });
@@ -216,6 +216,8 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            resizable: true,
+            remoteSort: false,
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({
@@ -235,7 +237,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
+
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
@@ -246,16 +248,16 @@
     });
 
     $('#subcont_type_id').combobox({
-        url:'<?= base_url('master/subcont_types/reads'); ?>',
-        valueField:'id',
-        textField:'name',
+        url: '<?= base_url('master/subcont_types/reads'); ?>',
+        valueField: 'id',
+        textField: 'name',
         prompt: 'Choose Type of Subcont',
     });
 
     $('#delivery_area_id').combobox({
-        url:'<?= base_url('master/delivery_areas/reads'); ?>',
-        valueField:'id',
-        textField:'name',
+        url: '<?= base_url('master/delivery_areas/reads'); ?>',
+        valueField: 'id',
+        textField: 'name',
         prompt: 'Choose Area',
     });
 
@@ -278,81 +280,81 @@
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
-            buttons: [{
-                text: 'List Failed',
-                handler: function() {
-                    window.open('<?= base_url('master/subconts/uploadDownloadFailed') ?>', '_blank');
-                }
-            }, {
-                text: 'Upload',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/subconts/upload') ?>',
-                        onSubmit: function() {
-                            if ($(this).form('validate') == false) {
-                                return $(this).form('validate');
-                            } else {
-                                $.messager.progress({
-                                    title: 'Please Wait',
-                                    msg: 'Importing Excel to Database'
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('master/subconts/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('master/subconts/upload') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('master/subconts/uploadclearFailed') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload').progressbar('setValue', value);
+                                $('#p_start').html(number);
+                                $('#p_finish').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('master/subconts/uploadCreate') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('master/subconts/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks").append(title + "<br>");
+                                    }
                                 });
                             }
-                        },
-                        success: function(result) {
-                            $.messager.progress('close');
-                            //Clear File
-                            $.ajax({
-                                url: "<?= base_url('master/subconts/uploadclearFailed') ?>"
-                            });
-                            var json = eval('(' + result + ')');
-                            requestData(json.total, json);
-
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
-
-                                    $.ajax({
-                                        type: "POST",
-                                        async: true,
-                                        url: "<?= base_url('master/subconts/uploadCreate') ?>",
-                                        data: {
-                                            "data": json[number - 1]
-                                        },
-                                        cache: false,
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (result.theme == "success") {
-                                                $('#p_success').html(success);
-                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                //Json Failed
-                                                $.ajax({
-                                                    type: "POST",
-                                                    async: true,
-                                                    url: "<?= base_url('master/subconts/uploadcreateFailed') ?>",
-                                                    data: {
-                                                        data: json[number - 1],
-                                                        message: result.message
-                                                    },
-                                                    cache: false
-                                                });
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                            }
-                                            $("#p_remarks").append(title + "<br>");
-                                        }
-                                    });
-                                }
-                            }
                         }
-                    });
-                }
-            }]
-        });
+                    }
+                });
+            }
+        }]
+    });
 </script>

@@ -11,6 +11,7 @@ class Setting_molds extends CI_Controller
         $this->load->library('form_validation');
         $this->load->library('session');
         $this->load->model('crud');
+        $this->load->database(); // Load the database library
         //VALIDASI FORM
 
         // $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[30]|is_unique[setting_molds.number]');
@@ -39,11 +40,24 @@ class Setting_molds extends CI_Controller
 
     public function readss()
     {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT b.id, b.number, b.name
-            FROM setting_molds a 
-            JOIN item_fg b ON a.item_fg_id = b.id");
-        echo json_encode($send);
+        $post = isset($_POST['customer_id']) ? $_POST['customer_id'] : "";
+        if (empty($post)) {
+            echo json_encode(['error' => 'Parameter customer_id kosong']);
+            return;
+        }
+
+        $query = "SELECT b.id, b.number, b.name, c.model, c.actual, c.standard
+              FROM setting_molds a 
+              JOIN item_fg b ON a.item_fg_id = b.id
+              JOIN molds c ON a.mold_id = c.id
+              WHERE c.customer_id = ?";
+        $send = $this->db->query($query, array($post))->result_array();
+
+        if (empty($send)) {
+            echo json_encode(['error' => 'Tidak ada data yang cocok']);
+        } else {
+            echo json_encode($send);
+        }
     }
 
     //GET DATATABLES

@@ -3,18 +3,18 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'customer_name',halign:'center',width:250">Customer Name</th>
-            <th rowspan="2" data-options="field:'type',halign:'center',width:80">Customer Type</th>
-            <th rowspan="2" data-options="field:'currency',halign:'center',width:80">Currency</th>
-            <!-- <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th> -->
+            <th rowspan="2" data-options="field:'customer_name',halign:'center',width:250,sortable:true">Customer Name</th>
+            <th rowspan="2" data-options="field:'type',halign:'center',width:100,sortable:true">Customer Type</th>
+            <th rowspan="2" data-options="field:'currency',halign:'center',width:80,sortable:true">Currency</th>
+            <!-- <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th> -->
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -32,10 +32,10 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
                 <input style="width:60%;" id="filter_item_id" class="easyui-combogrid">
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;"></span>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-            </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;"></span>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                </div>
         </fieldset>
         <?= $button ?>
     </div>
@@ -98,6 +98,17 @@
 
     function addTable(link = "") {
         $('#dg2').datagrid({
+            onBeginEdit: function(index, row) {
+                var editor = $(this).datagrid('getEditor', {
+                    index: index,
+                    field: 'status'
+                });
+                if (row.isNewRecord) { // Anda perlu menetapkan `isNewRecord` saat menambah baris baru
+                    $(editor.target).combobox('readonly', true);
+                } else {
+                    $(editor.target).combobox('readonly', false);
+                }
+            },
             url: link,
             singleSelect: true,
             columns: [
@@ -109,7 +120,13 @@
                     editor: {
                         type: 'combogrid',
                         options: {
-                            url: '<?= base_url('master/setting_molds/readss'); ?>',
+                            url: '<?= base_url('master/setting_molds/readss?customer_id='); ?>' + window.btoa($("#customer_id").combogrid('getValue')),
+                            queryParams: {
+                                customer_id: function() {
+                                    return $('#customer_id').combogrid('getValue');
+                                }
+                            },
+                            type: 'post',
                             required: true,
                             panelWidth: 400,
                             idField: 'number',
@@ -170,7 +187,7 @@
                     editor: {
                         type: 'textbox'
                     }
-                },{
+                }, {
                     field: 'item_name',
                     width: 150,
                     halign: 'center',
@@ -189,52 +206,52 @@
                             precision: 2,
                         }
                     }
-                // }, {
-                //     field: 'attachment_upload',
-                //     width: 200,
-                //     halign: 'center',
-                //     title: "Attachment",
-                //     editor:{
-                //         type:'filebox',
-                //         options:{
-                //             // required: true,
-                //             buttonText:'Browse File',
-                //             accept:'.jpg, .png, .pdf',
-                //             onChange: function(){
-                //                 var dg = $('#dg2');
-                //                 var row = dg.datagrid('getSelected');
-                //                 var rowIndex = dg.datagrid('getRowIndex', row);
+                    // }, {
+                    //     field: 'attachment_upload',
+                    //     width: 200,
+                    //     halign: 'center',
+                    //     title: "Attachment",
+                    //     editor:{
+                    //         type:'filebox',
+                    //         options:{
+                    //             // required: true,
+                    //             buttonText:'Browse File',
+                    //             accept:'.jpg, .png, .pdf',
+                    //             onChange: function(){
+                    //                 var dg = $('#dg2');
+                    //                 var row = dg.datagrid('getSelected');
+                    //                 var rowIndex = dg.datagrid('getRowIndex', row);
 
-                //                 var ed = dg.datagrid('getEditor', {
-                //                     index: rowIndex,
-                //                     field: 'attachment'
-                //                 });
+                    //                 var ed = dg.datagrid('getEditor', {
+                    //                     index: rowIndex,
+                    //                     field: 'attachment'
+                    //                 });
 
-                //                 var files = $(this).filebox('files')
-                //                 var formData = new FormData();
-                //                 for(var i=0; i<files.length; i++){
-                //                     var file = files[i];
-                //                     formData.append('file',file,file.name);
-                //                 }
-                //                 $.ajax({
-                //                     url: '<?= base_url('master/mold_details/uploadatt') ?>',
-                //                     type:'post',
-                //                     data: formData,
-                //                     contentType:false,
-                //                     processData:false,
-                //                     dataType: 'json',
-                //                     success:function(data){
-                //                         if(data.success == true){
-                //                             toastr.success(data.message);
-                //                             $(ed.target).textbox('setValue', data.filename);
-                //                         }else{
-                //                             toastr.error(data.message);
-                //                         }
-                //                     }
-                //                 })
-                //             }
-                //         }
-                //     }
+                    //                 var files = $(this).filebox('files')
+                    //                 var formData = new FormData();
+                    //                 for(var i=0; i<files.length; i++){
+                    //                     var file = files[i];
+                    //                     formData.append('file',file,file.name);
+                    //                 }
+                    //                 $.ajax({
+                    //                     url: '<?= base_url('master/mold_details/uploadatt') ?>',
+                    //                     type:'post',
+                    //                     data: formData,
+                    //                     contentType:false,
+                    //                     processData:false,
+                    //                     dataType: 'json',
+                    //                     success:function(data){
+                    //                         if(data.success == true){
+                    //                             toastr.success(data.message);
+                    //                             $(ed.target).textbox('setValue', data.filename);
+                    //                         }else{
+                    //                             toastr.error(data.message);
+                    //                         }
+                    //                     }
+                    //                 })
+                    //             }
+                    //         }
+                    //     }
                 }, {
                     field: 'depreciation',
                     width: 150,
@@ -278,9 +295,9 @@
                                 var tooling_price = $(ed2.target).numberbox('getValue')
 
                                 var total = (parseInt(tooling_price) + parseInt(product_price));
-                               
+
                                 $(ed.target).numberbox('setValue', total);
-        
+
                             }
                         }
                     }
@@ -311,9 +328,9 @@
                                 var product_price = $(ed2.target).numberbox('getValue')
 
                                 var total = (parseInt(tooling_price) + parseInt(product_price));
-                               
+
                                 $(ed.target).numberbox('setValue', total);
-        
+
                             }
                         }
                     }
@@ -330,6 +347,14 @@
                         }
                     }
                 }, {
+                    field: 'remark',
+                    width: 200,
+                    align: 'center',
+                    title: "Remark",
+                    editor: {
+                        type: 'textbox'
+                    }
+                }, {
                     field: 'status',
                     width: 80,
                     align: 'center',
@@ -337,10 +362,15 @@
                     editor: {
                         type: 'combobox',
                         options: {
-                        data: [
-                        { value: 'OPEN', text: 'OPEN' },{ value: 'CLOSE', text: 'CLOSE' } ],
-                        valueField: 'value',
-                        textField: 'text'
+                            data: [{
+                                value: 'OPEN',
+                                text: 'OPEN'
+                            }, {
+                                value: 'CLOSE',
+                                text: 'CLOSE'
+                            }],
+                            valueField: 'value',
+                            textField: 'text'
                         }
                     }
                 }, {
@@ -365,7 +395,9 @@
             return true
         }
         if ($('#dg2').datagrid('validateRow', editIndex)) {
-            $('#dg2').datagrid('endEdit', editIndex);
+            $('#dg2').datagrid('endEdit', editIndex)
+            var row = $('#dg2').datagrid('getRows')[editIndex];
+            delete row.isNewRecord;
             editIndex = undefined;
             return true;
         } else {
@@ -391,7 +423,9 @@
         if (customer_id != "") {
             if (endEditing()) {
                 $('#dg2').datagrid('appendRow', {
-                    qty: '0'
+                    qty: '0',
+                    status: 'OPEN',
+                    isNewRecord: true
                 });
                 editIndex = $('#dg2').datagrid('getRows').length - 1;
                 $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
@@ -451,7 +485,7 @@
             url_save = '<?= base_url('master/mold_details/update') ?>';
             $("#customer_id").combogrid('disable');
 
-            
+
             addTable('<?= base_url('master/mold_details/datatableUpdates?customer_id=') ?>' + window.btoa(row.customer_id));
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
@@ -537,7 +571,7 @@
     }
 
     $(function() {
-   
+
         addTable();
 
         //SETTING DATAGRID EASYUI DETAIL
@@ -549,6 +583,8 @@
             fitColumns: true,
             fit: true,
             view: detailview,
+            resizable: true,
+            remoteSort: false,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.customer_name + '"></table></div>';
             },
@@ -636,6 +672,11 @@
                             width: 100,
                             formatter: priceformat
                         }, {
+                            field: 'remark',
+                            title: 'Remark',
+                            width: 200,
+                            halign: 'center',
+                        }, {
                             field: 'status',
                             title: 'Status',
                             width: 200,
@@ -653,17 +694,17 @@
                 });
                 $('#dg').datagrid('fixDetailRowHeight', index);
             }
-            
+
         });
 
-            //SAVE DATA
+        //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
                 text: 'Save All',
                 iconCls: 'icon-ok',
                 handler: function() {
                     var customer_id = $("#customer_id").combogrid('getValue');
-                    
+
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
                     var changesDetected = false;
@@ -685,6 +726,7 @@
                                     product_price: rows[i].product_price,
                                     tooling_price: rows[i].tooling_price,
                                     total_price: rows[i].total_price,
+                                    remark: rows[i].remark,
                                     status: rows[i].status
                                 },
                                 dataType: "json",
@@ -713,7 +755,7 @@
         });
 
     });
-    
+
 
     $('#customer_id').combogrid({
         url: '<?= base_url('master/customers/readsA/'); ?>',
@@ -812,9 +854,9 @@
         }],
     });
 
-     //CELLSTYLE APPROVE
-     function styleApproved(value, row, index) {
-        if (value == "" || value === null ) {
+    //CELLSTYLE APPROVE
+    function styleApproved(value, row, index) {
+        if (value == "" || value === null) {
             return 'background: #53D636; color:white;';
         } else {
             return 'background: #FF5F5F; color:white;';
@@ -823,7 +865,7 @@
 
     //FORMATTER APPROVE
     function formatApproved(value) {
-        if (value == "" || value === null ) {
+        if (value == "" || value === null) {
             return 'Approved';
         } else {
             return 'Checking';
@@ -907,9 +949,9 @@
 
     function btnDetails(val, row, index) {
         var attachment = row.attachment;
-        
+
         if (attachment != null && attachment != "") {
-            return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/mold_details/') ?>'+row.attachment+'" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+            return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/mold_details/') ?>' + row.attachment + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
         } else {
             return '-';
         }
@@ -1010,4 +1052,3 @@
         }]
     });
 </script>
-

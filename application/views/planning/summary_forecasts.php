@@ -16,7 +16,7 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Period</span>
                 <input style="width:30%;" id="filter_period_year" value="<?= date("Y") ?>" class="easyui-combobox">
-                <input style="width:30%;" id="filter_period_month" value="<?= date("m") ?>" class="easyui-combobox"> 
+                <input style="width:30%;" id="filter_period_month" value="<?= date("m") ?>" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
@@ -132,6 +132,6 @@
     $(function() {
         var filter_period_year = $("#filter_period_year").combobox('getValue');
         var filter_period_month = $("#filter_period_month").combobox('getValue');
-        
+
     });
 </script>

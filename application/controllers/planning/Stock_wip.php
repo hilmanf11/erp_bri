@@ -221,8 +221,15 @@ class Stock_wip extends CI_Controller
             $data = $this->input->post('data');
             
             $item_fg = $this->crud->read('item_fg', [], [
-                "id" => $data['item_fg_id'],
+                "number" => $data['item_fg_id'],
             ]);
+
+            if (empty($item_fg->id)) {
+                echo json_encode(array("title" => "Not found", "message" => " Product No. " . $data['item_fg_id'] . " is Not Found!", "theme" => "error"));
+                return;
+            }
+
+            $data['item_fg_id'] = $item_fg->id;
 
             $stock_wip = $this->crud->read('stock_wip', [], [
                 "document_no" => $data['document_no'],
@@ -236,13 +243,12 @@ class Stock_wip extends CI_Controller
                 'p2' => $data['p2'],
                 'p3' => $data['p3'],
             ]);
-
-            if (empty($item_fg->id)) {
-                echo json_encode(array("title" => "Not found", "message" => " Product No. " . $data['item_fg_id'] . " is Not Found!", "theme" => "error"));
-            } elseif (!empty($stock_wip->document_no)) {
+            
+            
+            if (!empty($stock_wip->document_no)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Document No. " . $data['document_no'] . " is Duplicate Data", "theme" => "error"));
             } elseif (!empty($stock_wip->item_fg_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['item_fg_id'] . " is Duplicate Data", "theme" => "error"));
+                echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $item_fg->number . " is Duplicate Data", "theme" => "error"));
             } else {
                 $send   = $this->crud->create('stock_wip', $data);
                 echo $send;

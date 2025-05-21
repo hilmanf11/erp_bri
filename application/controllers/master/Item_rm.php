@@ -31,7 +31,7 @@ class Item_rm extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT a.*, b.name as item_family_name FROM item_rm a JOIN item_familys b ON a.item_family_id = b.id WHERE a.number like '%$post%' or a.name like '$post'");
+        $send = $this->crud->query("SELECT a.*, b.name as item_family_name FROM item_rm a JOIN item_familys b ON a.item_family_id = b.id WHERE a.number like '%$post%' or a.name like '%$post%' or a.id like '%$post%' or a.item_family_id like '%$post%'");
         echo json_encode($send);
     }
 

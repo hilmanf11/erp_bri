@@ -5,8 +5,8 @@
             <th rowspan="2" data-options="field:'return_no',width:200,halign:'center'">Return No</th>
             <th rowspan="2" data-options="field:'return_date',width:100,halign:'center'">Return Date</th>
             <th rowspan="2" data-options="field:'return_name',width:150,halign:'center'">Return Name</th>
-            <th rowspan="2" data-options="field:'item_number',width:200,halign:'center'">Product No</th>
-            <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'item_number',width:200,halign:'center'">Part No</th>
+            <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Part Name</th>
             <!-- <th rowspan="2" data-options="field:'description',width:400,halign:'center'">Product Specification</th> -->
             <th rowspan="2" data-options="field:'workorder',width:100,align:'center'">Workorder</th>
             <th rowspan="2" data-options="field:'uom',width:60,align:'center'">UoM</th>
@@ -92,11 +92,11 @@
                 <input style="width:60%;" name="id" id="id" required class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product No</span>
+                <span style="width:35%; display:inline-block;">Part No</span>
                 <input style="width:60%;" name="item_number" id="item_number" disabled class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product Name</span>
+                <span style="width:35%; display:inline-block;">Part Name</span>
                 <input style="width:60%;" name="item_name" id="item_name" disabled class="easyui-textbox">
             </div>
             <div class="fitem">

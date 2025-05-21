@@ -218,6 +218,27 @@ class Os_so extends CI_Controller
         if ($this->input->post()) {
             $data = $this->input->post('data');
 
+            $item_fg = $this->crud->read('item_fg', [], [
+                "number" => $data['item_fg_id'],
+            ]);
+
+            $customer = $this->crud->read('customers', [], [
+                "number" => $data['customer_id'],
+            ]);
+
+            if (empty($item_fg->id)) {
+                echo json_encode(array("title" => "Not found", "message" => " Product No. " . $data['item_fg_id'] . " is Not Found!", "theme" => "error"));
+                return;
+            }
+
+            if (empty($customer->id)) {
+                echo json_encode(array("title" => "Not found", "message" => " Customer No. " . $data['customer_id'] . " is Not Found!", "theme" => "error"));
+                return;
+            }
+
+            $data['item_fg_id'] = $item_fg->id;
+            $data['customer_id'] = $customer->id;
+
             $os_so = $this->crud->read('os_so', [], [
                 "customer_id" => $data['customer_id'],
                 "item_fg_id" => $data['item_fg_id'],
@@ -227,9 +248,9 @@ class Os_so extends CI_Controller
             ]);
 
             if (!empty($os_so->item_fg_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['item_fg_id'] . " is Duplicate Data", "theme" => "error"));
+                echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $item_fg->number . " is Duplicate Data", "theme" => "error"));
             } elseif (!empty($os_so->customer_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Customer " . $data['customer_id'] . " is Duplicate Data", "theme" => "error"));
+                echo json_encode(array("title" => "Duplicated", "message" => " Customer " . $customer->number . " is Duplicate Data", "theme" => "error"));
             }
             else {
                 $send   = $this->crud->create('os_so', $data);

@@ -13,25 +13,29 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'detail',width:80,align:'center',formatter: btnDetails">Address</th>
-            <th rowspan="2" data-options="field:'id',width:80,align:'center'">Customer<br>ID</th>
-            <th rowspan="2" data-options="field:'name',width:250,halign:'center'">Customer Name</th>
-            <th rowspan="2" data-options="field:'number',width:80,align:'center'">Customer<br>Code</th>
-            <th rowspan="2" data-options="field:'type',width:80,align:'center'">Type</th>
-            <th rowspan="2" data-options="field:'currency',width:80,align:'center'">Currency</th>
-            <th rowspan="2" data-options="field:'taxes',width:80,halign:'center',align:'right'">Taxes</th>
-            <th rowspan="2" data-options="field:'payment_term',width:100,halign:'center',align:'right'">Payment Term<br>(Day)</th>
-            <th rowspan="2" data-options="field:'bank_account',width:150,halign:'center'">Bank Account</th>
-            <th rowspan="2" data-options="field:'bank_name',width:150,halign:'center'">Bank Name</th>
-            <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'detail',width:80,align:'center',formatter: btnDetails,sortable:true">Address</th>
+            <th rowspan="2" data-options="field:'id',width:80,align:'center',sortable:true">Customer<br>ID</th>
+            <th rowspan="2" data-options="field:'name',width:250,halign:'center',sortable:true">Customer Name</th>
+            <th rowspan="2" data-options="field:'number',width:80,align:'center',sortable:true">Customer<br>Code</th>
+            <th rowspan="2" data-options="field:'type',width:80,align:'center',sortable:true">Type</th>
+            <th rowspan="2" data-options="field:'currency',width:80,align:'center',sortable:true">Currency</th>
+            <th rowspan="2" data-options="field:'taxes',width:80,halign:'center',align:'right',sortable:true">Taxes</th>
+            <th rowspan="2" data-options="field:'payment_term',width:100,halign:'center',align:'right',sortable:true">Payment Term<br>(Day)</th>
+            <th rowspan="2" data-options="field:'bank_account',width:150,halign:'center',sortable:true">Bank Account</th>
+            <th rowspan="2" data-options="field:'bank_name',width:150,halign:'center',sortable:true">Bank Name</th>
+            <th rowspan="2" data-options="field:'faktur_code',width:150,halign:'center'">Kode Faktur</th>
+            <th rowspan="2" data-options="field:'npwp',width:150,halign:'center'">NPWP</th>
+            <th rowspan="2" data-options="field:'account_number',width:150,halign:'center'">Account Number</th>
+            <th rowspan="2" data-options="field:'account_name',width:150,halign:'center'">Account Name</th>
+            <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -78,8 +82,6 @@
                     <span style="width:35%; display:inline-block;">Currency</span>
                     <input style="width:60%;" name="currency" id="currency" required="" class="easyui-textbox">
                 </div>
-            </div>
-            <div style="float:left; width:50%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Taxes</span>
                     <input style="width:60%;" name="taxes" id="taxes" class="easyui-numberbox">
@@ -88,6 +90,8 @@
                     <span style="width:35%; display:inline-block;">Payment Term (Day)</span>
                     <input style="width:60%;" name="payment_term" id="payment_term" class="easyui-numberbox">
                 </div>
+            </div>
+            <div style="float:left; width:50%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Bank Account</span>
                     <input style="width:60%;" name="bank_account" id="bank_account" class="easyui-numberbox">
@@ -95,6 +99,36 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Bank Name</span>
                     <input style="width:60%;" name="bank_name" id="bank_name" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Kode Faktur Pajak</span>
+                    <select style="width:60%;" name="faktur_code" id="faktur_code" class="easyui-combobox" 
+                        data-options="panelHeight:'150', multiple:true">
+                        <option value="01">01</option>
+                        <option value="02">02</option>
+                        <option value="03">03</option>
+                        <option value="04">04</option>
+                        <option value="05">05</option>
+                        <option value="06">06</option>
+                        <option value="07">07</option>
+                        <option value="08">08</option>
+                        <option value="09">09</option>
+                    </select>
+                </div>
+                <div class="fitem">
+                    <input type="hidden" name="faktur_code" id="faktur_code_hidden">
+                </div> 
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">NPWP</span>
+                    <input style="width:60%;" name="npwp" id="npwp" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">COA No</span>
+                    <input style="width:60%;" id="account_number" name="account_number" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">COA Name</span>
+                    <input style="width:60%;" id="account_name" name="account_name" class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status</span>
@@ -261,8 +295,15 @@
     function update() {
         var row = $('#dg').datagrid('getSelected');
         if (row) {
+            // Pastikan faktur_code tidak null sebelum memuat data ke form
+            if (!row.faktur_code) {
+                row.faktur_code = ''; // Gantikan null dengan string kosong
+            }
+
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
+
+            console.log(row); // Debug untuk melihat data yang dikirim
             url_save = '<?= base_url('master/customers/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
@@ -360,8 +401,8 @@
         window.location.assign('<?= base_url('template/tmp_customers.xls') ?>');
     }
 
-     // DOWNLOAD
-     function download_excel2() {
+    // DOWNLOAD
+    function download_excel2() {
         window.location.assign('<?= base_url('template/tmp_customer_address.xls') ?>');
     }
     //PRINT PDF
@@ -387,7 +428,30 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            resizable: true,
+            remoteSort: false,
         }).datagrid('enableFilter');
+
+        // Handle faktur_code multiple selection
+        $('#faktur_code').combobox({
+            onChange: function(newValue, oldValue) {
+                // Get selected values as array
+                var values = $(this).combobox('getValues');
+                // Join array with comma
+                var joinedValues = values.join(',');
+                // Set value to hidden input
+                $('#faktur_code_hidden').val(joinedValues);
+            }
+        });
+
+        // Load faktur_code values when editing
+        function loadFakturCodeValues(values) {
+            if (values) {
+                var valueArray = values.split(',');
+                $('#faktur_code').combobox('setValues', valueArray);
+                $('#faktur_code_hidden').val(values);
+            }
+        }
 
         //SAVE DATA
         $('#dlg_insert').dialog({
@@ -481,6 +545,30 @@
         valueField: 'name',
         textField: 'name',
         prompt: 'Choose Currencies',
+    });
+
+    $('#account_number').combogrid({
+        url: '<?= base_url('master/customers/readCoa') ?>',
+        panelWidth: 370,
+        idField: 'account_number',
+        textField: 'account_number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose COA No",
+        columns: [
+            [{
+                field: 'account_number',
+                title: 'Account No',
+                width: 120
+            }, {
+                field: 'account_name',
+                title: 'Account Name',
+                width: 250
+            }, ]
+        ],
+        onSelect: function(index, coa) {
+            $("#account_name").textbox("setValue", coa.account_name);
+        }
     });
 
     // UPLOAD

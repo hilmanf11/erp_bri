@@ -16,38 +16,38 @@
 </div>
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
-    <thead data-options="frozen:true">
+    <thead data-options="frozen:true" style="height: auto;" fitColumns="true">
         <tr>
             <th field="ck" checkbox="true"></th>
             <th data-options="field:'attachment',width:100,halign:'center',formatter:cellbutton">Attachment</th>
             <th data-options="field:'id',width:150,align:'center'">Product ID</th>
             <th data-options="field:'number',width:150,halign:'center'">Product No.</th>
-            <th data-options="field:'name',width:150,halign:'center'">Product Name</th>
+            <th data-options="field:'name',width:150,halign:'center'">Product <br>Name</th>
         </tr>
     </thead>
 
-    <thead>
+    <thead style="height: auto;" fitColumns="true">
         <tr>
-            <th rowspan="2" data-options="field:'specification',width:100,align:'center'">Specification</th>
-            <th rowspan="2" data-options="field:'total_mold',width:50,align:'center'">Total <br>Mold</th>
-            <th rowspan="2" data-options="field:'process',width:80,align:'center'">Flow <br>Type</th>
-            <th rowspan="2" data-options="field:'product_type',width:80,align:'center'">Product <br>Type</th>
-            <th rowspan="2" data-options="field:'item_category_name',width:100,align:'center'">Category</th>
-            <th rowspan="2" data-options="field:'item_family_name',width:150,align:'center'">Product Family</th>
-            <th rowspan="2" data-options="field:'item_family_sub_name',width:150,align:'center'">Sub Product Family</th>
-            <th rowspan="2" data-options="field:'lot',width:100,align:'center'">Lot</th>
-            <th rowspan="2" data-options="field:'weight',width:100,align:'center'">Weight (gram)</th>
-            <th rowspan="2" data-options="field:'leadtime',width:80,align:'center'">Lead Time <br>(Day)</th>
-            <th rowspan="2" data-options="field:'lifetime',width:80,align:'center'">Life Time <br>(Day)</th>
-            <th rowspan="2" data-options="field:'mpq',width:50,align:'center'">MPQ</th>
-            <th rowspan="2" data-options="field:'moq',width:50,align:'center'">MOQ</th>
-            <th rowspan="2" data-options="field:'uom',width:50,align:'center'">UoM</th>
-            <th rowspan="2" data-options="field:'qty_box',width:80,align:'center'">QTY/Box</th>
-            <th rowspan="2" data-options="field:'box_sub',width:80,align:'center'">QTY/Sub Box</th>
+            <th rowspan="2" data-options="field:'specification',width:100,align:'center',sortable:true">Specification</th>
+            <th rowspan="2" data-options="field:'total_mold',width:50,align:'center',sortable:true">Total <br>Mold</th>
+            <th rowspan="2" data-options="field:'process',width:80,align:'center',sortable:true">Flow <br>Type</th>
+            <th rowspan="2" data-options="field:'product_type',width:80,align:'center',sortable:true">Product <br>Type</th>
+            <th rowspan="2" data-options="field:'item_category_name',width:100,align:'center',sortable:true">Category</th>
+            <th rowspan="2" data-options="field:'item_family_name',width:150,align:'center',sortable:true">Product Family</th>
+            <th rowspan="2" data-options="field:'item_family_sub_name',width:150,align:'center'" hidden>Sub Product Family</th>
+            <th rowspan="2" data-options="field:'lot',width:100,align:'center',sortable:true">Lot</th>
+            <th rowspan="2" data-options="field:'weight',width:100,align:'center',sortable:true">Weight (gram)</th>
+            <th rowspan="2" data-options="field:'leadtime',width:80,align:'center',sortable:true">Lead Time <br>(Day)</th>
+            <th rowspan="2" data-options="field:'lifetime',width:80,align:'center',sortable:true">Life Time <br>(Day)</th>
+            <th rowspan="2" data-options="field:'mpq',width:50,align:'center',sortable:true">MPQ</th>
+            <th rowspan="2" data-options="field:'moq',width:50,align:'center',sortable:true">MOQ</th>
+            <th rowspan="2" data-options="field:'uom',width:50,align:'center',sortable:true">UoM</th>
+            <th rowspan="2" data-options="field:'qty_box',width:80,align:'center',sortable:true">QTY/Box</th>
+            <th rowspan="2" data-options="field:'box_sub',width:80,align:'center',sortable:true">QTY/Sub Box</th>
             <!-- <th rowspan="2" data-options="field:'safety_stock',width:100,halign:'center'">Safety Stock</th> -->
-            <th rowspan="2" data-options="field:'min',width:50,align:'center'">Min</th>
-            <th rowspan="2" data-options="field:'max',width:50,align:'center'">Max</th>
-            <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'min',width:50,align:'center',sortable:true">Min</th>
+            <th rowspan="2" data-options="field:'max',width:50,align:'center',sortable:true">Max</th>
+            <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th>
             <!-- <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', styler:styleApproved, formatter:formatApproved">Approved To</th>
             <th rowspan="2" data-options="field:'approved_by',width:100,halign:'center'">Approved by</th>
             <th rowspan="2" data-options="field:'approved_date',width:100,halign:'center'">Approved date</th> -->
@@ -55,10 +55,10 @@
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -98,7 +98,7 @@
                     <span style="width:35%; display:inline-block;">Product Type</span>
                     <select style="width:60%;" name="product_type" class="easyui-combobox" panelHeight="auto">
                         <option value="EXPORT">EXPORT</option>
-                        <option value="IMPORT">IMPORT</option>
+                        <!-- <option value="IMPORT">IMPORT</option> -->
                         <option value="LOCAL">LOCAL</option>
                     </select>
                 </div>
@@ -110,7 +110,7 @@
                     <span style="width:35%; display:inline-block;">Product Family</span>
                     <input style="width:60%;" name="item_family_number" id="item_family_number" required="" class="easyui-combobox">
                 </div>
-                <div class="fitem">
+                <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Sub Product Family</span>
                     <input style="width:60%;" name="item_family_sub_number" id="item_family_sub_number" class="easyui-combobox">
                 </div>
@@ -203,6 +203,7 @@
 
         $('#status').combobox('setValue', '0');
         $('#id').textbox('setValue', 'Auto Generate');
+        $('#item_category_number').combobox('setValue', 'FG');
     }
 
     //EDIT DATA
@@ -242,10 +243,16 @@
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
+                                if (result.theme === 'error') {
+                                    toastr.error(result.message);
+                                    $.messager.alert('Error', result.message, 'error');
+                                } else {
+                                    toastr.success('Data successfully deleted.');
+                                }
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error(jqXHR.statusText);
-                                $.messager.alert("Error", jqXHR.statusText, 'error');
+                                toastr.error('Failed to delete data because it is still being used in the Module Bill of Material.');
+                                // $.messager.alert("Error", 'Failed to delete data because it is still being used in the Module Bill of Material.');
                             },
                             complete: function(data) {
                                 $('#dg').datagrid('reload');
@@ -289,6 +296,230 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            resizable: true,
+            remoteSort: false,
+            frozenColumns: [
+                [{
+                        field: 'attachment',
+                        title: 'Attachment',
+                        width: 100,
+                        align: 'center',
+                        sortable: true,
+                        formatter: cellbutton
+                    },
+                    {
+                        field: 'id',
+                        title: 'Product ID',
+                        width: 150,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'number',
+                        title: 'Product No.',
+                        width: 150,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'name',
+                        title: 'Product Name',
+                        width: 150,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    }
+                ]
+            ],
+            columns: [
+                [{
+                        field: 'specification',
+                        title: 'Specification',
+                        width: 100,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'total_mold',
+                        title: 'Total Mold',
+                        width: 80,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'process',
+                        title: 'Flow Type',
+                        width: 100,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'product_type',
+                        title: 'Product Type',
+                        width: 100,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'item_category_name',
+                        title: 'Category',
+                        width: 150,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'item_family_name',
+                        title: 'Product Family',
+                        width: 120,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    // {
+                    //     field: 'item_family_sub_name',
+                    //     title: 'Sub Product Family',
+                    //     width: 150,
+                    //     align: 'center'
+                    // },
+                    {
+                        field: 'lot',
+                        title: 'Lot',
+                        width: 100,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'weight',
+                        title: 'Weight (gram)',
+                        width: 100,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'leadtime',
+                        title: 'Lead Time (Day)',
+                        width: 80,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'lifetime',
+                        title: 'Life Time (Day)',
+                        width: 80,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'mpq',
+                        title: 'MPQ',
+                        width: 50,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'moq',
+                        title: 'MOQ',
+                        width: 50,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'uom',
+                        title: 'UoM',
+                        width: 50,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'qty_box',
+                        title: 'QTY/Box',
+                        width: 80,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'box_sub',
+                        title: 'QTY/Sub Box',
+                        width: 80,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'min',
+                        title: 'Min',
+                        width: 50,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'max',
+                        title: 'Max',
+                        width: 50,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'status',
+                        title: 'Status',
+                        width: 100,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                        styler: cellStyler,
+                        formatter: cellFormatter
+                    },
+                    {
+                        field: 'created_by',
+                        title: 'Created By',
+                        width: 100,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'created_date',
+                        title: 'Created Date',
+                        width: 150,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'updated_by',
+                        title: 'Updated By',
+                        width: 100,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    },
+                    {
+                        field: 'updated_date',
+                        title: 'Updated Date',
+                        width: 150,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true,
+                    }
+                ]
+            ]
         }).datagrid('enableFilter');
 
         //SAVE DATA

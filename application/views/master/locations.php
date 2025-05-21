@@ -3,20 +3,20 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'number',width:60,align:'center'">Code</th>
-            <th rowspan="2" data-options="field:'location',width:150,halign:'center'">Location</th>
-            <th rowspan="2" data-options="field:'area',width:150,halign:'center'">Area</th>
-            <th rowspan="2" data-options="field:'rack',width:150,halign:'center'">Rack</th>
-            <th rowspan="2" data-options="field:'level',width:80,halign:'center'">Level</th>
-            <th rowspan="2" data-options="field:'level_sub',width:80,halign:'center'">Level Sub</th>
+            <th rowspan="2" data-options="field:'number',width:60,align:'center',sortable:true">Code</th>
+            <th rowspan="2" data-options="field:'location',width:150,halign:'center',sortable:true">Location</th>
+            <th rowspan="2" data-options="field:'area',width:150,halign:'center',sortable:true">Area</th>
+            <th rowspan="2" data-options="field:'rack',width:150,halign:'center',sortable:true">Rack</th>
+            <th rowspan="2" data-options="field:'level',width:80,halign:'center',sortable:true">Level</th>
+            <th rowspan="2" data-options="field:'level_sub',width:80,halign:'center',sortable:true">Level Sub</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -167,6 +167,8 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            resizable: true,
+            remoteSort: false,
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({
@@ -186,7 +188,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
+
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }

@@ -59,20 +59,29 @@ class Os_rm extends CI_Controller
             $result = array();
 
             //Select Query
-            $this->db->select('a.*, b.uom, b.number as item_rm_number, b.name as item_rm_name, c.name as category_name, d.name as product_family_name, e.name as product_family_sub_name');
+            $this->db->select('a.*, b.uom, b.number as item_rm_number, b.name as item_rm_name, c.name as category_name, d.name as product_family_name, e.name as product_family_sub_name, f.name as transaction_type');
             $this->db->from('os_rm a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('item_categories c', 'b.item_category_id = c.id');
             $this->db->join('item_familys d', 'b.item_family_id = d.id');
-            $this->db->join('item_family_subs e', 'b.item_sub_family_id = e.id');
+            $this->db->join('item_family_subs e', 'b.item_sub_family_id = e.id', 'left');
+            $this->db->join('transaction_type f', 'a.transaction_type = f.type','left');
             if ($filter_from != "" && $filter_to != "") {
                 $this->db->where('a.trans_date >=', $filter_from);
                 $this->db->where('a.trans_date <=', $filter_to);
             }
-            $this->db->like('c.id', $filter_category);
-            $this->db->like('d.id', $filter_product_family);
-            $this->db->like('e.id', $filter_product_family_sub);
-            $this->db->like('b.id', $filter_item_rm);
+            if ($filter_category != "") {
+                $this->db->where('c.id', $filter_category);
+            }
+            if ($filter_product_family != "") {
+                $this->db->where('d.id', $filter_product_family);
+            }
+            if ($filter_product_family_sub != "") {
+                $this->db->where('e.id', $filter_product_family_sub);
+            }
+            if ($filter_item_rm != "") {
+                $this->db->where('a.item_rm_id', $filter_item_rm);
+            }
             $this->db->order_by('a.trans_date', 'DESC');
 
             //Total Data
@@ -94,6 +103,7 @@ class Os_rm extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
+                $post['transaction_type'] = 'RE-0002';
                 $send   = $this->crud->create('os_rm', $post);
                 echo $send;
             } else {
@@ -142,7 +152,8 @@ class Os_rm extends CI_Controller
                 'item_rm_name' => $data->val($i, 2),
                 'trans_date' => $data->val($i, 3),
                 'qty' => $data->val($i, 4),
-                'location' => $data->val($i, 5)
+                'location' => $data->val($i, 5),
+                'transaction_type' => 'RE-0001'
             );
         }
 
@@ -185,21 +196,26 @@ class Os_rm extends CI_Controller
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
+            $data['transaction_type'] = 'RE-0002';
 
             $item_rm = $this->crud->read('item_rm', [], ["name" => $data['item_rm_name']]);
-
-            $os_rm = $this->crud->read('os_rm', [], [
-                "item_rm_id" => $item_rm->id,
-                "trans_date" => $data['trans_date'],
-            ]);
-
-            if (!empty($os_rm->item_rm_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => "Part ID " . $data['item_rm_name'] . " is Duplicate Data", "theme" => "error"));
-            } elseif (empty($item_rm->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Part ID " . $data['item_rm_name'] . " is Not Found", "theme" => "error"));
-            } else {
-                $send = $this->crud->create('os_rm', $data);
-                echo $send;
+            if (empty($item_rm->id)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Part Name " . $data['item_rm_name'] . " is Not Found", "theme" => "error"));
+            }else{
+                $os_rm = $this->crud->read('os_rm', [], [
+                    "item_rm_id" => $item_rm->id,
+                    "trans_date" => $data['trans_date']
+                ]);
+                $data['item_rm_id'] = $item_rm->id;
+                unset($data['item_rm_name']);
+                if (!empty($os_rm->item_rm_id)) {
+                    echo json_encode(array("title" => "Duplicated", "message" => "Part ID " . $data['item_rm_id'] . " is Duplicate Data", "theme" => "error"));
+                } elseif (empty($item_rm->id)) {
+                    echo json_encode(array("title" => "Not Found", "message" => "Part ID " . $data['item_rm_id'] . " is Not Found", "theme" => "error"));
+                } else {
+                    $send = $this->crud->create('os_rm', $data);
+                    echo $send;
+                }
             }
         }
     }
@@ -227,20 +243,29 @@ class Os_rm extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.uom, b.number as item_rm_number, b.name as item_rm_name, c.name as category_name, d.name as product_family_name, e.name as product_family_sub_name');
+        $this->db->select('a.*, b.uom, b.number as item_rm_number, b.name as item_rm_name, c.name as category_name, d.name as product_family_name, e.name as product_family_sub_name, f.name as transaction_type');
         $this->db->from('os_rm a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('item_categories c', 'b.item_category_id = c.id');
         $this->db->join('item_familys d', 'b.item_family_id = d.id');
-        $this->db->join('item_family_subs e', 'b.item_sub_family_id = e.id');
+        $this->db->join('item_family_subs e', 'b.item_sub_family_id = e.id', 'left');
+        $this->db->join('transaction_type f', 'a.transaction_type = f.type','left');
         if ($filter_from != "" && $filter_to != "") {
             $this->db->where('a.trans_date >=', $filter_from);
             $this->db->where('a.trans_date <=', $filter_to);
         }
-        $this->db->like('c.id', $filter_category);
-        $this->db->like('d.id', $filter_product_family);
-        $this->db->like('e.id', $filter_product_family_sub);
-        $this->db->like('b.id', $filter_item_rm);
+        if ($filter_category != "") {
+            $this->db->where('c.id', $filter_category);
+        }
+        if ($filter_product_family != "") {
+            $this->db->where('d.id', $filter_product_family);
+        }
+        if ($filter_product_family_sub != "") {
+            $this->db->where('e.id', $filter_product_family_sub);
+        }
+        if ($filter_item_rm != "") {
+            $this->db->where('a.item_rm_id', $filter_item_rm);
+        }
         $this->db->order_by('a.trans_date', 'DESC');
         $records = $this->db->get()->result_array();
 

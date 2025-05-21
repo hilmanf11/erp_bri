@@ -141,7 +141,7 @@ class Type_process extends CI_Controller
                         </td>
                         <td style="font-size: 14px; text-align: left; margin:2px;">
                             <b>' . $config->name . '</b><br>
-                            <small>MASTER ITEM CATEGORY</small>
+                            <small>PROCESS TYPE</small>
                         </td>
                     </tr>
                 </table>

@@ -37,20 +37,57 @@ class Supply_materials extends CI_Controller
 
     public function readWp($period)
     {
-        $records = $this->crud->query("SELECT wp FROM supply_materials WHERE `status` = '0' and `period` = '$period' GROUP BY wp");
+        $records = $this->crud->query("SELECT workorder FROM supply_materials WHERE `status` = '0' and `period` = '$period' GROUP BY workorder");
         echo json_encode($records);
     }
 
-    public function readRequestNo($period, $wp)
+    public function readRequestNo($period, $workorder)
     {
-        $wp = base64_decode($wp);
-        $records = $this->crud->query("SELECT request_no FROM supply_materials WHERE status = '0' and `period` = '$period' and wp = '$wp' GROUP BY `request_no`");
+        $workorder = base64_decode($workorder);
+        $records = $this->crud->query("SELECT request_no FROM supply_materials WHERE status = '0' and `period` = '$period' and workorder = '$workorder' GROUP BY `request_no`");
+        echo json_encode($records);
+    }
+
+    public function readRequestNos()
+    {
+        $records = $this->crud->query("SELECT request_no FROM supply_materials WHERE status = '0' GROUP BY `request_no`");
+        echo json_encode($records);
+    }
+
+    // public function readItemRm()
+    // {
+    //     $post = isset($_POST['q']) ? $_POST['q'] : "";
+    //     $records = $this->crud->query("SELECT id, number, name, uom 
+    //     FROM item_rm 
+    //     WHERE (item_category_id = 'C01' or (item_category_id = 'C09' AND item_family_id = 'P23')) and `number` like '%$post%' or `name` like '$post'
+    //     ORDER BY `number` ASC");
+    //     echo json_encode($records);
+    // }
+
+    public function readItemRm()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        // $records = $this->crud->query("
+        //     SELECT id, number, name, uom 
+        //     FROM item_rm 
+        //     WHERE status = '0' and number like '%$post%' or name like '$post'
+        //     ORDER BY number ASC
+        // ");
+        $records = $this->crud->query("SELECT id, number, name, uom FROM item_rm WHERE status = '0' AND (number like '%$post%' or name like '%$post%') ORDER BY number ASC");
         echo json_encode($records);
     }
 
     public function readProduct($product_family_id)
     {
         $records = $this->crud->query("SELECT b.number, b.name, b.id FROM supply_materials a JOIN item_rm b ON a.item_rm_id = b.id WHERE b.item_family_id = '$product_family_id' GROUP BY b.id ORDER BY b.number asc");
+        echo json_encode($records);
+    }
+
+    public function readProducts()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $records = $this->crud->query("SELECT number, name, id FROM item_rm WHERE status = '0' and `number` like '%$post%' or `name` like '$post'
+        GROUP BY id ORDER BY number asc");
         echo json_encode($records);
     }
 
@@ -77,7 +114,7 @@ class Supply_materials extends CI_Controller
         //Select Query
         $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom');
         $this->db->from('supply_materials a');
-        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id','left');
         // $this->db->join('uom c', 'b.uom_id = c.id');
         $this->db->where('a.request_no', $request_no);
 
@@ -95,31 +132,39 @@ class Supply_materials extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filter_period = $this->input->get('filter_period');
-            $filter_wp   = $this->input->get('filter_wp');
+            // $filter_period = $this->input->get('filter_period');
+            // $filter_workorder   = $this->input->get('filter_workorder');
             $filter_request_no = $this->input->get('filter_request_no');
             $filter_product_family = $this->input->get('filter_product_family');
             $filter_product_no = base64_decode($this->input->get('filter_product_no'));
+            $filter_kanban_date_from = $this->input->get('filter_kanban_date_from');
+            $filter_kanban_date_to = $this->input->get('filter_kanban_date_to');
+            $filter_status = $this->input->get('filter_status');
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
+
             //Pagination 1-10
             $page   = isset($page) ? intval($page) : 1;
-            $rows   = isset($rows) ? intval($rows) : 10;
+            $rows   = isset($rows) ? intval($rows) : 10; 
             $offset = ($page - 1) * $rows;
             $result = array();
             $id = $_POST['id'];
+
             if ($id === "0") {
-                //Select Query
-                $this->db->select('a.*, c.number as item_number, c.name as item_name, b.uom');
+                // Untuk header table
+                $this->db->select('a.*, c.number as item_number, c.name as item_name, b.uom, 
+                    COUNT(a.id) as total_items,
+                    SUM(CASE WHEN a.qty = COALESCE(d.qty_actual, 0) THEN 1 ELSE 0 END) as closed_items');
                 $this->db->from('supply_materials a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->join('item_fg c', 'a.item_fg_id = c.id', 'left');
-                // $this->db->join('uom d', 'b.uom_id = d.id');
+                $this->db->join('(
+                    SELECT request_no, item_rm_id, COALESCE(SUM(qty), 0) as qty_actual 
+                    FROM issued_material_details 
+                    GROUP BY request_no, item_rm_id
+                ) d', 'a.request_no = d.request_no AND a.item_rm_id = d.item_rm_id', 'left');
                 $this->db->where('a.deleted', 0);
-                $this->db->where('a.status', 0);
-                $this->db->like("a.period", $filter_period);
-                $this->db->like("a.wp", $filter_wp);
                 if ($filter_request_no != "") {
                     $this->db->where('a.request_no', $filter_request_no);
                 }
@@ -129,6 +174,15 @@ class Supply_materials extends CI_Controller
                 if($filter_product_no != ""){
                     $this->db->where('a.item_rm_id', $filter_product_no);
                 }
+                if($filter_kanban_date_from != "" && $filter_kanban_date_to != ""){
+                    $this->db->where('a.request_date >=', $filter_kanban_date_from);
+                    $this->db->where('a.request_date <=', $filter_kanban_date_to);
+                } else {
+                    $this->db->where('a.request_date', date('Y-m-d'));
+                }
+                if($filter_status != ""){
+                    $this->db->where('a.status', $filter_status);
+                }
                 $this->db->group_by('a.request_no');
                 $this->db->order_by('a.request_no', 'DESC');
                 //Total Data
@@ -137,6 +191,9 @@ class Supply_materials extends CI_Controller
                 $this->db->limit($rows, $offset);
                 $records = $this->db->get()->result_array();
                 foreach ($records as $record) {
+                    // Status header: CLOSED jika semua item closed
+                    $status = ($record['total_items'] == $record['closed_items']) ? "1" : "0";
+
                     $arr[] = array(
                         "id" => $record['request_no'],
                         "request_no" => $record['request_no'],
@@ -145,9 +202,11 @@ class Supply_materials extends CI_Controller
                         "period" => $record['period'],
                         "item_rm_id" => $record['item_rm_id'],
                         "item_number" => $record['item_number'],
+                        "item_fg_id" => $record['item_fg_id'],
                         "item_name" => $record['item_name'],
-                        "wp" => $record['wp'],
                         "workorder" => $record['workorder'],
+                        "request_type" => $record['request_type'],
+                        "status" => $status,
                         "state" => "closed"
                     );
                 }
@@ -155,13 +214,14 @@ class Supply_materials extends CI_Controller
                 $result = array_merge($result, ['rows' => @$arr]);
                 echo json_encode($result);
             } else {
-                //Select Query
-                $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom');
+                // Untuk detail table
+                $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom, 
+                    COALESCE(SUM(c.qty), 0) as qty_actual');
                 $this->db->from('supply_materials a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-                // $this->db->join('uom d', 'b.uom_id = d.id');
+                $this->db->join('issued_material_details c', 
+                    'a.request_no = c.request_no and a.item_rm_id = c.item_rm_id', 'left');
                 $this->db->where('a.deleted', 0);
-                $this->db->where('a.status', 0);
                 $this->db->where('a.request_no', $id);
                 if($filter_product_family != ""){
                     $this->db->where('b.item_family_id', $filter_product_family);
@@ -169,9 +229,21 @@ class Supply_materials extends CI_Controller
                 if($filter_product_no != ""){
                     $this->db->where('a.item_rm_id', $filter_product_no);
                 }
+                if($filter_kanban_date_from != "" && $filter_kanban_date_to != ""){
+                    $this->db->where('a.request_date >=', $filter_kanban_date_from);
+                    $this->db->where('a.request_date <=', $filter_kanban_date_to);
+                }
+                if($filter_status != ""){
+                    $this->db->where('a.status', $filter_status);
+                }
+                $this->db->group_by('a.id');
                 $this->db->order_by('a.request_no', 'DESC');
                 $records = $this->db->get()->result_array();
+
                 foreach ($records as $record) {
+                    // Status detail: CLOSED jika qty_actual sama dengan qty request
+                    $status = (floatval($record['qty']) == floatval($record['qty_actual'])) ? '1' : '0';
+
                     $arr[] = array(
                         "id" => $record['id'],
                         "request_no" => $record['request_no'],
@@ -183,9 +255,10 @@ class Supply_materials extends CI_Controller
                         "item_rm_id" => $record['item_rm_id'],
                         "item_number" => $record['item_number'],
                         "item_name" => $record['item_name'],
+                        "request_type" => $record['request_type'],
                         "qty" => $record['qty'],
                         "uom" => $record['uom'],
-                        "status" => $record['status'],
+                        "status" => $status,
                         "created_by" => $record['created_by'],
                         "created_date" => $record['created_date'],
                         "updated_by" => $record['updated_by'],
@@ -201,31 +274,111 @@ class Supply_materials extends CI_Controller
     public function create()
     {
         if ($this->input->post()) {
-            if ($this->form_validation->run() == TRUE) {
-                $post   = $this->input->post();
-                if ($post['qty'] == 0) {
-                    echo json_encode(array("title" => "Qty 0", "message" => " Qty is 0", "theme" => "error"));
-                } else {
-                    $request_no = $post['request_no'];
-                    $item_rm_id = $post['item_rm_id'];
-
-                    $datas = $this->crud->reads('supply_materials', [], ["request_no" => $request_no, "item_rm_id" => $item_rm_id]);
-
-                    if(count($datas) > 0){
-                        $send = $this->crud->update('supply_materials', ["request_no" => $request_no, "item_rm_id" => $item_rm_id], $post);
-                        echo $send;
-                    }else{
-                        $send = $this->crud->create('supply_materials', $post);
-                        echo $send;
-                    }
-                }
+            $post = $this->input->post();
+            $request_no = $post['request_no'];
+            // $item_fg_id = $post['item_fg_id'];
+            $item_rm_id = $post['item_rm_id'];
+            $qty = $post['qty'];
+            $request_type = $post['request_type']; // Add request_type
+    
+            // Pastikan jumlah yang dimasukkan tidak nol
+            if ($qty <= 0) {
+                echo json_encode(array("title" => "Error", "message" => "Quantity cannot be zero", "theme" => "error"));
+                return;
+            }
+    
+            // Cek apakah data sudah ada sebelumnya
+            $existingData = $this->crud->reads('supply_materials', [], [
+                "request_no" => $request_no,
+                // "item_fg_id" => $item_fg_id,
+                "item_rm_id" => $item_rm_id
+            ]);
+    
+            if (count($existingData) > 0) {
+                // Jika data sudah ada, lakukan update
+                $send = $this->crud->update('supply_materials', [
+                    "request_no" => $request_no,
+                    // "item_fg_id" => $item_fg_id,
+                    "item_rm_id" => $item_rm_id
+                ], $post);
+                $supplyMaterialId = $existingData[0]['id'];
             } else {
-                show_error(validation_errors());
+                $datePrefix = date('Ymd'); 
+                $lastIdQuery = $this->db->select('id')
+                    ->from('supply_materials')
+                    ->like('id', $datePrefix, 'after') 
+                    ->order_by('id', 'DESC')
+                    ->limit(1)
+                    ->get();
+    
+                $lastId = $lastIdQuery->row_array();
+                if ($lastId) {
+                    $lastNumber = (int)substr($lastId['id'], 8);
+                    $newNumber = $lastNumber + 1;
+                } else {
+                    $newNumber = 1;
+                }
+    
+                $newId = $datePrefix . str_pad($newNumber, 6, '0', STR_PAD_LEFT); 
+                $post['id'] = $newId; 
+    
+                // Simpan data baru
+                $send = $this->crud->create_return_id('supply_materials', $post);
+                $supplyMaterialId = $newId; 
+            }
+    
+            if ($send) {
+                $notificationData = [
+                    'created_by' => $this->session->userdata('username'),
+                    'created_date' => date('Y-m-d H:i:s'),
+                    'approvals_id' => null,
+                    'users_id_from' => $this->session->userdata('username'), 
+                    'users_id_to' => 'scmbri04', 
+                    'table_id' => $supplyMaterialId, 
+                    'table_name' => 'supply_materials',
+                    'name' => 'Created',
+                    'description' => 'Data in Module Supply Materials has been created',
+                    'status' => 0 
+                ];
+    
+                $this->crud->create('notifications', $notificationData);
+    
+                echo json_encode(array("title" => "Success", "message" => "Data saved successfully", "theme" => "success"));
+            } else {
+                echo json_encode(array("title" => "Error", "message" => "Failed to save data", "theme" => "error"));
             }
         } else {
-            show_error("Cannot Process your request");
+            echo json_encode(array("title" => "Error", "message" => "Invalid request", "theme" => "error"));
         }
     }
+    // public function create()
+    // {
+    //     if ($this->input->post()) {
+    //         if ($this->form_validation->run() == TRUE) {
+    //             $post   = $this->input->post();
+    //             if ($post['qty'] == 0) {
+    //                 echo json_encode(array("title" => "Qty 0", "message" => " Qty is 0", "theme" => "error"));
+    //             } else {
+    //                 $request_no = $post['request_no'];
+    //                 $item_rm_id = $post['item_rm_id'];
+
+    //                 $datas = $this->crud->reads('supply_materials', [], ["request_no" => $request_no, "item_rm_id" => $item_rm_id]);
+
+    //                 if(count($datas) > 0){
+    //                     $send = $this->crud->update('supply_materials', ["request_no" => $request_no, "item_rm_id" => $item_rm_id], $post);
+    //                     echo $send;
+    //                 }else{
+    //                     $send = $this->crud->create('supply_materials', $post);
+    //                     echo $send;
+    //                 }
+    //             }
+    //         } else {
+    //             show_error(validation_errors());
+    //         }
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
 
     public function delete()
     {
@@ -294,7 +447,7 @@ class Supply_materials extends CI_Controller
             $this->db->from('supply_materials a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             // $this->db->join('uom d', 'b.uom_id = d.id');
-            $this->db->join('warehouse_location_items f', "a.item_rm_id = f.item_rm_id and type = 'RM'", 'left');
+            $this->db->join('warehouse_location_items f', "a.item_rm_id = f.item_rm_id and f.type = 'RM'", 'left');
             $this->db->where('a.deleted', 0);
             $this->db->like('a.request_no', base64_decode($request_no));
             $this->db->group_by('a.item_rm_id');
@@ -336,9 +489,9 @@ class Supply_materials extends CI_Controller
                                 <div style="float:left; width:35%;">
                                     <table style="width:100%; font-size:12px; margin-bottom:10px;">
                                         <tr>
-                                            <td width="100">Period / WP</td>
+                                            <td width="100">Period</td>
                                             <td width="30">:</td>
-                                            <td><b>' . @$kanban->period . ' / ' . @$kanban->wp . '</b></td>
+                                            <td><b>' . @$kanban->period .'</b></td>
                                         </tr>
                                         <tr>
                                             <td width="50">Print Date</td>
@@ -360,7 +513,6 @@ class Supply_materials extends CI_Controller
                                         <th>No</th>
                                         <th>Product No</th>
                                         <th>Product Name</th>
-                                        <th>Product Specification</th>
                                         <th>Uom</th>
                                         <th>Qty</th>
                                         <th width="80">WHS Stock</th>
@@ -394,7 +546,6 @@ class Supply_materials extends CI_Controller
                                 <td>' . $no . '</td>
                                 <td>' . $record['item_number'] . '</td>
                                 <td>' . $record['item_name'] . '</td>
-                                <td>' . $record['description'] . '</td>
                                 <td>' . $record['uom'] . '</td>
                                 <td style="text-align:right;">' . $record['qty'] . '</td>
                                 <td style="text-align:right;">' . number_format((@$stockWarehouse[0]->end_stock), 2) . '</td>
@@ -436,11 +587,13 @@ class Supply_materials extends CI_Controller
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=supply_materials_$format.xls");
         }
-        $filter_period = $this->input->get('filter_period');
-        $filter_wp   = $this->input->get('filter_wp');
+        // $filter_period = $this->input->get('filter_period');
+        // $filter_workorder   = $this->input->get('filter_workorder');
         $filter_request_no = $this->input->get('filter_request_no');
         $filter_product_family = $this->input->get('filter_product_family');
         $filter_product_no = base64_decode($this->input->get('filter_product_no'));
+        $filter_kanban_date = $this->input->get('filter_kanban_date');
+        $filter_status = $this->input->get('filter_status');
 
         //Config
         $this->db->select('*');
@@ -451,8 +604,8 @@ class Supply_materials extends CI_Controller
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         // $this->db->join('uom d', 'b.uom_id = d.id');
         $this->db->where('a.deleted', 0);
-        $this->db->like("a.period", $filter_period);
-        $this->db->like("a.wp", $filter_wp);
+        // $this->db->like("a.period", $filter_period);
+        // $this->db->like("a.workorder", $filter_workorder);
         if ($filter_request_no != "") {
             $this->db->where('a.request_no', $filter_request_no);
         }
@@ -461,6 +614,12 @@ class Supply_materials extends CI_Controller
         }
         if($filter_product_no != ""){
             $this->db->where('a.item_rm_id', $filter_product_no);
+        }
+        if($filter_kanban_date != ""){
+            $this->db->where('a.request_date', $filter_kanban_date);
+        }
+        if($filter_status != ""){
+            $this->db->where('a.status', $filter_status);
         }
         $this->db->order_by('a.request_no', 'DESC');
         $records = $this->db->get()->result_array();

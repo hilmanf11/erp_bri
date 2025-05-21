@@ -3,18 +3,18 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
-            <th rowspan="2" data-options="field:'number',width:80,halign:'center'">Code</th>
-            <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Name</th>
-            <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
+            <th rowspan="2" data-options="field:'id',width:80,align:'center',sortable:true">ID</th>
+            <th rowspan="2" data-options="field:'number',width:80,halign:'center',sortable:true">Code</th>
+            <th rowspan="2" data-options="field:'name',width:200,halign:'center',sortable:true">Name</th>
+            <th rowspan="2" data-options="field:'description',width:150,halign:'center',sortable:true">Description</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -54,12 +54,12 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/item_categories/create') ?>';
         $('#frm_insert').form('clear');
-        
+
         $.ajax({
-            type : "post",
-            url : "<?= base_url('master/item_categories/autoid')?>",
-            dataType : "html",
-            success : function(response){
+            type: "post",
+            url: "<?= base_url('master/item_categories/autoid') ?>",
+            dataType: "html",
+            success: function(response) {
                 $('#id').textbox('setValue', response);
             }
         });
@@ -130,6 +130,8 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            remoteSort: false,
+            resizeable: true,
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({
@@ -149,7 +151,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
+
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }

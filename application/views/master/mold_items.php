@@ -20,27 +20,27 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'mold_id',width:130,halign:'center'">Mold Id</th>
-            <th rowspan="2" data-options="field:'mold_name',width:130,halign:'center'">Mold Name</th>
-            <th rowspan="2" data-options="field:'item_fg_id',width:200,halign:'center'">Product No.</th>
-            <th rowspan="2" data-options="field:'item_fg_name',width:150,halign:'center'">Product Name</th>
-            <th rowspan="2" data-options="field:'project_year',width:150,halign:'center'">Project Year</th>
-            <th rowspan="2" data-options="field:'cavity_standard',width:150,halign:'center'">Standard Cavity</th>
-            <th rowspan="2" data-options="field:'cavity_actual',width:150,halign:'center'">Actual Cavity</th>
-            <th rowspan="2" data-options="field:'shoot_standard',width:150,halign:'center'">Standard Shoot</th>
-            <th rowspan="2" data-options="field:'shoot_actual',width:150,halign:'center'">Actual Shoot</th>
-            <th rowspan="2" data-options="field:'mold_type',width:80,halign:'center'">Mold Type</th>
-            <th rowspan="2" data-options="field:'item_fg_id_mold',width:100,halign:'center'">Mold Type<br>Product</th>
-            <th rowspan="2" data-options="field:'remark',width:150,halign:'center'">Remarks</th>
-            <th rowspan="2" data-options="field:'status',width:150,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'mold_id',width:130,halign:'center',sortable:true">Mold Id</th>
+            <th rowspan="2" data-options="field:'mold_name',width:130,halign:'center',sortable:true">Mold Name</th>
+            <th rowspan="2" data-options="field:'item_fg_id',width:200,halign:'center',sortable:true">Product No.</th>
+            <th rowspan="2" data-options="field:'item_fg_name',width:150,halign:'center',sortable:true">Product Name</th>
+            <th rowspan="2" data-options="field:'project_year',width:150,halign:'center',sortable:true">Project Year</th>
+            <th rowspan="2" data-options="field:'cavity_standard',width:150,halign:'center',sortable:true">Standard Cavity</th>
+            <th rowspan="2" data-options="field:'cavity_actual',width:150,halign:'center',sortable:true">Actual Cavity</th>
+            <th rowspan="2" data-options="field:'shoot_standard',width:150,halign:'center',sortable:true">Standard Shoot</th>
+            <th rowspan="2" data-options="field:'shoot_actual',width:150,halign:'center',sortable:true">Actual Shoot</th>
+            <th rowspan="2" data-options="field:'mold_type',width:80,halign:'center',sortable:true">Mold Type</th>
+            <th rowspan="2" data-options="field:'item_fg_id_mold',width:100,halign:'center',sortable:true">Mold Type<br>Product</th>
+            <th rowspan="2" data-options="field:'remark',width:150,halign:'center',sortable:true">Remarks</th>
+            <th rowspan="2" data-options="field:'status',width:150,halign:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -51,25 +51,25 @@
     <div style="width: 50%;">
         <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Mold Name</span>
-                    <input style="width:60%;" id="filter_mold_name" class="easyui-combobox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product No.</span>
-                    <input style="width:60%;" id="filter_product_no" class="easyui-combogrid">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Mold Type</span>
-                    <select style="width:60%;" name="filter_mold_type" id="filter_mold_type" prompt="Select All" panelHeight="auto" class="easyui-combobox">
-                        <option value="SINGLE">SINGLE</option>
-                        <option value="DOUBLE">DOUBLE</option>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Mold Name</span>
+                <input style="width:60%;" id="filter_mold_name" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Product No.</span>
+                <input style="width:60%;" id="filter_product_no" class="easyui-combogrid">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Mold Type</span>
+                <select style="width:60%;" name="filter_mold_type" id="filter_mold_type" prompt="Select All" panelHeight="auto" class="easyui-combobox">
+                    <option value="SINGLE">SINGLE</option>
+                    <option value="DOUBLE">DOUBLE</option>
                 </select>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;"></span>
-                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-                </div>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;"></span>
+                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+            </div>
         </fieldset>
         <?= $button ?>
         <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
@@ -96,32 +96,32 @@
             <!-- auto ambil dari mold_items -->
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Project Year</span>
-                <input style="width:60%;"  id="project_year" readonly class="easyui-textbox">
+                <input style="width:60%;" id="project_year" readonly class="easyui-textbox">
             </div>
             <!-- auto ambil dari molds -->
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Standard Cavity</span>
-                <input style="width:60%;"  id="cavity_standard" readonly class="easyui-textbox">
+                <input style="width:60%;" id="cavity_standard" readonly class="easyui-textbox">
             </div>
             <!-- auto ambil dari molds -->
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Actual Cavity</span>
-                <input style="width:60%;"  id="cavity_actual" readonly class="easyui-textbox">
+                <input style="width:60%;" id="cavity_actual" readonly class="easyui-textbox">
             </div>
             <!-- auto ambil dari molds -->
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Standard Shoot</span>
-                <input style="width:60%;"  id="shoot_standard" readonly class="easyui-textbox">
+                <input style="width:60%;" id="shoot_standard" readonly class="easyui-textbox">
             </div>
             <!-- auto ambil dari molds -->
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Actual Shoot</span>
-                <input style="width:60%;"  id="shoot_actual" readonly class="easyui-textbox">
+                <input style="width:60%;" id="shoot_actual" readonly class="easyui-textbox">
             </div>
             <!-- auto ambil dari molds -->
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Mold Type</span>
-                <input style="width:60%;"  id="mold_type" readonly class="easyui-textbox">
+                <input style="width:60%;" id="mold_type" readonly class="easyui-textbox">
             </div>
             <!-- ambil dari item_fg -->
             <div class="fitem">
@@ -176,7 +176,7 @@
         $('#item_fg_id').combogrid('enable');
         $('#mold_id').combogrid('enable');
     }
-    
+
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
@@ -195,9 +195,9 @@
             $("#shoot_actual").textbox('setValue', row.shoot_actual);
             $("#mold_type").textbox('setValue', row.mold_type);
 
-            if(row.mold_type=="SINGLE"){
+            if (row.mold_type == "SINGLE") {
                 $("#item_fg_id_mold").combobox('disable')
-            }else{
+            } else {
                 $("#item_fg_id_mold").combobox('enable')
             }
         } else {
@@ -292,6 +292,8 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            resizable: true,
+            remoteSort: false,
         });
 
         //SAVE DATA
@@ -312,7 +314,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
+
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
@@ -323,9 +325,9 @@
     });
 
     $('#item_fg_id').combobox({
-        url:'<?= base_url('master/item_fg/reads'); ?>',
-        valueField:'id',
-        textField:'number',
+        url: '<?= base_url('master/item_fg/reads'); ?>',
+        valueField: 'id',
+        textField: 'number',
         prompt: 'Choose Product No.',
     });
 
@@ -356,9 +358,9 @@
             $("#shoot_actual").textbox('setValue', molds.shoot_actual);
             $("#mold_type").textbox('setValue', molds.mold_type);
 
-            if(molds.mold_type=="SINGLE"){
+            if (molds.mold_type == "SINGLE") {
                 $("#item_fg_id_mold").combobox('disable')
-            }else{
+            } else {
                 $("#item_fg_id_mold").combobox('enable')
             }
         }
@@ -378,37 +380,37 @@
     });
 
     $('#filter_product_no').combogrid({
-            url: '<?= base_url("master/item_fg/reads") ?>',
-            panelWidth: 400,
-            idField: 'id',
-            textField: 'number',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Select Product No",
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-                }
-            }],
-            columns: [
-                [{
-                    field: 'number',
-                    title: 'Product No',
-                    width: 200
-                }, {
-                    field: 'name',
-                    title: 'Product Name',
-                    width: 200
-                }]
-            ]
-        });
+        url: '<?= base_url("master/item_fg/reads") ?>',
+        panelWidth: 400,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Select Product No",
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
+        columns: [
+            [{
+                field: 'number',
+                title: 'Product No',
+                width: 200
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 200
+            }]
+        ]
+    });
 
-    
+
     $('#item_fg_id_mold').combobox({
-        url:'<?= base_url('master/item_fg/reads'); ?>',
-        valueField:'id',
-        textField:'number',
+        url: '<?= base_url('master/item_fg/reads'); ?>',
+        valueField: 'id',
+        textField: 'number',
         prompt: 'Choose Mold Type Product',
     });
 
@@ -431,81 +433,81 @@
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
-            buttons: [{
-                text: 'List Failed',
-                handler: function() {
-                    window.open('<?= base_url('master/mold_items/uploadDownloadFailed') ?>', '_blank');
-                }
-            }, {
-                text: 'Upload',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/mold_items/upload') ?>',
-                        onSubmit: function() {
-                            if ($(this).form('validate') == false) {
-                                return $(this).form('validate');
-                            } else {
-                                $.messager.progress({
-                                    title: 'Please Wait',
-                                    msg: 'Importing Excel to Database'
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('master/mold_items/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('master/mold_items/upload') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('master/mold_items/uploadclearFailed') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload').progressbar('setValue', value);
+                                $('#p_start').html(number);
+                                $('#p_finish').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('master/mold_items/uploadCreate') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('master/mold_items/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks").append(title + "<br>");
+                                    }
                                 });
                             }
-                        },
-                        success: function(result) {
-                            $.messager.progress('close');
-                            //Clear File
-                            $.ajax({
-                                url: "<?= base_url('master/mold_items/uploadclearFailed') ?>"
-                            });
-                            var json = eval('(' + result + ')');
-                            requestData(json.total, json);
-
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
-
-                                    $.ajax({
-                                        type: "POST",
-                                        async: true,
-                                        url: "<?= base_url('master/mold_items/uploadCreate') ?>",
-                                        data: {
-                                            "data": json[number - 1]
-                                        },
-                                        cache: false,
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (result.theme == "success") {
-                                                $('#p_success').html(success);
-                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                //Json Failed
-                                                $.ajax({
-                                                    type: "POST",
-                                                    async: true,
-                                                    url: "<?= base_url('master/mold_items/uploadcreateFailed') ?>",
-                                                    data: {
-                                                        data: json[number - 1],
-                                                        message: result.message
-                                                    },
-                                                    cache: false
-                                                });
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                            }
-                                            $("#p_remarks").append(title + "<br>");
-                                        }
-                                    });
-                                }
-                            }
                         }
-                    });
-                }
-            }]
-        });
+                    }
+                });
+            }
+        }]
+    });
 </script>

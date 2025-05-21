@@ -44,13 +44,14 @@
         var filter_from = $("#filter_from").datebox("getValue");
         var filter_to = $("#filter_to").datebox("getValue");
         var filter_customers = $("#filter_customers").combobox("getValue");
+
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_customers=" + filter_customers;
         if (filter_from == "" || filter_to == "") {
             toastr.warning("Please select Trans Date!");
         } else {
-            window.location.assign('<?= base_url('finance/ar_schedules/print') ?>' + url);
+            window.location.assign('<?= base_url('finance/ar_schedules/print/excel') ?>' + url);
         }
     }
 

@@ -13,19 +13,19 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'item_category_id',width:80,align:'center'">Category ID</th>
-            <th rowspan="2" data-options="field:'item_category_name',width:150,halign:'center'">Category Name</th>
-            <th rowspan="2" data-options="field:'kind',width:100,halign:'center'">Kind</th>
-            <th rowspan="2" data-options="field:'min',width:100,halign:'center'">Min Stock</th>
-            <th rowspan="2" data-options="field:'max',width:150,halign:'center'">Max Stock</th>
+            <th rowspan="2" data-options="field:'item_category_id',width:100,align:'center',sortable:true">Category ID</th>
+            <th rowspan="2" data-options="field:'item_category_name',width:150,halign:'center',sortable:true">Category Name</th>
+            <th rowspan="2" data-options="field:'kind',width:100,halign:'center',sortable:true">Kind</th>
+            <th rowspan="2" data-options="field:'min',width:100,halign:'center',sortable:true">Min Stock</th>
+            <th rowspan="2" data-options="field:'max',width:150,halign:'center',sortable:true">Max Stock</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -44,13 +44,13 @@
                 <input style="width:60%;" name="item_category_id" id="item_category_id" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Kind</span>
-                    <select style="width:60%;" name="kind" id="kind" required="" panelHeight="auto" class="easyui-combobox">
-                        <option value="LOCAL">LOCAL</option>
-                        <option value="IMPORT">IMPORT</option>
-                        <option value="EXPORT">EXPORT</option>
-                    </select>
-                </div>
+                <span style="width:35%; display:inline-block;">Kind</span>
+                <select style="width:60%;" name="kind" id="kind" required="" panelHeight="auto" class="easyui-combobox">
+                    <option value="LOCAL">LOCAL</option>
+                    <option value="IMPORT">IMPORT</option>
+                    <option value="EXPORT">EXPORT</option>
+                </select>
+            </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Min Stock</span>
                 <input style="width:60%;" name="min" id="min" class="easyui-numberbox">
@@ -168,6 +168,8 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            resizable: true,
+            remoteSort: false,
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({
@@ -187,7 +189,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
+
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
@@ -198,89 +200,89 @@
     });
 
     $('#item_category_id').combobox({
-        url:'<?= base_url('master/item_categories/reads'); ?>',
-        valueField:'id',
-        textField:'name',
+        url: '<?= base_url('master/item_categories/reads'); ?>',
+        valueField: 'id',
+        textField: 'name',
         prompt: 'Choose Category',
     });
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
-            buttons: [{
-                text: 'List Failed',
-                handler: function() {
-                    window.open('<?= base_url('master/setting_stocks/uploadDownloadFailed') ?>', '_blank');
-                }
-            }, {
-                text: 'Upload',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/setting_stocks/upload') ?>',
-                        onSubmit: function() {
-                            if ($(this).form('validate') == false) {
-                                return $(this).form('validate');
-                            } else {
-                                $.messager.progress({
-                                    title: 'Please Wait',
-                                    msg: 'Importing Excel to Database'
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('master/setting_stocks/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('master/setting_stocks/upload') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('master/setting_stocks/uploadclearFailed') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload').progressbar('setValue', value);
+                                $('#p_start').html(number);
+                                $('#p_finish').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('master/setting_stocks/uploadCreate') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('master/setting_stocks/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks").append(title + "<br>");
+                                    }
                                 });
                             }
-                        },
-                        success: function(result) {
-                            $.messager.progress('close');
-                            //Clear File
-                            $.ajax({
-                                url: "<?= base_url('master/setting_stocks/uploadclearFailed') ?>"
-                            });
-                            var json = eval('(' + result + ')');
-                            requestData(json.total, json);
-
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
-
-                                    $.ajax({
-                                        type: "POST",
-                                        async: true,
-                                        url: "<?= base_url('master/setting_stocks/uploadCreate') ?>",
-                                        data: {
-                                            "data": json[number - 1]
-                                        },
-                                        cache: false,
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (result.theme == "success") {
-                                                $('#p_success').html(success);
-                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                //Json Failed
-                                                $.ajax({
-                                                    type: "POST",
-                                                    async: true,
-                                                    url: "<?= base_url('master/setting_stocks/uploadcreateFailed') ?>",
-                                                    data: {
-                                                        data: json[number - 1],
-                                                        message: result.message
-                                                    },
-                                                    cache: false
-                                                });
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                            }
-                                            $("#p_remarks").append(title + "<br>");
-                                        }
-                                    });
-                                }
-                            }
                         }
-                    });
-                }
-            }]
-        });
+                    }
+                });
+            }
+        }]
+    });
 </script>

@@ -17,20 +17,20 @@
                     <input style="width:60%;" id="filter_customer_order_no" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Sales Order No</span>
-                    <input style="width:60%;" id="filter_sales_order_no" class="easyui-combobox">
-                </div>
-                <div class="fitem">
                     <span style="width:35%; display:inline-block;"></span>
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                 </div>
             </div>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Sales Order No</span>
+                    <input style="width:60%;" id="filter_sales_order_no" class="easyui-combobox">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No</span>
                     <input style="width:60%;" id="filter_item_fg" class="easyui-combogrid">
                 </div>
-                <div class="fitem">
+                <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Division</span>
                     <input style="width:60%;" id="filter_division" class="easyui-combobox">
                 </div>

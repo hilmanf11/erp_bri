@@ -22,17 +22,17 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'item_fg_id',width:200,align:'center'">Product ID</th>
-            <th rowspan="2" data-options="field:'item_fg_number',width:250,halign:'center'">Product No</th>
-            <th rowspan="2" data-options="field:'item_fg_name',width:300,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'item_fg_id',width:200,align:'center',sortable:true">Product ID</th>
+            <th rowspan="2" data-options="field:'item_fg_number',width:250,halign:'center',sortable:true">Product No</th>
+            <th rowspan="2" data-options="field:'item_fg_name',width:300,halign:'center',sortable:true">Product Name</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:120,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:120,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:120,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:120,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -262,9 +262,13 @@
                     halign: 'center',
                     title: "Uom",
                     editor: {
-                        type: 'textbox',
+                        type: 'combobox',
                         options: {
-                            readonly: true
+                            url: '<?= base_url('master/bom/readUoM'); ?>',
+                            required: true,
+                            valueField: 'name',
+                            textField: 'name',
+                            prompt: 'Choose UoM'
                         }
                     }
                 }, {
@@ -283,32 +287,24 @@
                         }
                     }
                 }, {
-                    field: 'type',
+                    field: 'type_name',
                     width: 120,
                     halign: 'center',
                     title: "Type",
                     editor: {
                         type: 'combobox',
                         options: {
-                            valueField: 'name',
+                            valueField: 'type',
                             textField: 'name',
                             prompt: 'Choose Type',
                             panelHeight: true,
                             required: true,
-                            data: [{
-                                    name: "ORIGINAL",
-                                    type: "0"
-                                },
-                                {
-                                    name: "RECYCLE",
-                                    type: "100"
-                                },
-                                {
-                                    name: "BOTH",
-                                    type: ""
-                                },
+                            data: [
+                                { name: "ORIGINAL", type: "1" },
+                                { name: "RECYCLE", type: "2" },
+                                { name: "BOTH", type: "3" },
                             ],
-                            onSelect: function(rows) {
+                            onSelect: function(record) {
                                 var dg = $('#dg2');
                                 var row = dg.datagrid('getSelected');
                                 var rowIndex = dg.datagrid('getRowIndex', row);
@@ -318,13 +314,23 @@
                                     field: 'recyle'
                                 });
 
-                                if (rows.type != "") {
+                                if (record.type === "1") {
+                                    $(ed.target).numberbox('setValue', 0);
                                     $(ed.target).numberbox('disable');
-                                } else {
+                                } else if (record.type === "2") {
+                                    $(ed.target).numberbox('setValue', 100);
+                                    $(ed.target).numberbox('disable');
+                                } else if (record.type === "3") {
                                     $(ed.target).numberbox('enable');
+                                    $(ed.target).numberbox('setValue', ''); // Allow user to input
                                 }
 
-                                $(ed.target).numberbox('setValue', rows.type);
+                                // Update the row data with the selected type
+                                row.type = record.type; // Ensure 'type' is set in the row data
+                                dg.datagrid('updateRow', {
+                                    index: rowIndex,
+                                    row: row
+                                });
                             }
                         }
                     }
@@ -345,7 +351,7 @@
                     editor: {
                         type: 'numberbox',
                         options: {
-                            precision: 5,
+                            precision: 2,
                         }
                     }
                 }, {
@@ -498,7 +504,7 @@
     }
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_bom.xls') ?>');
+        window.location.assign('<?= base_url('master/bom/exportTemplate') ?>');
     }
 
     //FILTER DATA
@@ -551,6 +557,8 @@
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
             view: detailview,
+            resizable: true,
+            remoteSort: false,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.item_fg_number + '"></table></div>';
             },
@@ -584,7 +592,7 @@
                                 halign: 'center',
                                 width: 200
                             }, {
-                                field: 'type',
+                                field: 'type_name',
                                 title: 'Type',
                                 halign: 'center',
                                 width: 100
@@ -605,7 +613,7 @@
                                 align: 'center',
                                 width: 80
                             }, {
-                                field: 'composition',
+                                field: 'formatted_composition',
                                 title: 'Composition',
                                 width: 100,
                                 halign: 'center',
@@ -654,6 +662,7 @@
                                     item_fg_id: item_fg_id,
                                     item_rm_id: rows[i].item_rm_id,
                                     process_id: rows[i].process_id,
+                                    uom: rows[i].uom,
                                     type: rows[i].type,
                                     recyle: rows[i].recyle,
                                     composition: rows[i].composition,
@@ -662,6 +671,9 @@
                                 dataType: "json",
                                 success: function(result) {
                                     if (i == (totalrows - 1)) {
+                                        // Display toastr notification
+                                        toastr.success('Data successfully created!', 'Success');
+                                        
                                         Swal.fire({
                                             title: result.message,
                                             icon: result.theme,
@@ -673,6 +685,9 @@
                                             }
                                         });
                                     }
+                                },
+                                error: function() {
+                                    toastr.error('An error occurred while creating data.', 'Error');
                                 }
                             });
                         }

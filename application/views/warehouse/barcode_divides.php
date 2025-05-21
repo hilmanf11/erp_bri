@@ -33,11 +33,11 @@
                 <input style="width:70%;" id="label_no_2" class="easyui-textbox" disabled>
             </div>
             <div class="fitem">
-                <span style="width:20%; display:inline-block;">Product No</span>
+                <span style="width:20%; display:inline-block;">Part No</span>
                 <input style="width:70%;" id="item_number" class="easyui-textbox" disabled>
             </div>
             <div class="fitem">
-                <span style="width:20%; display:inline-block;">Product Name</span>
+                <span style="width:20%; display:inline-block;">Part Name</span>
                 <input style="width:70%;" id="item_name" class="easyui-textbox" disabled>
             </div>
             <div class="fitem">

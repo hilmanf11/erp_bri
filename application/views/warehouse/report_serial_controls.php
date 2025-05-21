@@ -52,12 +52,12 @@
             "&filter_dn_no=" + window.btoa(filter_dn_no) +
             "&filter_serial_no=" + window.btoa(filter_serial_no);
 
-        if (filter_customer == "" && filter_serial_no == "") {
-            toastr.warning("Please select Customer or Serial No!");
-        } else {
+        // if (filter_customer == "" && filter_serial_no == "") {
+        //     toastr.warning("Please select Customer or Serial No!");
+        // } else {
             $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
             $("#printout").attr('src', '<?= base_url('warehouse/report_serial_controls/print') ?>' + url);
-        }
+        // }
     }
 
     function excel() {
@@ -155,6 +155,33 @@
                     }
                 });
             },
+        });
+
+        $('#filter_product_no').combogrid({
+            url: '<?= base_url('master/customer_items/readItems2') ?>',
+            panelWidth: 400,
+            idField: 'id',
+            textField: 'number',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Select Product No",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                     $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                }
+            }],
+            columns: [
+                [{
+                    field: 'number',
+                    title: 'Product No',
+                    width: 200
+                }, {
+                    field: 'name',
+                    title: 'Product Name',
+                    width: 200
+                 }]
+            ]
         });
     });
 

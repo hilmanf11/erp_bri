@@ -79,7 +79,7 @@ class Report_serial_controls extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.delivery_order_no, h.delivery_note_no, b.name as customer_name, c.number as item_no, c.name as item_name, a.delivery_order_date, a.sales_order_no, f.checksheet_label, f.qty');
+        $this->db->select('a.delivery_order_no, h.delivery_note_no, b.name as customer_name, c.number as item_no, c.name as item_name, a.delivery_order_date, a.sales_order_no, f.serial_label, f.qty');
         $this->db->from('delivery_orders a');
         $this->db->join('customers b', 'a.customer_id = b.id');
         $this->db->join('item_fg c', 'a.item_fg_id = c.id');
@@ -92,11 +92,11 @@ class Report_serial_controls extends CI_Controller
             $this->db->like('h.delivery_note_no', $filter_dn_no);
         }
         if($filter_serial_no != ""){
-            $this->db->like('f.checksheet_label', $filter_serial_no);
+            $this->db->like('f.serial_label', $filter_serial_no);
         }
         $this->db->order_by('a.delivery_order_no', 'ASC');
-        $this->db->order_by('f.checksheet_label', 'ASC');
-        $this->db->group_by('f.checksheet_label');
+        $this->db->order_by('f.serial_label', 'ASC');
+        $this->db->group_by('f.serial_label');
         $records = $this->db->get()->result_array();
 
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
@@ -147,7 +147,7 @@ class Report_serial_controls extends CI_Controller
                             <td>' . $data['customer_name'] . '</td>
                             <td>' . $data['item_no'] . '</td>
                             <td>' . $data['item_name'] . '</td>
-                            <td>' . $data['checksheet_label'] . '</td>
+                            <td>' . $data['serial_label'] . '</td>
                             <td>' . number_format($data['qty'], 2) . '</td>
                         </tr>';
             $no++;

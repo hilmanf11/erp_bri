@@ -134,10 +134,14 @@
                             "&filter_revision=" + window.btoa(filter_revision) +
                             "&filter_customer=" + window.btoa(filter_customer) +
                             "&filter_product_no=" + window.btoa(filter_product_no),
-                        dataType: "json",
+                        dataType: "text",
                         success: function(rows) {
+                            let results = JSON.parse(rows);
                             Swal.close();
-                            requestData(rows['total'], rows);
+                            if(results.length>0){
+                                requestData(results.length, results);
+                            }
+                            // requestData(rows['total'], rows);
 
                             function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
                                 if (value < 100) {
@@ -390,15 +394,15 @@
         var filter_month = $("#filter_month").combobox('getValue');
         var filter_year = $("#filter_year").textbox('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
-        var filter_line_no = $("#filter_line_no").combobox('getValue');
-        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
+        // var filter_line_no = $("#filter_line_no").combobox('getValue');
+        var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_product_no = $("#filter_product_no").combogrid('getValue');
 
         var url = "?filter_month=" + window.btoa(filter_month) +
             "&filter_year=" + window.btoa(filter_year) +
             "&filter_revision=" + window.btoa(filter_revision) +
-            "&filter_line_no=" + window.btoa(filter_line_no) +
-            "&filter_customer_id=" + window.btoa(filter_customer_id) +
+            // "&filter_line_no=" + window.btoa(filter_line_no) +
+            "&filter_customer=" + window.btoa(filter_customer) +
             "&filter_product_no=" + window.btoa(filter_product_no);
 
         if (filter_month == "" || filter_year == "") {

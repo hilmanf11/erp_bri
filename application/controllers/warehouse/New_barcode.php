@@ -30,41 +30,42 @@ class new_barcode extends CI_Controller
 
     public function readItemrmnosub($category_id, $family_id)
     {
-       $post = isset($_POST['q']) ? $_POST['q'] : "";
-       $this->db->select('a.*');
-       $this->db->from('item_rm a');
-       $this->db->join('item_categories b','a.item_category_id = b.id');
-       $this->db->join('item_familys c','a.item_family_id = c.id');
-       $this->db->where('a.item_category_id', $category_id);
-       $this->db->where('a.item_family_id', $family_id);
-       $this->db->like('a.number', $post);
-       $this->db->group_by('a.id');
-       $this->db->order_by('a.id', 'ASC');
-       $records = $this->db->get()->result_array();
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $this->db->select('a.*');
+        $this->db->from('item_rm a');
+        $this->db->join('item_categories b', 'a.item_category_id = b.id');
+        $this->db->join('item_familys c', 'a.item_family_id = c.id');
+        $this->db->where('a.item_category_id', $category_id);
+        $this->db->where('a.item_family_id', $family_id);
+        $this->db->like('a.number', $post);
+        $this->db->group_by('a.id');
+        $this->db->order_by('a.id', 'ASC');
+        $records = $this->db->get()->result_array();
 
         echo json_encode($records);
     }
 
     public function readItemrm($category_id, $family_id, $subfamily_id)
     {
-       $post = isset($_POST['q']) ? $_POST['q'] : "";
-       $this->db->select('a.*');
-       $this->db->from('item_rm a');
-       $this->db->join('item_categories b','a.item_category_id = b.id');
-       $this->db->join('item_familys c','a.item_family_id = c.id');
-       $this->db->join('item_family_subs d','a.item_sub_family_id = d.id','left');
-       $this->db->where('a.item_category_id', $category_id);
-       $this->db->where('a.item_family_id', $family_id);
-       $this->db->where('a.item_sub_family_id', $subfamily_id);
-       $this->db->like('a.number', $post);
-       $this->db->group_by('a.id');
-       $this->db->order_by('a.id', 'ASC');
-       $records = $this->db->get()->result_array();
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $this->db->select('a.*');
+        $this->db->from('item_rm a');
+        $this->db->join('item_categories b', 'a.item_category_id = b.id');
+        $this->db->join('item_familys c', 'a.item_family_id = c.id');
+        $this->db->join('item_family_subs d', 'a.item_sub_family_id = d.id', 'left');
+        $this->db->where('a.item_category_id', $category_id);
+        $this->db->where('a.item_family_id', $family_id);
+        $this->db->where('a.item_sub_family_id', $subfamily_id);
+        $this->db->like('a.number', $post);
+        $this->db->group_by('a.id');
+        $this->db->order_by('a.id', 'ASC');
+        $records = $this->db->get()->result_array();
 
         echo json_encode($records);
     }
 
-    public function stock($item_rm_id, $cut_off_date ){
+    public function stock($item_rm_id, $cut_off_date)
+    {
         $cut_off_date = base64_decode($cut_off_date);
         $item_rm_id = base64_decode($item_rm_id);
 
@@ -101,10 +102,11 @@ class new_barcode extends CI_Controller
         echo $begin_stock;
     }
 
-    public function itemMpq($item_rm_id){
+    public function itemMpq($item_rm_id)
+    {
         $item_rm_id = base64_decode($item_rm_id);
-        
-        $send = $this->crud->read("supplier_items",[],['item_rm_id' => $item_rm_id]);
+
+        $send = $this->crud->read("supplier_items", [], ['item_rm_id' => $item_rm_id]);
         echo json_encode($send);
     }
 
@@ -112,11 +114,11 @@ class new_barcode extends CI_Controller
     {
         if ($this->input->post()) {
             $post = $this->input->post();
-            $new_barcode = $this->crud->reads('new_barcode',[],['item_rm_id' => $post['item_rm_id'],'cut_off_date' => $post['cut_off_date']]);
-            
-            if (count($new_barcode)){
+            $new_barcode = $this->crud->reads('new_barcode', [], ['item_rm_id' => $post['item_rm_id'], 'cut_off_date' => $post['cut_off_date']]);
+
+            if (count($new_barcode)) {
                 echo json_encode(array("title" => "Available", "message" => "Item Id has Been Created in Period ", "theme" => "error"));
-            }else{
+            } else {
                 $qty_label = $post['qty_label'];
                 $datenow = date('Ymd', strtotime($post['cut_off_date']));
                 $sqlGetID   = $this->db->query("SELECT max(label_no) as kode FROM new_barcode WHERE label_no like '%$datenow%'");
@@ -132,15 +134,11 @@ class new_barcode extends CI_Controller
 
                 $qty_receipt = $post['stock'];
                 if ($qty_label > 0) {
-                    for ($i=0; $i < $qty_label; $i++) { 
+                    // Jika MPQ lebih besar dari historical stock, buat 1 label dengan qty historical stock
+                    if ($post['mpq'] > $post['stock']) {
                         $label_no = "NBC-" . $datenow . "-" . $autoID;
-                        
-                        if ($qty_receipt > $post['mpq']) {
-                            $qty = $post['mpq'];
-                        } else {
-                            $qty = $qty_receipt;
-                        }
-                        
+                        $qty = $post['stock'];
+
                         $arrLabel = [
                             "label_no" => $label_no,
                             "item_rm_id" => $post['item_rm_id'],
@@ -150,17 +148,46 @@ class new_barcode extends CI_Controller
                             "cut_off_date" => $post['cut_off_date'],
                         ];
 
-                        $send   = $this->crud->create('new_barcode', $arrLabel);
+                        $send = $this->crud->create('new_barcode', $arrLabel);
                         $message = json_encode(array("title" => "Success", "message" => "Data Saved Successfully ", "theme" => "success"));
                         //Generate QRcode
                         $this->createQrcode($label_no, "assets/image/qrcode/");
-                        $autoID = sprintf("%04s", $autoID + 1);
+                    } else {
+                        // Proses normal jika MPQ <= historical stock
+                        for ($i = 0; $i < $qty_label; $i++) {
+                            $label_no = "NBC-" . $datenow . "-" . $autoID;
 
-                        $qty_receipt = ($qty_receipt - $post['mpq']);
+                            if ($qty_receipt <= $post['mpq']) {
+                                $qty = $qty_receipt;
+                            } else {
+                                $qty = $post['mpq'];
+                            }
+
+                            $arrLabel = [
+                                "label_no" => $label_no,
+                                "item_rm_id" => $post['item_rm_id'],
+                                "stock" => $post['stock'],
+                                "uom" => $post['uom'],
+                                "qty" => $qty,
+                                "cut_off_date" => $post['cut_off_date'],
+                            ];
+
+                            $send = $this->crud->create('new_barcode', $arrLabel);
+                            $message = json_encode(array("title" => "Success", "message" => "Data Saved Successfully ", "theme" => "success"));
+                            //Generate QRcode
+                            $this->createQrcode($label_no, "assets/image/qrcode/");
+                            $autoID = sprintf("%04s", $autoID + 1);
+
+                            $qty_receipt = ($qty_receipt - $qty);
+                            
+                            if ($qty_receipt <= 0) {
+                                break;
+                            }
+                        }
                     }
 
                     echo $message;
-                }else{
+                } else {
                     echo json_encode(array("title" => "Available", "message" => "QTY label is 0 ", "theme" => "error"));
                 }
             }
@@ -192,6 +219,10 @@ class new_barcode extends CI_Controller
         $this->db->where('a.item_rm_id', $item_rm_id);
         $this->db->where('a.cut_off_date', $cut_off_date);
         // $this->db->group_by('a.cut_off_date', $cut_off_date);
+        $this->db->group_by('a.item_rm_id');
+        $this->db->group_by('a.cut_off_date');
+        $this->db->group_by('a.label_no');
+        $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_object();
 
         $html = '<html>
@@ -199,24 +230,69 @@ class new_barcode extends CI_Controller
                         <title>' . $item_rm_id . '</title>
                         <link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="16x16">
                     </head>
-                    <style>body {font-family: Arial, Helvetica, sans-serif; margin:5px;}#customers {border-collapse: collapse; width: 100%; font-size: 9px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>';
-        $html .= '<div style="width: 55mm;">';
+                    <style>
+                        body {font-family: Arial, Helvetica, sans-serif; margin:5px;}
+                        #customers {
+                            border-collapse: collapse;
+                            width: 100%;
+                            font-size: 6px;
+                            border-width: 2px;
+                        }
+                        #customers td, #customers th {
+                            border: 2px solid black;
+                            padding: 1px;
+                        }
+                        #customers tr:nth-child(even) {background-color: #f2f2f2;}
+                        #customers tr:hover {background-color: #ddd;}
+                        #customers th {
+                            padding-top: 2px;
+                            padding-bottom: 2px;
+                            text-align: center;
+                            color: black;
+                        }
+            @page {
+            size: 51mm 49mm;
+            margin: 0;
+            }
+                @media print {
+            .printbr {
+                page-break-after: always;
+                width: 45mm;
+                height: 40mm;
+                display: block;
+                padding: 3mm;
+            }
+
+            .printbr img {
+                max-width: 30mm;
+                max-height: 30mm;
+            }
+
+            table {
+                width: 100%;
+                font-size: 6px;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+            }
+                
+        }
+                    </style>
+                    <body>';
+        $html .= '<div style="width: 48mm;">';
         $no = 1;
         foreach ($records as $record) {
-            // if ($no == 3) {
-            //     $no = 1;
-            // }
-            // if ($no == 1) {
-                $padding = "padding:3mm 5mm 3mm 3mm;";
-            // } else {
-            //     $padding = "padding:5mm 5mm 0mm 3mm;";
-            // }
+            $padding = "padding:3mm 5mm 3mm 3mm;";
             $this->createQrcode($record->label_no, "assets/image/qrcode/");
-            $html .= '  <div style="max-width: 50mm; max-height:40mm; float:left; ' . $padding . '">
+            $html .= '  <div class="printbr" style="max-width: 48mm; max-height:46mm;">
                             <table id="customers" border="1" style="margin-bottom:20px;">
                                 <tr>   
                                     <th colspan="3" style="font-size:8px; text-align:center;">
-                                        <img src="' . base_url('assets/image/bpi_logo.png') . '" width="10" style="float: left; margin-right: 5px;">
+                                        <img src="' . base_url('assets/image/bri_logo.png') . '" width="10" style="float: left; margin-right: 5px;">
                                         <b>' . $config->name . '</b>
                                     </th>
                                 </tr>
@@ -240,7 +316,7 @@ class new_barcode extends CI_Controller
                                         </th>
                                     <th style="text-align:left">
                                         <small style="font-size:9px">Location</small><br>
-                                        
+                                        <small style="font-size:9px">'.$record->location.'</small>
                                     </th>
                                 </tr>
                                 <tr>
@@ -248,10 +324,6 @@ class new_barcode extends CI_Controller
                                         <div style="display: inline-block;">
                                             <small style="font-size:9px">Date :</small><br> 
                                             <b style="font-size:7px;">' . $record->cut_off_date . '</b>
-                                        
-                                        </div>
-                                        <div style="display: inline-block; float:right;">
-                                            <img src="' . base_url('assets/image/qc_passed.png') . '" width="30" style="float: right; margin-right: 5px; margin-top: 5px;">
                                         </div>
                                         <div style="display: inline-block;">
                                             <small style="font-size:9px">Label No :</small><br>

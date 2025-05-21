@@ -716,7 +716,7 @@ class Journal_postings extends CI_Controller
             $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
             echo json_encode($result);
         } elseif ($modul == "SALES INVOICING") {
-            $this->db->select('a.number, b.trans_date, b.so_number, b.customer_po, c.name as customer_name, b.currency, b.item_no, b.item_name, a.account_number, a.account_name, a.debit, a.credit, a.flag');
+            $this->db->select('a.number, b.trans_date, b.sales_order_no, b.customer_order_no, c.name as customer_name, b.currency, b.item_no, b.item_name, a.account_number, a.account_name, a.debit, a.credit, a.flag');
             $this->db->from('sales_invoice_journals a');
             $this->db->join("(SELECT * FROM sales_invoices GROUP BY number) b", "b.number = a.number");
             $this->db->join("customers c", "b.customer_id = c.id");
@@ -747,7 +747,7 @@ class Journal_postings extends CI_Controller
                 $debit = $journal['debit'];
                 $credit = $journal['credit'];
 
-                $this->db->select('a.trans_date, a.customer_po, b.name as customer_name, a.item_no, a.item_name, a.currency, a.account_number, c.account_name, a.account_type, a.total');
+                $this->db->select('a.trans_date, a.customer_order_no, b.name as customer_name, a.item_no, a.item_name, a.currency, a.account_number, c.account_name, a.account_type, a.total');
                 $this->db->from('sales_invoices a');
                 $this->db->join('customers b', 'a.customer_id = b.id');
                 $this->db->join('account_coa c', 'a.account_number = c.account_number');
@@ -804,12 +804,12 @@ class Journal_postings extends CI_Controller
                             $data[] = array(
                                 "trans_date" => $sales_invoice['trans_date'],
                                 "document_no" => $number,
-                                "invoice_no" => $sales_invoice['customer_po'],
+                                "invoice_no" => $sales_invoice['customer_order_no'],
                                 "company_name" => $customer_name,
                                 "modul" => $modul,
                                 "account_number" => $sales_invoice['account_number'],
                                 "account_name" => $sales_invoice['account_name'],
-                                "description" => $customer_name . " | " . $number . " | " . $sales_invoice['customer_po'] . " | " . $sales_invoice['item_no'] . " | " . $sales_invoice['item_name'],
+                                "description" => $customer_name . " | " . $number . " | " . $sales_invoice['customer_order_no'] . " | " . $sales_invoice['item_no'] . " | " . $sales_invoice['item_name'],
                                 "currency" => $sales_invoice['currency'],
                                 "original_debit" => $original_debit,
                                 "original_credit" => $original_credit,
@@ -846,12 +846,12 @@ class Journal_postings extends CI_Controller
                         $data[] = array(
                             "trans_date" => $journal['trans_date'],
                             "document_no" => $number,
-                            "invoice_no" => $journal['customer_po'],
+                            "invoice_no" => $journal['customer_order_no'],
                             "company_name" => $journal['customer_name'],
                             "modul" => $modul,
                             "account_number" => $account_number,
                             "account_name" => $account_name,
-                            "description" => $journal['customer_name'] . " | " . $journal['so_number'] . " | " . $journal['customer_po'] . " | " . $journal['item_no'] . " | " . $journal['item_name'],
+                            "description" => $journal['customer_name'] . " | " . $journal['sales_order_no'] . " | " . $journal['customer_order_no'] . " | " . $journal['item_no'] . " | " . $journal['item_name'],
                             "currency" => $journal['currency'],
                             "original_debit" => $original_debit,
                             "original_credit" => $original_credit,

@@ -31,14 +31,14 @@ class Locations extends CI_Controller
     public function reads($type)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('warehouse_locations', ["location" => $post], ["type" => $type], "", "location", "asc", ["location"]);
+        $send = $this->crud->reads('warehouse_locations', ["location" => $post], ["type" => $type], "", "location", "asc", ["number"]);
         echo json_encode($send);
     }
     public function readLocations()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $type = $this->input->get('type');
-        $send = $this->crud->reads('warehouse_locations', ["location" => $post], ["type" => $type], "", "location", "asc", ["location"]);
+        $send = $this->crud->reads('warehouse_locations', ["location" => $post], ["type" => $type], "", "location", "asc", ["number"]);
         echo json_encode($send);
     }
     public function readAreas()

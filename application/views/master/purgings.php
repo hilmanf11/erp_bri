@@ -15,23 +15,23 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'machine_id',width:100,align:'center'">Machine ID</th>
-            <th rowspan="2" data-options="field:'machine_number',width:100,halign:'center'">Machine No.</th>
-            <th rowspan="2" data-options="field:'machine_name',width:150,halign:'center'">Name Of Machine</th>
-            <th rowspan="2" data-options="field:'qty',width:100,align:'center'">Qty Maximum <br>Purging</th>
-            <th rowspan="2" data-options="field:'total',width:80,align:'center'">Total <br>Purging</th>
-            <th rowspan="2" data-options="field:'item_sub_family',width:100,halign:'center'">Sub Product <br>Family</th>
-            <th rowspan="2" data-options="field:'kind',width:100,halign:'center'">Kind of Color</th>
-            <th rowspan="2" data-options="field:'uom',width:80,halign:'center'">UOM</th>
-            <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'machine_id',width:100,align:'center',sortable:true">Machine ID</th>
+            <th rowspan="2" data-options="field:'machine_number',width:100,halign:'center',sortable:true">Machine No.</th>
+            <th rowspan="2" data-options="field:'machine_name',width:150,halign:'center',sortable:true">Name Of Machine</th>
+            <th rowspan="2" data-options="field:'qty',width:100,align:'center',sortable:true">Qty Maximum <br>Purging</th>
+            <th rowspan="2" data-options="field:'total',width:80,align:'center',sortable:true">Total <br>Purging</th>
+            <th rowspan="2" data-options="field:'item_sub_family',width:100,halign:'center',sortable:true">Sub Product <br>Family</th>
+            <th rowspan="2" data-options="field:'kind',width:100,halign:'center',sortable:true">Kind of Color</th>
+            <th rowspan="2" data-options="field:'uom',width:80,halign:'center',sortable:true">UOM</th>
+            <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -191,6 +191,8 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            resizable: true,
+            remoteSort: false,
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({
@@ -210,7 +212,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
+
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
@@ -221,39 +223,39 @@
     });
 
     $('#machine_id').combobox({
-        url:'<?= base_url('master/machines/reads/'); ?>',
-        valueField:'id',
-        textField:'number',
+        url: '<?= base_url('master/machines/reads/'); ?>',
+        valueField: 'id',
+        textField: 'number',
         prompt: 'Choose Machine No.',
-        onSelect: function(machine){
+        onSelect: function(machine) {
             $('#qty').numberbox('clear');
             $('#qty').numberbox({
-                onChange: function(){
+                onChange: function() {
                     var qty = $('#qty').numberbox('getValue');
-                    $('#total').numberbox('setValue', (machine.volume*qty)/1000);
+                    $('#total').numberbox('setValue', (machine.volume * qty) / 1000);
                 }
             });
         }
     });
 
     $('#item_sub_family').combobox({
-        url:'<?= base_url('master/item_family_subs/reads_number'); ?>',
-        valueField:'number',
-        textField:'number',
+        url: '<?= base_url('master/item_family_subs/reads_number'); ?>',
+        valueField: 'number',
+        textField: 'number',
         prompt: 'Choose Sub Product Family',
     });
 
     $('#kind').combobox({
-        url:'<?= base_url('master/item_colors/reads_kind'); ?>',
-        valueField:'kind',
-        textField:'kind',
+        url: '<?= base_url('master/item_colors/reads_kind'); ?>',
+        valueField: 'kind',
+        textField: 'kind',
         prompt: 'Choose Kind of Colors',
     });
 
     $('#uom').combobox({
-        url:'<?= base_url('master/uom/reads/'); ?>',
-        valueField:'name',
-        textField:'name',
+        url: '<?= base_url('master/uom/reads/'); ?>',
+        valueField: 'name',
+        textField: 'name',
         prompt: 'Choose Unit of Measure',
     });
 
@@ -272,85 +274,85 @@
         } else {
             return 'Not Active';
         }
-    };    
+    };
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
-            buttons: [{
-                text: 'List Failed',
-                handler: function() {
-                    window.open('<?= base_url('master/purgings/uploadDownloadFailed') ?>', '_blank');
-                }
-            }, {
-                text: 'Upload',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/purgings/upload') ?>',
-                        onSubmit: function() {
-                            if ($(this).form('validate') == false) {
-                                return $(this).form('validate');
-                            } else {
-                                $.messager.progress({
-                                    title: 'Please Wait',
-                                    msg: 'Importing Excel to Database'
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('master/purgings/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('master/purgings/upload') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('master/purgings/uploadclearFailed') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload').progressbar('setValue', value);
+                                $('#p_start').html(number);
+                                $('#p_finish').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('master/purgings/uploadCreate') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('master/purgings/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks").append(title + "<br>");
+                                    }
                                 });
                             }
-                        },
-                        success: function(result) {
-                            $.messager.progress('close');
-                            //Clear File
-                            $.ajax({
-                                url: "<?= base_url('master/purgings/uploadclearFailed') ?>"
-                            });
-                            var json = eval('(' + result + ')');
-                            requestData(json.total, json);
-
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
-
-                                    $.ajax({
-                                        type: "POST",
-                                        async: true,
-                                        url: "<?= base_url('master/purgings/uploadCreate') ?>",
-                                        data: {
-                                            "data": json[number - 1]
-                                        },
-                                        cache: false,
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (result.theme == "success") {
-                                                $('#p_success').html(success);
-                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                //Json Failed
-                                                $.ajax({
-                                                    type: "POST",
-                                                    async: true,
-                                                    url: "<?= base_url('master/purgings/uploadcreateFailed') ?>",
-                                                    data: {
-                                                        data: json[number - 1],
-                                                        message: result.message
-                                                    },
-                                                    cache: false
-                                                });
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                            }
-                                            $("#p_remarks").append(title + "<br>");
-                                        }
-                                    });
-                                }
-                            }
                         }
-                    });
-                }
-            }]
-        });
+                    }
+                });
+            }
+        }]
+    });
 </script>

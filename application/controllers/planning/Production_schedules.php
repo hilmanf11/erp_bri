@@ -82,14 +82,24 @@ class Production_schedules extends CI_Controller
     {
         $period = base64_decode($this->input->get('period'));
         $wp = base64_decode($this->input->get('wp'));
-        $customer_id = $this->input->get('customer_id');
         $workorder = base64_decode($this->input->get('workorder'));
 
-        $send = $this->crud->query("SELECT a.workorder, b.id as item_fg_id, b.number as item_number, b.name as item_name, c.name as customer_name  
+        $send = $this->crud->query("SELECT a.workorder, b.id as item_fg_id, b.number as item_number, b.name as item_name  
             FROM production_schedules a
             JOIN item_fg b on a.item_fg_id = b.id
-            JOIN customers c on a.customer_id = c.id
-            WHERE a.status = 0 and a.period = '$period' and a.wp = '$wp' and a.customer_id = '$customer_id' and a.workorder = '$workorder' ORDER BY a.workorder DESC");
+            WHERE a.status = 0 and a.period = '$period' and a.wp = '$wp' and a.workorder = '$workorder' 
+            ORDER BY a.workorder DESC");
+        echo json_encode($send);
+    }
+
+
+    public function readItems2()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT b.id, b.number, b.name, a.qty
+            FROM sales_orders a 
+            JOIN item_fg b ON a.item_fg_id = b.id
+            WHERE a.status = 0 and (b.number LIKE '%$post%' or b.name LIKE '%$post%') ");
         echo json_encode($send);
     }
 

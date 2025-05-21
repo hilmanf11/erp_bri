@@ -14,18 +14,18 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'subcont_id',width:200,halign:'center'">Subcont ID</th>
-            <th rowspan="2" data-options="field:'subcont_number',width:200,halign:'center'">Subcont Code</th>
-            <th rowspan="2" data-options="field:'subcont_name',width:300,halign:'center'">Subcont Name</th>
-            <th rowspan="2" data-options="field:'status',width:150,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'subcont_id',width:200,halign:'center',sortable:true">Subcont ID</th>
+            <th rowspan="2" data-options="field:'subcont_number',width:200,halign:'center',sortable:true">Subcont Code</th>
+            <th rowspan="2" data-options="field:'subcont_name',width:300,halign:'center',sortable:true">Subcont Name</th>
+            <th rowspan="2" data-options="field:'status',width:150,align:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:120,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:120,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:120,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:120,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -257,7 +257,7 @@
                     editor: {
                         type: 'textbox'
                     }
-                },  {
+                }, {
                     field: 'capacity',
                     width: 100,
                     align: 'center',
@@ -265,7 +265,7 @@
                     editor: {
                         type: 'numberbox'
                     }
-                },  {
+                }, {
                     field: 'machine_name',
                     width: 150,
                     halign: 'center',
@@ -342,7 +342,7 @@
                             readonly: true
                         }
                     }
-                },  {
+                }, {
                     field: 'machine_uom_min_close',
                     width: 100,
                     align: 'center',
@@ -353,7 +353,7 @@
                             readonly: true
                         }
                     }
-                },  {
+                }, {
                     field: 'machine_max_open',
                     width: 100,
                     align: 'center',
@@ -364,7 +364,7 @@
                             readonly: true
                         }
                     }
-                },  {
+                }, {
                     field: 'machine_uom_max_open',
                     width: 100,
                     align: 'center',
@@ -375,7 +375,7 @@
                             readonly: true
                         }
                     }
-                },  {
+                }, {
                     field: 'machine_volume',
                     width: 100,
                     align: 'center',
@@ -386,7 +386,7 @@
                             readonly: true
                         }
                     }
-                },  {
+                }, {
                     field: 'machine_uom_volume',
                     width: 100,
                     align: 'center',
@@ -397,7 +397,7 @@
                             readonly: true
                         }
                     }
-                },  {
+                }, {
                     field: 'machine_diameter',
                     width: 100,
                     align: 'center',
@@ -408,7 +408,7 @@
                             readonly: true
                         }
                     }
-                },  {
+                }, {
                     field: 'machine_uom_diameter',
                     width: 100,
                     align: 'center',
@@ -419,7 +419,7 @@
                             readonly: true
                         }
                     }
-                },  {
+                }, {
                     field: 'machine_brand',
                     width: 100,
                     align: 'center',
@@ -430,7 +430,7 @@
                             readonly: true
                         }
                     }
-                },  {
+                }, {
                     field: 'machine_status',
                     width: 100,
                     align: 'center',
@@ -635,6 +635,8 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            resizable: true,
+            remoteSort: false,
             view: detailview,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.subcont_name + '"></table></div>';
@@ -653,7 +655,7 @@
                             title: 'Capacity/Day',
                             halign: 'center',
                             width: 100
-                        },  {
+                        }, {
                             field: 'machine_id',
                             title: 'Machine ID',
                             halign: 'center',
@@ -668,7 +670,7 @@
                             title: 'Machine Name',
                             halign: 'center',
                             width: 200
-                        },  {
+                        }, {
                             field: 'machine_spec',
                             title: 'Specification',
                             halign: 'center',
@@ -703,47 +705,47 @@
                             title: 'UOM',
                             halign: 'center',
                             width: 80
-                        },  {
+                        }, {
                             field: 'machine_max_open',
                             title: 'Maximum Open',
                             halign: 'center',
                             width: 120
-                        },  {
+                        }, {
                             field: 'machine_uom_max_open',
                             title: 'UOM',
                             halign: 'center',
                             width: 80
-                        },  {
+                        }, {
                             field: 'machine_volume',
                             title: 'Barrel Volume',
                             halign: 'center',
                             width: 120
-                        },  {
+                        }, {
                             field: 'machine_uom_volume',
                             title: 'UOM',
                             halign: 'center',
                             width: 80
-                        },  {
+                        }, {
                             field: 'machine_diameter',
                             title: 'Screw Diameter',
                             halign: 'center',
                             width: 120
-                        },  {
+                        }, {
                             field: 'machine_uom_diameter',
                             title: 'UOM',
                             halign: 'center',
                             width: 80
-                        },  {
+                        }, {
                             field: 'machine_brand',
                             title: 'Brand',
                             halign: 'center',
                             width: 80
-                        },  {
+                        }, {
                             field: 'machine_status',
                             title: 'Status',
                             halign: 'center',
-                            styler:cellStyler, 
-                            formatter:cellFormatter,
+                            styler: cellStyler,
+                            formatter: cellFormatter,
                             width: 80
                         }]
                     ],

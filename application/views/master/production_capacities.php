@@ -26,24 +26,24 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'item_fg_number',width:150,align:'center'">Product No.</th>
-            <th rowspan="2" data-options="field:'machine_number',width:150,align:'center'">Machine No.</th>
-            <th rowspan="2" data-options="field:'item_fg_name',width:150,halign:'center'">Product Name</th>
-            <th rowspan="2" data-options="field:'cycle_time',width:100,halign:'center'">Cycle Time <br>(Second)</th>
-            <th rowspan="2" data-options="field:'productcivity',width:100,halign:'center'">Productivity <br>Factor (%)</th>
-            <th rowspan="2" data-options="field:'cavity_actual',width:100,halign:'center'">Cavity Actual</th>
-            <th rowspan="2" data-options="field:'capacity_hour',width:100,halign:'center'">Capacity/Hour</th>
-            <th rowspan="2" data-options="field:'capacity_shift',width:100,halign:'center'">Capacity/Shift</th>
-            <th rowspan="2" data-options="field:'capacity_day',width:100,halign:'center'">Capacity/Day</th>
-            <th rowspan="2" data-options="field:'remarks',width:150,halign:'center'">Remarks</th>
+            <th rowspan="2" data-options="field:'item_fg_number',width:150,align:'center',sortable:true">Product No.</th>
+            <th rowspan="2" data-options="field:'machine_number',width:150,align:'center',sortable:true">Machine No.</th>
+            <th rowspan="2" data-options="field:'item_fg_name',width:150,halign:'center',sortable:true">Product Name</th>
+            <th rowspan="2" data-options="field:'cycle_time',width:120,halign:'center',sortable:true">Cycle Time <br>(Second)</th>
+            <th rowspan="2" data-options="field:'productcivity',width:120,halign:'center',sortable:true">Productivity <br>Factor (%)</th>
+            <th rowspan="2" data-options="field:'cavity_actual',width:120,halign:'center',sortable:true">Cavity Actual</th>
+            <th rowspan="2" data-options="field:'capacity_hour',width:120,halign:'center',sortable:true">Capacity/Hour</th>
+            <th rowspan="2" data-options="field:'capacity_shift',width:120,halign:'center',sortable:true">Capacity/Shift</th>
+            <th rowspan="2" data-options="field:'capacity_day',width:120,halign:'center',sortable:true">Capacity/Day</th>
+            <th rowspan="2" data-options="field:'remarks',width:150,halign:'center',sortable:true">Remarks</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -199,6 +199,8 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            resizable: true,
+            remoteSort: false,
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({
@@ -228,144 +230,142 @@
     });
 
     $('#item_fg_id').combogrid({
-            url: '<?php echo base_url('master/production_capacities/readItems'); ?>',
-            required: true,
-            panelWidth: 500,
-            idField: 'item_fg_id',
-            textField: 'item_fg_number',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: 'Choose Product No',
-            columns: [
-                [{
-                    field: 'item_fg_id',
-                    title: 'Product ID',
-                    width: 120
-                }, {
-                    field: 'item_fg_number',
-                    title: 'Product No.',
-                    width: 150
-                }, {
-                    field: 'item_fg_name',
-                    title: 'Product Name',
-                    width: 200
-                }]
-            ],
-            onSelect: function(val, rows) {
-                    $("#machine_id").textbox('setValue', rows.machine_id);
-                    $("#cycle_time").textbox('setValue', rows.cycle_time);
-                    $("#productcivity").textbox('setValue', rows.productcivity);
-                    $("#cavity_actual").textbox('setValue', rows.cavity_actual); // mengambil dari molds
+        url: '<?php echo base_url('master/production_capacities/readItems'); ?>',
+        required: true,
+        panelWidth: 500,
+        idField: 'item_fg_id',
+        textField: 'item_fg_number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: 'Choose Product No',
+        columns: [
+            [{
+                field: 'item_fg_id',
+                title: 'Product ID',
+                width: 120
+            }, {
+                field: 'item_fg_number',
+                title: 'Product No.',
+                width: 150
+            }, {
+                field: 'item_fg_name',
+                title: 'Product Name',
+                width: 200
+            }]
+        ],
+        onSelect: function(val, rows) {
+            $("#machine_id").textbox('setValue', rows.machine_id);
+            $("#cycle_time").textbox('setValue', rows.cycle_time);
+            $("#productcivity").textbox('setValue', rows.productcivity);
+            $("#cavity_actual").textbox('setValue', rows.cavity_actual); // mengambil dari molds
 
-                    var capacity_hour = (3600 / rows.cycle_time) * rows.cavity_actual * (rows.productcivity / 100);
-                    var capacity_shift = (capacity_hour * capacity_hour);
-                    var capacity_day = (capacity_hour *  capacity_hour * rows.shift_hour * rows.shift);
+            var capacity_hour = (3600 / rows.cycle_time) * rows.cavity_actual * (rows.productcivity / 100);
+            var capacity_shift = (capacity_hour * capacity_hour);
+            var capacity_day = (capacity_hour * capacity_hour * rows.shift_hour * rows.shift);
 
-                    $("#capacity_hour").textbox('setValue', capacity_hour);
-                    $("#capacity_shift").textbox('setValue', capacity_shift);
-                    $("#capacity_day").textbox('setValue', capacity_day);
-                    
-                // $('#machine_id').combobox({
-                //     url: '<?php echo base_url('master/production_capacities/readMachines/'); ?>' + btoa(rows.item_fg_id),
-                //     valueField: 'machine_id',
-                //     textField: 'machine_number',
-                //     prompt: "Choose Machine No",
-                //     onSelect: function(menu_loadings){
-                //         $("#cycle_time").textbox('setValue', menu_loadings.cycle_time);
-                //         $("#productcivity").textbox('setValue', menu_loadings.productcivity);
-                //         $("#cavity_actual").textbox('setValue', menu_loadings.cavity_actual); // mengambil dari molds
+            $("#capacity_hour").textbox('setValue', capacity_hour);
+            $("#capacity_shift").textbox('setValue', capacity_shift);
+            $("#capacity_day").textbox('setValue', capacity_day);
 
-                //         var capacity_hour = (3600 / menu_loadings.cycle_time) * menu_loadings.cavity_actual * (menu_loadings.productcivity / 100);
-                //         var capacity_shift = (capacity_hour * capacity_hour);
-                //         var capacity_day = (capacity_hour *  capacity_hour * menu_loadings.shift_hour * menu_loadings.shift);
+            // $('#machine_id').combobox({
+            //     url: '<?php echo base_url('master/production_capacities/readMachines/'); ?>' + btoa(rows.item_fg_id),
+            //     valueField: 'machine_id',
+            //     textField: 'machine_number',
+            //     prompt: "Choose Machine No",
+            //     onSelect: function(menu_loadings){
+            //         $("#cycle_time").textbox('setValue', menu_loadings.cycle_time);
+            //         $("#productcivity").textbox('setValue', menu_loadings.productcivity);
+            //         $("#cavity_actual").textbox('setValue', menu_loadings.cavity_actual); // mengambil dari molds
 
-                //         $("#capacity_hour").textbox('setValue', capacity_hour);
-                //         $("#capacity_shift").textbox('setValue', capacity_shift);
-                //         $("#capacity_day").textbox('setValue', capacity_day);
-                //     }
-                // });
-            }
+            //         var capacity_hour = (3600 / menu_loadings.cycle_time) * menu_loadings.cavity_actual * (menu_loadings.productcivity / 100);
+            //         var capacity_shift = (capacity_hour * capacity_hour);
+            //         var capacity_day = (capacity_hour *  capacity_hour * menu_loadings.shift_hour * menu_loadings.shift);
+
+            //         $("#capacity_hour").textbox('setValue', capacity_hour);
+            //         $("#capacity_shift").textbox('setValue', capacity_shift);
+            //         $("#capacity_day").textbox('setValue', capacity_day);
+            //     }
+            // });
+        }
     });
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
-            buttons: [{
-                text: 'List Failed',
-                handler: function() {
-                    window.open('<?= base_url('master/production_capacities/uploadDownloadFailed') ?>', '_blank');
-                }
-            }, {
-                text: 'Upload',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/production_capacities/upload') ?>',
-                        onSubmit: function() {
-                            if ($(this).form('validate') == false) {
-                                return $(this).form('validate');
-                            } else {
-                                $.messager.progress({
-                                    title: 'Please Wait',
-                                    msg: 'Importing Excel to Database'
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('master/production_capacities/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('master/production_capacities/upload') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('master/production_capacities/uploadclearFailed') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload').progressbar('setValue', value);
+                                $('#p_start').html(number);
+                                $('#p_finish').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('master/production_capacities/uploadCreate') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('master/production_capacities/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks").append(title + "<br>");
+                                    }
                                 });
                             }
-                        },
-                        success: function(result) {
-                            $.messager.progress('close');
-                            //Clear File
-                            $.ajax({
-                                url: "<?= base_url('master/production_capacities/uploadclearFailed') ?>"
-                            });
-                            var json = eval('(' + result + ')');
-                            requestData(json.total, json);
-
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
-
-                                    $.ajax({
-                                        type: "POST",
-                                        async: true,
-                                        url: "<?= base_url('master/production_capacities/uploadCreate') ?>",
-                                        data: {
-                                            "data": json[number - 1]
-                                        },
-                                        cache: false,
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (result.theme == "success") {
-                                                $('#p_success').html(success);
-                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                //Json Failed
-                                                $.ajax({
-                                                    type: "POST",
-                                                    async: true,
-                                                    url: "<?= base_url('master/production_capacities/uploadcreateFailed') ?>",
-                                                    data: {
-                                                        data: json[number - 1],
-                                                        message: result.message
-                                                    },
-                                                    cache: false
-                                                });
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                            }
-                                            $("#p_remarks").append(title + "<br>");
-                                        }
-                                    });
-                                }
-                            }
                         }
-                    });
-                }
-            }]
-        });
-    
-
+                    }
+                });
+            }
+        }]
+    });
 </script>

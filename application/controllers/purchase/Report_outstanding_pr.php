@@ -1,9 +1,15 @@
 <?php
+
 date_default_timezone_set("Asia/Bangkok");
+
 defined('BASEPATH') or exit('No direct script access allowed');
+
 class Report_outstanding_pr extends CI_Controller
+
 {
+
     public function __construct()
+
     {
         parent::__construct();
         $this->load->helper('url');
@@ -13,8 +19,11 @@ class Report_outstanding_pr extends CI_Controller
         $this->load->model('crud');
         //Validasi Form
         $this->form_validation->set_rules('item_rm_id', 'Product No', 'required|min_length[1]|max_length[50]');
+
     }
+
     public function index()
+
     {
         if (empty($this->session->username)) {
             redirect('error_session');
@@ -26,41 +35,48 @@ class Report_outstanding_pr extends CI_Controller
             redirect('error_access');
         }
     }
+
     public function readPurchaseRequest()
+
     {
+
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $filter_from = base64_decode($this->input->get("filter_from"));
         $filter_to = base64_decode($this->input->get("filter_to"));
-        $item_family_id = $this->input->get("item_family_id");
-        $item_rm_id = $this->input->get("item_rm_id");
         $post = isset($_POST['q']) ? $_POST['q'] : "";
+
 
         $sales_orders = $this->crud->query("SELECT a.request_no
         FROM purchase_requests a
         JOIN item_rm b ON a.item_rm_id = b.id
         WHERE a.request_no like '%$post%'
         AND a.request_date between '$filter_from' and '$filter_to'
-        AND b.item_family_id = '$item_family_id' 
-        AND a.item_rm_id = '$item_rm_id'
         GROUP BY a.request_no 
         ORDER BY a.request_no DESC");
         echo json_encode($sales_orders);
     }
 
+
+
     public function print($option = "")
+
     {
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=sales_orders_$format.xls");
         }
+
         $filter_from = base64_decode($this->input->get("filter_from"));
         $filter_to = base64_decode($this->input->get("filter_to"));
         $filter_display = $this->input->get("filter_display");
+        $filter_category_id = $this->input->get("filter_category_id");
         $filter_item_family = $this->input->get("filter_item_family");
         $filter_product_no = $this->input->get("filter_product_no");
         $filter_purchase_request = base64_decode($this->input->get("filter_purchase_request"));
+        $filter_status = $this->input->get("filter_status");
         //Config
+
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
@@ -69,14 +85,20 @@ class Report_outstanding_pr extends CI_Controller
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('users c', 'a.created_by = c.username');
         $this->db->join('item_familys d', 'b.item_family_id = d.id');
+        $this->db->join('item_categories e', 'b.item_category_id = e.id');
         $this->db->where('a.deleted', 0);
+        if($filter_status !== "2"){
+            $this->db->where('a.status', intval($filter_status));
+            }
         $this->db->where("a.request_date between '$filter_from' and '$filter_to'");
-        $this->db->like('d.id', $filter_item_family);
-        $this->db->like('a.item_rm_id', $filter_product_no);
-        $this->db->like('a.request_no', $filter_purchase_request);
+        $this->db->where(empty($filter_category_id)?'1':'b.item_category_id', empty($filter_category_id)?'1':$filter_category_id);
+        $this->db->where(empty($filter_item_family)?'1':'d.id', empty($filter_item_family)?'1':$filter_item_family);
+        $this->db->where(empty($filter_product_no)?'1':'b.number', empty($filter_product_no)?'1':$filter_product_no);
+        $this->db->where(empty($filter_purchase_request)?'1':'a.request_no', empty($filter_purchase_request)?'1':$filter_purchase_request);
         $this->db->order_by('a.status', 'ASC');
         $this->db->group_by('a.request_no');
         $records = $this->db->get()->result_array();
+
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
                 <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
@@ -110,16 +132,24 @@ class Report_outstanding_pr extends CI_Controller
                 <th>Created Date</th>
                 <th>Status</th>
             </tr>';
+
         $no = 1;
+
         foreach ($records as $data) {
             $request_no = $data['request_no'];
             $this->db->select('a.*, c.po_no, b.number as item_number, b.name as item_name, b.description as item_description, b.uom');
             $this->db->from('purchase_requests a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('purchase_orders c', 'a.request_no = c.request_no', 'left');
+            $this->db->join('item_categories d', 'b.item_category_id = d.id');
             $this->db->where('a.deleted', 0);
+            if($filter_status !== "2"){
+                $this->db->where('a.status', intval($filter_status));
+                }
             $this->db->where('a.request_no', $request_no);
-            $this->db->like('a.item_rm_id', $filter_product_no);
+            $this->db->where(empty($filter_category_id)?'1':'b.item_category_id', empty($filter_category_id)?'1':$filter_category_id);
+            $this->db->where(empty($filter_product_no)?'1':'b.number', empty($filter_product_no)?'1':$filter_product_no);
+            $this->db->where(empty($filter_purchase_request)?'1':'a.request_no', empty($filter_purchase_request)?'1':$filter_purchase_request);
             $this->db->order_by('b.number', 'ASC');
             $this->db->group_by('a.item_rm_id');
             $details = $this->db->get()->result_array();
@@ -136,7 +166,9 @@ class Report_outstanding_pr extends CI_Controller
                             <td>' . $data['created_date'] . '</td>
                             <td>' . $status . '</td>
                         </tr>';
+
             $no++;
+
             if ($filter_display == "DETAIL") {
                 if ($details) {
                     $html .= '  <tr>
@@ -144,7 +176,7 @@ class Report_outstanding_pr extends CI_Controller
                                 </tr>';
                     $html .= '  <tr>
                                     <th width="20"></th>
-                                    <th>Component No</th>
+                                    <th>Part Name</th>
                                     <th width="600">Specification</th>
                                     <th>UoM</th>
                                     <th>Quantity</th>
@@ -153,10 +185,10 @@ class Report_outstanding_pr extends CI_Controller
                     foreach ($details as $detail) {
                         $html .= '  <tr>
                                         <td></td>
-                                        <td>' . $detail['item_number'] . '</td>
+                                        <td>' . $detail['item_name'] . '</td>
                                         <td>' . $detail['item_description'] . '</td>
                                         <td>' . $detail['uom'] . '</td>
-                                        <td style="text-align:right">' . number_format($detail['qty'], 2) . '</td>
+                                        <td style="text-align:right">' . number_format($detail['qty'], 0) . '</td>
                                         <td>' . @$detail['po_no'] . '</td>
                                     </tr>';
                     }
@@ -170,4 +202,6 @@ class Report_outstanding_pr extends CI_Controller
         $html .= '</table></body></html>';
         echo $html;
     }
+
 }
+

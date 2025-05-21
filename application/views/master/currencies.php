@@ -3,18 +3,18 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
-            <th rowspan="2" data-options="field:'name',width:100,halign:'center'">Name</th>
-            <th rowspan="2" data-options="field:'description',width:200,halign:'center'">Description</th>
-            <th rowspan="2" data-options="field:'symbol',width:80,align:'center'">Symbol</th>
+            <th rowspan="2" data-options="field:'id',width:80,align:'center',sortable:true">ID</th>
+            <th rowspan="2" data-options="field:'name',width:100,halign:'center',sortable:true">Name</th>
+            <th rowspan="2" data-options="field:'description',width:200,halign:'center',sortable:true">Description</th>
+            <th rowspan="2" data-options="field:'symbol',width:80,align:'center',sortable:true">Symbol</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -56,10 +56,10 @@
         $('#frm_insert').form('clear');
 
         $.ajax({
-            type : "post",
-            url : "<?= base_url('master/currencies/autoid')?>",
-            dataType : "html",
-            success : function(response){
+            type: "post",
+            url: "<?= base_url('master/currencies/autoid') ?>",
+            dataType: "html",
+            success: function(response) {
                 $('#id').textbox('setValue', response);
             }
         });
@@ -130,6 +130,8 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            remoteSort: false,
+            resizeable: true,
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({

@@ -13,38 +13,38 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:100,align:'center'">Supplier ID</th>
-            <th rowspan="2" data-options="field:'name',width:250,halign:'center'">Supplier Name</th>
-            <th rowspan="2" data-options="field:'number',width:80,align:'center'">Supplier<br>Code</th>
-            <th rowspan="2" data-options="field:'type',width:80,align:'center'">Type</th>
-            <th rowspan="2" data-options="field:'address',width:250,halign:'center'">Address</th>
-            <th rowspan="2" data-options="field:'contact_person',width:120,halign:'center'">Contact Person</th>
-            <th rowspan="2" data-options="field:'telp',width:120,halign:'center'">Telp</th>
-            <th rowspan="2" data-options="field:'fax',width:120,halign:'center'">Fax</th>
-            <th rowspan="2" data-options="field:'email',width:200,halign:'center'">Email</th>
-            <th rowspan="2" data-options="field:'website',width:150,halign:'center'">Website</th>
-            <th rowspan="2" data-options="field:'attention',width:150,halign:'center'">Attention</th>
-            <th rowspan="2" data-options="field:'currency',width:80,align:'center'">Currency</th>
-            <th rowspan="2" data-options="field:'payment_term',width:80,halign:'center',align:'right'">Payment<br>Term (Day)</th>
-            <th rowspan="2" data-options="field:'incoterm',width:80,align:'center'">Incoterm</th>
-            <th rowspan="2" data-options="field:'vat_status',align:'center',width:80">Vat Status</th>
-            <th rowspan="2" data-options="field:'vat',halign:'center',width:80,align:'right'">Vat</th>
-            <th rowspan="2" data-options="field:'tax',halign:'center',width:120">Tax No</th>
-            <th rowspan="2" data-options="field:'bank_account',width:150,halign:'center'">Bank Account</th>
-            <th rowspan="2" data-options="field:'bank_name',width:150,halign:'center'">Bank Name</th>
-            <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
-            <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', align:'center', styler:styleApproved, formatter:formatApproved">Approval</th>
+            <th rowspan="2" data-options="field:'id',width:100,align:'center',sortable:true">Supplier ID</th>
+            <th rowspan="2" data-options="field:'name',width:250,halign:'center',sortable:true">Supplier Name</th>
+            <th rowspan="2" data-options="field:'number',width:80,align:'center',sortable:true">Supplier<br>Code</th>
+            <th rowspan="2" data-options="field:'type',width:100,align:'center',sortable:true">Type</th>
+            <th rowspan="2" data-options="field:'address',width:250,halign:'center',sortable:true">Address</th>
+            <th rowspan="2" data-options="field:'contact_person',width:120,halign:'center',sortable:true">Contact Person</th>
+            <th rowspan="2" data-options="field:'telp',width:120,halign:'center',sortable:true">Telp</th>
+            <th rowspan="2" data-options="field:'fax',width:120,halign:'center',sortable:true">Fax</th>
+            <th rowspan="2" data-options="field:'email',width:200,halign:'center',sortable:true">Email</th>
+            <th rowspan="2" data-options="field:'website',width:150,halign:'center',sortable:true">Website</th>
+            <th rowspan="2" data-options="field:'attention',width:150,halign:'center',sortable:true">Attention</th>
+            <th rowspan="2" data-options="field:'currency',width:80,align:'center',sortable:true">Currency</th>
+            <th rowspan="2" data-options="field:'payment_term',width:80,halign:'center',align:'right',sortable:true">Payment<br>Term (Day)</th>
+            <th rowspan="2" data-options="field:'incoterm',width:80,align:'center',sortable:true">Incoterm</th>
+            <th rowspan="2" data-options="field:'vat_status',align:'center',width:80,sortable:true">Vat Status</th>
+            <th rowspan="2" data-options="field:'vat',halign:'center',width:80,align:'right',sortable:true">Vat</th>
+            <th rowspan="2" data-options="field:'tax',halign:'center',width:120,sortable:true">Tax No</th>
+            <th rowspan="2" data-options="field:'bank_account',width:150,halign:'center',sortable:true">Bank Account</th>
+            <th rowspan="2" data-options="field:'bank_name',width:150,halign:'center',sortable:true">Bank Name</th>
+            <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th>
+            <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', align:'center', styler:styleApproved, formatter:formatApproved,sortable:true">Approval</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Approved</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'approved_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'approved_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'approved_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'approved_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -278,6 +278,8 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            resizable: true,
+            remoteSort: false,
         }).datagrid('enableFilter');
 
         //SAVE DATA

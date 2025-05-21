@@ -5,31 +5,31 @@
                 <li><b>Filter Data</b> is to show Forecast Analyst base on <b>Filter Customer</b> or <b>Filter Product No</b>, The data is based on <b>Order Management > Forecasting > Forecast Customer</b> that were previously input.</li>
                 <li><b>The Data Forecast</b> is based on <b>Order Management > Forecasting > Forecast Customer</b> that were previously input.</li>
                 <li><b>The Data 4 Month</b> is based on <b>Calculating</b></li>
-                    <ul>
-                        <li><b>The Data 4 month table for the 4th month</b>: Data (1st Month + 2nd Month + 3rd Month + 4th Month) / 4</b></li>
-                        <li><b>The Data 4 month table for the 5th month</b>: Data (2nd Month + 3rd Month + 4th Month + 5th Month) / 4</b></li>
-                        <li><b>The Data 4 month table for the 6th month</b>: Data (3rd Month + 4th Month + 5th Month + 6th Month) / 4</b></li>
-                        <li><b>The Data 4 month table for the 7th month</b>: Data (4th Month + 5th Month + 6th Month + 7th Month) / 4</b></li>
-                        <li><b>The Data 4 month table for the 8th month</b>: Data (5th Month + 6th Month + 7th Month + 8th Month) / 4</b></li>
-                        <li><b>The Data 4 month table for the 9th month</b>: Data (6th Month + 7th Month + 8th Month + 9th Month) / 4</b></li>
-                        <li><b>The Data 4 month table for the 10th month</b>: Data (7th Month + 8th Month + 9th Month + 10th Month) / 4</b></li>
-                        <li><b>The Data 4 month table for the 11th month</b>: Data (8th Month + 9th Month + 10th Month + 11th Month) / 4</b></li>
-                        <li><b>The Data 4 month table for the 12th month</b>: Data (9th Month + 10th Month + 11th Month + 12th Month) / 4</b></li>
-                    </ul>
+                <ul>
+                    <li><b>The Data 4 month table for the 4th month</b>: Data (1st Month + 2nd Month + 3rd Month + 4th Month) / 4</b></li>
+                    <li><b>The Data 4 month table for the 5th month</b>: Data (2nd Month + 3rd Month + 4th Month + 5th Month) / 4</b></li>
+                    <li><b>The Data 4 month table for the 6th month</b>: Data (3rd Month + 4th Month + 5th Month + 6th Month) / 4</b></li>
+                    <li><b>The Data 4 month table for the 7th month</b>: Data (4th Month + 5th Month + 6th Month + 7th Month) / 4</b></li>
+                    <li><b>The Data 4 month table for the 8th month</b>: Data (5th Month + 6th Month + 7th Month + 8th Month) / 4</b></li>
+                    <li><b>The Data 4 month table for the 9th month</b>: Data (6th Month + 7th Month + 8th Month + 9th Month) / 4</b></li>
+                    <li><b>The Data 4 month table for the 10th month</b>: Data (7th Month + 8th Month + 9th Month + 10th Month) / 4</b></li>
+                    <li><b>The Data 4 month table for the 11th month</b>: Data (8th Month + 9th Month + 10th Month + 11th Month) / 4</b></li>
+                    <li><b>The Data 4 month table for the 12th month</b>: Data (9th Month + 10th Month + 11th Month + 12th Month) / 4</b></li>
+                </ul>
                 <li><b>The Data 6 Month</b> is based on <b>Calculating</b></li>
-                    <ul>
-                        <li><b>The Data 6 month table for the 6th month</b>: Data (1st Month + 2nd Month + 3rd Month + 4th Month + 5th Month + 6th Month) / 6</b></li>
-                        <li><b>The Data 6 month table for the 7th month</b>: Data (2nd Month + 3rd Month + 4th Month + 5th Month + 6th Month + 7th Month) / 6</b></li>
-                        <li><b>The Data 6 month table for the 8th month</b>: Data (3rd Month + 4th Month + 5th Month + 6th Month + 7th Month + 8th Month) / 6</b></li>
-                        <li><b>The Data 6 month table for the 9th month</b>: Data (4th Month + 5th Month + 6th Month + 7th Month + 8th Month + 9th Month) / 6</b></li>
-                        <li><b>The Data 6 month table for the 10th month</b>: Data (5th Month + 6th Month + 7th Month + 8th Month + 9th Month + 10th Month) / 6</b></li>
-                        <li><b>The Data 6 month table for the 11th month</b>: Data (6th Month + 7th Month + 8th Month + 9th Month + 10th Month + 11th Month) / 6</b></li>
-                        <li><b>The Data 6 month table for the 12th month</b>: Data (7th Month + 8th Month + 9th Month + 10th Month + 11th Month + 12th Month) / 6</b></li>
-                    </ul>
+                <ul>
+                    <li><b>The Data 6 month table for the 6th month</b>: Data (1st Month + 2nd Month + 3rd Month + 4th Month + 5th Month + 6th Month) / 6</b></li>
+                    <li><b>The Data 6 month table for the 7th month</b>: Data (2nd Month + 3rd Month + 4th Month + 5th Month + 6th Month + 7th Month) / 6</b></li>
+                    <li><b>The Data 6 month table for the 8th month</b>: Data (3rd Month + 4th Month + 5th Month + 6th Month + 7th Month + 8th Month) / 6</b></li>
+                    <li><b>The Data 6 month table for the 9th month</b>: Data (4th Month + 5th Month + 6th Month + 7th Month + 8th Month + 9th Month) / 6</b></li>
+                    <li><b>The Data 6 month table for the 10th month</b>: Data (5th Month + 6th Month + 7th Month + 8th Month + 9th Month + 10th Month) / 6</b></li>
+                    <li><b>The Data 6 month table for the 11th month</b>: Data (6th Month + 7th Month + 8th Month + 9th Month + 10th Month + 11th Month) / 6</b></li>
+                    <li><b>The Data 6 month table for the 12th month</b>: Data (7th Month + 8th Month + 9th Month + 10th Month + 11th Month + 12th Month) / 6</b></li>
+                </ul>
                 <li><b>The Data 12 Month</b> is based on <b>Calculating</b></li>
-                    <ul>
-                        <li><b>The Data 12 month table for the 12th month</b>: Data (1st Month + 2nd Month + 3rd Month + 4th Month + 5th Month + 6th Month + 7th Month + 8th Month + 9th Month + 10th Month + 11th Month + 12th Month) / 12</b></li>
-                    </ul>
+                <ul>
+                    <li><b>The Data 12 month table for the 12th month</b>: Data (1st Month + 2nd Month + 3rd Month + 4th Month + 5th Month + 6th Month + 7th Month + 8th Month + 9th Month + 10th Month + 11th Month + 12th Month) / 12</b></li>
+                </ul>
             </ul>
         </div>
     </div>
@@ -42,7 +42,7 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Period</span>
                 <input style="width:30%;" id="filter_period_year" value="<?= date("Y") ?>" class="easyui-combobox">
-                <input style="width:30%;" id="filter_period_month" value="<?= date("m") ?>" class="easyui-combobox"> 
+                <input style="width:30%;" id="filter_period_month" value="<?= date("m") ?>" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Customer Name</span>
@@ -190,11 +190,11 @@
         ],
     });
 
-    
+
 
     // $(function() {
     //     var filter_period_year = $("#filter_period_year").combobox('getValue');
     //     var filter_period_month = $("#filter_period_month").combobox('getValue');
-        
+
     // });
 </script>

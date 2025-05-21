@@ -111,6 +111,7 @@ class Item_process_flow extends CI_Controller
         $send = $this->crud->delete('item_process_flow', $data);
         echo $send;
     }
+
     //PRINT & EXCEL DATA
     public function print($option = "")
     {
@@ -119,15 +120,38 @@ class Item_process_flow extends CI_Controller
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=item_process_flow_$format.xls");
         }
+
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
+
         $this->db->select('*');
         $this->db->from('item_process_flow');
         $this->db->where('deleted', 0);
         $this->db->order_by('id', 'ASC');
         $records = $this->db->get()->result_array();
+
+        // Proses definisi (urutan proses sesuai kolom)
+        $processes = [
+            'process_a' => 'WEIGHING',
+            'process_b' => 'MIXING MB',
+            'process_l' => 'MIXING FB',
+            'process_c' => 'CUTTING',
+            'process_d' => 'BONDING',
+            'process_e' => 'PRESS',
+            'process_f' => 'FINISHING',
+            'process_g' => 'VISUAL CHECK',
+            'process_h' => 'SUBCONT',
+            'process_i' => 'SLITTING',
+            'process_j' => 'POST CURE',
+            'process_k' => 'PACKING',
+            // 'process_l' => 'EXTRUSION',
+            // 'process_m' => 'COOLING',
+            // 'process_n' => 'SEALER',
+        ];
+
+        // Membuat tampilan HTML
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">
@@ -151,44 +175,45 @@ class Item_process_flow extends CI_Controller
                 <h3>MASTER FLOW PROCESS</h3>
             </div>
         </center>
-        
-        <table id="customers" border="1">
-            <tr>
-                <th width="20">No</th>
-                <th>Process ID</th>
-                <th>Process Name</th>
-                <th>WEIGHING</th>
-                <th>MIXING</th>
-                <th>CUTTING</th>
-                <th>BONDING</th>
-                <th>PRESS</th>
-                <th>FINISHING</th>
-                <th>VISUAL CHECK</th>
-                <th>SUBCONT</th>
-                <th>SLITTING</th>
-                <th>POST CURE</th>
-                <th>PACKING</th>
-            </tr>';
-        $no = 1;
+    
+    <table id="customers" border="1">
+        <tr>
+            <th width="20">No</th>';
+
+        // Menambahkan header dinamis dari kolom 'name'
         foreach ($records as $data) {
-            $html .= '<tr>
-                    <td>' . $no . '</td>
-                    <td>' . $data['id'] . '</td>
-                    <td>' . $data['name'] . '</td>
-                    <td>' . $data['process_a'] . '</td>
-                    <td>' . $data['process_b'] . '</td>
-                    <td>' . $data['process_c'] . '</td>
-                    <td>' . $data['process_d'] . '</td>
-                    <td>' . $data['process_e'] . '</td>
-                    <td>' . $data['process_f'] . '</td>
-                    <td>' . $data['process_g'] . '</td>
-                    <td>' . $data['process_h'] . '</td>
-                    <td>' . $data['process_i'] . '</td>
-                    <td>' . $data['process_j'] . '</td>
-                    <td>' . $data['process_k'] . '</td>
-                    ';
-            $no++;
+            $html .= '<th style="text-align: center;">' . $data['name'] . '</th>';
         }
+
+        $html .= '</tr>';
+
+        // Looping berdasarkan urutan proses dari 1 hingga 14
+        for ($i = 1; $i <= 12; $i++) {
+            $html .= '<tr>';
+            $html .= '<td>' . $i . '</td>';  // Baris pertama adalah nomor urut
+
+            // Looping untuk setiap kolom proses
+            foreach ($records as $data) {
+                $processFound = false;
+
+                // Looping untuk setiap kolom proses (process_a hingga process_n)
+                foreach ($processes as $key => $processName) {
+                    if ($data[$key] == $i) {
+                        $html .= '<td>' . $processName . '</td>';
+                        $processFound = true;
+                        break;
+                    }
+                }
+
+                // Jika tidak ditemukan proses yang sesuai, tampilkan "-"
+                if (!$processFound) {
+                    $html .= '<td>-</td>';
+                }
+            }
+
+            $html .= '</tr>';
+        }
+
         $html .= '</table></body></html>';
         echo $html;
     }

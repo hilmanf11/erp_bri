@@ -3,7 +3,7 @@
         <div title="RELATION" style="padding: 20px;">
             <ul>
                 <li>The Data Customers is taken from <b>Master Data > Marketing > Customers</b></li>
-                <li>The Data Division is taken from <b>Master Data > General Master > Division</b></li>
+                <!-- <li>The Data Division is taken from <b>Master Data > General Master > Division</b></li> -->
                 <li>The Data Plants is taken from the results of Customer selection</li>
                 <li>Departement, Shipping Address and Attention to is taken from the results of Plant Selection</li>
                 <li>The Data Product No is taken from <b>Master Data > Marketing > Customer Items</b> by Type = 'FG'</li>
@@ -35,33 +35,35 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
-            <th rowspan="2" data-options="field:'sales_order_no',width:150,halign:'center'">Sales Order No</th>
-            <th rowspan="2" data-options="field:'customer_order_no',width:150,halign:'center'">Customer Order No</th>
-            <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
-            <th rowspan="2" data-options="field:'sales_order_date',width:150,halign:'center'">Sales Order Date</th>
-            <th rowspan="2" data-options="field:'delivery_date',width:150,halign:'center'">Delivery Date</th>
-            <th rowspan="2" data-options="field:'currency',width:80,align:'center'">Currency</th>
-            <th rowspan="2" data-options="field:'total_sub',width:100,halign:'center',align:'right',formatter: numberFormat">Sub Total</th>
-            <th rowspan="2" data-options="field:'total_tax',width:100,halign:'center',align:'right',formatter: numberFormat">Taxes</th>
-            <th rowspan="2" data-options="field:'total_pph',width:100,halign:'center',align:'right',formatter: numberFormat">PPh</th>
-            <th rowspan="2" data-options="field:'total_grand',width:100,halign:'center',align:'right',formatter: numberFormat">Grand Total</th>
+            <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th>
+            <th rowspan="2" data-options="field:'division_name',width:100,halign:'center',sortable:true">Division</th>
+            <th rowspan="2" data-options="field:'so_type',width:100,halign:'center',sortable:true">SO Type</th>
+            <th rowspan="2" data-options="field:'sales_order_no',width:150,halign:'center',sortable:true">Sales Order No</th>
+            <th rowspan="2" data-options="field:'customer_order_no',width:150,halign:'center',sortable:true">Customer Order No</th>
+            <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center',sortable:true">Customer Name</th>
+            <th rowspan="2" data-options="field:'sales_order_date',width:150,halign:'center',sortable:true">Sales Order Date</th>
+            <!-- <th rowspan="2" data-options="field:'delivery_date',width:150,halign:'center'">Delivery Date</th> -->
+            <th rowspan="2" data-options="field:'currency',width:80,align:'center',sortable:true">Currency</th>
+            <th rowspan="2" data-options="field:'total_sub',width:100,halign:'center',align:'right',formatter: numberFormat,sortable:true">Sub Total</th>
+            <th rowspan="2" data-options="field:'total_tax',width:100,halign:'center',align:'right',formatter: numberFormat,sortable:true">Taxes</th>
+            <th rowspan="2" data-options="field:'total_pph',width:100,halign:'center',align:'right',formatter: numberFormat,sortable:true">PPh</th>
+            <th rowspan="2" data-options="field:'total_grand',width:100,halign:'center',align:'right',formatter: numberFormat,sortable:true">Grand Total</th>
             <th rowspan="2" data-options="field:'remarks',width:150,halign:'center'">Remarks</th>
-            <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>
+            <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails,sortable:true">Attachment</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:120,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:120,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:120,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:120,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
 
 <!-- TOOLBAR DATAGRID -->
-<div id="toolbar" style="height: 200px; padding: 10px;">
+<div id="toolbar" style="height: 250px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
         <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
@@ -77,14 +79,14 @@
                     <input style="width:60%;" id="filter_customer_id" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;"></span>
-                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                    <span style="width:35%; display:inline-block;">Product No</span>
+                    <input style="width:60%;" id="filter_sales_order_no" class="easyui-combobox">
                 </div>
             </div>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Sales Order No</span>
-                    <input style="width:60%;" id="filter_sales_order_no" class="easyui-combobox">
+                    <span style="width:35%; display:inline-block;">Division</span>
+                    <input style="width:60%;" id="filter_division" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Customer Order No</span>
@@ -97,6 +99,10 @@
                         <option value="0">OPEN</option>
                         <option value="1">CLOSE</option>
                     </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;"></span>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                 </div>
             </div>
         </fieldset>
@@ -117,6 +123,10 @@
             <legend><b>Form Data</b></legend>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Division</span>
+                    <input style="width:60%;" name="division" id="division" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Customer Name</span>
                     <input style="width:60%;" name="customer_id" id="customer_id" required="" class="easyui-combobox">
                 </div>
@@ -128,20 +138,24 @@
                     <span style="width:35%; display:inline-block;">Sales Order Date</span>
                     <input style="width:40%;" name="sales_order_date" id="sales_order_date" required="" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
                 </div>
-                <div class="fitem">
+                <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Sales Order No</span>
                     <input style="width:60%;" name="sales_order_no" id="sales_order_no" readonly class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Division</span>
-                    <input style="width:60%;" name="division" id="division" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Delivery Date</span>
                     <input style="width:40%;" name="delivery_date" id="delivery_date" required data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Order Type</span>
+                    <select style="width:60%;" id="order_type" required panelHeight="auto" class="easyui-combobox">
+                        <!-- <option value="">Choose Order Type</option> -->
+                        <option value="1">Regular</option>
+                        <option value="2">Additional</option>
+                    </select>
+                </div>
             </div>
-            
+
             <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Plant</span>
@@ -181,7 +195,7 @@
                 </div>
             </div>
         </fieldset>
-        
+
         <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Sales Order Lists" toolbar="#toolbar2"></table>
         <div style="width: 30%; float: right; margin-top: 10px;">
             <a style="width: 100%;" class="easyui-linkbutton c2" onclick="calculate()">Calculate</a>
@@ -241,6 +255,19 @@
         url_save = '<?= base_url('sales/sales_orders/create') ?>';
         $('#frm_insert').form('clear');
 
+        // Tambahkan style untuk SweetAlert2
+        $('<style>')
+            .prop('type', 'text/css')
+            .html(`
+                .swal2-container {
+                    z-index: 99999 !important;
+                }
+                .swal2-popup {
+                    z-index: 99999 !important;
+                }
+            `)
+            .appendTo('head');
+
         $("#customer_id").combobox('enable');
         $("#sales_order_no").textbox('enable');
         $("#sales_order_date").datebox('enable');
@@ -264,7 +291,7 @@
             url: '<?= base_url('master/customers/reads/'); ?>',
             valueField: 'id',
             textField: 'name',
-            prompt: 'Choose Customer Name',
+            //prompt: 'Choose Customer Name',
             onSelect: function(customer) {
                 var sales_order_date = $("#sales_order_date").datebox('getValue');
                 $("#taxes").numberbox('setValue', customer.taxes);
@@ -280,7 +307,7 @@
                     textField: 'plant',
                     mode: 'remote',
                     fitColumns: true,
-                    prompt: "Choose Plant Name ",
+                    prompt: "Choose Plant Name",
                     icons: [{
                         iconCls: 'icon-clear',
                         handler: function(e) {
@@ -298,7 +325,24 @@
                             width: 200
                         }]
                     ],
+                    onLoadSuccess: function(data) {
+                        // Dapatkan data dari datagrid setelah data di-load
+                        var gridData = $('#plant').combogrid('grid').datagrid('getData').rows;
+
+                        // Cek apakah hanya ada satu plant yang tersedia
+                        if (gridData.length === 1) {
+                            // Jika hanya ada satu, otomatis pilih plant
+                            $('#plant').combogrid('setValue', gridData[0].plant);
+
+                            // Set field terkait
+                            $("#attention_to").textbox('setValue', gridData[0].contact_person);
+                            $("#customer_address_id").textbox('setValue', gridData[0].id);
+                            $("#customer_address_name").textbox('setValue', gridData[0].address);
+                            $("#department").textbox('setValue', gridData[0].department);
+                        }
+                    },
                     onSelect: function(val, row) {
+                        // Set field terkait ketika plant dipilih secara manual
                         $("#attention_to").textbox('setValue', row.contact_person);
                         $("#customer_address_id").textbox('setValue', row.id);
                         $("#customer_address_name").textbox('setValue', row.address);
@@ -341,7 +385,7 @@
 
             var total_pph = (((parseFloat(total_sub) + parseInt(total_tax)) * parseInt(pph)) / 100);
             $("#total_pph").numberbox('setValue', total_pph);
-            
+
             var total_grand = (parseFloat(total_sub) + parseFloat(total_tax) - parseFloat(total_pph));
             $("#total_grand").numberbox('setValue', (total_grand));
         } else {
@@ -421,6 +465,32 @@
                                 $(ed4.target).numberbox('setValue', rows.price);
                                 $(ed5.target).textbox('setValue', rows.currency);
                                 $(ed6.target).textbox('setValue', rows.delivery);
+
+                                // CEK EXPIRED PRICE
+                                var validFrom = rows.valid_from;
+                                var validTo = rows.valid_to;
+                                var salesOrderDate = $('#sales_order_date').datebox('getValue');
+                                if (validFrom && validTo && salesOrderDate) {
+                                    var soDate = new Date(salesOrderDate);
+                                    var fromDate = new Date(validFrom);
+                                    var toDate = new Date(validTo);
+                                    if (soDate < fromDate || soDate > toDate) {
+                                        Swal.fire({
+                                            title: 'Price for This Product is Expired, Are You Sure to Continue?',
+                                            icon: 'warning',
+                                            showCancelButton: true,
+                                            confirmButtonText: 'Yes',
+                                            cancelButtonText: 'No',
+                                            allowOutsideClick: false
+                                        }).then((result) => {
+                                            if (!result.isConfirmed) {
+                                                // Auto remove baris product id tsb
+                                                dg.datagrid('cancelEdit', rowIndex).datagrid('deleteRow', rowIndex);
+                                                editIndex = undefined;
+                                            }
+                                        });
+                                    }
+                                }
                             }
                         }
                     }
@@ -465,6 +535,8 @@
                     editor: {
                         type: 'numberbox',
                         options: {
+                            required: true,
+                            validType: 'nonZero',
                             onChange: function(qty) {
                                 var dg = $('#dg2');
                                 var row = dg.datagrid('getSelected');
@@ -563,7 +635,10 @@
                     }
                 }, ]
             ],
-            onClickCell: onClickCell
+            onClickCell: onClickCell,
+            onLoadSuccess: function(data) {
+                calculate();
+            }
         });
     }
 
@@ -661,8 +736,9 @@
             $("#sales_order_no").textbox('disable');
             $("#sales_order_date").datebox('disable');
             $("#plant").textbox('disable');
-            
-            
+            $("#order_type").combobox('setValue', row.order_type);
+
+            url_save = '<?= base_url('sales/sales_orders/create') ?>';
 
             addTable(row.customer_id, '<?= base_url('sales/sales_orders/datatableUpdates?sales_order_no=') ?>' + window.btoa(row.sales_order_no));
         } else {
@@ -707,6 +783,8 @@
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_customer_id = $("#filter_customer_id").combobox('getValue');
+        var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
+        var filter_division = $("#filter_division").combobox('getValue');
         var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
@@ -714,6 +792,8 @@
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            "&filter_division=" + window.btoa(filter_division) +
+            "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
             "&filter_status=" + window.btoa(filter_status);
 
         $('#dg').datagrid({
@@ -723,6 +803,7 @@
             fit: true,
             pageList: [10, 50, 100, 500, 1000],
             pageSize: 10,
+            remoteSort: false,
             view: detailview,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.sales_order_no + '"></table></div>';
@@ -763,8 +844,14 @@
                             width: 80,
                             formatter: numberFormat
                         }, {
+                            field: 'delivery_date',
+                            title: 'ETA',
+                            halign: 'center',
+                            align: 'center',
+                            width: 100,
+                        }, {
                             field: 'delivery',
-                            title: 'Delivery',
+                            title: 'Delivery Qty',
                             halign: 'center',
                             align: 'right',
                             width: 80,
@@ -807,13 +894,14 @@
         $("#printout").attr('src', '<?= base_url('sales/sales_orders/print') ?>' + url);
     }
 
-     //Upload Data
-     function upload() {
+    //Upload Data
+    function upload() {
         $('#dlg_upload').dialog('open');
     }
 
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_sales_orders.xls') ?>');
+        window.location.assign('<?= base_url('sales/sales_orders/exportTemplate') ?>');
+        // window.location.assign('<?= base_url('template/tmp_sales_orders.xls') ?>');
     }
 
     //PRINT PDF
@@ -827,12 +915,16 @@
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_customer_id = $("#filter_customer_id").combobox('getValue');
         var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
+        var filter_division = $("#filter_division").combobox('getValue');
+        var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            "&filter_division=" + window.btoa(filter_division) +
+            "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
             "&filter_status=" + window.btoa(filter_status);
 
         window.location.assign('<?= base_url('sales/sales_orders/print/excel') ?>' + url);
@@ -845,9 +937,19 @@
 
     $(function() {
         filter();
+        
+        $.extend($.fn.validatebox.defaults.rules, {
+            nonZero: {
+                validator: function(value) {
+                    return parseFloat(value) !== 0;
+                },
+                message: 'Value must not be zero.'
+            }
+        });
 
-         //Upload Data
-         $('#dlg_upload').dialog({
+
+        //Upload Data
+        $('#dlg_upload').dialog({
             buttons: [{
                 text: 'List Failed',
                 handler: function() {
@@ -937,7 +1039,7 @@
                     var customer_order_no = $("#customer_order_no").textbox('getValue');
                     var sales_order_date = $("#sales_order_date").datebox('getValue');
                     var sales_order_no = $("#sales_order_no").textbox('getValue');
-                    var division = $("#division").combobox('getValue');
+                     var division = $("#division").combobox('getValue');
                     var attachment = $("#attachment").textbox('getValue');
                     var delivery_date = $("#delivery_date").datebox('getValue');
                     var customer_address_id = $("#customer_address_id").textbox('getValue');
@@ -951,6 +1053,7 @@
                     var total_tax = $("#total_tax").numberbox('getValue');
                     var total_pph = $("#total_pph").numberbox('getValue');
                     var total_grand = $("#total_grand").numberbox('getValue');
+                    var order_type = $("#order_type").combobox('getValue');
 
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
@@ -961,7 +1064,7 @@
                             if (rows[i].item_fg_id) {
                                 $.ajax({
                                     type: "post",
-                                    url: '<?= base_url('sales/sales_orders/create') ?>',
+                                    url: url_save,
                                     data: {
                                         customer_id: customer_id,
                                         customer_order_no: customer_order_no,
@@ -988,7 +1091,8 @@
                                         outstanding: rows[i].outstanding,
                                         currency: rows[i].currency,
                                         price: rows[i].price,
-                                        total: rows[i].total
+                                        total: rows[i].total,
+                                        order_type: order_type,
                                     },
                                     dataType: "json",
                                     success: function(result) {
@@ -1031,32 +1135,55 @@
             }
         }],
         onSelect: function(customer) {
-            $('#filter_sales_order_no').combobox({
-                url: '<?= base_url('sales/sales_orders/readSalesOrder/'); ?>' + customer.id,
-                valueField: 'sales_order_no',
-                textField: 'sales_order_no',
-                prompt: 'Choose All',
-                icons: [{
-                    iconCls: 'icon-clear',
-                    handler: function(e) {
-                        $(e.data.target).combobox('clear').combobox('textbox').focus();
-                    }
-                }],
-            });
-
-            $('#filter_customer_order_no').combobox({
-                url: '<?= base_url('sales/sales_orders/readCustomerOrder/'); ?>' + customer.id,
-                valueField: 'customer_order_no',
-                textField: 'customer_order_no',
-                prompt: 'Choose All',
-                icons: [{
-                    iconCls: 'icon-clear',
-                    handler: function(e) {
-                        $(e.data.target).combobox('clear').combobox('textbox').focus();
-                    }
-                }],
-            });
+            // Set URL untuk filter_sales_order_no dan filter_customer_order_no dengan customer id yang dipilih
+          // $('#filter_sales_order_no').combobox('reload', '<?= base_url('sales/sales_orders/readSalesOrder/'); ?>' + customer.id);
+            $('#filter_customer_order_no').combobox('reload', '<?= base_url('sales/sales_orders/readCustomerOrder/'); ?>' + customer.id);
+        },
+        onClear: function() {
+            // Jika filter_customer_id dibersihkan, tampilkan semua filter_sales_order_no dan filter_customer_order_no
+            //$('#filter_sales_order_no').combobox('reload', '<?= base_url('sales/sales_orders/readSalesOrder/'); ?>');
+            $('#filter_customer_order_no').combobox('reload', '<?= base_url('sales/sales_orders/readCustomerOrder/'); ?>');
         }
+    });
+
+    // Inisialisasi filter_sales_order_no dan filter_customer_order_no untuk menampilkan semua data ketika halaman dimuat
+    $('#filter_sales_order_no').combobox({
+        url: '<?= base_url('sales/sales_orders/readProductNo/'); ?>',
+        valueField: 'id',
+        textField: 'number',
+        prompt: 'Choose All',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+    $('#filter_division').combobox({
+        url: '<?= base_url('master/divisions/reads'); ?>',
+        valueField: 'number',
+        textField: 'name',
+        panelHeight: 'panelHeight',
+        prompt: 'Choose Division',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_customer_order_no').combobox({
+        url: '<?= base_url('sales/sales_orders/readCustomerOrder/'); ?>',
+        valueField: 'customer_order_no',
+        textField: 'customer_order_no',
+        prompt: 'Choose All',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
     });
 
     $('#division').combobox({
@@ -1114,9 +1241,9 @@
 
     function btnDetails(val, row, index) {
         var attachment = row.attachment;
-        
+
         if (attachment != null && attachment != "") {
-            return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/sales_orders/') ?>'+row.attachment+'" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+            return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/sales_orders/') ?>' + row.attachment + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
         } else {
             return '-';
         }
@@ -1125,7 +1252,7 @@
     $('#attachment_upload').filebox({
         buttonText: 'Browse File',
         accept: '.jpg, .png, .pdf',
-        onChange: function () {
+        onChange: function() {
             var files = $(this).filebox('files');
             var formData = new FormData();
 
@@ -1141,7 +1268,7 @@
                 contentType: false,
                 processData: false,
                 dataType: 'json',
-                success: function (data) {
+                success: function(data) {
                     if (data.success == true) {
                         toastr.success(data.message);
                         $('#attachment').textbox('setValue', data.filename); // Mengatur nilai pada textbox
@@ -1152,4 +1279,19 @@
             });
         }
     });
+
+    // function validateBeforeSave(customer_order_no, item_fg_id, callback) {
+    //     $.ajax({
+    //         type: "post",
+    //         url: "<?= base_url('sales/sales_orders/checkDuplicate') ?>",
+    //         data: {
+    //             customer_order_no: customer_order_no,
+    //             item_fg_id: item_fg_id
+    //         },
+    //         dataType: "json",
+    //         success: function(response) {
+    //             callback(response.exists);
+    //         }
+    //     });
+    // }
 </script>

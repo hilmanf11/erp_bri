@@ -15,32 +15,32 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>
-            <th rowspan="2" data-options="field:'id',width:150,align:'center'">Part ID</th>
-            <th rowspan="2" data-options="field:'number',width:200,halign:'center'">Part No</th>
-            <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Part Name</th>
-            <th rowspan="2" data-options="field:'uom',width:100,halign:'center'">Uom</th>
-            <th rowspan="2" data-options="field:'type',width:150,halign:'center'">Type</th>
-            <th rowspan="2" data-options="field:'item_category_name',width:150,halign:'center'">Category</th>
-            <th rowspan="2" data-options="field:'item_family_name',width:150,halign:'center'">Product Family</th>
-            <th rowspan="2" data-options="field:'item_sub_family_name',width:150,halign:'center'">Sub Product Family</th>
-            <th rowspan="2" data-options="field:'account_number',width:150,halign:'center'">Account No</th>
-            <th rowspan="2" data-options="field:'account_name',width:150,halign:'center'">Account Name</th>
-            <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
-            <th rowspan="2" data-options="field:'specification',width:150,halign:'center'">Specification</th>
-            <th rowspan="2" data-options="field:'leadtime',width:150,halign:'center',align:'right',width:130">Leadtime Production</th>
-            <th rowspan="2" data-options="field:'lifetime',width:150,halign:'center',align:'right'">Lifetime</th>
-            <th rowspan="2" data-options="field:'safety_stock',width:150,halign:'center',align:'right',width:130">Safety Stock (%)</th>
-            <th rowspan="2" data-options="field:'supply',width:80,halign:'center', styler:cellStyler, formatter:cellFormatterSup">Supply</th>
-            <th rowspan="2" data-options="field:'status',width:80,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'attachment',width:100,align:'center',formatter: btnDetails,sortable:true">Attachment</th>
+            <th rowspan="2" data-options="field:'id',width:150,align:'center',sortable:true">Part ID</th>
+            <th rowspan="2" data-options="field:'number',width:200,halign:'center',sortable:true">Part No</th>
+            <th rowspan="2" data-options="field:'name',width:150,halign:'center',sortable:true">Part Name</th>
+            <th rowspan="2" data-options="field:'uom',width:100,halign:'center',sortable:true">Uom</th>
+            <th rowspan="2" data-options="field:'type',width:150,halign:'center',sortable:true">Type</th>
+            <th rowspan="2" data-options="field:'item_category_name',width:150,halign:'center',sortable:true">Category</th>
+            <th rowspan="2" data-options="field:'item_family_name',width:150,halign:'center',sortable:true">Product Family</th>
+            <th rowspan="2" data-options="field:'item_sub_family_name',width:150,halign:'center',sortable:true" hidden>Sub Product Family</th>
+            <th rowspan="2" data-options="field:'account_number',width:150,halign:'center',sortable:true">Account No</th>
+            <th rowspan="2" data-options="field:'account_name',width:150,halign:'center',sortable:true">Account Name</th>
+            <th rowspan="2" data-options="field:'description',width:150,halign:'center',sortable:true">Description</th>
+            <th rowspan="2" data-options="field:'specification',width:150,halign:'center',sortable:true">Specification</th>
+            <th rowspan="2" data-options="field:'leadtime',width:150,halign:'center',align:'right',width:130,sortable:true">Leadtime <br>Production</th>
+            <th rowspan="2" data-options="field:'lifetime',width:150,halign:'center',align:'right',sortable:true">Lifetime</th>
+            <th rowspan="2" data-options="field:'safety_stock',width:150,halign:'center',align:'right',width:130,sortable:true">Safety Stock (%)</th>
+            <th rowspan="2" data-options="field:'supply',width:80,halign:'center', styler:cellStyler, formatter:cellFormatterSup,sortable:true">Supply</th>
+            <th rowspan="2" data-options="field:'status',width:80,halign:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -86,7 +86,7 @@
                     <span style="width:35%; display:inline-block;">Product Family</span>
                     <input style="width:60%;" name="item_family_id" id="item_family_id" required="" class="easyui-combobox">
                 </div>
-                <div class="fitem">
+                <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Product Family Sub</span>
                     <input style="width:60%;" name="item_sub_family_id" id="item_sub_family_id" class="easyui-combobox">
                 </div>
@@ -94,13 +94,13 @@
                     <span style="width:35%; display:inline-block;">Account No</span>
                     <input style="width:60%;" name="account_number" id="account_number" class="easyui-textbox">
                 </div>
-            </div>
-
-            <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Account Name</span>
                     <input style="width:60%;" name="account_name" id="account_name" class="easyui-textbox">
                 </div>
+            </div>
+
+            <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Description</span>
                     <input style="width:60%;" name="description" id="description" class="easyui-textbox">
@@ -111,7 +111,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Leadtime Production</span>
-                    <input style="width:60%;" name="leadtime" class="easyui-numberbox">
+                    <input style="width:60%;" name="leadtime" class="easyui-numberbox" prompt="Only For ProdFam Compund">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Lifetime</span>
@@ -271,6 +271,8 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            resizable: true,
+            remoteSort: false,
         }).datagrid('enableFilter');
 
         //SAVE DATA
@@ -456,6 +458,10 @@
                 textField: 'name',
                 prompt: 'Choose Product Family',
                 onSelect: function(family) {
+                    // Autofill account number and account name
+                    $('#account_number').textbox('setValue', family.account_number);
+                    $('#account_name').textbox('setValue', family.account_name);
+
                     $('#item_sub_family_id').combobox({
                         url: '<?= base_url('master/item_family_subs/reads/'); ?>' + family.id,
                         valueField: 'id',

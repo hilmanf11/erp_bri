@@ -3,27 +3,30 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:80,align:'center'">Flow ID</th>
-            <th rowspan="2" data-options="field:'name',width:100,halign:'center'">Flow Type</th>
-            <th rowspan="2" data-options="field:'process_a',width:150,halign:'center'">WEIGHING</th>
-            <th rowspan="2" data-options="field:'process_b',width:150,halign:'center'">MIXING</th>
-            <th rowspan="2" data-options="field:'process_c',width:150,halign:'center'">CUTTING</th>
-            <th rowspan="2" data-options="field:'process_d',width:150,halign:'center'">BONDING</th>
-            <th rowspan="2" data-options="field:'process_e',width:150,halign:'center'">PRESS</th>
-            <th rowspan="2" data-options="field:'process_f',width:150,halign:'center'">FINISHING</th>
-            <th rowspan="2" data-options="field:'process_g',width:150,halign:'center'">VISUAL CHECK</th>
-            <th rowspan="2" data-options="field:'process_h',width:150,halign:'center'">SUBCONT</th>
-            <th rowspan="2" data-options="field:'process_i',width:150,halign:'center'">SLITTING</th>
-            <th rowspan="2" data-options="field:'process_j',width:150,halign:'center'">POST CURE</th>
-            <th rowspan="2" data-options="field:'process_k',width:150,halign:'center'">PACKING</th>
+            <th rowspan="2" data-options="field:'id',width:80,align:'center',sortable:true">Flow ID</th>
+            <th rowspan="2" data-options="field:'name',width:100,halign:'center',sortable:true">Flow Type</th>
+            <th rowspan="2" data-options="field:'process_a',width:150,halign:'center',sortable:true">WEIGHING</th>
+            <th rowspan="2" data-options="field:'process_b',width:150,halign:'center',sortable:true">MIXING MB</th>
+            <th rowspan="2" data-options="field:'process_l',width:150,halign:'center',sortable:true">MIXING FB</th>
+            <!-- <th rowspan="2" data-options="field:'process_m',width:150,halign:'center',sortable:true">COOLING</th> -->
+            <th rowspan="2" data-options="field:'process_c',width:150,halign:'center',sortable:true">CUTTING</th>
+            <th rowspan="2" data-options="field:'process_d',width:150,halign:'center',sortable:true">BONDING</th>
+            <th rowspan="2" data-options="field:'process_e',width:150,halign:'center',sortable:true">PRESS</th>
+            <th rowspan="2" data-options="field:'process_f',width:150,halign:'center',sortable:true">FINISHING</th>
+            <th rowspan="2" data-options="field:'process_g',width:150,halign:'center',sortable:true">VISUAL CHECK</th>
+            <!-- <th rowspan="2" data-options="field:'process_n',width:150,halign:'center',sortable:true">SEALER</th> -->
+            <th rowspan="2" data-options="field:'process_h',width:150,halign:'center',sortable:true">SUBCONT</th>
+            <th rowspan="2" data-options="field:'process_i',width:150,halign:'center',sortable:true">SLITTING</th>
+            <th rowspan="2" data-options="field:'process_j',width:150,halign:'center',sortable:true">POST CURE</th>
+            <th rowspan="2" data-options="field:'process_k',width:150,halign:'center',sortable:true">PACKING</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -32,61 +35,77 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 600px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Process ID</span>
-                <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Process ID</span>
+                    <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Process Name</span>
+                    <input style="width:60%;" name="name" id="item_process_id" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">WEIGHING</span>
+                    <input style="width:60%;" name="process_a" id="process_a" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">MIXING MB</span>
+                    <input style="width:60%;" name="process_b" id="process_b" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">MIXING FB</span>
+                    <input style="width:60%;" name="process_l" id="process_l" class="easyui-textbox">
+                </div>
+                <!-- <div class="fitem">
+                    <span style="width:35%; display:inline-block;">COOLING</span>
+                    <input style="width:60%;" name="process_m" id="process_m" class="easyui-textbox">
+                </div> -->
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">CUTTING</span>
+                    <input style="width:60%;" name="process_c" id="process_c" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">BONDING</span>
+                    <input style="width:60%;" name="process_d" id="process_d" class="easyui-textbox">
+                </div>
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Process Name</span>
-                <input style="width:60%;" name="name" id="item_process_id" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">WEIGHING</span>
-                <input style="width:60%;" name="process_a" id="process_a" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">MIXING</span>
-                <input style="width:60%;" name="process_b" id="process_b" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">CUTTING</span>
-                <input style="width:60%;" name="process_c" id="process_c" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">BONDING</span>
-                <input style="width:60%;" name="process_d" id="process_d" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">PRESS</span>
-                <input style="width:60%;" name="process_e" id="process_e" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">FINISHING</span>
-                <input style="width:60%;" name="process_f" id="process_f" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">VISUAL CHECK</span>
-                <input style="width:60%;" name="process_g" id="process_g" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">SUBCONT</span>
-                <input style="width:60%;" name="process_h" id="process_h" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">SLITTING</span>
-                <input style="width:60%;" name="process_i" id="process_i" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">POST CURE</span>
-                <input style="width:60%;" name="process_j" id="process_j" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">PACKING</span>
-                <input style="width:60%;" name="process_k" id="process_k" class="easyui-textbox">
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">PRESS</span>
+                    <input style="width:60%;" name="process_e" id="process_e" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">FINISHING</span>
+                    <input style="width:60%;" name="process_f" id="process_f" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">VISUAL CHECK</span>
+                    <input style="width:60%;" name="process_g" id="process_g" class="easyui-textbox">
+                </div>
+                <!-- <div class="fitem">
+                    <span style="width:35%; display:inline-block;">SEALER</span>
+                    <input style="width:60%;" name="process_n" id="process_n" class="easyui-textbox">
+                </div> -->
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">SUBCONT</span>
+                    <input style="width:60%;" name="process_h" id="process_h" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">SLITTING</span>
+                    <input style="width:60%;" name="process_i" id="process_i" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">POST CURE</span>
+                    <input style="width:60%;" name="process_j" id="process_j" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">PACKING</span>
+                    <input style="width:60%;" name="process_k" id="process_k" class="easyui-textbox">
+                </div>
             </div>
         </fieldset>
     </form>
@@ -99,6 +118,20 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/item_process_flow/create') ?>';
         $('#frm_insert').form('clear');
+        $('#process_a').textbox('textbox').attr('placeholder', '0');
+        $('#process_b').textbox('textbox').attr('placeholder', '0');
+        $('#process_l').textbox('textbox').attr('placeholder', '0');
+        // $('#process_m').textbox('textbox').attr('placeholder', '0');
+        $('#process_c').textbox('textbox').attr('placeholder', '0');
+        $('#process_d').textbox('textbox').attr('placeholder', '0');
+        $('#process_e').textbox('textbox').attr('placeholder', '0');
+        $('#process_f').textbox('textbox').attr('placeholder', '0');
+        $('#process_g').textbox('textbox').attr('placeholder', '0');
+        // $('#process_n').textbox('textbox').attr('placeholder', '0');
+        $('#process_h').textbox('textbox').attr('placeholder', '0');
+        $('#process_i').textbox('textbox').attr('placeholder', '0');
+        $('#process_j').textbox('textbox').attr('placeholder', '0');
+        $('#process_k').textbox('textbox').attr('placeholder', '0');
 
         $.ajax({
             type: "post",
@@ -175,6 +208,8 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            resizable: true,
+            remoteSort: false
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({

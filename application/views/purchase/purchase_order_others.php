@@ -2,22 +2,16 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'po_no',width:200,halign:'center'">PO No</th>
+            <th rowspan="2" data-options="field:'po_no',width:200,halign:'center'">Document No</th>
             <th rowspan="2" data-options="field:'status',width:80,align:'center',formatter:statusformat,styler:statusStyle">Status PO</th>
             <th rowspan="2" data-options="field:'po_date',width:100,align:'center'">PO Date</th>
-            <th rowspan="2" data-options="field:'delivery_date',width:100,align:'center'">Delivery Date</th>
-            <th rowspan="2" data-options="field:'supplier_name',width:200,halign:'center'">Supplier</th>
-            <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
-            <th rowspan="2" data-options="field:'item_name',width:200,halign:'center'">Product Name</th>
-            <th rowspan="2" data-options="field:'mpq',width:80,halign:'center',align:'right',formatter:numberformat">MPQ</th>
-            <th rowspan="2" data-options="field:'moq',width:80,halign:'center',align:'right',formatter:numberformat">MOQ</th>
-            <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformat">Qty</th>
+            <th rowspan="2" data-options="field:'item_id',width:150,halign:'center'">Part No Customer</th>
+            <th rowspan="2" data-options="field:'item_name',width:200,halign:'center'">Part Name Customer</th>
+            <th rowspan="2" data-options="field:'etd',width:80,halign:'center',parser:myparser">ETD</th>
+            <th rowspan="2" data-options="field:'specification',width:200,halign:'center'">Specification</th>
+            <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right'">Qty</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
-            <th rowspan="2" data-options="field:'price',width:100,halign:'center',align:'right',formatter:numberformat">Price</th>
-            <th rowspan="2" data-options="field:'total',width:120,halign:'center',align:'right',formatter:numberformat">Total Price</th>
-            <th rowspan="2" data-options="field:'currency',width:80,align:'center'">Currency</th>
-            <th rowspan="2" data-options="field:'revision',width:80,align:'center'">Revision</th>
-            <th rowspan="2" data-options="field:'remarks',width:100,halign:'center'">Remarks</th>
+            <th rowspan="2" data-options="field:'remarks',width:200,halign:'center'">Remarks</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -37,12 +31,8 @@
             <legend><b>Form Filter Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Period</span>
-                <input style="width:28%;" id="filter_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false"> To
-                <input style="width:28%;" id="filter_to" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Supplier</span>
-                <input style="width:60%;" id="filter_supplier_id" class="easyui-combobox">
+                <input style="width:28%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false"> To
+                <input style="width:28%;" id="filter_to" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Po No</span>
@@ -76,20 +66,6 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">PO Date</span>
                     <input style="width:60%;" name="po_date" id="po_date" value="<?= date("Y-m-d") ?>" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
-                </div>
-            </div>
-            <div style="width: 50%; float: left;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">PO Name</span>
-                    <input style="width:60%;" name="po_name" id="po_name" value="<?= $this->session->name ?>" readonly class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Supplier</span>
-                    <input style="width:60%;" name="supplier_id" id="supplier_id" required class="easyui-combobox">
-                </div>
-                <div class="fitem" hidden>
-                    <span style="width:35%; display:inline-block;">Tax</span>
-                    <input style="width:60%;" name="taxes" id="taxes" class="easyui-numberbox" data-options="precision: 2">
                 </div>
             </div>
         </fieldset>
@@ -151,8 +127,6 @@
     function add() {
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
-        $("#supplier_id").combobox('enable');
-        $("#supplier_id").combobox('clear');
     }
 
     function addTable(supplier_id, link = "") {
@@ -165,7 +139,7 @@
                     field: 'item_number',
                     width: 250,
                     halign: 'center',
-                    title: "Product No",
+                    title: "Part No Customer",
                     editor: {
                         type: 'combogrid',
                         options: {
@@ -206,33 +180,9 @@
                                     field: 'item_name'
                                 });
 
-                                var ed3 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'mpq'
-                                });
-
-                                var ed4 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'moq'
-                                });
-
-                                var ed5 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'currency'
-                                });
-
-                                var ed6 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'price'
-                                });
-
 
                                 $(ed.target).textbox('setValue', rows.item_rm_id);
                                 $(ed2.target).textbox('setValue', rows.item_name);
-                                $(ed3.target).numberbox('setValue', rows.mpq);
-                                $(ed4.target).numberbox('setValue', rows.moq);
-                                $(ed5.target).textbox('setValue', rows.currency);
-                                $(ed6.target).numberbox('setValue', rows.price);
                             }
                         }
                     }
@@ -241,7 +191,7 @@
                     width: 150,
                     readonly: true,
                     halign: 'center',
-                    title: "Product Name",
+                    title: "Part Name Customer",
                     editor: {
                         type: 'textbox',
                         options: {
@@ -249,7 +199,7 @@
                         }
                     }
                 }, {
-                    field: 'item_rm_id',
+                    field: 'item_number',
                     hidden: true,
                     width: 100,
                     halign: 'center',
@@ -258,32 +208,29 @@
                         type: 'textbox'
                     }
                 }, {
-                    field: 'mpq',
+                    field: 'specification',
                     width: 80,
                     halign: 'center',
-                    title: "MPQ",
+                    title: "Specification",
                     editor: {
-                        type: 'numberbox',
+                        type: 'textbox',
                         options: {
                             required: true,
-                            readonly: true,
-                            precision: 2
                         }
                     }
                 }, {
-                    field: 'moq',
+                    field: 'etd',
                     width: 80,
                     halign: 'center',
-                    title: "MOQ",
+                    title: "ETD",
                     editor: {
-                        type: 'numberbox',
+                        type: 'datebox',
                         options: {
+                            parser: myparser,
                             required: true,
-                            readonly: true,
-                            precision: 2
                         }
                     }
-                },{
+                }, {
                     field: 'qty',
                     width: 80,
                     halign: 'center',
@@ -296,53 +243,13 @@
                         }
                     }
                 }, {
-                    field: 'currency',
-                    width: 80,
+                    field: 'uom',
+                    width: 120,
                     halign: 'center',
-                    title: "Currency",
+                    title: "UoM",
                     editor: {
                         type: 'textbox',
                         options: {
-                            required: true,
-                            readonly: true,
-                        }
-                    }
-                },{
-                    field: 'price',
-                    width: 100,
-                    halign: 'center',
-                    title: "Price",
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            required: true,
-                            readonly: true,
-                            precision: 2
-                        }
-                    }
-                }, {
-                    field: 'amount',
-                    width: 100,
-                    halign: 'center',
-                    title: "Amount",
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            required: true,
-                            readonly: true,
-                            precision: 2
-                        }
-                    }
-                },{
-                    field: 'delivery_date',
-                    width: 120,
-                    halign: 'center',
-                    title: "Delivery Date",
-                    editor: {
-                        type: 'datebox',
-                        options: {
-                            formatter: myformatter,
-                            parser: myparser,
                             editable: false,
                             required: true
                         }
@@ -364,57 +271,57 @@
                 }
                 lastIndex = rowIndex;
             },
-            onBeginEdit: function(rowIndex, row) {
-                var editors = $('#dg2').datagrid('getEditors', rowIndex);
-                var total_sub = $("#total_sub").numberbox('getValue');
+            // onBeginEdit: function(rowIndex, row) {
+            //     var editors = $('#dg2').datagrid('getEditors', rowIndex);
+            //     var total_sub = $("#total_sub").numberbox('getValue');
 
-                if(link != ""){
-                    var amount = $(editors[8].target);
-                    $(editors[5].target).numberbox({
-                        onChange: function() {
-                            var qty_after = $(editors[5].target).numberbox('getValue');
+            //     if(link != ""){
+            //         var amount = $(editors[8].target);
+            //         $(editors[5].target).numberbox({
+            //             onChange: function() {
+            //                 var qty_after = $(editors[5].target).numberbox('getValue');
 
-                            var price = $(editors[7].target).numberbox('getValue');
+            //                 var price = $(editors[7].target).numberbox('getValue');
 
-                            var total_dp = $("#total_dp").numberbox('getValue');
-                            var total_vat = $("#total_vat").numberbox('getValue');
-                            var taxes = $("#taxes").numberbox('getValue');
+            //                 var total_dp = $("#total_dp").numberbox('getValue');
+            //                 var total_vat = $("#total_vat").numberbox('getValue');
+            //                 var taxes = $("#taxes").numberbox('getValue');
 
-                            amount.numberbox('setValue', (qty_after * price));
-                            var total_subs = (parseFloat(qty_after * price) + parseFloat(total_sub));
-                            var total_vats = ((total_subs * taxes) / 100);
+            //                 amount.numberbox('setValue', (qty_after * price));
+            //                 var total_subs = (parseFloat(qty_after * price) + parseFloat(total_sub));
+            //                 var total_vats = ((total_subs * taxes) / 100);
 
-                            $("#total_sub").numberbox('setValue', total_subs);
-                            $("#total_vat").numberbox('setValue', total_vats);
-                            $("#total_amount").numberbox('setValue', (total_subs - total_vats));
-                            $("#total_grand").numberbox('setValue', ((total_subs - total_vats) - total_dp));
-                        }
-                    });
-                }else{
-                    var qty = $(editors[5].target).numberbox('getValue');
-                    var amount = $(editors[8].target);
-                    $(editors[5].target).numberbox({
-                        onChange: function() {
-                            var qty_after = $(editors[5].target).numberbox('getValue');
+            //                 $("#total_sub").numberbox('setValue', total_subs);
+            //                 $("#total_vat").numberbox('setValue', total_vats);
+            //                 $("#total_amount").numberbox('setValue', (total_subs - total_vats));
+            //                 $("#total_grand").numberbox('setValue', ((total_subs - total_vats) - total_dp));
+            //             }
+            //         });
+            //     }else{
+            //         var qty = $(editors[5].target).numberbox('getValue');
+            //         var amount = $(editors[8].target);
+            //         $(editors[5].target).numberbox({
+            //             onChange: function() {
+            //                 var qty_after = $(editors[5].target).numberbox('getValue');
 
-                            var price = $(editors[7].target).numberbox('getValue');
+            //                 var price = $(editors[7].target).numberbox('getValue');
 
-                            var total_dp = $("#total_dp").numberbox('getValue');
-                            var total_vat = $("#total_vat").numberbox('getValue');
-                            var taxes = $("#taxes").numberbox('getValue');
+            //                 var total_dp = $("#total_dp").numberbox('getValue');
+            //                 var total_vat = $("#total_vat").numberbox('getValue');
+            //                 var taxes = $("#taxes").numberbox('getValue');
 
-                            amount.numberbox('setValue', (qty_after * price));
-                            var total_subs = (total_sub - (qty * price)) + (qty_after * price);
-                            var total_vats = ((total_subs * taxes) / 100);
+            //                 amount.numberbox('setValue', (qty_after * price));
+            //                 var total_subs = (total_sub - (qty * price)) + (qty_after * price);
+            //                 var total_vats = ((total_subs * taxes) / 100);
 
-                            $("#total_sub").numberbox('setValue', total_subs);
-                            $("#total_vat").numberbox('setValue', total_vats);
-                            $("#total_amount").numberbox('setValue', (total_subs - total_vats));
-                            $("#total_grand").numberbox('setValue', ((total_subs - total_vats) - total_dp));
-                        }
-                    });
-                }
-            }
+            //                 $("#total_sub").numberbox('setValue', total_subs);
+            //                 $("#total_vat").numberbox('setValue', total_vats);
+            //                 $("#total_amount").numberbox('setValue', (total_subs - total_vats));
+            //                 $("#total_grand").numberbox('setValue', ((total_subs - total_vats) - total_dp));
+            //             }
+            //         });
+            //     }
+            // }
         });
     }
 
@@ -434,8 +341,6 @@
     }
 
     function append() {
-        var supplier_id = $("#supplier_id").combobox('getValue');
-        if (supplier_id != "") {
             if (endEditing()) {
                 $('#dg2').datagrid('appendRow', {
                     qty: '0'
@@ -444,9 +349,6 @@
                 editIndex = $('#dg2').datagrid('getRows').length - 1;
                 $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
             }
-        } else {
-            toastr.error("Please Choose Supplier first");
-        }
     }
 
     function removeit() {
@@ -454,18 +356,6 @@
             return true;
         }
         var editors = $('#dg2').datagrid('getEditors', editIndex);
-        var total_sub = $("#total_sub").numberbox('getValue');
-        var total_dp = $("#total_dp").numberbox('getValue');
-
-        var amount = $(editors[8].target).numberbox('getValue');
-
-        var total_subs = (parseFloat(total_sub) - parseFloat(amount));
-        var total_vats = ((total_subs * taxes) / 100);
-
-        $("#total_sub").numberbox('setValue', total_subs);
-        $("#total_vat").numberbox('setValue', total_vats);
-        $("#total_amount").numberbox('setValue', (total_subs - total_vats));
-        $("#total_grand").numberbox('setValue', ((total_subs - total_vats) - total_dp));
 
         $('#dg2').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
         editIndex = undefined;
@@ -479,7 +369,6 @@
                 if (row.status == "0") {
                     $('#dlg_insert').dialog('open');
                     $('#frm_insert').form('load', row);
-                    $("#supplier_id").combobox('disable');
 
                     setTimeout(function() {
                         $('#po_no').textbox('setValue', row.po_no);
@@ -547,11 +436,11 @@
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_po_no = $("#filter_po_no").combobox('getValue');
-        var filter_supplier_id = $("#filter_supplier_id").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_po_no=" + filter_po_no + "&filter_supplier_id=" + filter_supplier_id;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_po_no=" + filter_po_no;
         $('#dg').treegrid({
             url: '<?= base_url('purchase/purchase_order_others/datatables') ?>' + url
         });
+
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
         $("#printout").attr('src', '<?= base_url('purchase/purchase_order_others/print') ?>' + url);
     }
@@ -564,8 +453,7 @@
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_po_no = $("#filter_po_no").combobox('getValue');
-        var filter_supplier_id = $("#filter_supplier_id").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_po_no=" + filter_po_no + "&filter_supplier_id=" + filter_supplier_id;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_po_no=" + filter_po_no;
         window.location.assign('<?= base_url('purchase/purchase_order_others/print/excel') ?>' + url);
     }
 
@@ -583,23 +471,26 @@
     }
 
     $(function() {
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_po_no = $("#filter_po_no").combobox('getValue');
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_po_no=" + filter_po_no;
+        
         $('#dg').treegrid({
-            url: '<?= base_url('purchase/purchase_order_others/datatables') ?>',
+            url: '<?= base_url('purchase/purchase_order_others/datatables') ?>' + url,
             pagination: true,
             rownumbers: true,
             idField: 'id',
             treeField: 'po_no',
             singleSelect: false,
+            fit: true,
+            pageList: [10, 50, 100, 500, 1000],
+            pageSize: 10,
             onBeforeLoad: function(row, param) {
                 if (!row) {
                     param.id = 0;
                 }
             },
-            // rowStyler: function(row) {
-            //     if (row.state != "closed") {
-            //         return 'background-color:#CFE6FF;font-weight:bold;';
-            //     }
-            // },
         });
 
         //Save Data
@@ -610,15 +501,6 @@
                 handler: function() {
                     var po_no = $("#po_no").textbox('getValue');
                     var po_date = $("#po_date").datebox('getValue');
-                    var po_name = $("#po_name").textbox('getValue');
-                    var supplier_id = $("#supplier_id").combobox('getValue');
-                    var taxes = $("#taxes").numberbox('getValue');
-                    var total_sub = $("#total_sub").numberbox('getValue');
-                    var total_vat = $("#total_vat").numberbox('getValue');
-                    var total_amount = $("#total_amount").numberbox('getValue');
-                    var total_dp = $("#total_dp").numberbox('getValue');
-                    var total_grand = $("#total_grand").numberbox('getValue');
-
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
                     endEditing();
@@ -743,73 +625,18 @@
             }]
         });
 
-        $("#supplier_id").combobox({
-            url: '<?= base_url('master/suppliers/reads') ?>',
-            valueField: 'id',
-            textField: 'name',
-            prompt: "Select Supplier",
-            onSelect: function(row) {
-                $.ajax({
-                    type: "post",
-                    url: "<?= base_url('purchase/purchase_order_others/po_no/') ?>" + row.number,
-                    dataType: "html",
-                    success: function(result) {
-                        addTable(row.id);
-                        $("#po_no").textbox('setValue', result);
-                    }
-                });
-
-                $.ajax({
-                    type: "post",
-                    url: "<?= base_url('admin/config/read') ?>",
-                    dataType: "json",
-                    success: function(config) {
-                        if (row.vat_status == "VAT") {
-                            taxes = config.tax;
-                        }else{
-                            taxes = "0";
-                        }
-
-                        $("#taxes").numberbox('setValue', taxes);
-                    }
-                });
-            }
-        });
-
-        //Get Customer
-        $("#filter_supplier_id").combobox({
-            url: '<?= base_url('master/suppliers/reads') ?>',
-            valueField: 'id',
-            textField: 'name',
-            prompt: "Select Supplier",
+        $("#filter_po_no").combobox({
+            url: '<?= base_url('purchase/purchase_order_others/readPono/') ?>',
+            valueField: 'po_no',
+            textField: 'po_no',
+            prompt: "Select Purchase Order No",
             icons: [{
                 iconCls: 'icon-clear',
                 handler: function(e) {
                     $(e.data.target).combobox('clear').combobox('textbox').focus();
                 }
             }],
-            onSelect: function(row) {
-                $("#filter_po_no").combobox({
-                    url: '<?= base_url('purchase/purchase_order_others/readPono/') ?>' + window.btoa(row.id),
-                    valueField: 'po_no',
-                    textField: 'po_no',
-                    prompt: "Select Purchase Order No",
-                    icons: [{
-                        iconCls: 'icon-clear',
-                        handler: function(e) {
-                            $(e.data.target).combobox('clear').combobox('textbox').focus();
-                        }
-                    }],
-                });
-            }
         });
-
-        $("#total_dp").numberbox({
-            onChange: function(val){
-                var total_amount = $("#total_amount").numberbox('getValue');
-                $("#total_grand").numberbox('setValue', (total_amount - val));
-            }
-        })
     });
 
     //Format Datepicker

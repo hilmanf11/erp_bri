@@ -3,28 +3,27 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'item_fg_id',align:'center',width:100">Product ID</th>
-            <th rowspan="2" data-options="field:'item_fg_no',align:'center',width:100">Product No</th>
-            <th rowspan="2" data-options="field:'item_fg_name',align:'center',width:100">Product Name</th>
-            <th rowspan="2" data-options="field:'machine_id',halign:'center',width:100">Machine ID</th>
-            <th rowspan="2" data-options="field:'machine_no',halign:'center',width:100">Machine No</th>
-            <th rowspan="2" data-options="field:'mold_id',halign:'center',width:100">Mold ID</th>
-            <th rowspan="2" data-options="field:'mold_model',halign:'center',width:100">Model</th>
-            <th rowspan="2" data-options="field:'mold_actual',halign:'center',width:100">Cavity Actual</th>
-            <th rowspan="2" data-options="field:'mold_standard',halign:'center',width:100">Cavity <br>Standard</th>
-            <th rowspan="2" data-options="field:'cycle_time',align:'center',width:100">Cycle Time <br>(shot/second)</th>
-            <th rowspan="2" data-options="field:'lot_size',align:'center',width:80">Lot Size</th>
-            <th rowspan="2" data-options="field:'efficiency',align:'center',width:100">Eficiency (%)</th>
-            <th rowspan="2" data-options="field:'priority',align:'center',width:100">Priority</th>
+            <th rowspan="2" data-options="field:'item_fg_id',align:'center',width:100,sortable:true">Product ID</th>
+            <th rowspan="2" data-options="field:'item_fg_no',align:'center',width:100,sortable:true">Product No</th>
+            <th rowspan="2" data-options="field:'item_fg_name',align:'center',width:100,sortable:true">Product Name</th>
+            <th rowspan="2" data-options="field:'machine_id',halign:'center',width:100,sortable:true">Machine ID</th>
+            <th rowspan="2" data-options="field:'machine_no',halign:'center',width:100,sortable:true">Machine No</th>
+            <th rowspan="2" data-options="field:'mold_id',halign:'center',width:100,sortable:true">Mold ID</th>
+            <th rowspan="2" data-options="field:'mold_model',halign:'center',width:100,sortable:true">Model</th>
+            <th rowspan="2" data-options="field:'mold_actual',halign:'center',width:100,sortable:true">Cavity Actual</th>
+            <th rowspan="2" data-options="field:'mold_standard',halign:'center',width:100,sortable:true">Cavity <br>Standard</th>
+            <th rowspan="2" data-options="field:'cycle_time',align:'center',width:100,sortable:true">Cycle Time <br>(shot/second)</th>
+            <th rowspan="2" data-options="field:'lot_size',align:'center',width:80,sortable:true">Lot Size</th>
+            <th rowspan="2" data-options="field:'efficiency',align:'center',width:100,sortable:true">Eficiency (%)</th>
+            <th rowspan="2" data-options="field:'priority',align:'center',width:100,sortable:true">Priority</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
-
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -252,7 +251,9 @@
             clientPaging: false,
             remoteFilter: true,
             fit: true,
-            rownumbers: true
+            rownumbers: true,
+            resizable: true,
+            remoteSort: false
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({

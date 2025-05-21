@@ -32,7 +32,7 @@ class Customers extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT * FROM customers WHERE id like '%$post%' or `number` like '%$post%' or `name` like '%$post%'");
+        $send = $this->crud->query("SELECT * FROM customers WHERE `status`=0 and (case when '$post' = '' then 1=1 else id like '%$post%' or `number` like '%$post%' or `name` like '%$post%' end)");
         echo json_encode($send);
     }
 
@@ -40,13 +40,20 @@ class Customers extends CI_Controller
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         // $send = $this->crud->reads('customers', ["name" => $post], ["status" => "0","approved_to" =>null ]);
-        $send = $this->crud->query("SELECT * FROM customers WHERE name LIKE '%$post%' AND `status` = '0' AND (`approved_to` IS NULL OR `approved_to` = '')");
+        $send = $this->crud->query("SELECT * FROM customers WHERE name LIKE '%$post%' AND `status` = '0' AND (`approved_to` IS NULL OR `approved_to` = '') or number LIKE '%$post%' or id LIKE '%$post%'");
         echo json_encode($send);
     }
 
     public function readAddress($customer_id)
     {
         $send = $this->crud->query("SELECT * FROM customer_address WHERE customer_id = '$customer_id'");
+        echo json_encode($send);
+    }
+
+    public function readCoa()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->reads('account_coa', ["account_name" => $post],["deleted" => 0], "", "account_number", "ASC");
         echo json_encode($send);
     }
 
@@ -133,8 +140,12 @@ class Customers extends CI_Controller
     {
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
-                $post   = $this->input->post();
-                $send   = $this->crud->create('customers', $post);
+                $post = $this->input->post();
+                // Konversi faktur_code dari array ke string
+                if (isset($post['faktur_code']) && is_array($post['faktur_code'])) {
+                    $post['faktur_code'] = implode(',', $post['faktur_code']);
+                }
+                $send = $this->crud->create('customers', $post);
                 echo $send;
             } else {
                 show_error(validation_errors());
@@ -387,7 +398,7 @@ class Customers extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-       $this->db->select('a.*, a.id as id_customers, b.*');
+        $this->db->select('a.*, a.id as id_customers, b.*');
         $this->db->from('customers a');
         $this->db->join('customer_address b', 'a.id = b.customer_id', 'left');
         $this->db->order_by('a.id', 'ASC');

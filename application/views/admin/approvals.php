@@ -41,6 +41,7 @@
                     <option value="supplier_items">Supplier Items</option>
                     <option value="purchase_requests">Purchase Request</option>
                     <option value="purchase_orders">Purchase Orders</option>
+                    <option value="delivery_notes">Delivery Notes</option>
                 </select>
             </div>
             <div class="fitem">

@@ -42,6 +42,7 @@ class Journal_setups extends CI_Controller
     {
         $filters = json_decode($this->input->post('filterRules'));
         $id = $_POST['id'];
+        // var_dump($id);
         if ($id === "0") {
             $this->db->select('a.journal_type_id, b.name as journal_name');
             $this->db->from('journal_setups a');

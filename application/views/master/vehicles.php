@@ -3,24 +3,24 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:80,align:'center'">Vehicle ID</th>
-            <th rowspan="2" data-options="field:'name',width:250,halign:'center'">Vehicle Name</th>
-            <th rowspan="2" data-options="field:'police_no',width:100,halign:'center'">Police No.</th>
-            <th colspan="3" data-options="field:'',width:100,halign:'center'">Dimension (cm)</th>
-            <th rowspan="2" data-options="field:'volume',width:100,halign:'center',formatter:volumeformat">Volume Box <br>(cm3)</th>
-            <th rowspan="2" data-options="field:'remark',width:150,halign:'center'">Remarks</th>
-            <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'id',width:80,align:'center',sortable:true">Vehicle ID</th>
+            <th rowspan="2" data-options="field:'name',width:250,halign:'center',sortable:true">Vehicle Name</th>
+            <th rowspan="2" data-options="field:'police_no',width:100,halign:'center',sortable:true">Police No.</th>
+            <th colspan="3" data-options="field:'',width:100,halign:'center',sortable:true">Dimension (cm)</th>
+            <th rowspan="2" data-options="field:'volume',width:100,halign:'center',formatter:volumeformat,sortable:true">Volume Box <br>(cm3)</th>
+            <th rowspan="2" data-options="field:'remark',width:150,halign:'center',sortable:true">Remarks</th>
+            <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'dimension_p',width:80,halign:'center'">P</th>
-            <th data-options="field:'dimension_l',width:80,halign:'center'">L</th>
-            <th data-options="field:'dimension_t',width:80,halign:'center'">T</th>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'dimension_p',width:80,halign:'center',sortable:true">P</th>
+            <th data-options="field:'dimension_l',width:80,halign:'center',sortable:true">L</th>
+            <th data-options="field:'dimension_t',width:80,halign:'center',sortable:true">T</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -108,10 +108,10 @@
         $('#status').combobox('setValue', '0');
 
         $.ajax({
-            type : "post",
-            url : "<?= base_url('master/vehicles/autoid')?>",
-            dataType : "html",
-            success : function(response){
+            type: "post",
+            url: "<?= base_url('master/vehicles/autoid') ?>",
+            dataType: "html",
+            success: function(response) {
                 $('#id').textbox('setValue', response);
             }
         });
@@ -190,6 +190,8 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            resizable: true,
+            remoteSort: false,
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({
@@ -219,36 +221,36 @@
     });
 
     $('#dimension_p').numberbox({
-            onChange: function(){
-                var p = $('#dimension_p').numberbox('getValue');
-                var l = $('#dimension_l').numberbox('getValue');
-                var t = $('#dimension_t').numberbox('getValue');
-                $('#volume').numberbox('setValue', p*l*t);
-            }
-        });
-
-    $('#dimension_l').numberbox({
-        onChange: function(){
+        onChange: function() {
             var p = $('#dimension_p').numberbox('getValue');
             var l = $('#dimension_l').numberbox('getValue');
             var t = $('#dimension_t').numberbox('getValue');
-            $('#volume').numberbox('setValue', p*l*t);
+            $('#volume').numberbox('setValue', p * l * t);
+        }
+    });
+
+    $('#dimension_l').numberbox({
+        onChange: function() {
+            var p = $('#dimension_p').numberbox('getValue');
+            var l = $('#dimension_l').numberbox('getValue');
+            var t = $('#dimension_t').numberbox('getValue');
+            $('#volume').numberbox('setValue', p * l * t);
         }
     });
 
     $('#dimension_t').numberbox({
-            onChange: function(){
-                var p = $('#dimension_p').numberbox('getValue');
-                var l = $('#dimension_l').numberbox('getValue');
-                var t = $('#dimension_t').numberbox('getValue');
-                $('#volume').numberbox('setValue', p*l*t);
-            }
-        });
+        onChange: function() {
+            var p = $('#dimension_p').numberbox('getValue');
+            var l = $('#dimension_l').numberbox('getValue');
+            var t = $('#dimension_t').numberbox('getValue');
+            $('#volume').numberbox('setValue', p * l * t);
+        }
+    });
 
     function volumeformat(value, row) {
         const formatter = new Intl.NumberFormat("id-ID", {
-                minimumFractionDigits: 2
-            });
+            minimumFractionDigits: 2
+        });
         return "<b>" + formatter.format(value) + "</b>";
     }
 
@@ -271,81 +273,81 @@
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
-            buttons: [{
-                text: 'List Failed',
-                handler: function() {
-                    window.open('<?= base_url('master/vehicles/uploadDownloadFailed') ?>', '_blank');
-                }
-            }, {
-                text: 'Upload',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/vehicles/upload') ?>',
-                        onSubmit: function() {
-                            if ($(this).form('validate') == false) {
-                                return $(this).form('validate');
-                            } else {
-                                $.messager.progress({
-                                    title: 'Please Wait',
-                                    msg: 'Importing Excel to Database'
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('master/vehicles/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('master/vehicles/upload') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('master/vehicles/uploadclearFailed') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload').progressbar('setValue', value);
+                                $('#p_start').html(number);
+                                $('#p_finish').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('master/vehicles/uploadCreate') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('master/vehicles/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks").append(title + "<br>");
+                                    }
                                 });
                             }
-                        },
-                        success: function(result) {
-                            $.messager.progress('close');
-                            //Clear File
-                            $.ajax({
-                                url: "<?= base_url('master/vehicles/uploadclearFailed') ?>"
-                            });
-                            var json = eval('(' + result + ')');
-                            requestData(json.total, json);
-
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
-
-                                    $.ajax({
-                                        type: "POST",
-                                        async: true,
-                                        url: "<?= base_url('master/vehicles/uploadCreate') ?>",
-                                        data: {
-                                            "data": json[number - 1]
-                                        },
-                                        cache: false,
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (result.theme == "success") {
-                                                $('#p_success').html(success);
-                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                //Json Failed
-                                                $.ajax({
-                                                    type: "POST",
-                                                    async: true,
-                                                    url: "<?= base_url('master/vehicles/uploadcreateFailed') ?>",
-                                                    data: {
-                                                        data: json[number - 1],
-                                                        message: result.message
-                                                    },
-                                                    cache: false
-                                                });
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                            }
-                                            $("#p_remarks").append(title + "<br>");
-                                        }
-                                    });
-                                }
-                            }
                         }
-                    });
-                }
-            }]
-        });
+                    }
+                });
+            }
+        }]
+    });
 </script>

@@ -116,4 +116,116 @@ class Sales_order_closing extends CI_Controller
             show_error("Cannot Process your request");
         }
     }
+
+    //PRINT & EXCEL DATA
+    public function print($option = "")
+    {
+        if ($option == "excel") {
+            $format  = date("Ymd");
+            header("Content-type: application/vnd-ms-excel");
+            header("Content-Disposition: attachment; filename=sales_orders_closing_$format.xls");
+        }
+
+        $get = $this->input->get();
+        $filter_from = @base64_decode($get['filter_from']);
+        $filter_to = @base64_decode($get['filter_to']);
+        $filter_customer_id = @base64_decode($get['filter_customer_id']);
+        $filter_sales_order_no = @base64_decode($get['filter_sales_order_no']);
+        $filter_status = @base64_decode($get['filter_status']);
+
+        //Config
+        $this->db->select('*');
+        $this->db->from('config');
+        $config = $this->db->get()->row();
+
+        $this->db->select("a.*, b.name as customer_name, c.number as item_fg_number, c.name as item_fg_name");
+        $this->db->from('sales_orders a');
+        $this->db->join('customers b', 'a.customer_id = b.id');
+        $this->db->join('item_fg c', 'a.item_fg_id = c.id');
+        if ($filter_from != "" && $filter_to != "") {
+            $this->db->where('a.sales_order_date >=', $filter_from);
+            $this->db->where('a.sales_order_date <=', $filter_to);
+        }
+        $this->db->like('a.customer_id', $filter_customer_id);
+        $this->db->like('a.sales_order_no', $filter_sales_order_no);
+        $this->db->like('a.status', $filter_status);
+        $this->db->order_by('a.sales_order_no', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customer_items {border-collapse: collapse;width: 100%;font-size: 12px;}#customer_items td, #customer_items th {border: 1px solid #ddd;padding: 2px;}#customer_items tr:nth-child(even){background-color: #f2f2f2;}#customer_items tr:hover {background-color: #ddd;}#customer_items th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        <center>
+            <div style="float: left; font-size: 12px; text-align: left;">
+                <table style="width: 100%;">
+                    <tr>
+                        <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                            <img src="' . $config->favicon . '" width="30">
+                        </td>
+                        <td style="font-size: 14px; text-align: left; margin:2px;">
+                            <b>' . $config->name . '</b><br>
+                            <small>' . $config->description . '</small>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div style="float: right; font-size: 12px; text-align: right;">
+                Print Date ' . date("d M Y H:m:s") . ' <br>
+                Print By ' . $this->session->username . '  
+            </div>
+            <br><br>
+            <div style="float: centet; font-size: 16px; text-align: center;">
+                <h3>SALES ORDER CLOSING</h3>
+            </div>
+        </center>
+        
+        <table id="customer_items" border="1">
+            <tr>
+                <th width="20">No</th>
+                <th>Customer Name</th>
+                <th>Customer Order No</th>
+                <th>Sales Order No</th>
+                <th>Sales Order Date</th>
+                <th>Division</th>
+                <th>Delivery Date</th>
+                <th>Remarks</th>
+                <th>Product ID</th>
+                <th>Product No</th>
+                <th>Product Name</th>
+                <th>Uom</th>
+                <th>Qty</th>
+                <th>Delivery</th>
+                <th>Outstanding</th>
+                <th>Currency</th>
+                <th>Price</th>
+                <th>Total</th>
+                <th>Status</th>
+            </tr>';
+        $no = 1;
+        foreach ($records as $data) {
+            $status = $data['status'] == '1' ? 'CLOSE' : 'OPEN';
+            $html .= '<tr>
+                        <td>' . $no . '</td>
+                        <td>' . $data['customer_name'] . '</td>
+                        <td>' . $data['customer_order_no'] . '</td>
+                        <td>' . $data['sales_order_no'] . '</td>
+                        <td>' . $data['sales_order_date'] . '</td>
+                        <td>' . $data['division'] . '</td>
+                        <td>' . $data['delivery_date'] . '</td>
+                        <td>' . $data['remarks'] . '</td>
+                        <td>' . $data['item_fg_id'] . '</td>
+                        <td>' . $data['item_fg_number'] . '</td>
+                        <td>' . $data['item_fg_name'] . '</td>
+                        <td>' . $data['uom'] . '</td>
+                        <td>' . $data['qty'] . '</td>
+                        <td>' . $data['delivery'] . '</td>
+                        <td>' . $data['outstanding'] . '</td>
+                        <td>' . $data['currency'] . '</td>
+                        <td>' . $data['price'] . '</td>
+                        <td>' . $data['total'] . '</td>
+                        <td>' . $status . '</td>
+                    </tr>';
+            $no++;
+        }
+        $html .= '</table></body></html>';
+        echo $html;
+    }
 }

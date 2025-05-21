@@ -3,22 +3,21 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'item_fg_id',align:'center',width:100">Product ID</th>
-            <th rowspan="2" data-options="field:'item_fg_no',halign:'center',width:150">Product No</th>
-            <th rowspan="2" data-options="field:'item_fg_name',align:'center',width:100">Product Name</th>
-            <th rowspan="2" data-options="field:'machine_id',halign:'center',width:100">Machine ID</th>
-            <th rowspan="2" data-options="field:'machine_no',halign:'center',width:100">Machine No</th>
-            <th rowspan="2" data-options="field:'cycle_time',align:'center',width:100">Cycle Time <br>(shot/second)</th>
-            <th rowspan="2" data-options="field:'priority',align:'center',width:100">Priority</th>
+            <th rowspan="2" data-options="field:'item_fg_id',align:'center',width:100,sortable:true">Product ID</th>
+            <th rowspan="2" data-options="field:'item_fg_no',halign:'center',width:150,sortable:true">Product No</th>
+            <th rowspan="2" data-options="field:'item_fg_name',align:'center',width:120,sortable:true">Product Name</th>
+            <th rowspan="2" data-options="field:'machine_id',halign:'center',width:100,sortable:true">Machine ID</th>
+            <th rowspan="2" data-options="field:'machine_no',halign:'center',width:100,sortable:true">Machine No</th>
+            <th rowspan="2" data-options="field:'cycle_time',align:'center',width:130,sortable:true">Cycle Time <br>(shot/second)</th>
+            <th rowspan="2" data-options="field:'priority',align:'center',width:100,sortable:true">Priority</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
-            
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -47,9 +46,9 @@
                 <span style="width:35%; display:inline-block;">Priority</span>
                 <input style="width:60%;" name="priority" class="easyui-numberbox">
             </div>
-        </div>
-        </fieldset>
-    </form>
+</div>
+</fieldset>
+</form>
 </div>
 <!-- Upload -->
 <div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
@@ -125,48 +124,48 @@
     }
 
     $('#item_fg_id').combogrid({
-            url: '<?= base_url('master/item_fg/reads') ?>',
-            panelWidth: 420,
-            idField: 'id',
-            textField: 'number',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Choose Product No",
-            columns: [
-                [{
-                    field: 'number',
-                    title: 'Product No',
-                    width: 100
-                }, {
-                    field: 'name',
-                    title: 'Product Name',
-                    width: 100
-                }, ]
-            ]
-        });
+        url: '<?= base_url('master/item_fg/reads') ?>',
+        panelWidth: 420,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Product No",
+        columns: [
+            [{
+                field: 'number',
+                title: 'Product No',
+                width: 100
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 100
+            }, ]
+        ]
+    });
 
-        $('#machine_id').combogrid({
-            url: '<?= base_url('master/machines/reads') ?>',
-            panelWidth: 420,
-            idField: 'id',
-            textField: 'number',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Choose Machine No",
-            columns: [
-                [{
-                    field: 'number',
-                    title: 'Machine No',
-                    width: 100
-                },{
-                    field: 'name',
-                    title: 'Machine Name',
-                    width: 100
-                },]
-            ]
-        });
+    $('#machine_id').combogrid({
+        url: '<?= base_url('master/machines/reads') ?>',
+        panelWidth: 420,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Machine No",
+        columns: [
+            [{
+                field: 'number',
+                title: 'Machine No',
+                width: 100
+            }, {
+                field: 'name',
+                title: 'Machine Name',
+                width: 100
+            }, ]
+        ]
+    });
 
-   //Upload Data
+    //Upload Data
     function upload() {
         $('#dlg_upload').dialog('open');
     }
@@ -182,7 +181,7 @@
     function excel() {
         window.location.assign('<?= base_url('master/setting_non_molds/print/excel') ?>');
     }
-    
+
     //RELOAD
     function reload() {
         window.location.reload();
@@ -213,7 +212,9 @@
             clientPaging: false,
             remoteFilter: true,
             fit: true,
-            rownumbers: true
+            rownumbers: true,
+            resizable: true,
+            remoteSort: false
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({
@@ -267,8 +268,8 @@
             ]
         });
 
-         //Upload Data
-         $('#dlg_upload').dialog({
+        //Upload Data
+        $('#dlg_upload').dialog({
             buttons: [{
                 text: 'List Failed',
                 handler: function() {

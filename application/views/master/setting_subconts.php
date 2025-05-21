@@ -14,18 +14,18 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'subcont_id',width:200,halign:'center'">Subcont ID</th>
-            <th rowspan="2" data-options="field:'subcont_name',width:335,halign:'center'">Subcont Name</th>
-            <th rowspan="2" data-options="field:'subcont_number',width:200,halign:'center'">Subcont Code</th>
-            <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'subcont_id',width:200,halign:'center',sortable:true">Subcont ID</th>
+            <th rowspan="2" data-options="field:'subcont_name',width:335,halign:'center',sortable:true">Subcont Name</th>
+            <th rowspan="2" data-options="field:'subcont_number',width:200,halign:'center',sortable:true">Subcont Code</th>
+            <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:120,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:120,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:120,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:120,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -182,7 +182,7 @@
                     editor: {
                         type: 'textbox'
                     }
-                },  {
+                }, {
                     field: 'item_fg_name',
                     width: 200,
                     halign: 'center',
@@ -193,7 +193,7 @@
                             readonly: true
                         }
                     }
-                },  {
+                }, {
                     field: 'share_order',
                     width: 200,
                     halign: 'center',
@@ -201,7 +201,7 @@
                     editor: {
                         type: 'numberbox'
                     }
-                },  {
+                }, {
                     field: 'type',
                     width: 200,
                     halign: 'center',
@@ -223,7 +223,7 @@
                             ]
                         }
                     }
-                },  {
+                }, {
                     field: 'currency',
                     width: 150,
                     halign: 'center',
@@ -251,7 +251,7 @@
                             ]
                         }
                     }
-                },  {
+                }, {
                     field: 'price',
                     width: 100,
                     align: 'center',
@@ -262,7 +262,7 @@
                             precision: 2
                         }
                     }
-                },  {
+                }, {
                     field: 'valid_date',
                     width: 180,
                     halign: 'center',
@@ -276,7 +276,7 @@
                             required: true
                         },
                     }
-                },  {
+                }, {
                     field: 'capacity',
                     width: 200,
                     halign: 'center',
@@ -486,6 +486,8 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            resizable: true,
+            remoteSort: false,
             view: detailview,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.subcont_name + '"></table></div>';
@@ -519,24 +521,24 @@
                             title: 'Share Job Order',
                             halign: 'center',
                             width: 200
-                        },  {
+                        }, {
                             field: 'type',
                             title: 'Type',
                             halign: 'center',
                             width: 130
-                        },  {
+                        }, {
                             field: 'currency',
                             title: 'Currency',
                             halign: 'center',
                             width: 100
-                        },  {
+                        }, {
                             field: 'price',
                             title: 'Price',
                             halign: 'center',
                             align: 'right',
                             width: 100,
                             formatter: priceformat
-                        },  {
+                        }, {
                             field: 'valid_date',
                             title: 'Valid Date Until',
                             halign: 'center',

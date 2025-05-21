@@ -41,27 +41,39 @@ class Barcode_divides extends CI_Controller
             $this->db->where('a.label_no', $label_no);
             $records = $this->db->get()->result_array();
             if (!$records) {
-                $this->db->select('a.*, c.receipt_date, d.number, d.name');
-                $this->db->from('barcode_divides a');
-                $this->db->join('purchase_order_labels b', 'a.reff = b.receipt_id');
-                $this->db->join('purchase_order_receipts c', 'b.receipt_id = c.receipt_id');
-                $this->db->join('item_rm d', 'c.item_rm_id = d.id');
+                $this->db->select('a.*, a.cut_off_date as receipt_date, d.number, d.name');
+                $this->db->from('new_barcode a');
+                // $this->db->join('purchase_order_labels b', 'a.reff = b.receipt_id');
+                // $this->db->join('purchase_order_receipts c', 'b.receipt_id = c.receipt_id');
+                $this->db->join('item_rm d', 'a.item_rm_id = d.id');
                 $this->db->where('a.deleted', 0);
                 $this->db->where('a.status', 0);
-                $this->db->where('a.label_divided', $label_no);
-                $this->db->group_by('a.label_divided');
+                $this->db->where('a.label_no', $label_no);
+                $this->db->group_by('a.label_no');
                 $records = $this->db->get()->result_array();
-
                 if (!$records) {
-                    $this->db->select('a.return_date as receipt_date, b.label_no, b.qty, c.number, c.name');
-                    $this->db->from('return_materials a');
-                    $this->db->join('return_material_labels b', 'a.return_id = b.return_id');
-                    $this->db->join('item_rm c', 'a.item_rm_id = c.id');
+                    $this->db->select('a.*, c.receipt_date, d.number, d.name');
+                    $this->db->from('barcode_divides a');
+                    $this->db->join('purchase_order_labels b', 'a.reff = b.receipt_id');
+                    $this->db->join('purchase_order_receipts c', 'b.receipt_id = c.receipt_id');
+                    $this->db->join('item_rm d', 'c.item_rm_id = d.id');
                     $this->db->where('a.deleted', 0);
                     $this->db->where('a.status', 0);
-                    $this->db->where('b.label_no', $label_no);
-                    $this->db->group_by('b.label_no');
+                    $this->db->where('a.label_divided', $label_no);
+                    $this->db->group_by('a.label_divided');
                     $records = $this->db->get()->result_array();
+    
+                    if (!$records) {
+                        $this->db->select('a.return_date as receipt_date, b.label_no, b.qty, c.number, c.name');
+                        $this->db->from('return_materials a');
+                        $this->db->join('return_material_labels b', 'a.return_id = b.return_id');
+                        $this->db->join('item_rm c', 'a.item_rm_id = c.id');
+                        $this->db->where('a.deleted', 0);
+                        $this->db->where('a.status', 0);
+                        $this->db->where('b.label_no', $label_no);
+                        $this->db->group_by('b.label_no');
+                        $records = $this->db->get()->result_array();
+                    }
                 }
             }
             //Mapping Data

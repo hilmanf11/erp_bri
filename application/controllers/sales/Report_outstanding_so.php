@@ -139,17 +139,33 @@ class Report_outstanding_so extends CI_Controller
                 <br>';
 
         if ($filter_display == "RECAP") {
-            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, SUM(a.qty) as qty_order, SUM(a.delivery) as qty_delivery, SUM(a.outstanding) as qty_outstanding, b.number as customer_number, b.name as customer_name');
+            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, SUM(a.qty) as qty_order, SUM(a.delivery) as qty_delivery, SUM(a.outstanding) as qty_outstanding, b.name as customer_name');
             $this->db->from('sales_orders a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
-            $this->db->like('a.customer_id', $filter_customer_name);
-            $this->db->like('a.item_fg_id', $filter_item_fg);
-            $this->db->like('a.customer_order_no', $filter_customer_order_no);
-            $this->db->like('a.sales_order_no', $filter_sales_order_no);
-            $this->db->like('a.division', $filter_division);
-            $this->db->order_by('a.status', 'ASC');
+
+            // Filter by customer name
+            if (!empty($filter_customer_name)) {
+                $this->db->like('a.customer_id', $filter_customer_name);
+            }
+
+            // Filter by item_fg
+            if (!empty($filter_item_fg)) {
+                $this->db->like('a.item_fg_id', $filter_item_fg);
+            }
+
+            // Filter by sales_order_no
+            if (!empty($filter_sales_order_no)) {
+                $this->db->like('a.sales_order_no', $filter_sales_order_no);
+            }
+
+            // Filter by customer_order_no
+            if (!empty($filter_customer_order_no)) {
+                $this->db->like('a.customer_order_no', $filter_customer_order_no);
+            }
+
             $this->db->group_by('a.sales_order_no');
+            $this->db->order_by('a.status', 'ASC');
             $records = $this->db->get()->result_array();
 
             $html .= '<table id="customers" border="1">
@@ -183,13 +199,13 @@ class Report_outstanding_so extends CI_Controller
 
                 $html .= '<tr>
                             <td>' . $no . '</td>
-                            <td>' . $data['sales_order_no'] . '</td>
-                            <td>' . $data['customer_order_no'] . '</td>
+                            <td style="mso-number-format:\@">' . $data['sales_order_no'] . '</td>
+                            <td style="mso-number-format:\@">' . $data['customer_order_no'] . '</td>
                             <td>' . $data['sales_order_date'] . '</td>
                             <td>' . $data['customer_name'] . '</td>
-                            <td>' . number_format($data['qty_order']) . '</td>
-                            <td>' . number_format($data['qty_delivery']) . '</td>
-                            <td>' . number_format($data['qty_outstanding']) . '</td>
+                            <td style="text-align:right;">' . number_format($data['qty_order'], 0, '.', '.') . '</td>
+                            <td style="text-align:right;">' . number_format($data['qty_delivery'], 0, '.', '.') . '</td>
+                            <td style="text-align:right;">' . number_format($data['qty_outstanding'], 0, '.', '.') . '</td>
                             <td>' . $status . '</td>
                         </tr>';
                 $no++;
@@ -197,29 +213,38 @@ class Report_outstanding_so extends CI_Controller
 
             $html .= '<tr>
                         <th colspan="5" style="text-align:right;">TOTAL</th>
-                        <th>' . number_format($qty_order) . '</th>
-                        <th>' . number_format($qty_delivery) . '</th>
-                        <th>' . number_format($qty_outstanding) . '</th>
+                        <th style="text-align:right;">' . number_format($qty_order, 0, '.', '.') . '</th>
+                        <th style="text-align:right;">' . number_format($qty_delivery, 0, '.', '.') . '</th>
+                        <th style="text-align:right;">' . number_format($qty_outstanding, 0, '.', '.') . '</th>
                         <th>' . $status . '</th>
                     </tr>';
         } else {
-            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, 
-                a.qty, 
-                a.delivery, 
-                a.outstanding, 
-                b.number as customer_number, 
-                b.name as customer_name,
-                c.number as item_fg_number,
-                c.name as item_fg_name');
+            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, a.qty, a.delivery, a.outstanding, b.name as customer_name, c.number as item_fg_number, c.name as item_fg_name');
             $this->db->from('sales_orders a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
             $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
-            $this->db->like('a.customer_id', $filter_customer_name);
-            $this->db->like('a.item_fg_id', $filter_item_fg);
-            $this->db->like('a.customer_order_no', $filter_customer_order_no);
-            $this->db->like('a.sales_order_no', $filter_sales_order_no);
-            $this->db->like('a.division', $filter_division);
+
+            // Filter by customer name
+            if (!empty($filter_customer_name)) {
+                $this->db->like('a.customer_id', $filter_customer_name);
+            }
+
+            // Filter by item_fg
+            if (!empty($filter_item_fg)) {
+                $this->db->like('a.item_fg_id', $filter_item_fg);
+            }
+
+            // Filter by sales_order_no
+            if (!empty($filter_sales_order_no)) {
+                $this->db->like('a.sales_order_no', $filter_sales_order_no);
+            }
+
+            // Filter by customer_order_no
+            if (!empty($filter_customer_order_no)) {
+                $this->db->like('a.customer_order_no', $filter_customer_order_no);
+            }
+
             $this->db->order_by('a.status', 'ASC');
             $records = $this->db->get()->result_array();
 
@@ -248,24 +273,24 @@ class Report_outstanding_so extends CI_Controller
 
                 $html .= '<tr>
                             <td>' . $no . '</td>
-                            <td>' . $data['item_fg_number'] . '</td>
-                            <td>' . $data['item_fg_name'] . '</td>
-                            <td>' . $data['sales_order_no'] . '</td>
-                            <td>' . $data['customer_order_no'] . '</td>
+                            <td style="mso-number-format:\@">' . $data['item_fg_number'] . '</td>
+                            <td style="mso-number-format:\@">' . $data['item_fg_name'] . '</td>
+                            <td style="mso-number-format:\@">' . $data['sales_order_no'] . '</td>
+                            <td style="mso-number-format:\@">' . $data['customer_order_no'] . '</td>
                             <td>' . $data['sales_order_date'] . '</td>
-                            <td>' . $data['customer_name'] . '</td>
-                            <td>' . number_format($data['qty']) . '</td>
-                            <td>' . number_format($data['delivery']) . '</td>
-                            <td>' . number_format($data['outstanding']) . '</td>
+                            <td style="mso-number-format:\@">' . $data['customer_name'] . '</td>
+                            <td style="text-align:right;">' . number_format($data['qty'], 0, '.', '.') . '</td>
+                            <td style="text-align:right;">' . number_format($data['delivery'], 0, '.', '.') . '</td>
+                            <td style="text-align:right;">' . number_format($data['outstanding'], 0, '.', '.') . '</td>
                         </tr>';
                 $no++;
             }
 
             $html .= '<tr>
                         <th colspan="7" style="text-align:right;">TOTAL</th>
-                        <th>' . number_format($qty_order) . '</th>
-                        <th>' . number_format($qty_delivery) . '</th>
-                        <th>' . number_format($qty_outstanding) . '</th>
+                        <th style="text-align:right;">' . number_format($qty_order, 0, '.', '.') . '</th>
+                        <th style="text-align:right;">' . number_format($qty_delivery, 0, '.', '.') . '</th>
+                        <th style="text-align:right;">' . number_format($qty_outstanding, 0, '.', '.') . '</th>
                     </tr>';
         }
 

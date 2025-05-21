@@ -3,17 +3,17 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'class',width:80,align:'center'">Class</th>
-            <th rowspan="2" data-options="field:'safety_stock',width:100,align:'center',formatter:formatPercentage">% Safety Stock</th>
-            <th rowspan="2" data-options="field:'formula',width:100,align:'center',formatter: formatFormula">Formula</th>
+            <th rowspan="2" data-options="field:'class',width:80,align:'center',sortable:true">Class</th>
+            <th rowspan="2" data-options="field:'safety_stock',width:120,align:'center',formatter:formatPercentage,sortable:true">% Safety Stock</th>
+            <th rowspan="2" data-options="field:'formula',width:100,align:'center',formatter: formatFormula,sortable:true">Formula</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -95,8 +95,8 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
-    
-    
+
+
     function formatPercentage(value, row, index) {
         if (value !== null) {
             return value + "%";
@@ -127,6 +127,8 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            remoteSort: false,
+            resizeable: true,
         }).datagrid('enableFilter');
 
         //SAVE DATA
@@ -159,29 +161,27 @@
 
     // Fungsi formatter untuk mengganti karakter '<' dengan '&lt;'
     function formatFormula(value, row, index) {
-            // Ganti karakter '<' dengan '&lt;'
-            value = value.replace(/</g, '&lt;');
-            return value;
-        }
+        // Ganti karakter '<' dengan '&lt;'
+        value = value.replace(/</g, '&lt;');
+        return value;
+    }
 
-        $(function () {
-            // Data sumber untuk datagrid
-            var data = [
-                {
-                    formula: "2<X<5"
-                },
-                {
-                    formula: "1<X<2"
-                },
-                {
-                    formula: "X<1"
-                },
-            ];
+    $(function() {
+        // Data sumber untuk datagrid
+        var data = [{
+                formula: "2<X<5"
+            },
+            {
+                formula: "1<X<2"
+            },
+            {
+                formula: "X<1"
+            },
+        ];
 
-            // Inisialisasi datagrid
-            $('#dg').datagrid({
-                data: data
-            });
+        // Inisialisasi datagrid
+        $('#dg').datagrid({
+            data: data
         });
-
+    });
 </script>

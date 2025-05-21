@@ -108,23 +108,26 @@ class Item_receipts extends CI_Controller
     {
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
-                $post   = $this->input->post();
+                $post = $this->input->post();
                 $item_receipts = $this->crud->read("scan_item_receipts", [], ["label_no" => $post['label_no']]);
                 if (!$item_receipts) {
-                    $send   = $this->crud->create('scan_item_receipts', $post);
+                    $send = $this->crud->create('scan_item_receipts', $post);
                     if ($send) {
-                        $update   = $this->crud->update('purchase_order_labels', ["label_no" => $post['label_no']], ["status" => 1]);
-                        $update   = $this->crud->update('return_material_labels', ["label_no" => $post['label_no']], ["status" => 1]);
-                        echo $send;
+                        $this->crud->update('purchase_order_labels', ["label_no" => $post['label_no']], ["status" => 1]);
+                        $this->crud->update('return_material_labels', ["label_no" => $post['label_no']], ["status" => 1]);
+                        $this->crud->queryUpdateOSPO($post['label_no']);
+                        echo json_encode(array("title" => "Success", "message" => "Data successfully saved", "theme" => "success"));
+                    } else {
+                        echo json_encode(array("title" => "Error", "message" => "Failed to save data", "theme" => "error"));
                     }
                 } else {
                     echo json_encode(array("title" => "Available", "message" => "Data Label No has been Scanned", "theme" => "error"));
                 }
             } else {
-                show_error(validation_errors());
+                echo json_encode(array("title" => "Validation Error", "message" => validation_errors(), "theme" => "error"));
             }
         } else {
-            show_error("Cannot Process your request");
+            echo json_encode(array("title" => "Error", "message" => "Cannot Process your request", "theme" => "error"));
         }
     }
 }

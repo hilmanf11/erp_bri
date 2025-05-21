@@ -15,22 +15,35 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'supplier_name',width:550,halign:'center'">Supplier Name</th>
-            <th rowspan="2" data-options="field:'type',width:100,halign:'center'">Type</th>
-            <th rowspan="2" data-options="field:'currency',width:100,halign:'center'">Currency</th>
-            <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
-            <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', align:'center', styler:styleApproved, formatter:formatApproved">Approval</th>
+            <th rowspan="2" data-options="field:'status',width:100,align:'center',sortable:true,styler:cellStyler,formatter:cellFormatter,sortable:true">Status</th>
+            <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center',align:'center',sortable:true,styler:styleApproved,formatter:formatApproved,sortable:true">Approval</th>
+            <th rowspan="2" data-options="field:'supplier_name',width:200,halign:'center',sortable:true">Supplier Name</th>
+            <th rowspan="2" data-options="field:'item_rm_number',width:100,halign:'center',sortable:true">Part No</th>
+            <th rowspan="2" data-options="field:'item_rm_name',width:150,halign:'center',sortable:true">Part Name</th>
+            <th rowspan="2" data-options="field:'maker',width:100,halign:'center',sortable:true">Maker</th>
+            <th rowspan="2" data-options="field:'item_supplier',width:200,halign:'center',sortable:true">Supplier Product</th>
+            <th rowspan="2" data-options="field:'item_family_name',width:120,halign:'center',sortable:true">Product Family</th>
+            <th rowspan="2" data-options="field:'mpq',width:100,halign:'center',sortable:true">MPQ</th>
+            <th rowspan="2" data-options="field:'moq',width:100,halign:'center',sortable:true">MOQ</th>
+            <th rowspan="2" data-options="field:'share_order',width:100,halign:'center',sortable:true">Share Order</th>
+            <th rowspan="2" data-options="field:'leadtime',width:100,halign:'center',sortable:true">Leadtime</th>
+            <th rowspan="2" data-options="field:'price',width:100,halign:'center',align:'right',sortable:true">Price</th>
+            <th rowspan="2" data-options="field:'type',width:100,halign:'center',sortable:true">Type</th>
+            <th rowspan="2" data-options="field:'supplier_currency',width:100,halign:'center',sortable:true">Currency</th>
+            <th rowspan="2" data-options="field:'valid_date',width:100,halign:'center',sortable:true">Valid Date</th>
+            <th rowspan="2" data-options="field:'safety_stock',width:120,halign:'center',sortable:true">Safety Stock %</th>
+            <th rowspan="2" data-options="field:'calculate',width:120,halign:'center',sortable:true">Calculate MPQ</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Approved</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:120,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:120,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'approved_by',width:120,align:'center'"> By</th>
-            <th data-options="field:'approved_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:120,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:120,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'approved_by',width:120,align:'center',sortable:true"> By</th>
+            <th data-options="field:'approved_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -317,7 +330,10 @@
                     }
                 }]
             ],
-            onClickCell: onClickCell
+            onClickCell: onClickCell,
+            onLoadSuccess: function(data) {
+                localStorage.setItem('previousData', JSON.stringify(data.rows));
+            }
         });
     }
 
@@ -385,8 +401,7 @@
             method: 'post',
             url: '<?= base_url('master/supplier_items/delete') ?>',
             data: {
-                supplier_id: row.supplier_id,
-                item_rm_id: item_rm_id
+                id: row.id
             },
             success: function(result) {
                 var result = eval('(' + result + ')');
@@ -431,7 +446,7 @@
                             method: 'post',
                             url: '<?= base_url('master/supplier_items/delete') ?>',
                             data: {
-                                supplier_id: row.supplier_id
+                                id: row.id
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
@@ -502,118 +517,45 @@
         addTable();
 
         //SETTING DATAGRID EASYUI
+        var filter_supplier_id = $("#filter_supplier_id").combogrid('getValue');
+        var filter_item_rm_id = $("#filter_item_rm_id").combogrid('getValue');
+        url = "?filter_supplier_id=" + window.btoa(filter_supplier_id) + "&filter_item_rm_id=" + window.btoa(filter_item_rm_id);
         $('#dg').datagrid({
-            url: '<?= base_url('master/supplier_items/datatables') ?>',
+            url: '<?= base_url('master/supplier_items/datatables') ?>' + url,
             pagination: true,
             rownumbers: true,
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
-            view: detailview,
-            detailFormatter: function(index, row) {
-                return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.supplier_name + '"></table></div>';
-            },
-            onExpandRow: function(index, row) {
-                var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
-                var filter_item_rm_id = $("#filter_item_rm_id").combogrid('getValue');
-
-                ddv.datagrid({
-                    url: '<?= base_url('master/supplier_items/datatableDetails?number=') ?>' + window.btoa(row.supplier_number) + "&filter_item_rm_id=" + window.btoa(filter_item_rm_id),
-                    singleSelect: true,
-                    rownumbers: true,
-                    columns: [
-                        [{
-                            field: 'item_rm_id',
-                            title: 'Part ID',
-                            halign: 'center',
-                            width: 150
-                        }, {
-                            field: 'item_rm_number',
-                            title: 'Part No.',
-                            halign: 'center',
-                            width: 150
-                        }, {
-                            field: 'item_rm_name',
-                            title: 'Part Name',
-                            halign: 'center',
-                            width: 200
-                        }, {
-                            field: 'maker',
-                            title: 'Maker',
-                            halign: 'center',
-                            width: 150
-                        }, {
-                            field: 'item_supplier',
-                            title: 'Supplier Product',
-                            halign: 'center',
-                            width: 150
-                        }, {
-                            field: 'item_family_name',
-                            title: 'Product Family',
-                            halign: 'center',
-                            width: 150
-                        }, {
-                            field: 'mpq',
-                            title: 'MPQ',
-                            halign: 'center',
-                            width: 80
-                        }, {
-                            field: 'moq',
-                            title: 'MOQ',
-                            halign: 'center',
-                            width: 80
-                        }, {
-                            field: 'share_order',
-                            title: 'Share Order %',
-                            halign: 'center',
-                            width: 100
-                        }, {
-                            field: 'leadtime',
-                            title: 'Leadtime',
-                            halign: 'center',
-                            width: 100
-                        }, {
-                            field: 'price',
-                            title: 'Price',
-                            halign: 'center',
-                            align: 'right',
-                            width: 100,
-                            formatter: priceformat
-                        }, {
-                            field: 'btn',
-                            title: 'History',
-                            halign: 'center',
-                            width: 80,
-                            formatter: btnHistories
-                        }, {
-                            field: 'valid_date',
-                            title: 'Valid Date',
-                            halign: 'center',
-                            width: 100
-                        }, {
-                            field: 'safety_stock',
-                            title: 'Safet Stock %',
-                            width: 100,
-                            halign: 'center',
-                        }, {
-                            field: 'calculate',
-                            title: 'Calculate MPQ',
-                            width: 100,
-                            halign: 'center',
-                        }]
-                    ],
-                    onResize: function() {
-                        $('#dg').datagrid('fixDetailRowHeight', index);
-                    },
-                    onLoadSuccess: function() {
-                        setTimeout(function() {
-                            $('#dg').datagrid('fixDetailRowHeight', index);
-                        }, 0);
-                    }
-                });
-                $('#dg').datagrid('fixDetailRowHeight', index);
-            }
+            resizable: true,
+            remoteSort: false,
         });
+
+        function findChangedIndices(previousArray, newArray) {
+            var changedIndices = [];
+
+            for (var i = 0; i < previousArray.length; i++) {
+                // Assume each item is an object and we're comparing all properties
+                var previousItem = previousArray[i];
+                var newItem = newArray[i];
+
+                if (JSON.stringify(previousItem) !== JSON.stringify(newItem)) {
+                    changedIndices.push(i);
+                }
+            }
+
+            return changedIndices;
+        }
+
+        function checkForChanges() {
+            const previousData = localStorage.getItem('previousData');
+            if (previousData) {
+                const storedData = JSON.parse(previousData);
+                var newData = $('#dg2').datagrid('getData').rows;
+                var changedIndices = findChangedIndices(storedData, newData);
+                return changedIndices;
+            }
+        }
 
         //SAVE DATA
         $('#dlg_insert').dialog({
@@ -626,44 +568,89 @@
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
                     endEditing();
-
-                    for (let i = 0; i < totalrows; i++) {
-                        if (rows[i].item_rm_id) {
+                    let dataUpdated = checkForChanges();
+                    if (dataUpdated.length > 0) {
+                        localStorage.removeItem('previousData');
+                        dataUpdated.forEach(index => {
                             $.ajax({
                                 type: "post",
                                 url: '<?= base_url('master/supplier_items/create') ?>',
                                 data: {
                                     supplier_id: supplier_id,
-                                    item_rm_id: rows[i].item_rm_id,
-                                    maker: rows[i].maker,
-                                    item_supplier: rows[i].item_supplier,
-                                    mpq: rows[i].mpq,
-                                    moq: rows[i].moq,
-                                    share_order: rows[i].share_order,
-                                    leadtime: rows[i].leadtime,
-                                    price: rows[i].price,
-                                    valid_date: rows[i].valid_date,
-                                    safety_stock: rows[i].safety_stock,
-                                    calculate: rows[i].calculate
+                                    item_rm_id: rows[index].item_rm_id,
+                                    maker: rows[index].maker,
+                                    item_supplier: rows[index].item_supplier,
+                                    mpq: rows[index].mpq,
+                                    moq: rows[index].moq,
+                                    share_order: rows[index].share_order,
+                                    leadtime: rows[index].leadtime,
+                                    price: rows[index].price,
+                                    valid_date: rows[index].valid_date,
+                                    safety_stock: rows[index].safety_stock,
+                                    calculate: rows[index].calculate
                                 },
                                 dataType: "json",
                                 success: function(result) {
-                                    if (i == (totalrows - 1)) {
-                                        Swal.fire({
-                                            title: result.message,
-                                            icon: result.theme,
-                                            confirmButtonText: 'Ok',
-                                            allowOutsideClick: false,
-                                        }).then((result) => {
-                                            if (result.isConfirmed) {
-                                                window.location.reload();
-                                            }
-                                        });
-                                    }
+                                    // if (i == (totalrows - 1)) {
+                                    Swal.fire({
+                                        title: result.message,
+                                        icon: result.theme,
+                                        confirmButtonText: 'Ok',
+                                        allowOutsideClick: false,
+                                    }).then((result) => {
+                                        if (result.isConfirmed) {
+                                            window.location.reload();
+                                        }
+                                    });
+                                    // }
                                 }
                             });
+                        });
+                    } else {
+
+                        localStorage.removeItem('previousData');
+
+                        for (let i = 0; i < totalrows; i++) {
+                            if (rows[i].item_rm_id) {
+                                $.ajax({
+                                    type: "post",
+                                    url: '<?= base_url('master/supplier_items/create') ?>',
+                                    data: {
+                                        supplier_id: supplier_id,
+                                        item_rm_id: rows[i].item_rm_id,
+                                        maker: rows[i].maker,
+                                        item_supplier: rows[i].item_supplier,
+                                        mpq: rows[i].mpq,
+                                        moq: rows[i].moq,
+                                        share_order: rows[i].share_order,
+                                        leadtime: rows[i].leadtime,
+                                        price: rows[i].price,
+                                        valid_date: rows[i].valid_date,
+                                        safety_stock: rows[i].safety_stock,
+                                        calculate: rows[i].calculate
+                                    },
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (i == (totalrows - 1)) {
+                                            Swal.fire({
+                                                title: result.message,
+                                                icon: result.theme,
+                                                confirmButtonText: 'Ok',
+                                                allowOutsideClick: false,
+                                            }).then((result) => {
+                                                if (result.isConfirmed) {
+                                                    window.location.reload();
+                                                }
+                                            });
+                                        }
+                                    }
+                                });
+                            }
                         }
+
                     }
+
+
 
                     $('#dg').datagrid('reload');
                     $('#dlg_insert').dialog('close');
@@ -671,6 +658,63 @@
             }]
         });
     });
+
+    //     //SAVE DATA
+    //     $('#dlg_insert').dialog({
+    //         buttons: [{
+    //             text: 'Save All',
+    //             iconCls: 'icon-ok',
+    //             handler: function() {
+    //                 var supplier_id = $("#supplier_id").combogrid('getValue');
+
+    //                 var rows = $('#dg2').datagrid('getRows');
+    //                 var totalrows = rows.length;
+    //                 endEditing();
+
+    //                 for (let i = 0; i < totalrows; i++) {
+    //                     if (rows[i].item_rm_id) {
+    //                         $.ajax({
+    //                             type: "post",
+    //                             url: '<?= base_url('master/supplier_items/create') ?>',
+    //                             data: {
+    //                                 supplier_id: supplier_id,
+    //                                 item_rm_id: rows[i].item_rm_id,
+    //                                 maker: rows[i].maker,
+    //                                 item_supplier: rows[i].item_supplier,
+    //                                 mpq: rows[i].mpq,
+    //                                 moq: rows[i].moq,
+    //                                 share_order: rows[i].share_order,
+    //                                 leadtime: rows[i].leadtime,
+    //                                 price: rows[i].price,
+    //                                 valid_date: rows[i].valid_date,
+    //                                 safety_stock: rows[i].safety_stock,
+    //                                 calculate: rows[i].calculate
+    //                             },
+    //                             dataType: "json",
+    //                             success: function(result) {
+    //                                 if (i == (totalrows - 1)) {
+    //                                     Swal.fire({
+    //                                         title: result.message,
+    //                                         icon: result.theme,
+    //                                         confirmButtonText: 'Ok',
+    //                                         allowOutsideClick: false,
+    //                                     }).then((result) => {
+    //                                         if (result.isConfirmed) {
+    //                                             window.location.reload();
+    //                                         }
+    //                                     });
+    //                                 }
+    //                             }
+    //                         });
+    //                     }
+    //                 }
+
+    //                 $('#dg').datagrid('reload');
+    //                 $('#dlg_insert').dialog('close');
+    //             }
+    //         }]
+    //     });
+    // });
 
     $('#supplier_id').combogrid({
         url: '<?= base_url('master/suppliers/reads/'); ?>',

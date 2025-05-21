@@ -3,18 +3,18 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'number',width:80,align:'center'">Code</th>
-            <th rowspan="2" data-options="field:'name',width:100,align:'center'">Name</th>
-            <th rowspan="2" data-options="field:'description',width:200,align:'center'">Description</th>
+            <th rowspan="2" data-options="field:'number',width:80,align:'center',sortable:true">Code</th>
+            <th rowspan="2" data-options="field:'name',width:100,align:'center',sortable:true">Name</th>
+            <th rowspan="2" data-options="field:'description',width:200,align:'center',sortable:true">Description</th>
             <!-- <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th> -->
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -58,7 +58,7 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/line_productions/create') ?>';
         $('#frm_insert').form('clear');
-        
+
         $('#status').combobox('setValue', '0');
 
     }
@@ -105,8 +105,8 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
-    
-    
+
+
     function formatPercentage(value, row, index) {
         if (value !== null) {
             return value + "%";
@@ -127,7 +127,7 @@
         window.location.reload();
     }
     $(function() {
-        
+
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
             url: '<?= base_url('master/line_productions/datatables') ?>',
@@ -135,9 +135,11 @@
             clientPaging: false,
             remoteFilter: true,
             rownumbers: true,
-            fit:true,
+            fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            remoteSort: false,
+            resizeable: true,
         }).datagrid('enableFilter');
 
         //SAVE DATA
@@ -175,7 +177,7 @@
         return value;
     }
 
-        //CELLSTYLE STATUS
+    //CELLSTYLE STATUS
     function cellStyler(value, row, index) {
         if (value == 0) {
             return 'background: #53D636; color:white;';
@@ -191,5 +193,4 @@
             return 'Not Active';
         }
     };
-
 </script>

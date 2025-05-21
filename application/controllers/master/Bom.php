@@ -1,6 +1,15 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Font;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\RichText\RichText;
+use PhpOffice\PhpSpreadsheet\RichText\Run;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+
 class Bom extends CI_Controller
 {
     public function __construct()
@@ -28,6 +37,20 @@ class Bom extends CI_Controller
             redirect('error_access');
         }
     }
+    private function format_number($number) {
+        //Check if the number contains a comma or period as decimal separator
+        if (strpos($number, '.') !== false) {
+            $formatted_number = str_replace(',', '.', $number);
+            $formatted_number = str_replace('.', ',', $formatted_number);
+        } elseif (strpos($number, ',') !== false) {
+            $formatted_number = str_replace('.', ',', $number);
+            $formatted_number = str_replace(',', '.', $formatted_number);
+        } else {
+            $formatted_number = $number;
+        }
+    
+        return $formatted_number;
+    }
     //GET DATA
     public function reads()
     {
@@ -42,6 +65,14 @@ class Bom extends CI_Controller
         $post = $this->input->post();
         $item_fg = $this->crud->read("item_fg", [], ["id" => $post['item_fg_id']]);
         echo json_encode($item_fg);
+    }
+    
+    //GET DATA
+    public function readUoM()
+    {
+        $post = $this->input->post();
+        $uom = $this->crud->reads("uom", [], ["deleted"=>0]);
+        echo json_encode($uom);
     }
 
     //GET DATA
@@ -98,17 +129,21 @@ class Bom extends CI_Controller
             $number = base64_decode($this->input->get('number'));
             $filter_item_rm_id = base64_decode($this->input->get('filter_item_rm_id'));
 
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.name as item_rm_name, e.name as process_name, c.uom as uom, c.item_family_id as product_family, d.name as product_family_name');
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.name as item_rm_name, e.name as process_name, a.uom as uom, c.item_family_id as product_family, d.name as product_family_name, (CASE WHEN a.type = "1" THEN "ORIGINAL" WHEN a.type = "2" THEN "RECYCLE" WHEN a.type = "3" THEN "BOTH" ELSE "INVALID" END) as type_name, CASE WHEN a.composition = FLOOR(a.composition) THEN FORMAT(CAST(FLOOR(a.composition) AS CHAR),0) ELSE FORMAT(CAST(a.composition AS CHAR),2) END AS formatted_composition');
             $this->db->from('bom a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
             $this->db->join('item_familys d', 'c.item_family_id = d.id');
             $this->db->join('item_process e', 'a.process_id = e.id');
+            $this->db->join('uom f', 'a.uom = f.name','left');
             $this->db->where('b.number', $number);
             $this->db->like('a.item_rm_id', $filter_item_rm_id);
             $this->db->group_by('a.id');
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
+            foreach ($records as &$record) {
+                $record['formatted_composition'] = $this->format_number($record['formatted_composition']);
+            }
 
             echo json_encode($records);
         }
@@ -120,7 +155,7 @@ class Bom extends CI_Controller
         if ($this->input->get()) {
             $item_fg_id = base64_decode($this->input->get('item_fg_id'));
 
-            $this->db->select('a.*, c.number as item_rm_number, c.name as item_rm_name, c.uom, d.name as item_family_name');
+            $this->db->select('a.*, c.number as item_rm_number, c.name as item_rm_name, a.uom, d.name as item_family_name, (CASE WHEN a.type = "1" THEN "ORIGINAL" WHEN a.type = "2" THEN "RECYCLE" WHEN a.type = "3" THEN "BOTH" ELSE "INVALID" END) as type_name, CASE WHEN a.composition = FLOOR(a.composition) THEN FORMAT(CAST(FLOOR(a.composition) AS CHAR),0) ELSE FORMAT(CAST(a.composition AS CHAR),2) END AS formatted_composition');
             $this->db->from('bom a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
@@ -128,7 +163,7 @@ class Bom extends CI_Controller
             $this->db->where('a.item_fg_id', $item_fg_id);
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
-
+            
             echo json_encode($records);
         }
     }
@@ -139,6 +174,7 @@ class Bom extends CI_Controller
         if ($this->input->post()) {
             $post = $this->input->post();
 
+            // Simpan data ke database
             $bom = $this->crud->read("bom", [], ["item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']]);
             if (@$bom->item_fg_id != "") {
                 $send = $this->crud->update('bom', ["item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']], $post);
@@ -162,29 +198,53 @@ class Bom extends CI_Controller
     //UPLOAD DATA
     public function upload()
     {
-        error_reporting(0);
-        require_once 'assets/vendors/excel_reader2.php';
         $target = basename($_FILES['file_upload']['name']);
         move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
-        chmod($_FILES['file_upload']['name'], 0777);
-        $file = $_FILES['file_upload']['name'];
-        $data = new Spreadsheet_Excel_Reader($file, false);
-        $total_row = $data->rowcount($sheet_index = 0);
-        for ($i = 3; $i <= $total_row; $i++) {
+        chmod($target, 0777);
+        $spreadsheet = IOFactory::load($target);
+        $sheet = $spreadsheet->getActiveSheet();
+        $totalRows = $sheet->getHighestDataRow();
+        
+        $datas = [];
+        for ($i = 3; $i <= $totalRows; $i++) {
             $datas[] = array(
-                //excel
-                'item_fg_id' => $data->val($i, 2),
-                'item_rm_id' => $data->val($i, 3),
-                'item_process_id' => $data->val($i, 4),
-                'type' => $data->val($i, 5),
-                'recyle' => $data->val($i, 6),
-                'composition' => $data->val($i, 7),
-                'priority' => $data->val($i, 8)
+                'item_fg_id' => $sheet->getCell('B' . $i)->getValue(),
+                'item_rm_id' => $sheet->getCell('C' . $i)->getValue(),
+                'item_process_id' => $sheet->getCell('D' . $i)->getValue(),
+                'type' => $sheet->getCell('E' . $i)->getValue(),
+                'uom' => $sheet->getCell('F' . $i)->getValue(),
+                'recyle' => $sheet->getCell('G' . $i)->getValue(),
+                'composition' => $sheet->getCell('H' . $i)->getValue(),
+                'priority' => $sheet->getCell('I' . $i)->getValue(),
             );
         }
+    
         $datas['total'] = count($datas);
         echo json_encode($datas);
-        unlink($_FILES['file_upload']['name']);
+        unlink($target);
+        // error_reporting(0);
+        // require_once 'assets/vendors/excel_reader2.php';
+        // $target = basename($_FILES['file_upload']['name']);
+        // move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
+        // chmod($_FILES['file_upload']['name'], 0777);
+        // $file = $_FILES['file_upload']['name'];
+        // $data = new Spreadsheet_Excel_Reader($file, false);
+        // $total_row = $data->rowcount($sheet_index = 0);
+        // for ($i = 3; $i <= $total_row; $i++) {
+        //     $datas[] = array(
+        //         //excel
+        //         'item_fg_id' => $data->val($i, 2),
+        //         'item_rm_id' => $data->val($i, 3),
+        //         'item_process_id' => $data->val($i, 4),
+        //         'type' => $data->val($i, 5),
+        //         'recyle' => $data->val($i, 6),
+        //         'composition' => $data->val($i, 7),
+        //         'priority' => $data->val($i, 8)
+        //     );
+        // }
+        // $datas['total'] = count($datas);
+        // echo json_encode($datas);
+        // unlink($_FILES['file_upload']['name']);
     }
 
     public function uploadclearFailed()
@@ -232,6 +292,7 @@ class Bom extends CI_Controller
 
 
             $bom = $this->crud->read('bom', [], ["item_fg_id" => $data['item_fg_id'], "item_rm_id" => $data['item_rm_id']]);
+            $uom = $this->crud->read('uom', [], ["name" => $data['uom'], "deleted" => 0]);
 
             if (empty($item_fg->id)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_fg_id'] . " Not Found", "theme" => "error"));
@@ -245,6 +306,8 @@ class Bom extends CI_Controller
                 //     echo json_encode(array("title" => "Alert", "message" => "Part ID" . $data['item_rm_id'] . " Product Family is VIRGIN ", "theme" => "error"));
             } elseif (!empty($bom->item_rm_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => "Part ID" . $data['item_rm_id'] . " is Duplicate Data", "theme" => "error"));
+            } elseif (empty($uom->name)) {
+                echo json_encode(array("title" => "Not Found", "message" => "UoM" . $data['uom'] . " Not Found", "theme" => "error"));
             } else {
                 // Hitung nilai untuk field composition
                 // $weight = $item_fg->weight;
@@ -267,19 +330,21 @@ class Bom extends CI_Controller
                     "item_rm_id" => $data['item_rm_id'],
                     "process_id" => $data['item_process_id'],
                     "type" => $data['type'],
+                    "uom" => $data['uom'],
                     "recyle" => $data['recyle'],
                     "priority" => $data['priority'],
+                    "composition" => $data['composition'],
                 );
 
-                if ($item_rm->item_family_id == 'P06') {
-                    if ($runner == 0) {
-                        $dataFinal['composition'] = 0;
-                    } else {
-                        $dataFinal['composition'] = (floatval($weight) + floatval($runner / $cavity_standard));
-                    }
-                } elseif ($item_rm->item_family_id != 'P06') {
-                    $dataFinal['composition'] = $data['composition'];
-                }
+                // if ($item_rm->item_family_id == 'P06') {
+                //     if ($runner == 0) {
+                //         $dataFinal['composition'] = 0;
+                //     } else {
+                //         $dataFinal['composition'] = (floatval($weight) + floatval($runner / $cavity_standard));
+                //     }
+                // } elseif ($item_rm->item_family_id != 'P06') {
+                //     $dataFinal['composition'] = $data['composition'];
+                // }
 
                 $send   = $this->crud->create('bom', $dataFinal);
                 echo $send;
@@ -305,7 +370,7 @@ class Bom extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.name as item_rm_name, e.name as process_name, c.item_family_id as product_family, c.uom as uom, , d.name as product_family_name');
+        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.name as item_rm_name, e.name as process_name, c.item_family_id as product_family, a.uom as uom, , d.name as product_family_name, CASE WHEN a.composition = FLOOR(a.composition) THEN FORMAT(CAST(FLOOR(a.composition) AS CHAR),0) ELSE FORMAT(CAST(a.composition AS CHAR),2) END AS formatted_composition');
         $this->db->from('bom a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
@@ -371,11 +436,194 @@ class Bom extends CI_Controller
                     <td>' . $data['recyle'] . '</td>
                     <td>' . $data['product_family_name'] . '</td>
                     <td>' . $data['uom'] . '</td>
-                    <td>' . $data['composition'] . '</td>
+                    <td>' . $this->format_number($data['formatted_composition']) . '</td>
                     <td>' . $data['priority'] . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';
         echo $html;
+    }
+    public function exportTemplate() {
+        // $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $spreadsheet = new Spreadsheet();
+        $comments = [
+            'B2' => ['admin:','Fill with ID Finish Good'],
+            'C2' => ['admin:','Fill with ID Raw Material'],
+            'D2' => ['admin:','Fill with ID Process from Master Process'],
+            'E2' => ['admin:','1 = Original', '2 = Recycle', '3 = Both'],
+            'F2' => ['admin:','Fill with Name from Master Unit Of Measure'],
+            'G2' => ['admin:','If','Type = 1, Recycle = 0','Type = 2, Recycle = 100','Type = 3, Recycle = x'],                           // Comment for F2
+            'H2' => ['admin:','Fill wih qty need per item (only number)'],
+            'I2' => ['admin:','1 = main priority', '2 = optional'],
+        ]; 
+        // Add template to the first sheet
+        $templateSheet = $spreadsheet->getActiveSheet();
+        $templateSheet->setTitle('BOM');
+        $templateSheet->mergeCells('A1:I1');
+        $templateSheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        $templateSheet->getStyle('A1')->getFont()->setSize(16) ->setBold(true);
+        $templateSheet->getColumnDimension('A')->setWidth(10);
+        $templateSheet->getColumnDimension('B')->setWidth(25);
+        $templateSheet->getColumnDimension('C')->setWidth(25);
+        $templateSheet->getColumnDimension('D')->setWidth(25);
+        $templateSheet->getColumnDimension('E')->setWidth(25);
+        $templateSheet->getColumnDimension('F')->setWidth(25);
+        $templateSheet->getColumnDimension('G')->setWidth(25);
+        $templateSheet->getColumnDimension('H')->setWidth(25);
+        $templateSheet->getColumnDimension('I')->setWidth(25);
+        $templateSheet->setCellValue('A1', 'TEMPLATE UPLOAD BOM');
+        $templateSheet->setCellValue('A2', 'No');
+        $templateSheet->setCellValue('B2', 'PRODUCT ID');
+        $templateSheet->setCellValue('C2', 'PART ID');
+        $templateSheet->setCellValue('D2', 'ID PROCESS');
+        $templateSheet->setCellValue('E2', 'TYPE');
+        $templateSheet->setCellValue('F2', 'UOM');
+        $templateSheet->setCellValue('G2', 'RECYCLE');
+        $templateSheet->setCellValue('H2', 'COMPOSITION');
+        $templateSheet->setCellValue('I2', 'PRIORITY');
+        $templateSheet->getStyle('A2:I2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        $templateSheet->getStyle('A2')->getFont()->setBold(true);
+        $templateSheet->getStyle('B2:G2')->getFont()->setBold(true)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED);
+        $templateSheet->getStyle('H2')->getFont()->setBold(true);
+        $templateSheet->getStyle('I2')->getFont()->setBold(true);
+        $templateSheet->getStyle('A2:I2')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        foreach ($comments as $cell => $commentLines) {
+            $richText = new RichText();
+            foreach ($commentLines as $index => $line) {
+                $run = new Run($line);
+                $run->getFont()->setSize(9);
+                $run->getFont()->setName('Times New Roman');
+
+                if ($index === 0) {
+                    $run->getFont()->setBold(true);
+                }
+        
+                $richText->createText($line);
+                if ($index < count($commentLines) - 1) {
+                    $richText->createText("\n");
+                }
+            }
+        
+            $comment = $templateSheet->getComment($cell);
+            $comment->setText($richText);
+            $comment->setWidth('135px');
+            $comment->setHeight('120px');
+            $comment->setAuthor('Author Name');
+        }
+        // Second Sheet: Product (FG)
+        $item_fgSheet = $spreadsheet->createSheet(1);
+        $item_fgSheet->setTitle('Product (FG)');
+
+        // Fetch data from the item_fg table
+        $item_fg = $this->db->get('item_fg')->result_array();
+        $item_fgSheet->getColumnDimension('A')->setWidth(10);
+        $item_fgSheet->getColumnDimension('B')->setWidth(25);
+        $item_fgSheet->getColumnDimension('C')->setWidth(25);
+        $item_fgSheet->getColumnDimension('D')->setWidth(25);
+
+        // Set header
+        $item_fgSheet->setCellValue('A1', 'No');
+        $item_fgSheet->setCellValue('B1', 'Product ID');
+        $item_fgSheet->setCellValue('C1', 'Product No');
+        $item_fgSheet->setCellValue('D1', 'Product Name');
+        $item_fgSheet->getStyle('A1:D1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        $item_fgSheet->getStyle('A1:D1')->getFont()->setBold(true);
+        $item_fgSheet->getStyle('A1:D1')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+
+        // Populate the data
+        $rowItem_fg = 2;
+        $rowNumItem_fg = 1;
+        foreach ($item_fg as $itemfg) {
+            $item_fgSheet->setCellValue('A' . $rowItem_fg, $rowNumItem_fg);
+            $item_fgSheet->setCellValue('B' . $rowItem_fg, $itemfg['id']);
+            $item_fgSheet->setCellValue('C' . $rowItem_fg, $itemfg['number']);
+            $item_fgSheet->setCellValue('D' . $rowItem_fg, $itemfg['name']);
+            $item_fgSheet->getStyle('A' . $rowItem_fg . ':C' . $rowItem_fg)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+            $item_fgSheet->getStyle('D' . $rowItem_fg)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+            $item_fgSheet->getStyle('A' . $rowItem_fg . ':D' . $rowItem_fg)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+            $rowItem_fg++;
+            $rowNumItem_fg++;
+        }
+
+        // Third Sheet: Part (RM)
+        $item_rmSheet = $spreadsheet->createSheet(2);
+        $item_rmSheet->setTitle('Part (RM)');
+
+        // Fetch data from the item_rm table
+        $item_rm = $this->db->get('item_rm')->result_array();
+        $item_rmSheet->getColumnDimension('A')->setWidth(10);
+        $item_rmSheet->getColumnDimension('B')->setWidth(25);
+        $item_rmSheet->getColumnDimension('C')->setWidth(25);
+        $item_rmSheet->getColumnDimension('D')->setWidth(50);
+
+        // Set header
+        $item_rmSheet->setCellValue('A1', 'No');
+        $item_rmSheet->setCellValue('B1', 'Part ID');
+        $item_rmSheet->setCellValue('C1', 'Part No');
+        $item_rmSheet->setCellValue('D1', 'Part Name');
+        $item_rmSheet->getStyle('A1:D1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        $item_rmSheet->getStyle('A1:D1')->getFont()->setBold(true);
+        $item_rmSheet->getStyle('A1:D1')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+        // Populate the data
+        $rowItem_rm = 2;
+        $rowNumItem_rm = 1;
+        foreach ($item_rm as $itemrm) {
+            $item_rmSheet->setCellValue('A' . $rowItem_rm, $rowNumItem_rm);
+            $item_rmSheet->setCellValue('B' . $rowItem_rm, $itemrm['id']);
+            $item_rmSheet->setCellValue('C' . $rowItem_rm, $itemrm['number']);
+            $item_rmSheet->setCellValue('D' . $rowItem_rm, $itemrm['name']);
+            $item_rmSheet->getStyle('A' . $rowItem_rm . ':C' . $rowItem_rm)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+            $item_rmSheet->getStyle('D' . $rowItem_rm)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+            $item_rmSheet->getStyle('A' . $rowItem_rm . ':D' . $rowItem_rm)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+            $rowItem_rm++;
+            $rowNumItem_rm++;
+        }
+
+        // Fourth Sheet: Process
+        $itemprocessSheet = $spreadsheet->createSheet(3);
+        $itemprocessSheet->setTitle('Process');
+
+        // Fetch data from the item_process table
+        $item_process = $this->db->get('item_process')->result_array();
+        $itemprocessSheet->getColumnDimension('A')->setWidth(10);
+        $itemprocessSheet->getColumnDimension('B')->setWidth(25);
+        $itemprocessSheet->getColumnDimension('C')->setWidth(25);
+
+        // Set header
+        $itemprocessSheet->setCellValue('A1', 'No');
+        $itemprocessSheet->setCellValue('B1', 'ID Process');
+        $itemprocessSheet->setCellValue('C1', 'Process Name');
+        $itemprocessSheet->getStyle('A1:C1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        $itemprocessSheet->getStyle('A1:C1')->getFont()->setBold(true);
+        $itemprocessSheet->getStyle('A1:C1')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+        // Populate the data
+        $rowItem_process = 2;
+        $rowNumItem_process = 1;
+        foreach ($item_process as $itemprocess) {
+            $itemprocessSheet->setCellValue('A' . $rowItem_process, $rowNumItem_process);
+            $itemprocessSheet->setCellValue('B' . $rowItem_process, $itemprocess['id']);
+            $itemprocessSheet->setCellValue('C' . $rowItem_process, $itemprocess['name']);
+            $itemprocessSheet->getStyle('A' . $rowItem_process . ':B' . $rowItem_process)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+            $itemprocessSheet->getStyle('C' . $rowItem_process)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+            $itemprocessSheet->getStyle('A' . $rowItem_process . ':C' . $rowItem_process)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+            $rowItem_process++;
+            $rowNumItem_process++;
+        }
+
+        $spreadsheet->setActiveSheetIndex(0); 
+        
+        // Set the header for the download
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="tmp_bom.xls"');
+        header('Cache-Control: max-age=0');
+        // Create the writer and output the file
+        // $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+
+        exit;
     }
 }

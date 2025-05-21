@@ -14,22 +14,22 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'customer_name',width:220,halign:'center'">Customer Name</th>
-            <th rowspan="2" data-options="field:'document_no',width:150,halign:'center'">Document No</th>
-            <th rowspan="2" data-options="field:'issued_date',width:100,halign:'center'">Issued Date</th>
+            <th rowspan="2" data-options="field:'customer_name',width:220,halign:'center',sortable:true">Customer Name</th>
+            <th rowspan="2" data-options="field:'document_no',width:150,halign:'center',sortable:true">Document No</th>
+            <th rowspan="2" data-options="field:'issued_date',width:100,halign:'center',sortable:true">Issued Date</th>
             <th colspan="2" data-options="field:'',width:200,halign:'center'">Period</th>
-            <th rowspan="2" data-options="field:'revision',width:80,align:'center'">Revision</th>
+            <th rowspan="2" data-options="field:'revision',width:80,align:'center',sortable:true">Revision</th>
             <th rowspan="2" data-options="field:'remark',width:100,halign:'center'">Remarks</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'p_month',width:80,align:'center'"> Month</th>
-            <th data-options="field:'p_year',width:80,align:'center'"> Year</th>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'p_month',width:80,align:'center',sortable:true"> Month</th>
+            <th data-options="field:'p_year',width:80,align:'center',sortable:true"> Year</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -448,9 +448,9 @@
             url: '<?= base_url('planning/forecasts/delete') ?>',
             data: {
                 customer_id: row.customer_id,
-                // p_month: row.p_month,
-                // p_year: row.p_year,
-                // revision: row.revision,
+                p_month: row.p_month,
+                p_year: row.p_year,
+                revision: row.revision,
                 item_fg_id: item_fg_id,
             },
             success: function(result) {
@@ -528,7 +528,7 @@
 
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_forecasts.xls') ?>');
+        window.location.assign('<?= base_url('planning/forecasts/exportTemplate') ?>');
     }
 
     //FILTER DATA
@@ -593,6 +593,7 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            remoteSort: false,
             view: detailview,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.customer_name + '"></table></div>';
@@ -753,45 +754,51 @@
 
                     for (let i = 0; i < totalrows; i++) {
                         if (rows[i].item_fg_id) {
-                            $.ajax({
-                                type: "post",
-                                url: '<?= base_url('planning/forecasts/create') ?>',
-                                data: {
-                                    p_month: p_month,
-                                    p_year: p_year,
-                                    customer_id: customer_id,
-                                    document_no: document_no,
-                                    issued_date: issued_date,
-                                    revision: revision,
-                                    remark: remark,
-                                    item_fg_id: rows[i].item_fg_id,
-                                    month_1: rows[i].month_1,
-                                    month_2: rows[i].month_2,
-                                    month_3: rows[i].month_3,
-                                    month_4: rows[i].month_4,
-                                    month_5: rows[i].month_5,
-                                    month_6: rows[i].month_6,
-                                    month_7: rows[i].month_7,
-                                    month_8: rows[i].month_8,
-                                    month_9: rows[i].month_9,
-                                    month_10: rows[i].month_10,
-                                    month_11: rows[i].month_11,
-                                    month_12: rows[i].month_12,
-                                },
-                                dataType: "json",
-                                success: function(result) {
-                                    if (i == (totalrows - 1)) {
-                                        Swal.fire({
-                                            title: result.message,
-                                            icon: result.theme,
-                                            confirmButtonText: 'Ok',
-                                            allowOutsideClick: false,
-                                        }).then((result) => {
-                                            if (result.isConfirmed) {
-                                                window.location.reload();
+                            validateBeforeSave(customer_id, rows[i].item_fg_id, revision, p_month, p_year, function(exists) {
+                                if (exists) {
+                                    toastr.error("Customer ID, Product No, Revision, Month, and Year already exists.");
+                                } else {
+                                    $.ajax({
+                                        type: "post",
+                                        url: '<?= base_url('planning/forecasts/create') ?>',
+                                        data: {
+                                            p_month: p_month,
+                                            p_year: p_year,
+                                            customer_id: customer_id,
+                                            document_no: document_no,
+                                            issued_date: issued_date,
+                                            revision: revision,
+                                            remark: remark,
+                                            item_fg_id: rows[i].item_fg_id,
+                                            month_1: rows[i].month_1,
+                                            month_2: rows[i].month_2,
+                                            month_3: rows[i].month_3,
+                                            month_4: rows[i].month_4,
+                                            month_5: rows[i].month_5,
+                                            month_6: rows[i].month_6,
+                                            month_7: rows[i].month_7,
+                                            month_8: rows[i].month_8,
+                                            month_9: rows[i].month_9,
+                                            month_10: rows[i].month_10,
+                                            month_11: rows[i].month_11,
+                                            month_12: rows[i].month_12,
+                                        },
+                                        dataType: "json",
+                                        success: function(result) {
+                                            if (i == (totalrows - 1)) {
+                                                Swal.fire({
+                                                    title: result.message,
+                                                    icon: result.theme,
+                                                    confirmButtonText: 'Ok',
+                                                    allowOutsideClick: false,
+                                                }).then((result) => {
+                                                    if (result.isConfirmed) {
+                                                        window.location.reload();
+                                                    }
+                                                });
                                             }
-                                        });
-                                    }
+                                        }
+                                    });
                                 }
                             });
                         }
@@ -802,6 +809,24 @@
                 }
             }]
         });
+
+        function validateBeforeSave(customer_id, item_fg_id, revision, p_month, p_year, callback) {
+            $.ajax({
+                type: "post",
+                url: "<?= base_url('planning/forecasts/checkDuplicate') ?>",
+                data: {
+                    customer_id: customer_id,
+                    item_fg_id: item_fg_id,
+                    revision: revision,
+                    p_month: p_month,
+                    p_year: p_year
+                },
+                dataType: "json",
+                success: function(response) {
+                    callback(response.exists);
+                }
+            });
+        }
     });
 
     $('#customer_id').combogrid({
@@ -848,11 +873,11 @@
     });
 
     $("#issued_date").datebox({
-        onChange: function(value){
+        onChange: function(value) {
             $.ajax({
                 type: "post",
                 url: "<?= base_url('planning/forecasts/autoid') ?>",
-                data: "issued_date="+value,
+                data: "issued_date=" + value,
                 dataType: "html",
                 success: function(response) {
                     $('#document_no').textbox('setValue', response);

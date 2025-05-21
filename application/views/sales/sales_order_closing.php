@@ -3,28 +3,28 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
-            <th rowspan="2" data-options="field:'sales_order_no',width:150,halign:'center'">Sales Order No</th>
-            <th rowspan="2" data-options="field:'customer_order_no',width:150,halign:'center'">Customer Order No</th>
-            <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
-            <th rowspan="2" data-options="field:'sales_order_date',width:150,halign:'center'">Sales Order Date</th>
-            <th rowspan="2" data-options="field:'delivery_date',width:150,halign:'center'">Delivery Date</th>
-            <th rowspan="2" data-options="field:'currency',width:80,align:'center'">Currency</th>
-            <th rowspan="2" data-options="field:'total_sub',width:100,halign:'center',align:'right',formatter: numberFormat">Sub Total</th>
-            <th rowspan="2" data-options="field:'total_tax',width:100,halign:'center',align:'right',formatter: numberFormat">Taxes</th>
-            <th rowspan="2" data-options="field:'total_pph',width:100,halign:'center',align:'right',formatter: numberFormat">PPh</th>
-            <th rowspan="2" data-options="field:'total_grand',width:100,halign:'center',align:'right',formatter: numberFormat">Grand Total</th>
-            <th rowspan="2" data-options="field:'remarks',width:150,halign:'center'">Remarks</th>
-            <th rowspan="2" data-options="field:'attachment',width:150,halign:'center'">Attachment</th>
-            <th rowspan="2" data-options="field:'closing_reason',width:150,halign:'center'">Reason</th>
+            <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th>
+            <th rowspan="2" data-options="field:'sales_order_no',width:150,halign:'center',sortable:true">Sales Order No</th>
+            <th rowspan="2" data-options="field:'customer_order_no',width:150,halign:'center',sortable:true">Customer Order No</th>
+            <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center',sortable:true">Customer Name</th>
+            <th rowspan="2" data-options="field:'sales_order_date',width:150,halign:'center',sortable:true">Sales Order Date</th>
+            <th rowspan="2" data-options="field:'delivery_date',width:150,halign:'center',sortable:true">Delivery Date</th>
+            <th rowspan="2" data-options="field:'currency',width:80,align:'center',sortable:true">Currency</th>
+            <th rowspan="2" data-options="field:'total_sub',width:100,halign:'center',align:'right',formatter: numberFormat,sortable:true">Sub Total</th>
+            <th rowspan="2" data-options="field:'total_tax',width:100,halign:'center',align:'right',formatter: numberFormat,sortable:true">Taxes</th>
+            <th rowspan="2" data-options="field:'total_pph',width:100,halign:'center',align:'right',formatter: numberFormat,sortable:true">PPh</th>
+            <th rowspan="2" data-options="field:'total_grand',width:100,halign:'center',align:'right',formatter: numberFormat,sortable:true">Grand Total</th>
+            <th rowspan="2" data-options="field:'remarks',width:150,halign:'center',sortable:true">Remarks</th>
+            <th rowspan="2" data-options="field:'attachment',width:150,halign:'center',sortable:true">Attachment</th>
+            <th rowspan="2" data-options="field:'closing_reason',width:150,halign:'center',sortable:true">Reason</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:120,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:120,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:120,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:120,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -91,11 +91,14 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Reason</span>
-                <input style="width:60%; height: 80px;" name="closing_reason" id="closing_reason" class="easyui-textbox" multiline="true">
+                <input style="width:60%; height: 80px;" name="closing_reason" id="closing_reason" class="easyui-textbox" multiline="true" required="true">
             </div>
         </fieldset>
     </form>
 </div>
+
+<!-- PDF -->
+<iframe id="printout" src="<?= base_url('sales/sales_order_closing/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
     //EDIT DATA
@@ -105,10 +108,40 @@
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
 
+            // Disable kolom status jika status CLOSE
+            if (row.status == 1) { // CLOSE
+                $("#status").combobox('disable');
+            } else {
+                $("#status").combobox('enable');
+            }
+
             $("#sales_order_no").textbox('disable');
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
+    }
+
+    //PRINT PDF
+    function pdf() {
+        $("#printout").get(0).contentWindow.print();
+    }
+
+    //PRINT EXCEL
+    function excel() {
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
+        var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
+        var filter_status = $("#filter_status").combobox('getValue');
+
+        var url = "?filter_from=" + window.btoa(filter_from) +
+            "&filter_to=" + window.btoa(filter_to) +
+            "&filter_customer_id=" + window.btoa(filter_customer_id) +
+            "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            "&filter_status=" + window.btoa(filter_status);
+
+        window.location.assign('<?= base_url('sales/sales_order_closing/print/excel') ?>' + url);
+
     }
 
     //FILTER DATA
@@ -125,14 +158,16 @@
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
             "&filter_status=" + window.btoa(filter_status);
 
-            $('#dg').datagrid({
-                url: '<?= base_url('sales/sales_order_closing/datatables') ?>' + url,
-                pagination: true,
-                rownumbers: true,
-                fit: true,
-                pageList: [10, 50, 100, 500, 1000],
-                pageSize: 10,
-            });
+        $('#dg').datagrid({
+            url: '<?= base_url('sales/sales_order_closing/datatables') ?>' + url,
+            pagination: true,
+            rownumbers: true,
+            fit: true,
+            pageList: [10, 50, 100, 500, 1000],
+            pageSize: 10,
+            resizable: true,
+            remoteSort: false,
+        });
     }
 
     //RELOAD
@@ -153,6 +188,13 @@
                     var sales_order_no = $("#sales_order_no").textbox('getValue');
                     var status = $("#status").combobox('getValue');
                     var closing_reason = $("#closing_reason").textbox('getValue');
+
+                    // Validasi apakah kolom Reason kosong
+                    if (!closing_reason.trim()) {
+                        toastr.warning("Reason cannot be empty!");
+                        $("#closing_reason").textbox('textbox').focus();
+                        return;
+                    }
 
                     $.ajax({
                         type: "post",

@@ -172,6 +172,7 @@ class purchase_returns extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
+                $post['transaction_type'] = 'IS-0002';
                 $purchase_returns = $this->crud->read('purchase_returns', [], ["return_no" => $post['return_no'], "item_rm_id" => $post['item_rm_id']]);
 
                 if (@$purchase_returns->id != "") {

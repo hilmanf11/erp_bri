@@ -1,449 +1,376 @@
-<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
-    <div class="easyui-accordion" style="width:100%; height: 100%;">
-        <div title="RELATIONS" style="padding: 20px;">
-            <ul>
-                <li>The Data Currency is taken from <b>Master Data > General Master > Currency</b></li>
-            </ul>
-        </div>
-    </div>
-</div>
-
-<!-- TABLE DATAGRID -->
-<table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
-    <thead>
-        <tr>
-            <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:100,align:'center'">Supplier ID</th>
-            <th rowspan="2" data-options="field:'name',width:250,halign:'center'">Supplier Name</th>
-            <th rowspan="2" data-options="field:'number',width:80,align:'center'">Supplier<br>Code</th>
-            <th rowspan="2" data-options="field:'type',width:80,align:'center'">Type</th>
-            <th rowspan="2" data-options="field:'address',width:250,halign:'center'">Address</th>
-            <th rowspan="2" data-options="field:'contact_person',width:120,halign:'center'">Contact Person</th>
-            <th rowspan="2" data-options="field:'telp',width:120,halign:'center'">Telp</th>
-            <th rowspan="2" data-options="field:'fax',width:120,halign:'center'">Fax</th>
-            <th rowspan="2" data-options="field:'email',width:200,halign:'center'">Email</th>
-            <th rowspan="2" data-options="field:'website',width:150,halign:'center'">Website</th>
-            <th rowspan="2" data-options="field:'attention',width:150,halign:'center'">Attention</th>
-            <th rowspan="2" data-options="field:'currency',width:80,align:'center'">Currency</th>
-            <th rowspan="2" data-options="field:'payment_term',width:80,halign:'center',align:'right'">Payment<br>Term (Day)</th>
-            <th rowspan="2" data-options="field:'incoterm',width:80,align:'center'">Incoterm</th>
-            <th rowspan="2" data-options="field:'vat_status',align:'center',width:80">Vat Status</th>
-            <th rowspan="2" data-options="field:'vat',halign:'center',width:80,align:'right'">Vat</th>
-            <th rowspan="2" data-options="field:'tax',halign:'center',width:120">Tax No</th>
-            <th rowspan="2" data-options="field:'bank_account',width:150,halign:'center'">Bank Account</th>
-            <th rowspan="2" data-options="field:'bank_name',width:150,halign:'center'">Bank Name</th>
-            <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
-            <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', align:'center', styler:styleApproved, formatter:formatApproved">Approval</th>
-            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
-            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
-            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Approved</th>
-        </tr>
-        <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'approved_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'approved_date',width:150,align:'center'"> Date</th>
-        </tr>
-    </thead>
-</table>
-<!-- TOOLBAR DATAGRID -->
-<div id="toolbar" style="height: 35px;">
-    <?= $button ?>
-    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
-</div>
-<!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 70%; padding:10px; top: 10px;">
-    <form id="frm_insert" method="post" novalidate>
-        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
-            <legend><b>Form Data</b></legend>
-            <div style="float:left; width:50%;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Supplier ID</span>
-                    <input style="width:30%;" name="id" id="id" required="" class="easyui-textbox" readonly>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Supplier Name</span>
-                    <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Supplier Code</span>
-                    <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox" validType="length[3,3]">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Type</span>
-                    <select style="width:60%;" name="type" id="type" required="" panelHeight="auto" class="easyui-combobox">
-                        <option value="LOCAL">LOCAL</option>
-                        <option value="IMPORT">IMPORT</option>
-                    </select>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Contact Person</span>
-                    <input style="width:60%;" name="contact_person" id="contact_person" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Address</span>
-                    <input style="width:60%;" name="address" id="address" required="" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Telepon</span>
-                    <input style="width:60%;" name="telp" id="telp" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Fax</span>
-                    <input style="width:60%;" name="fax" id="fax" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Email</span>
-                    <input style="width:60%;" name="email" id="email" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Website</span>
-                    <input style="width:60%;" name="website" id="website" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Attention</span>
-                    <input style="width:60%;" name="attention" id="attention" class="easyui-textbox">
-                </div>
-            </div>
-            <div style="float:left; width:50%;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Currency</span>
-                    <input style="width:60%;" name="currency" id="currency" required="" class="easyui-combobox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Payment Term</span>
-                    <input style="width:60%;" name="payment_term" id="payment_term" class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Incoterm</span>
-                    <input style="width:60%;" name="incoterm" id="incoterm" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Vat Status</span>
-                    <select style="width:30%;" name="vat_status" class="easyui-combobox" panelHeight="auto">
-                        <option value="VAT">VAT</option>
-                        <option value="NON VAT">NON VAT</option>
-                    </select>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">VAT (%)</span>
-                    <input style="width:30%;" name="vat" class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Tax No</span>
-                    <input style="width:60%;" name="tax" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Bank Account</span>
-                    <input style="width:60%;" name="bank_account" id="bank_account" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Bank Name</span>
-                    <input style="width:60%;" name="bank_name" id="bank_name" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Status</span>
-                    <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
-                        <option value="0">Active</option>
-                        <option value="1">Not Active</option>
-                    </select>
-                </div>
-            </div>
-        </fieldset>
-    </form>
-</div>
-
-<!-- Upload -->
-<div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
-    <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
-        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
-            <legend><b>Form Data</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">File Upload</span>
-                <input name="file_upload" style="width: 60%;" required="" accept=".xls" id="file_excel" class="easyui-filebox">
-            </div>
-        </fieldset>
-    </form>
-    <span style="float: left; color:green;">SUCCESS : <b id="p_success">0</b></span><span style="float: right; color:red;"> FAILED : <b id="p_failed">0</b></span>
-    <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
-    <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
-    <div id="p_remarks" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
-        <ul id="remarks">
-        </ul>
-    </div>
-</div>
-
-<!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/suppliers/print') ?>" style="width: 100%;" hidden></iframe>
-<script>
-    //ADD DATA
-    function add() {
-        $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/suppliers/create') ?>';
-        $('#frm_insert').form('clear');
-
-        $('#type').combobox('setValue', 'LOCAL');
-        $('#status').combobox('setValue', '0');
-
-        $.ajax({
-            type: "post",
-            url: "<?= base_url('master/suppliers/autoid') ?>",
-            dataType: "html",
-            success: function(response) {
-                $('#id').textbox('setValue', response);
-            }
-        });
+<?php
+date_default_timezone_set("Asia/Bangkok");
+defined('BASEPATH') or exit('No direct script access allowed');
+class Suppliers extends CI_Controller
+{
+    public function __construct()
+    {
+        parent::__construct();
+        $this->load->helper('url');
+        $this->load->helper(array('form', 'url'));
+        $this->load->library('form_validation');
+        $this->load->library('session');
+        $this->load->model('crud');
+        //VALIDASI FORM
+        $this->form_validation->set_rules('number', 'Supplier Code', 'required|min_length[1]|max_length[20]|is_unique[suppliers.number]');
     }
-
-    //EDIT DATA
-    function update() {
-        var row = $('#dg').datagrid('getSelected');
-        if (row) {
-            $('#dlg_insert').dialog('open');
-            $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/suppliers/update') ?>?id=' + btoa(row.id);
+    //HALAMAN UTAMA
+    public function index()
+    {
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
+            $data['button'] = $this->getbutton($this->id_menu());
+            $this->load->view('template/header', $data);
+            $this->load->view('master/suppliers');
         } else {
-            toastr.warning("Please select one of the data in the table first!", "Information");
+            redirect('error_access');
         }
     }
-
-    //DELETE DATA
-    function deleted() {
-        var rows = $('#dg').datagrid('getSelections');
-        if (rows.length > 0) {
-            $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
-                if (r) {
-                    for (var i = 0; i < rows.length; i++) {
-                        var row = rows[i];
-                        $.ajax({
-                            method: 'post',
-                            url: '<?= base_url('master/suppliers/delete') ?>',
-                            data: {
-                                id: row.id
-                            },
-                            success: function(result) {
-                                var result = eval('(' + result + ')');
-                            },
-                            error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error(jqXHR.statusText);
-                                $.messager.alert("Error", jqXHR.statusText, 'error');
-                            },
-                            complete: function(data) {
-                                $('#dg').datagrid('reload');
-                            }
-                        });
-                    }
+    //GET DATA
+    public function reads()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT * FROM suppliers WHERE number like '%$post%' or name like '%$post%' or id like '%$post%'");
+        echo json_encode($send);
+    }
+    //GET DATATABLES
+    public function datatables()
+    {
+        if ($this->input->post()) {
+            $filters = json_decode($this->input->post('filterRules'));
+            $page = $this->input->post('page');
+            $rows = $this->input->post('rows');
+            //Pagination 1-10
+            $page   = isset($page) ? intval($page) : 1;
+            $rows   = isset($rows) ? intval($rows) : 10;
+            $offset = ($page - 1) * $rows;
+            $result = array();
+            //Select Query
+            $this->db->select('*');
+            $this->db->from('suppliers');
+            $this->db->where('deleted', 0);
+            if (@count($filters) > 0) {
+                foreach ($filters as $filter) {
+                    $this->db->like($filter->field, $filter->value);
                 }
-            });
-        } else {
-            toastr.warning("Please select one of the data in the table first!", "Information");
+            }
+            $this->db->order_by('id', 'asc');
+            //Total Data
+            $totalRows = $this->db->count_all_results('', false);
+            //Limit 1 - 10
+            $this->db->limit($rows, $offset);
+            //Get Data Array
+            $records = $this->db->get()->result_array();
+            //Mapping Data
+            $result['total'] = $totalRows;
+            $result = array_merge($result, ['rows' => $records]);
+            echo json_encode($result);
         }
+    }
+    //AUTO ID
+    public function autoid()
+    {
+        $month = date('my');
+        $format = "SP-" . $month;
+        $sql = $this->db->query("SELECT max(id) as kode FROM suppliers WHERE id LIKE '%$format%'");
+        $row = $sql->row();
+        if ($row->kode == "") {
+            $kode = 0;
+        } else {
+            $kode = substr($row->kode, -3);
+        }
+        $autoid = $format . sprintf("%03s", $kode + 1);
+        echo $autoid;
+    }
+    //CREATE DATA
+    public function create()
+    {
+        if ($this->input->post()) {
+            if ($this->form_validation->run() == TRUE) {
+                $post   = $this->input->post();
+                $send   = $this->crud->create('suppliers', $post);
+                echo $send;
+            } else {
+                show_error(validation_errors());
+            }
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+    //UPDATE DATA
+    public function update()
+    {
+        if ($this->input->post()) {
+            $id   = base64_decode($this->input->get('id'));
+            $post = $this->input->post();
+            $send = $this->crud->update('suppliers', ["id" => $id], $post);
+            echo $send;
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+    //DELETE DATA
+    public function delete()
+    {
+        $data = $this->input->post();
+        $send = $this->crud->delete('suppliers', $data);
+        echo $send;
     }
 
     //UPLOAD DATA
-    function upload() {
-        $('#dlg_upload').dialog('open');
+    public function upload()
+    {
+        error_reporting(0);
+        require_once 'assets/vendors/excel_reader2.php';
+        $target = basename($_FILES['file_upload']['name']);
+        move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
+        chmod($_FILES['file_upload']['name'], 0777);
+        $file = $_FILES['file_upload']['name'];
+        $data = new Spreadsheet_Excel_Reader($file, false);
+        $total_row = $data->rowcount($sheet_index = 0);
+        for ($i = 3; $i <= $total_row; $i++) {
+            $datas[] = array(
+                //excel
+                'number' => $data->val($i, 2),
+                'name' => $data->val($i, 3),
+                'type' => $data->val($i, 4),
+                'address' => $data->val($i, 5),
+                'contact_person' => $data->val($i, 6),
+                'telp' => $data->val($i, 7),
+                'fax' => $data->val($i, 8),
+                'email' => $data->val($i, 9),
+                'attention' => $data->val($i, 10),
+                'website' => $data->val($i, 11),
+                'currency' => $data->val($i, 12),
+                'payment_term' => $data->val($i, 13),
+                'incoterm' => $data->val($i, 14),
+                'vat_status' => $data->val($i, 15),
+                'vat' => $data->val($i, 16),
+                'tax' => $data->val($i, 17),
+                'bank_account' => $data->val($i, 18),
+                'bank_name' => $data->val($i, 19),
+                'status' => $data->val($i, 20)
+            );
+        }
+        $datas['total'] = count($datas);
+        echo json_encode($datas);
+        unlink($_FILES['file_upload']['name']);
     }
 
-    //DOWNLOAD
-    function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_suppliers.xls') ?>');
+    public function uploadclearFailed()
+    {
+        @unlink('failed/suppliers.txt');
     }
 
-    //PRINT PDF
-    function pdf() {
-        $("#printout").get(0).contentWindow.print();
+    public function uploadcreateFailed()
+    {
+        if ($this->input->post()) {
+            $message = $this->input->post('message');
+            $textFailed = fopen('failed/suppliers.txt', 'a');
+            fwrite($textFailed, $message . "\n");
+            fclose($textFailed);
+        }
     }
 
-    //PRINT EXCEL
-    function excel() {
-        window.location.assign('<?= base_url('master/suppliers/print/excel') ?>');
+    //UPLOAD DOWNLOAD FAILED
+    public function uploadDownloadFailed()
+    {
+        $file = "failed/suppliers.txt";
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
     }
 
-    //RELOAD
-    function reload() {
-        window.location.reload();
-    }
+    //UPLOAD CREATE DATA
+    public function uploadcreate()
+    {
+        if ($this->input->post()) {
+            $data = $this->input->post('data');
 
-    $(function() {
-        //SETTING DATAGRID EASYUI
-        $('#dg').datagrid({
-            url: '<?= base_url('master/suppliers/datatables') ?>',
-            pagination: true,
-            clientPaging: false,
-            remoteFilter: true,
-            rownumbers: true,
-            fit: true,
-            pageList: [20, 50, 100, 500, 1000],
-            pageSize: 20,
-        }).datagrid('enableFilter');
+            // Validasi kolom yang kosong
+            $required_fields = [
+                'number' => 'Supplier Code',
+                'address' => 'Address',
+                'currency' => 'Currency',
+                'vat' => 'Vat',
+                'status' => 'Status'
+            ];
+            $missing_fields = [];
 
-        //SAVE DATA
-        $('#dlg_insert').dialog({
-            buttons: [{
-                text: 'Save',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    var supplierCode = $('#number').textbox('getValue');
-                    if (supplierCode.length !== 3) {
-                        $.messager.alert('Error', 'Supplier Code Entered Must Be 3 Characters!', 'error');
-                        return;
-                    }
-
-                    $('#frm_insert').form('submit', {
-                        url: url_save,
-                        onSubmit: function() {
-                            return $(this).form('validate');
-                        },
-                        success: function(result) {
-                            var result = eval('(' + result + ')');
-                            if (result.theme == "success") {
-                                toastr.success(result.message, result.title);
-                            } else {
-                                toastr.error(result.message, result.title);
-                            }
-                            $('#dlg_insert').dialog('close');
-                            $('#dg').datagrid('reload');
-                        }
-                    });
+            foreach ($required_fields as $field => $label) {
+                if (!isset($data[$field]) || $data[$field] === '') {
+                    $missing_fields[] = $label;
                 }
-            }]
-        });
-    });
-
-    //CELLSTYLE STATUS
-    function cellStyler(value, row, index) {
-        if (value == 0) {
-            return 'background: #53D636; color:white;';
-        } else {
-            return 'background: #FF5F5F; color:white;';
-        }
-    }
-
-    //FORMATTER STATUS
-    function cellFormatter(value) {
-        if (value == 0) {
-            return 'Active';
-        } else {
-            return 'Not Active';
-        }
-    }
-
-    $('#currency').combobox({
-        url: '<?= base_url('master/currencies/reads'); ?>',
-        valueField: 'name',
-        textField: 'name',
-        prompt: 'Choose Currencies',
-    });
-
-    //UPLOAD
-    $('#dlg_upload').dialog({
-        buttons: [{
-            text: 'List Failed',
-            handler: function() {
-                window.open('<?= base_url('master/suppliers/uploadDownloadFailed') ?>', '_blank');
             }
-        }, {
-            text: 'Upload',
-            iconCls: 'icon-ok',
-            handler: function() {
-                $('#frm_upload').form('submit', {
-                    url: '<?= base_url('master/suppliers/upload') ?>',
-                    onSubmit: function() {
-                        if ($(this).form('validate') == false) {
-                            return $(this).form('validate');
-                        } else {
-                            $.messager.progress({
-                                title: 'Please Wait',
-                                msg: 'Importing Excel to Database'
-                            });
-                        }
-                    },
-                    success: function(result) {
-                        $.messager.progress('close');
-                        //Clear File
-                        $.ajax({
-                            url: "<?= base_url('master/suppliers/uploadclearFailed') ?>"
-                        });
-                        var json = eval('(' + result + ')');
-                        requestData(json.total, json);
 
-                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                            if (value < 100) {
-                                value = Math.floor((number / total) * 100);
-                                $('#p_upload').progressbar('setValue', value);
-                                $('#p_start').html(number);
-                                $('#p_finish').html(total);
-
-                                $.ajax({
-                                    type: "POST",
-                                    async: true,
-                                    url: "<?= base_url('master/suppliers/uploadCreate') ?>",
-                                    data: {
-                                        "data": json[number - 1]
-                                    },
-                                    cache: false,
-                                    dataType: "json",
-                                    success: function(result) {
-                                        if (result.theme == "success") {
-                                            $('#p_success').html(success);
-                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                        } else {
-                                            $('#p_failed').html(failed);
-                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                            //Json Failed
-                                            $.ajax({
-                                                type: "POST",
-                                                async: true,
-                                                url: "<?= base_url('master/suppliers/uploadcreateFailed') ?>",
-                                                data: {
-                                                    data: json[number - 1],
-                                                    message: result.message
-                                                },
-                                                cache: false
-                                            });
-                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                        }
-                                        $("#p_remarks").append(title + "<br>");
-                                    }
-                                });
-                            }
-                        }
-                    }
-                });
+            if (!empty($missing_fields)) {
+                echo json_encode(array("title" => "Error", "message" => "Column Cannot Be Empty: " . implode(', ', $missing_fields), "theme" => "error"));
+                return;
             }
-        }]
-    });
 
-    //CELLSTYLE APPROVE
-    function styleApproved(value, row, index) {
-        if (value == "" || value === null) {
-            return 'background: #53D636; color:white;';
-        } else {
-            return 'background: #FF5F5F; color:white;';
+            // Validasi format data
+            if (!is_numeric($data['payment_term'])) {
+                echo json_encode(array("title" => "Error", "message" => "Payment Term must be a number", "theme" => "error"));
+                return;
+            }
+
+            if (!is_numeric($data['vat'])) {
+                echo json_encode(array("title" => "Error", "message" => "VAT must be a number", "theme" => "error"));
+                return;
+            }
+
+            // Validasi panjang Supplier Code
+            if (strlen($data['number']) != 3) {
+                echo json_encode(array("title" => "Error", "message" => "Supplier Code Entered Must Be 3 Characters!", "theme" => "error"));
+                return;
+            }
+
+            // Validasi status (harus 0 atau 1)
+            if (!in_array($data['status'], ['0', '1'])) {
+                echo json_encode(array("title" => "Error", "message" => "Status must be 0 (Active) or 1 (Not Active)", "theme" => "error"));
+                return;
+            }
+
+            //Cek Process Number
+            $suppliers = $this->crud->read('suppliers', [], ["number" => $data['number']]);
+
+            //AUTOID
+            $month = date('my');
+            $format = "SP-" . $month;
+            $sql = $this->db->query("SELECT max(id) as kode FROM suppliers WHERE id LIKE '%$format%'");
+            $row = $sql->row();
+            if ($row->kode == "") {
+                $kode = 0;
+            } else {
+                $kode = substr($row->kode, -3);
+            }
+            $autoid = $format . sprintf("%03s", $kode + 1);
+
+            if (!empty($suppliers->number)) {
+                echo json_encode(array("title" => "Duplicated", "message" => " Supplier Code " . $data['number'] . " is Duplicate Data", "theme" => "error"));
+            } else {
+                $dataFinal = array(
+                    //field
+                    "id" => $autoid,
+                    "name" => $data['name'],
+                    "number" => $data['number'],
+                    "type" => $data['type'],
+                    "address" => $data['address'],
+                    "contact_person" => $data['contact_person'],
+                    "telp" => $data['telp'],
+                    "fax" => $data['fax'],
+                    "email" => $data['email'],
+                    "attention" => $data['attention'],
+                    "website" => $data['website'],
+                    "currency" => $data['currency'],
+                    "payment_term" => $data['payment_term'],
+                    "incoterm" => $data['incoterm'],
+                    "vat_status" => $data['vat_status'],
+                    "vat" => $data['vat'],
+                    "tax" => $data['tax'],
+                    "bank_account" => $data['bank_account'],
+                    "bank_name" => $data['bank_name'],
+                    "status" => $data['status'], // Menyimpan 0 atau 1 langsung
+                );
+                $send = $this->crud->create('suppliers', $dataFinal);
+                echo $send;
+            }
         }
     }
 
-    //FORMATTER APPROVE
-    function formatApproved(value) {
-        if (value == "" || value === null) {
-            return 'Approved';
-        } else {
-            return 'Checking';
+    //PRINT & EXCEL DATA
+    public function print($option = "")
+    {
+        if ($option == "excel") {
+            $format  = date("Ymd");
+            header("Content-type: application/vnd-ms-excel");
+            header("Content-Disposition: attachment; filename=suppliers_$format.xls");
         }
-    }
+        //Config
+        $this->db->select('*');
+        $this->db->from('config');
+        $config = $this->db->get()->row();
 
-    $(document).ready(function() {
-        $('#number').textbox({
-            validType: 'length[3,3]'
-        }).textbox('textbox').on('input', function() {
-            var value = $(this).val();
-            if (value.length > 3) {
-                $(this).val(value.slice(0, 3));
-            }
-        });
-    });
-</script>
+        $this->db->select('*');
+        $this->db->from('suppliers');
+        $this->db->where('deleted', 0);
+        $this->db->order_by('id', 'ASC');
+        $records = $this->db->get()->result_array();
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#suppliers {border-collapse: collapse;width: 100%;font-size: 12px;}#suppliers td, #suppliers th {border: 1px solid #ddd;padding: 2px;}#suppliers tr:nth-child(even){background-color: #f2f2f2;}#suppliers tr:hover {background-color: #ddd;}#suppliers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        <center>
+            <div style="float: left; font-size: 12px; text-align: left;">
+                <table style="width: 100%;">
+                    <tr>
+                        <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                            <img src="' . $config->favicon . '" width="30">
+                        </td>
+                        <td style="font-size: 14px; text-align: left; margin:2px;">
+                            <b>' . $config->name . '</b>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div style="float: right; font-size: 12px; text-align: right;">
+                Print Date ' . date("d M Y H:m:s") . ' <br>
+                Print By ' . $this->session->username . '  
+            </div>
+            <br><br>
+            <div style="float: centet; font-size: 16px; text-align: center;">
+                <h3>MASTER SUPPLIER</h3>
+            </div>
+        </center>
+        
+        <table id="suppliers" border="1">
+            <tr>
+                <th width="20">No</th>
+                <th>Supplier ID</th>
+                <th>Supplier Name</th>
+                <th>Supplier Code</th>
+                <th>type</th>
+                <th>Address</th>
+                <th>Contact Person</th>
+                <th>Telepon</th>
+                <th>Fax</th>
+                <th>Email</th>
+                <th>Website</th>
+                <th>Attention</th>
+                <th>Currency</th>
+                <th>Payment Term (Day)</th>
+                <th>Incoterm</th>
+                <th>Bank Account</th>
+                <th>Bank Name</th>
+                <th>Status</th>
+            </tr>';
+        $no = 1;
+        foreach ($records as $data) {
+            $html .= '<tr>
+                    <td>' . $no . '</td>
+                    <td>' . $data['id'] . '</td>
+                    <td>' . $data['name'] . '</td>
+                    <td>' . $data['number'] . '</td>
+                    <td>' . $data['type'] . '</td>
+                    <td>' . $data['address'] . '</td>
+                    <td>' . $data['contact_person'] . '</td>
+                    <td>' . $data['telp'] . '</td>
+                    <td>' . $data['fax'] . '</td>
+                    <td>' . $data['email'] . '</td>
+                    <td>' . $data['website'] . '</td>
+                    <td>' . $data['attention'] . '</td>
+                    <td>' . $data['currency'] . '</td>
+                    <td>' . $data['payment_term'] . '</td>
+                    <td>' . $data['incoterm'] . '</td>
+                    <td>' . $data['bank_account'] . '</td>
+                    <td>' . $data['bank_name'] . '</td>
+                    <td>' . $data['status'] . '</td>';
+            $no++;
+        }
+        $html .= '</table></body></html>';
+        echo $html;
+    }
+}

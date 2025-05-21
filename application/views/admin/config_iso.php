@@ -13,6 +13,10 @@
                     <input style="width:60%;" name="doc_purchase_order" value="<?= $config->doc_purchase_order ?>" class="easyui-textbox">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Purchase Order Additional</span>
+                    <input style="width:60%;" name="doc_purchase_order_additional" value="<?= $config->doc_purchase_order_additional ?>" class="easyui-textbox">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Receiving Note</span>
                     <input style="width:60%;" name="doc_receiving_note" value="<?= $config->doc_receiving_note ?>" class="easyui-textbox">
                 </div>

@@ -15,34 +15,34 @@
     <thead frozen="true">
         <tr>
             <th field="ck" checkbox="true"></th>
-            <th data-options="field:'item_fg_id',width:150,align:'center'">Product ID</th>
-            <th data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
-            <th data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th>
+            <th data-options="field:'item_fg_id',width:150,align:'center',sortable:true">Product ID</th>
+            <th data-options="field:'item_fg_number',width:150,halign:'center',sortable:true">Product No.</th>
+            <th data-options="field:'item_fg_name',width:200,halign:'center',sortable:true">Product Name</th>
         </tr>
     </thead>
     <thead>
         <tr>
-            <th rowspan="2" data-options="field:'machine_number',width:150,halign:'center'">Machine No.</th>
-            <th rowspan="2" data-options="field:'machine_toonage',width:150,halign:'center'">Toonage of Machine </th>
-            <th rowspan="2" data-options="field:'mold_id',width:150,halign:'center'">Mold ID</th>
-            <th rowspan="2" data-options="field:'mold_cavity_actual',width:100,halign:'center'">Cavity Actual</th>
-            <th rowspan="2" data-options="field:'mold_cavity_standard',width:120,halign:'center'">Cavity Standard</th>
-            <th rowspan="2" data-options="field:'shift',width:100,halign:'center'">Shift</th>
-            <th rowspan="2" data-options="field:'shift_hour',width:100,halign:'center'">Hour/Shift</th>
-            <th rowspan="2" data-options="field:'productcivity',width:100,halign:'center'">Productivity <br>Factor (%)</th>
-            <th rowspan="2" data-options="field:'cycle_time',width:90,halign:'center'">Cycle Time <br>(Second)</th>
-            <th rowspan="2" data-options="field:'cycle_time_process',width:150,halign:'center'">Cycle Time Second <br>Process</th>
-            <th rowspan="2" data-options="field:'manpower',width:100,halign:'center'">Man Power</th>
-            <th rowspan="2" data-options="field:'runner',width:110,halign:'center'">Runner/Shoot</th>
-            <th rowspan="2" data-options="field:'priority',width:110,halign:'center'">Priority</th>
+            <th rowspan="2" data-options="field:'machine_number',width:150,halign:'center',sortable:true">Machine No.</th>
+            <th rowspan="2" data-options="field:'machine_toonage',width:150,halign:'center',sortable:true">Toonage of Machine </th>
+            <th rowspan="2" data-options="field:'mold_id',width:150,halign:'center',sortable:true">Mold ID</th>
+            <th rowspan="2" data-options="field:'mold_cavity_actual',width:100,halign:'center',sortable:true">Cavity Actual</th>
+            <th rowspan="2" data-options="field:'mold_cavity_standard',width:120,halign:'center',sortable:true">Cavity Standard</th>
+            <th rowspan="2" data-options="field:'shift',width:100,halign:'center',sortable:true">Shift</th>
+            <th rowspan="2" data-options="field:'shift_hour',width:100,halign:'center',sortable:true">Hour/Shift</th>
+            <th rowspan="2" data-options="field:'productcivity',width:100,halign:'center',sortable:true">Productivity <br>Factor (%)</th>
+            <th rowspan="2" data-options="field:'cycle_time',width:90,halign:'center',sortable:true">Cycle Time <br>(Second)</th>
+            <th rowspan="2" data-options="field:'cycle_time_process',width:150,halign:'center',sortable:true">Cycle Time Second <br>Process</th>
+            <th rowspan="2" data-options="field:'manpower',width:100,halign:'center',sortable:true">Man Power</th>
+            <th rowspan="2" data-options="field:'runner',width:110,halign:'center',sortable:true">Runner/Shoot</th>
+            <th rowspan="2" data-options="field:'priority',width:110,halign:'center',sortable:true">Priority</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -207,6 +207,174 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            resizable: true,
+            remoteSort: false,
+            frozenColumns: [
+                [{
+                        field: 'item_fg_id',
+                        title: 'Product ID',
+                        width: 150,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                    {
+                        field: 'item_fg_number',
+                        title: 'Product No.',
+                        width: 150,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                    {
+                        field: 'item_fg_name',
+                        title: 'Product Name',
+                        width: 200,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                ]
+            ],
+            columns: [
+                [{
+                        field: 'machine_number',
+                        title: 'Machine No.',
+                        width: 150,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                    {
+                        field: 'machine_toonage',
+                        title: 'Toonage of Machine',
+                        width: 150,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                    {
+                        field: 'mold_id',
+                        title: 'Mold ID',
+                        width: 150,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                    {
+                        field: 'mold_cavity_actual',
+                        title: 'Cavity Actual',
+                        width: 100,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                    {
+                        field: 'mold_cavity_standard',
+                        title: 'Cavity Standard',
+                        width: 120,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                    {
+                        field: 'shift',
+                        title: 'Shift',
+                        width: 100,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                    {
+                        field: 'shift_hour',
+                        title: 'Hour/Shift',
+                        width: 100,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                    {
+                        field: 'productcivity',
+                        title: 'Productivity <br>Factor (%)',
+                        width: 100,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                    {
+                        field: 'cycle_time',
+                        title: 'Cycle Time <br>(Second)',
+                        width: 90,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                    {
+                        field: 'cycle_time_process',
+                        title: 'Cycle Time Second <br>Process',
+                        width: 150,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                    {
+                        field: 'manpower',
+                        title: 'Man Power',
+                        width: 100,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                    {
+                        field: 'runner',
+                        title: 'Runner/Shoot',
+                        width: 110,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                    {
+                        field: 'priority',
+                        title: 'Priority',
+                        width: 110,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                    {
+                        field: 'created_by',
+                        title: 'Created By',
+                        width: 100,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                    {
+                        field: 'created_date',
+                        title: 'Created Date',
+                        width: 150,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                    {
+                        field: 'updated_by',
+                        title: 'Updated By',
+                        width: 100,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                    {
+                        field: 'updated_date',
+                        title: 'Updated Date',
+                        width: 150,
+                        align: 'center',
+                        sortable: true,
+                        resizable: true
+                    },
+                ]
+            ]
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({
@@ -226,7 +394,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
+
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
@@ -237,104 +405,104 @@
     });
 
     $('#item_fg_id').combobox({
-        url:'<?= base_url('master/item_fg/reads/'); ?>',
-        valueField:'id',
-        textField:'number',
+        url: '<?= base_url('master/item_fg/reads/'); ?>',
+        valueField: 'id',
+        textField: 'number',
         prompt: 'Choose Product No.',
-        onSelect: function(item_fg){
+        onSelect: function(item_fg) {
             $('#mold_id').combobox({
-                url:'<?= base_url('master/molds/reads/'); ?>' + btoa(item_fg.id),
-                valueField:'id',
-                textField:'id',
+                url: '<?= base_url('master/molds/reads/'); ?>' + btoa(item_fg.id),
+                valueField: 'id',
+                textField: 'id',
                 prompt: 'Choose Mold ID',
             });
         }
     });
 
     $('#machine_id').combobox({
-        url:'<?= base_url('master/machines/reads/'); ?>',
-        valueField:'id',
-        textField:'number',
+        url: '<?= base_url('master/machines/reads/'); ?>',
+        valueField: 'id',
+        textField: 'number',
         prompt: 'Choose Machine No.',
     });
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
-            buttons: [{
-                text: 'List Failed',
-                handler: function() {
-                    window.open('<?= base_url('master/menu_loadings/uploadDownloadFailed') ?>', '_blank');
-                }
-            }, {
-                text: 'Upload',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/menu_loadings/upload') ?>',
-                        onSubmit: function() {
-                            if ($(this).form('validate') == false) {
-                                return $(this).form('validate');
-                            } else {
-                                $.messager.progress({
-                                    title: 'Please Wait',
-                                    msg: 'Importing Excel to Database'
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('master/menu_loadings/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('master/menu_loadings/upload') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('master/menu_loadings/uploadclearFailed') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload').progressbar('setValue', value);
+                                $('#p_start').html(number);
+                                $('#p_finish').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('master/menu_loadings/uploadCreate') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('master/menu_loadings/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks").append(title + "<br>");
+                                    }
                                 });
                             }
-                        },
-                        success: function(result) {
-                            $.messager.progress('close');
-                            //Clear File
-                            $.ajax({
-                                url: "<?= base_url('master/menu_loadings/uploadclearFailed') ?>"
-                            });
-                            var json = eval('(' + result + ')');
-                            requestData(json.total, json);
-
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
-
-                                    $.ajax({
-                                        type: "POST",
-                                        async: true,
-                                        url: "<?= base_url('master/menu_loadings/uploadCreate') ?>",
-                                        data: {
-                                            "data": json[number - 1]
-                                        },
-                                        cache: false,
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (result.theme == "success") {
-                                                $('#p_success').html(success);
-                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                //Json Failed
-                                                $.ajax({
-                                                    type: "POST",
-                                                    async: true,
-                                                    url: "<?= base_url('master/menu_loadings/uploadcreateFailed') ?>",
-                                                    data: {
-                                                        data: json[number - 1],
-                                                        message: result.message
-                                                    },
-                                                    cache: false
-                                                });
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                            }
-                                            $("#p_remarks").append(title + "<br>");
-                                        }
-                                    });
-                                }
-                            }
                         }
-                    });
-                }
-            }]
-        });
+                    }
+                });
+            }
+        }]
+    });
 </script>

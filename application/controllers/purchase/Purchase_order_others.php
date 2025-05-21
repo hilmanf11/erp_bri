@@ -51,10 +51,9 @@ class Purchase_order_others extends CI_Controller
         echo json_encode($records);
     }
 
-    public function readPono($supplier_id)
+    public function readPono()
     {
-        $supplier_id = base64_decode($supplier_id);
-        $records = $this->crud->query("SELECT po_no, po_date, po_name FROM purchase_order_others WHERE `status` = '0' AND supplier_id = '$supplier_id' GROUP BY po_no ORDER BY `status` desc");
+        $records = $this->crud->query("SELECT po_no, po_date FROM purchase_order_others WHERE `deleted` = '0' GROUP BY po_no ORDER BY `status` desc");
         echo json_encode($records);
     }
 
@@ -78,7 +77,6 @@ class Purchase_order_others extends CI_Controller
     {
         $filter_from = $this->input->get('filter_from');
         $filter_to   = $this->input->get('filter_to');
-        $filter_supplier_id = $this->input->get('filter_supplier_id');
         $filter_po_no = $this->input->get('filter_po_no');
         $page = $this->input->post('page');
         $rows = $this->input->post('rows');
@@ -87,20 +85,19 @@ class Purchase_order_others extends CI_Controller
         $rows   = isset($rows) ? intval($rows) : 10;
         $offset = ($page - 1) * $rows;
         $result = array();
-        //Select Query
         $id = $_POST['id'];
         if ($id === "0") {
-            $this->db->select('a.po_no, a.po_date, a.po_name, sum(a.qty) as qty, a.status, a.supplier_id, a.taxes, a.total_dp, c.name as supplier_name, SUM(a.qty * a.price) as total');
+        //Select Query
+            $this->db->select('a.*');
             $this->db->from('purchase_order_others a');
-            $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-            $this->db->join('suppliers c', 'a.supplier_id = c.id');
             $this->db->where('a.deleted', 0);
             if ($filter_from != "" or $filter_to != "") {
                 $this->db->where('a.po_date >=', $filter_from);
                 $this->db->where('a.po_date <=', $filter_to);
             }
-            $this->db->like('a.po_no', $filter_po_no);
-            $this->db->like('c.id', $filter_supplier_id);
+            if ($filter_po_no != "" ) {
+                $this->db->where('a.po_no', $filter_po_no);
+            }
             $this->db->group_by('a.po_no');
             $this->db->order_by('a.po_date', 'DESC');
             //Total Data
@@ -109,53 +106,19 @@ class Purchase_order_others extends CI_Controller
             $this->db->limit($rows, $offset);
             //Get Data Array
             $records = $this->db->get()->result_array();
-            foreach ($records as $record) {
-                $arr[] = array(
-                    "id" => $record['po_no'],
-                    "supplier_name" => $record['supplier_name'],
-                    "supplier_id" => $record['supplier_id'],
-                    "po_no" => $record['po_no'],
-                    "po_date" => $record['po_date'],
-                    "po_name" => $record['po_name'],
-                    "qty" => $record['qty'],
-                    "total" => $record['total'],
-                    "total_vat" => ($record['total'] * ($record['taxes'] / 100)),
-                    "total_amount" => ($record['total'] - ($record['total'] * ($record['taxes'] / 100))),
-                    "total_dp" => $record['total_dp'],
-                    "total_grand" => (($record['total'] - ($record['total'] * ($record['taxes'] / 100))) - $record['total_dp']),
-                    "status" => $record['status'],
-                    "state" => "closed",
-                    "datatable" => 1
-                );
-            }
             $result['total'] = $totalRows;
-            $result = array_merge($result, ['rows' => @$arr]);
+            $result = array_merge($result, ['rows' => $records]);
             echo json_encode($result);
         } else {
-            $this->db->select('a.*, 
-                b.number as item_number, 
-                b.name as item_name, 
-                b.uom, 
-                c.name as supplier_name,
-                c.currency,
-                b.description,
-                d.mpq, d.moq');
-                
-            $this->db->from('purchase_order_others a');
-            $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-            $this->db->join('suppliers c', 'a.supplier_id = c.id');
-            $this->db->join('supplier_items d', 'a.supplier_id = d.supplier_id and a.item_rm_id = d.item_rm_id');
-            // $this->db->join('uom e', 'b.uom_id = e.id');
-            $this->db->where('a.deleted', 0);
-            if ($filter_from != "" or $filter_to != "") {
-                $this->db->where('a.po_date >=', $filter_from);
-                $this->db->where('a.po_date <=', $filter_to);
-            }
-            $this->db->where('a.po_no', $id);
-            $this->db->like('c.id', $filter_supplier_id);
-            $this->db->order_by('b.number', 'ASC');
-            $records = $this->db->get()->result_array();
-            echo json_encode($records);
+            //Select Query
+                $this->db->select('a.*');
+                $this->db->from('purchase_order_others a');
+                $this->db->where('a.deleted', 0);
+                $this->db->where('a.po_no', $filter_po_no);
+                $this->db->order_by('a.item_id', 'ASC');
+                //Get Data Array
+                $records = $this->db->get()->result_array();
+                echo json_encode($records);
         }
     }
 
@@ -172,26 +135,26 @@ class Purchase_order_others extends CI_Controller
         echo json_encode($records);
     }
 
-    public function create()
-    {
-        if ($this->input->post()) {
-            if ($this->form_validation->run() == TRUE) {
-                $post   = $this->input->post();
-                $purchase_order_others = $this->crud->read('purchase_order_others', [], ["po_no" => $post['po_no'], "item_rm_id" => $post['item_rm_id']]);
-                if (@$purchase_order_others->id != "") {
-                    $send = $this->crud->update('purchase_order_others', ["po_no" => $post['po_no'], "item_rm_id" => $post['item_rm_id']], array_merge($post, array("revision" => (@$purchase_order_others->revision + 1))));
-                } else {
-                    $send = $this->crud->create('purchase_order_others', $post);
-                }
+    // public function create()
+    // {
+    //     if ($this->input->post()) {
+    //         if ($this->form_validation->run() == TRUE) {
+    //             $post   = $this->input->post();
+    //             $purchase_order_others = $this->crud->read('purchase_order_others', [], ["po_no" => $post['po_no'], "item_rm_id" => $post['item_rm_id']]);
+    //             if (@$purchase_order_others->id != "") {
+    //                 $send = $this->crud->update('purchase_order_others', ["po_no" => $post['po_no'], "item_rm_id" => $post['item_rm_id']], array_merge($post, array("revision" => (@$purchase_order_others->revision + 1))));
+    //             } else {
+    //                 $send = $this->crud->create('purchase_order_others', $post);
+    //             }
 
-                echo $send;
-            } else {
-                show_error(validation_errors());
-            }
-        } else {
-            show_error("Cannot Process your request");
-        }
-    }
+    //             echo $send;
+    //         } else {
+    //             show_error(validation_errors());
+    //         }
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
 
     public function delete()
     {
@@ -202,6 +165,7 @@ class Purchase_order_others extends CI_Controller
 
     public function upload()
     {
+        
         error_reporting(0);
         require_once 'assets/vendors/excel_reader2.php';
         $target = basename($_FILES['file_upload']['name']);
@@ -211,26 +175,23 @@ class Purchase_order_others extends CI_Controller
         $data = new Spreadsheet_Excel_Reader($file, false);
         $total_row = $data->rowcount($sheet_index = 0);
 
-        for ($i = 3; $i <= $total_row; $i++) {
-            $item_number = $data->val($i, 3);
-            $items = $this->crud->read('item_rm', [], ["number" => $item_number]);
-
+        for ($i = 6; $i <= $total_row; $i++) {
             $datas[] = array(
-                'po_no' => $data->val($i, 2),
-                'po_date' => date("Y-m-d", $data->val($i, 3)),
-                'po_name' => $this->session->name,
-                'supplier_number' => $data->val($i, 4),
-                'product_number' => $data->val($i, 5),
-                'qty' => $data->val($i, 6),
-                'delivery_date' => $data->val($i, 7),
-                'remarks' => $data->val($i, 8),
+                'po_no' => $data->val($i, 4),
+                'po_date' => $data->val($i, 9),
+                'item_number' => $data->val($i, 12),
+                'item_name' => $data->val($i, 13),
+                'etd' => $data->val($i, 17),
+                'specification' => $data->val($i, 19),
+                'qty' => $data->val($i, 22),
+                'uom' => $data->val($i, 23),
+                'remarks' => $data->val($i, 28),
             );
         }
-        
+    
         $datas['total'] = count($datas);
         echo json_encode($datas);
-
-        unlink($_FILES['file_upload']['name']);
+        unlink($target);
     }
 
     public function uploadclearFailed()
@@ -264,45 +225,28 @@ class Purchase_order_others extends CI_Controller
     public function uploadcreate()
     {
         if ($this->input->post()) {
-            $data       = $this->input->post('data');
-            //Cek Process Number
-            $config = $this->crud->read('config');
-            $item = $this->crud->read('item_rm', [], ["number" => $data['product_number']]);
-            $supplier = $this->crud->read('suppliers', [], ["number" => $data['supplier_number']]);
-            $supplier_item = $this->crud->read('supplier_items', [], ["supplier_id" => @$supplier->id, "item_rm_id" => @$item->id]);
-
-            $purchase_order_others = $this->crud->read('purchase_order_others', [], ["po_no" => $data['po_no'], "item_rm_id" => @$item->id, "supplier_id" => @$supplier->id]);
-            if (empty($item->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Product No " . $data['product_number'] . " Not Found", "theme" => "error"));
-            } elseif (empty($supplier->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Supplier No " . $data['supplier_number'] . " Not Found", "theme" => "error"));
-            } elseif (empty($supplier_item->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Supplier Items " . $data['supplier_number'] . " and " . $data['product_number'] . " Not Found", "theme" => "error"));
-            } elseif (!empty($purchase_order_others->id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['product_number'] . " and " . $data['po_no'] . " Duplicate Data", "theme" => "error"));
-            } else {
-                if($supplier->vat_status == "NON VAT"){
-                    $taxes = 0;
-                }else{
-                    $taxes = $config->tax;
-                }
+            $data = $this->input->post('data');
+            $purchase_order_others = $this->crud->read('purchase_order_others', [], ["po_no" => $data['po_no'], "item_id" => $data['item_number']]);
+            if (!empty($purchase_order_others->id)) {
+                echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['item_number'] . " and " . $data['po_no'] . " Duplicate Data", "theme" => "error"));
+            }else{
 
                 $finalPost = array(
-                    "supplier_id" => $supplier->id,
-                    "item_rm_id" => $item->id,
                     "po_no" => $data['po_no'],
                     "po_date" => $data['po_date'],
-                    "po_name" => $data['po_name'],
-                    "delivery_date" => $data['delivery_date'],
+                    "item_id" => $data['item_number'],
+                    "item_name" => $data['item_name'],
+                    "etd" => $data['etd'],
+                    "specification" => $data['specification'],
                     "qty" => $data['qty'],
-                    "price" => $supplier_item->price,
-                    "total" => ($data['qty'] * $supplier_item->price),
-                    "taxes" => ((($data['qty'] * $supplier_item->price) * $taxes) / 100),
+                    "uom" => $data['uom'],
                     "remarks" => $data['remarks'],
                 );
 
                 $send = $this->crud->create('purchase_order_others', $finalPost);
                 echo $send;
+            
+
             }
         }
     }
@@ -310,17 +254,37 @@ class Purchase_order_others extends CI_Controller
     public function print_po($po_no)
     {
         $purchase_order_others_total = $this->crud->reads('purchase_order_others', [], ["po_no" => base64_decode($po_no)]);
-        $purchase_order_others = $this->crud->read('purchase_order_others', [], ["po_no" => base64_decode($po_no)], "", "revision", "desc");
-        $supplier = $this->crud->read('suppliers', [], ["id" => $purchase_order_others->supplier_id]);
+        $purchase_order_others = $this->crud->read('purchase_order_others', [], ["po_no" => base64_decode($po_no)],"", "created_date", "desc");
         $config = $this->db->get('config')->row();
         $config_iso = $this->db->get('config_iso')->row();
         $signatures = $this->db->get('signatures')->row();
+        // $po_period = $purchase_order_others->po_date;
+        // $month = date('m', strtotime($po_period));
+        // $year = date('y', strtotime($po_period));
+
+        // $bulan_array = array(
+        //     1 => "Jan",
+        //     2 => "Feb",
+        //     3 => "Mar",
+        //     4 => "Apr",
+        //     5 => "May",
+        //     6 => "June",
+        //     7 => "July",
+        //     8 => "Aug",
+        //     9 => "Sep",
+        //     10 => "Oct",
+        //     11 => "Nov",
+        //     12 => "Dec"
+        // );
+
+        // $month_1 = $bulan_array[(($month + 1 - 1) % 12) + 1] . "-" . (($month + 1 > 12) ? $year + 1 : $year);
+        // $month_2 = $bulan_array[(($month + 2 - 1) % 12) + 1] . "-" . (($month + 2 > 12) ? $year + 1 : $year);
+        // $month_3 = $bulan_array[(($month + 3 - 1) % 12) + 1] . "-" . (($month + 3 > 12) ? $year + 1 : $year);
+        // $month_4 = $bulan_array[(($month + 4 - 1) % 12) + 1] . "-" . (($month + 4 > 12) ? $year + 1 : $year);
 
         //Config Page
-        $rows = 8;
+        $rows = $this->getRowsPerPage(1);
         $page = ceil(count($purchase_order_others_total) / $rows);
-        //Generate QRcode
-        $this->createQrcode($purchase_order_others->po_no, "assets/image/qrcode/");
         $html = '<html>
                     <head>
                         <title>' . $purchase_order_others->po_no . '</title>
@@ -342,6 +306,37 @@ class Purchase_order_others extends CI_Controller
                             padding-bottom: 2px;
                             text-align: center;color: black;
                         }
+            .supplier-signature {
+                width: 100%;
+            }
+            .signature-header {
+                border-bottom: 0.1mm solid black;
+                text-align: center;
+                padding: 5px;
+                height: 45px;
+            }
+            .signature-content {
+                height: 100px;
+                text-align: center;
+            }
+            .signature-name {
+                border-top: 0.1mm solid black;
+                text-align: center;
+                padding: 5px;
+            }
+            .supplier-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 9pt;
+                font-weight: bold;
+            }
+            .supplier-table th, .supplier-table td {
+                border: 0.1mm solid black;
+                padding: 2px;
+                text-align: center;
+                font-size: 9pt;
+                font-weight: bold;
+            }
                         @media screen {
                             .print {
                                 display: none !important;
@@ -359,29 +354,22 @@ class Purchase_order_others extends CI_Controller
                                 <h1>Press CTRL + P for Print</h1>
                             </center>
                         </div>
-                        <div class="print">';
+                        <div class="print">
+                        <div style="width:100%; display:flex, flex-direction:column">';
         //Loop Page
         $no = 1;
         $hal = 1;
         $subtotal = 0;
+        $total_qty = 0;
         for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*, b.number as item_rm_id, c.currency, b.description as item_name, a.price, b.uom');
+            $this->db->select('a.*, b. name');
             $this->db->from('purchase_order_others a');
-            $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-            $this->db->join('suppliers c', 'a.supplier_id = c.id');
-            $this->db->join('supplier_items d', 'a.supplier_id = d.supplier_id and a.item_rm_id = d.item_rm_id');
-            // $this->db->join('uom e', 'b.uom_id = e.id');
+            $this->db->join('users b', 'a.created_by = b.username');
             $this->db->where('a.deleted', 0);
             $this->db->where('a.po_no', base64_decode($po_no));
-            $this->db->order_by('b.number', 'asc');
-            $this->db->limit(8, ($i * 8));
+            $this->db->order_by('a.created_date', 'asc');
+            $this->db->limit($rows, ($i * $rows));
             $records = $this->db->get()->result_array();
-
-            if ($purchase_order_others->updated_date != null) {
-                $revision_date = $purchase_order_others->updated_date;
-            } else {
-                $revision_date = $purchase_order_others->created_date;
-            }
             $html .= '  <table style="width:100%;">
                             <tr>
                                 <th width="10">
@@ -394,222 +382,148 @@ class Purchase_order_others extends CI_Controller
                                 <th width="100" style="text-align:right;">
                                     <table style="width:100%; font-size:10px;">
                                         <tr>
-                                            <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $purchase_order_others->po_no . '.png') . '" width="60"/></td>
-                                            <td width="60">Doc No</td>
-                                            <td width="5">:</td>
-                                            <td width="100">' . $config_iso->doc_purchase_order . '</td>
+                                            <td>Phone</td>
+                                            <td>:</td>
+                                            <td>(0264) 204444</td>
                                         </tr>
                                         <tr>
-                                            <td>Form</td>
+                                            <td>Fax</td>
                                             <td>:</td>
-                                            <td>' . $config_iso->form_purchase_order . '</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Print Date</td>
-                                            <td>:</td>
-                                            <td>' . date("Y-m-d H:i") . '</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Print By</td>
-                                            <td>:</td>
-                                            <td>' . $this->session->name . '</td>
+                                            <td>(0264) 214444</td>
                                         </tr>
                                     </table>
                                 </th>
                             </tr>
                         </table>
-                        <div style="border: 1px solid black; width:100%;">
-                            <div style="padding:10px;">
+                            <div style="border: 1px solid black; padding:10px;">
                                 <center>
                                     <br>
-                                    <h3 style="margin:0;"><u>PURCHASE ORDER</u></h3>
-                                    <small>NO : ' . @$purchase_order_others->po_no . '</small>
-                                </center>
-                                <table style="width:100%; font-size:12px; margin-bottom:10px;">
+                                    <h3 style="margin:0;"><u>PURCHASE ORDER OTHERS</u></h3>
+                                </center>';
+            if ($hal == 1) {
+                $html .= '<div style="width:100%; display:flex; flex-direction:row; font-size:12px; margin-bottom:10px;"><table style="width:60%;">
+                                            <tr style="width:100%">
+                                                <td style="width:100%">Kepada Yth :</td>
+                                            </tr>
+                                            <tr style="width:100%">
+                                                <td style="width:100%">PT. ASKARA INTERNAL</td>
+                                            </tr>
+                                            <tr style="width:100%">
+                                                <td style="width:100%">Jl. K.H. Noer Alie Duta Permai Block CIV </td>
+                                            </tr>
+                                            <tr style="width:100%">
+                                                <td width="100">No 09-12 Jakasampurna, Bekasi Barat</td>
+                                            </tr>
+                                            <tr style="width:100%">
+                                                <td style="width:100%">Bekasi - Indonesia</td>
+                                            </tr>
+                                            <tr style="width:100%">
+                                                <td style="width:100%">Attention : Bapak Raise</td>
+                                            </tr>
+                                    </table>
+                                    <table style="width:35%;">
+                                            <tr style="width:100%">
+                                                <td style="width:29%">Document No</td>
+                                                <td style="width:1%">:</td>
+                                                <td style="width:70%">'.$purchase_order_others->po_no.'</td>
+                                            </tr>
+                                            <tr style="width:100%">
+                                                <td style="width:29%">PO Date</td>
+                                                <td style="width:1%">:</td>
+                                                <td style="width:70%">'.$purchase_order_others->po_date.'</td>
+                                            </tr>
+                                            <tr style="width:100%">
+                                                <td style="width:29%">Lampiran</td>
+                                                <td style="width:1%">:</td>
+                                                <td style="width:70%">-</td>
+                                            </tr>
+                                            <tr style="width:100%">
+                                                <td style="width:29%">Plan</td>
+                                                <td style="width:1%">:</td>
+                                                <td style="width:70%">-</td>
+                                            </tr>
+                                            <tr style="width:100%">
+                                                <td style="width:29%">Revisi</td>
+                                                <td style="width:1%">:</td>
+                                                <td style="width:70%">-</td>
+                                            </tr>
+                                    </table></div>';
+            }
+            $html .= '<table id="customers">
                                     <tr>
-                                        <td width="80">Supplier</td>
-                                        <td width="10">:</td>
-                                        <td width="30%"><b>' . @$supplier->name . '</b></td>
-                                        <td style="text-align:right; padding-right: 20px;" rowspan="7">
-                                            Page <b>' . $hal  . '</b> of <b> ' . $page . '</b><br><br>
-                                            PO Date:<br><b>' . date("d F Y", strtotime($purchase_order_others->po_date)) . '</b><br>
-                                            Revision:<br><b>' . $purchase_order_others->revision . '</b><br>
-                                            Revision Date:<br><b>' . date("d F Y", strtotime($revision_date)) . '</b><br>
-                                            Payment Terms:<br><b>' . $supplier->payment_term . ' Days</b>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td width="50">Address</td>
-                                        <td width="10">:</td>
-                                        <td><b>' . @$supplier->address . '</b></td>
-                                    </tr>
-                                    <tr>
-                                        <td width="50">Reff No</td>
-                                        <td width="10">:</td>
-                                        <td><b>' . @$purchase_order_others->request_no . '</b></td>
-                                    </tr>
-                                    <tr>
-                                        <td width="50">Attention</td>
-                                        <td width="10">:</td>
-                                        <td><b>' . @$supplier->attention . '</b></td>
-                                    </tr>
-                                    <tr>
-                                        <td width="50">Phone</td>
-                                        <td width="10">:</td>
-                                        <td><b>' . @$supplier->telp . '</b></td>
-                                    </tr>
-                                    <tr>
-                                        <td width="50">Fax</td>
-                                        <td width="10">:</td>
-                                        <td><b>' . @$supplier->fax . '</b></td>
-                                    </tr>
-                                    <tr>
-                                        <td width="50">Email</td>
-                                        <td width="10">:</td>
-                                        <td><b>' . @$supplier->email . '</b></td>
-                                    </tr>
-                                </table>
-                                <table id="customers">
-                                    <tr>
-                                        <th width="30" style="text-align:center;">No</th>
-                                        <th style="text-align:center;">Product No</th>
-                                        <th style="text-align:center;">Specification</th>
-                                        <th width="50" style="text-align:center;">Qty</th>
-                                        <th width="50" style="text-align:center;">Uom</th>
-                                        <th width="80" style="text-align:center;">Delivery<br>Date</th>
-                                        <th width="50" style="text-align:center;">Unit<br>Price</th>
-                                        <th width="50" style="text-align:center;">Currency</th>
-                                        <th width="50" style="text-align:center;">Amount</th>
+                                        <th rowspan="1" width="30" style="text-align:center;">No</th>
+                                        <th rowspan="1" width="150" style="text-align:center;">Part Number Customer</th>
+                                        <th rowspan="1" width="150" style="text-align:center;">art Name Customer</th>
+                                        <th rowspan="1" width="50" style="text-align:center;">Specification</th>
+                                        <th rowspan="1" width="80" style="text-align:center;">ETD</th>
+                                        <th rowspan="1" width="50" style="text-align:center;">Qty</th>
+                                        <th rowspan="1" width="50" style="text-align:center;">Uom</th>
+                                        <th rowspan="1" width="100" style="text-align:center;">Remarks</th>
+                                        <th rowspan="1" width="50" style="text-align:center;">Dept</th>
                                     </tr>';
             $row = 0;
             foreach ($records as $record) {
-                $subtotal += ($record['qty'] * $record['price']);
-                if ($record['currency'] != "IDR") {
-                    $digits = 2;
-                } else {
-                    $digits = 2;
-                }
-                $html .= '  <tr>
-                                <td  style="text-align:center;">' . $no . '</td>
-                                <td>' . $record['item_rm_id'] . '</td>
+
+                $html .= '  
+                            <tr>    
+                                <td style="text-align:center;">' . $no . '</td>
+                                <td>' . $record['item_id'] . '</td>
                                 <td><span style="font-size:10px;">' . $record['item_name'] . '</span></td>
-                                <td style="text-align:right;">' . number_format($record['qty'], 2) . '</td>
+                                <td style="text-align:left;">' . $record['specification'] . '</td>
+                                <td style="text-align:center;">' . $record['etd'] . '</td>
+                                <td style="text-align:right;">' . number_format(round($record['qty']), 0, ',', '.') . '</td>
                                 <td style="text-align:center;">' . $record['uom'] . '</td>
-                                <td style="text-align:center;">' . $record['delivery_date'] . '</td>
-                                <td style="text-align:right;">' . number_format($record['price'], 2) . '</td>
-                                <td style="text-align:center;">' . $record['currency'] . '</td>
-                                <td style="text-align:right;">' . number_format(($record['qty'] * $record['price']), 2) . '</td>
+                                <td style="text-align:left;">' . $record['remarks']. '</td>
+                                <td style="text-align:center;">BRI</td>
                             </tr>';
                 $row++;
                 $no++;
             }
-            if (($i + 1) == $page) {
-                $this->db->select('a.remarks, b.number as item_rm_id, b.description as item_name');
-                $this->db->from('purchase_order_others a');
-                $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-                $this->db->where('a.deleted', 0);
-                $this->db->where('a.po_no', base64_decode($po_no));
-                $this->db->order_by('b.number', 'asc');
-                $this->db->limit(8, ($i * 8));
-                $remarks = $this->db->get()->result_array();
-
-                $html .= '  <tr>
-                                <td style="vertical-align: top; text-align:left;" colspan="6" rowspan="5">
-                                    <b>Note :</b> <br>';
-                foreach ($remarks as $remark) {
-                    if ($remark['remarks'] != "") {
-                        $html .= $remark['item_rm_id'] . " &nbsp; (" . $remark['remarks'] . ") <br>";
-                    }
-                }
-
-                if($supplier->vat_status == "VAT"){
-                    $tax = $config->tax;
-                }else{
-                    $tax = 0;
-                }
-
-                $html .= '  </td>
-                            </tr>
-                            <tr>
-                                <th style="text-align:left" colspan="2">Sub Total</th>
-                                <th style="text-align:right;">' . number_format($subtotal, 2) . '</th>
-                            </tr>
-                            <tr>
-                                <th style="text-align:left" colspan="2">VAT (' . $tax . '%)</th>
-                                <th style="text-align:right;">' . number_format(((@$subtotal * $tax) / 100), 2) . '</th>
-                            </tr>
-                            <tr>
-                                <th style="text-align:left" colspan="2">Down Payment</th>
-                                <th style="text-align:right;">' . number_format(@$purchase_order_others->total_dp, 2) . '</th>
-                            </tr>
-                            <tr>
-                                <th style="text-align:left" colspan="2">Total Amount</th>
-                                <th style="text-align:right;">' . number_format($subtotal - ((@$subtotal * $tax) / 100) - @$purchase_order_others->total_dp, 2) . '</th>
-                            </tr>
-                        </table>';
-            } else {
-                $html .= '</table>';
-            }
-            $html .= '  <div style="width:100%; display: grid; grid-template-columns: auto auto auto;">
-                        <div style="width:50%;">
-                            <table style="margin-top:20px; font-size:12px;">
-                                <tr>
-                                    <th width="200" style="text-align:center;">Supplier Approval</th>
-                                </tr>
-                                <tr>
-                                    <th style="height:80px;"></th>
-                                </tr>
-                                <tr>
-                                    <th style="height:20px; text-align:center;">(...................................)</th>
-                                </tr>
-                            </table>
-                        </div>
-                        <div style="width:50%; position: absolute; right: 50px;">
-                            <table id="customers" style="margin-top:20px;">
-                                <tr>
-                                    <th width="200" style="text-align:center;">Prepared By</th>
-                                    <th width="200" style="text-align:center;">Checked By</th>
-                                    <th width="200" style="text-align:center;">Approved By</th>
-                                </tr>
-                                <tr>
-                                    <th style="height:80px;"></th>
-                                    <th style="height:80px;"></th>
-                                    <th style="height:80px;"></th>
-                                </tr>
-                                <tr>
-                                    <th style="height:20px; text-align:center;">' . $signatures->po_prepared . '</th>
-                                    <th style="height:20px; text-align:center;">' . $signatures->po_checked . '</th>
-                                    <th style="height:20px; text-align:center;">' . $signatures->po_approved . '</th>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-    
-                    <table style="width:100%; font-size:12px; margin-top:20px;">
-                        <tr>
-                            <td width="20">1.</td>
-                            <td>Please mention the Purchase Order Number in the shipping & billing document</td>
-                        </tr>
-                        <tr>
-                            <td>2. </td>
-                            <td>Make sure the delivery of goods must be meet to specifications otherwise penalty will be issued</td>
-                        </tr>
-                        <tr>
-                            <td>3. </td>
-                            <td>Please pay attention to letter of vendor regulations</td>
-                        </tr>
-                        <tr>
-                            <td>4. </td>
-                            <td>Late delivery must be inform one week before due date</td>
-                        </tr>
-                    </table>
-                </div>
-            </div>';
-            if (($i + 1) != $page) {
-                $html .= '<div style="page-break-after:always;"></div>';
-            }
             $hal++;
         }
+        $html .= '<div class="footer" style="margin-top:10pt; font-size:9pt;">
+                            <div class="signature-container">
+                                <div class="supplier-signature">
+                                    <table class="supplier-table">
+                                        <tr>
+                                            <th style="width:15%;padding:2pt;" rowspan="3">Diterima</th>
+                                            <th style="width:25%;padding:2pt;border:none" rowspan="3"></th>
+                                            <th style="width:45%;padding:2pt;" colspan="4">Confirm OK</th>
+                                        </tr>
+                                        <tr style="width:100%;">
+                                            <th style="padding:2pt;">Disetujui</th>
+                                            <th style="padding:2pt;">Diketahui</th>
+                                            <th style="padding:2pt;">Diperiksa</th>
+                                            <th style="padding:2pt;">Dibuat</th>
+                                        </tr>
+                                        <tr>
+                                        <td style="border:none"></td>
+                                        <td style="border:none"></td>
+                                        <td></td>
+                                        <td></td>
+                                        </tr>';
+        $html .= '
+                                        <tr>
+                                            <td style="text-align:center;"></td>
+                                            <td style="text-align:center;border:none;"></td>
+                                            <td style="text-align:center;">Deddy H</td>
+                                            <td style="text-align:center;">A. Rachman</td>
+                                            <td style="text-align:center;">Heru P</td>
+                                            <td style="text-align:center;">'.$records[0]['name'].'</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="text-align:center;">PT. ASKARA INTERNAL</td>
+                                            <td style="text-align:center;border:none;"></td>
+                                            <td style="text-align:center;">Presdir</td>
+                                            <td style="text-align:center;">BOD</td>
+                                            <td style="text-align:center;">Plan Manager</td>
+                                            <td style="text-align:center;">Staff</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    ';
         $html .= '<script>window.print()</script>';
         die($html);
     }
@@ -619,39 +533,26 @@ class Purchase_order_others extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=purchase_order_misc_$format.xls");
+            header("Content-Disposition: attachment; filename=purchase_order_others_$format.xls");
         }
         $filter_from = $this->input->get('filter_from');
         $filter_to   = $this->input->get('filter_to');
         $filter_po_no = $this->input->get('filter_po_no');
-        $filter_suppliers = $this->input->get('filter_suppliers');
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        $this->db->select('a.*, 
-            b.number as item_rm_id, 
-            b.name as item_name,
-            c.name as item_family_name, 
-            d.name as supplier_name, 
-            d.currency, 
-            e.mpq, 
-            e.moq,
-            b.uom');
+        $this->db->select('a.*');
         $this->db->from('purchase_order_others a');
-        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-        $this->db->join('item_familys c', 'b.item_family_id = c.id');
-        $this->db->join('suppliers d', 'a.supplier_id = d.id');
-        $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
-        // $this->db->join('uom f', 'b.uom_id = f.id');
         $this->db->where('a.deleted', 0);
         if ($filter_from != "" or $filter_to != "") {
             $this->db->where('a.po_date >=', $filter_from);
             $this->db->where('a.po_date <=', $filter_to);
         }
-        $this->db->like('a.po_no', $filter_po_no);
-        $this->db->like('d.number', $filter_suppliers);
-        $this->db->order_by('a.po_date', 'DESC');
+        if ($filter_po_no != "" ) {
+            $this->db->where('a.po_no', $filter_po_no);
+        }
+        $this->db->order_by('a.item_id', 'DESC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: black;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
             <center>
@@ -678,21 +579,15 @@ class Purchase_order_others extends CI_Controller
             <table id="customers" border="1">
                 <tr>
                     <th width="20">No</th>
-                    <th>PO No</th>
-                    <th>PO Period</th>
-                    <th>PO Name</th>
-                    <th>Supplier</th>
-                    <th>Product No</th>
-                    <th>Product Name</th>
-                    <th>MPQ</th>
-                    <th>MOQ</th>
-                    <th>Qty</th>
-                    <th>Price</th>
-                    <th>Total Price</th>
-                    <th>Currency</th>
-                    <th>Uom</th>
-                    <th>Delivery</th>
                     <th>Status</th>
+                    <th>PO No</th>
+                    <th>PO Date</th>
+                    <th>Part No Customer</th>
+                    <th>Part Name Customer</th>
+                    <th>ETD</th>
+                    <th>SPECIFICATION</th>
+                    <th>Qty</th>
+                    <th>UOM</th>
                     <th>Remarks</th>
                 </tr>';
         $no = 1;
@@ -702,33 +597,30 @@ class Purchase_order_others extends CI_Controller
             } else {
                 $status = "CLOSED";
             }
-            if ($data['currency'] != "IDR") {
-                $digits = 4;
-            } else {
-                $digits = 2;
-            }
             $html .= '<tr>
                         <td style="text-align:center">' . $no . '</td>
+                        <td>' . $status . '</td>
                         <td>' . $data['po_no'] . '</td>
                         <td>' . $data['po_date'] . '</td>
-                        <td>' . $data['po_name'] . '</td>
-                        <td>' . $data['supplier_name'] . '</td>
-                        <td>' . $data['item_rm_id'] . '</td>
+                        <td>' . $data['item_id'] . '</td>
                         <td>' . $data['item_name'] . '</td>
-                        <td>' . number_format($data['mpq'], 2) . '</td>
-                        <td>' . number_format($data['moq'], 2) . '</td>
-                        <td>' . number_format($data['qty'], 2) . '</td>
-                        <td>' . number_format($data['price'], 4, ",", ".") . '</td>
-                        <td>' . number_format(($data['qty'] * $data['price']), 2, ",", ".") . '</td>
-                        <td>' . $data['currency'] . '</td>
+                        <td>' . $data['etd'] . '</td>
+                        <td>' . $data['specification'] . '</td>
+                        <td>' . $data['qty'] . '</td>
                         <td>' . $data['uom'] . '</td>
-                        <td>' . $data['delivery_date'] . '</td>
-                        <td>' . $status . '</td>
                         <td>' . $data['remarks'] . '</td>
                     </tr>';
             $no++;
         }
         $html .= '</table></body></html>';
         echo $html;
+    }
+    function getRowsPerPage($pageNumber)
+    {
+        if ($pageNumber == 1) {
+            return 18; // Set 20 rows for the first page
+        } else {
+            return 25; // Set 25 rows for subsequent pages
+        }
     }
 }

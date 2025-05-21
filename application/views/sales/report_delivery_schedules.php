@@ -17,19 +17,15 @@
                     <input style="width:60%;" id="filter_customer_order_no" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Sales Order No</span>
-                    <input style="width:60%;" id="filter_sales_order_no" class="easyui-combobox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;"></span>
-                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-                </div>
-            </div>
-            <div style="width: 50%; float: left;">
-                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No</span>
                     <input style="width:60%;" id="filter_item_fg" class="easyui-combobox">
                 </div>
+                <!-- <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Sales Order No</span>
+                    <input style="width:60%;" id="filter_sales_order_no" class="easyui-combobox">
+                </div> -->
+            </div>
+            <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Name</span>
                     <input style="width:60%;" id="filter_item_fg_name" class="easyui-textbox">
@@ -40,6 +36,10 @@
                         <option value="RECAP">RECAP</option>
                         <option value="DETAIL">DETAIL</option>
                     </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;"></span>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                 </div>
             </div>
         </fieldset>
@@ -59,7 +59,7 @@
         var filter_so_date_to = $("#filter_so_date_to").datebox("getValue");
         var filter_customer_name = $("#filter_customer_name").combobox("getValue");
         var filter_customer_order_no = $("#filter_customer_order_no").combobox("getValue");
-        var filter_sales_order_no = $("#filter_sales_order_no").combobox("getValue");
+        //var filter_sales_order_no = $("#filter_sales_order_no").combobox("getValue");
         var filter_item_fg = $("#filter_item_fg").combobox("getValue");
         var filter_item_fg_name = $("#filter_item_fg_name").textbox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
@@ -68,7 +68,7 @@
             "&filter_so_date_to=" + window.btoa(filter_so_date_to) +
             "&filter_customer_name=" + window.btoa(filter_customer_name) +
             "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
-            "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            //"&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
             "&filter_item_fg_name=" + window.btoa(filter_item_fg_name) +
             "&filter_display=" + window.btoa(filter_display);
@@ -86,7 +86,7 @@
         var filter_so_date_to = $("#filter_so_date_to").datebox("getValue");
         var filter_customer_name = $("#filter_customer_name").combobox("getValue");
         var filter_customer_order_no = $("#filter_customer_order_no").combobox("getValue");
-        var filter_sales_order_no = $("#filter_sales_order_no").combobox("getValue");
+        //var filter_sales_order_no = $("#filter_sales_order_no").combobox("getValue");
         var filter_item_fg = $("#filter_item_fg").combobox("getValue");
         var filter_item_fg_name = $("#filter_item_fg_name").textbox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
@@ -95,7 +95,7 @@
             "&filter_so_date_to=" + window.btoa(filter_so_date_to) +
             "&filter_customer_name=" + window.btoa(filter_customer_name) +
             "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
-            "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+           // "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
             "&filter_item_fg_name=" + window.btoa(filter_item_fg_name) +
             "&filter_display=" + window.btoa(filter_display);
@@ -144,53 +144,53 @@
                     }],
                 });
 
-                $('#filter_sales_order_no').combobox({
-                    url: '<?php echo base_url('sales/report_delivery_schedules/readCustomerOrder?customer_id='); ?>' + cus.id + "&filter_so_date_from=" + window.btoa(filter_so_date_from) + "&filter_so_date_to=" + window.btoa(filter_so_date_to),
-                    valueField: 'sales_order_no',
-                    textField: 'sales_order_no',
-                    prompt: "Select Sales Order No",
-                    icons: [{
-                        iconCls: 'icon-clear',
-                        handler: function(e) {
-                            $(e.data.target).combobox('clear').combobox('textbox').focus();
-                        }
-                    }],
-                    onSelect: function(so) {
-                        $('#filter_item_fg').combogrid({
-                            url: '<?php echo base_url('sales/report_delivery_schedules/readItems?customer_id='); ?>' + cus.id +
-                                "&filter_so_date_from=" + window.btoa(filter_so_date_from) +
-                                "&filter_so_date_to=" + window.btoa(filter_so_date_to) +
-                                "&filter_sales_order_no=" + window.btoa(so.sales_order_no),
-                            panelWidth: 400,
-                            idField: 'id',
-                            textField: 'number',
-                            mode: 'remote',
-                            fitColumns: true,
-                            prompt: "Select Product No",
-                            icons: [{
-                                iconCls: 'icon-clear',
-                                handler: function(e) {
-                                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-                                }
-                            }],
-                            columns: [
-                                [{
-                                    field: 'number',
-                                    title: 'Product No',
-                                    width: 200
-                                }, {
-                                    field: 'name',
-                                    title: 'Product Name',
-                                    width: 200
-                                }]
-                            ],
-                            onSelect: function(value, row) {
-                                $('#filter_item_fg_name').textbox('setValue', row.name);
-                            }
+                // $('#filter_sales_order_no').combobox({
+                //     url: '<?php echo base_url('sales/report_delivery_schedules/readCustomerOrder?customer_id='); ?>' + cus.id + "&filter_so_date_from=" + window.btoa(filter_so_date_from) + "&filter_so_date_to=" + window.btoa(filter_so_date_to),
+                //     valueField: 'sales_order_no',
+                //     textField: 'sales_order_no',
+                //     prompt: "Select Sales Order No",
+                //     icons: [{
+                //         iconCls: 'icon-clear',
+                //         handler: function(e) {
+                //             $(e.data.target).combobox('clear').combobox('textbox').focus();
+                //         }
+                //     }],
+                //     onSelect: function(so) {
+                //         $('#filter_item_fg').combogrid({
+                //             url: '<?php echo base_url('sales/report_delivery_schedules/readItems?customer_id='); ?>' + cus.id +
+                //                 "&filter_so_date_from=" + window.btoa(filter_so_date_from) +
+                //                 "&filter_so_date_to=" + window.btoa(filter_so_date_to) +
+                //                 "&filter_sales_order_no=" + window.btoa(so.sales_order_no),
+                //             panelWidth: 400,
+                //             idField: 'id',
+                //             textField: 'number',
+                //             mode: 'remote',
+                //             fitColumns: true,
+                //             prompt: "Select Product No",
+                //             icons: [{
+                //                 iconCls: 'icon-clear',
+                //                 handler: function(e) {
+                //                     $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                //                 }
+                //             }],
+                //             columns: [
+                //                 [{
+                //                     field: 'number',
+                //                     title: 'Product No',
+                //                     width: 200
+                //                 }, {
+                //                     field: 'name',
+                //                     title: 'Product Name',
+                //                     width: 200
+                //                 }]
+                //             ],
+                //             onSelect: function(value, row) {
+                //                 $('#filter_item_fg_name').textbox('setValue', row.name);
+                //             }
 
-                        });
-                    }
-                });
+                //         });
+                //     }
+                // });
             }
         });
 

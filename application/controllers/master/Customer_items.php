@@ -1,10 +1,17 @@
 <?php
+
 date_default_timezone_set("Asia/Bangkok");
+
 defined('BASEPATH') or exit('No direct script access allowed');
+
 class Customer_items extends CI_Controller
+
 {
+
     public function __construct()
+
     {
+
         parent::__construct();
         $this->load->helper('url');
         $this->load->helper(array('form', 'url'));
@@ -13,8 +20,9 @@ class Customer_items extends CI_Controller
         $this->load->model('crud');
         //VALIDASI FORM
         $this->form_validation->set_rules('customer_id', 'Customer', 'required|min_length[1]|max_length[20]|is_unique[customer_items.customer_id]');
-        $this->form_validation->set_rules('item_fg_id', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[customer_items.item_fg_id]');
+        $this->form_validation->set_rules('item_fg_id', 'Part No.', 'required|min_length[1]|max_length[20]|is_unique[customer_items.item_fg_id]');
     }
+
     //HALAMAN UTAMA
     public function index()
     {
@@ -28,6 +36,7 @@ class Customer_items extends CI_Controller
             redirect('error_access');
         }
     }
+
     //GET DATA
     public function reads($customer_id)
     {
@@ -39,28 +48,69 @@ class Customer_items extends CI_Controller
         echo json_encode($send);
     }
 
-    //GET DATATABLES
-    public function datatables()
+    public function readPlant($customer_id)
     {
+        $customer_id = base64_decode($customer_id);
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT * FROM customer_address WHERE customer_id = '$customer_id' and (plant LIKE '%$post%' or `address` LIKE '%$post%')");
+        echo json_encode($send);
+    }
+
+    public function readItems()
+    {
+        $customer_id = base64_decode($this->input->get('customer_id'));
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT b.id, b.number, b.name, b.number_customer, a.price FROM customer_items a 
+            JOIN item_fg b ON a.item_fg_id = b.id 
+            WHERE a.customer_id = '$customer_id' and (b.number LIKE '%$post%' or b.name LIKE '%$post%')");
+        echo json_encode($send);
+    }
+
+    public function readItems2()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT b.id, b.number, b.name, b.number_customer, a.price FROM customer_items a 
+            JOIN item_fg b ON a.item_fg_id = b.id 
+            WHERE (b.number LIKE '%$post%' or b.name LIKE '%$post%')");
+        echo json_encode($send);
+    }
+
+    //GET DATATABLES
+
+    public function datatables()
+
+    {
+
         if ($this->input->post()) {
+
             $get = $this->input->get();
+
             $filter_customer_id = @base64_decode($get['filter_customer_id']);
+
             $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
 
+
+
             $page = $this->input->post('page');
+
             $rows = $this->input->post('rows');
+
             //Pagination 1-10
             $page   = isset($page) ? intval($page) : 1;
             $rows   = isset($rows) ? intval($rows) : 10;
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('b.id as customer_id, b.number as customer_number, b.name as customer_name, b.type, b.status, a.created_by, a.created_date, a.updated_by, a.updated_date');
+            $this->db->select('a.item_fg_id, a.item_fg_customer, c.number as item_fg_number, c.name as item_fg_name, a.valid_to, a.valid_from, a.price, a.remark, b.id as customer_id, b.currency, b.number as customer_number, b.name as customer_name, b.type, b.status, a.created_by, a.created_date, a.updated_by, a.updated_date');
             $this->db->from('customer_items a');
             $this->db->join('customers b', 'a.customer_id = b.id');
-            $this->db->like('a.customer_id', $filter_customer_id);
-            $this->db->like('a.item_fg_id', $filter_item_fg_id);
-            $this->db->group_by('b.name');
+            $this->db->join('item_fg c', 'a.item_fg_id = c.id');
+            if (!empty($filter_customer_id)) {
+                $this->db->where('a.customer_id', $filter_customer_id);
+            }
+            if (!empty($filter_item_fg_id)) {
+                $this->db->where('a.item_fg_id', $filter_item_fg_id);
+            }
             $this->db->order_by('b.id', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
@@ -75,38 +125,75 @@ class Customer_items extends CI_Controller
         }
     }
 
+
+
     //GET DATATABLES DETAILS
+
     public function datatableDetails()
+
     {
+
         if ($this->input->get()) {
+
             $number = base64_decode($this->input->get('number'));
+
             $filter_customer_id = base64_decode($this->input->get('filter_customer_id'));
 
+
+
             $this->db->select('a.*, b.number as customer_number, b.name as customer_name, b.currency, c.number as item_fg_number, c.name as item_fg_name');
+
             $this->db->from('customer_items a');
+
             $this->db->join('customers b', 'a.customer_id = b.id');
+
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
+
             $this->db->where('b.number', $number);
+
             $this->db->like('a.customer_id', $filter_customer_id);
+
             $this->db->group_by('a.id');
+
             $this->db->order_by('a.id', 'ASC');
+
             $records = $this->db->get()->result_array();
+
+
 
             echo json_encode($records);
         }
     }
 
+
+
     // GET DATATABLES UPDATE
+
     public function datatableUpdates()
     {
         if ($this->input->get()) {
             $customer_id = base64_decode($this->input->get('customer_id'));
+            $item_fg_id = $this->input->get('item_fg_id') ? base64_decode($this->input->get('item_fg_id')) : null;
+
+            // Mendapatkan nilai filter_item_fg_id dari GET jika ada
+            $filter_item_fg_id = $this->input->get('filter_item_fg_id');
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_name, c.currency');
             $this->db->from('customer_items a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('customers c', 'a.customer_id = c.id');
             $this->db->where('a.customer_id', $customer_id);
+
+            // Tambahkan kondisi where untuk item_fg_id jika ada
+            if (!empty($item_fg_id)) {
+                $this->db->where('a.item_fg_id', $item_fg_id);
+            }
+
+            // Tambahkan kondisi where untuk filter_item_fg_id jika ada
+            if (!empty($filter_item_fg_id)) {
+                $this->db->where('a.item_fg_id', $filter_item_fg_id);
+            }
+
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
 
@@ -114,98 +201,179 @@ class Customer_items extends CI_Controller
         }
     }
 
+
+
+
+
     // GET DATATABLE HISTORY PRICE
+
     public function datatableHistories()
+
     {
+
         if ($this->input->get()) {
+
             $customer_id = base64_decode($this->input->get('customer_id'));
+
             $item_fg_id = base64_decode($this->input->get('item_fg_id'));
 
+
+
             $this->db->select('a.*,  c.number as item_fg_number');
+
             $this->db->from('customer_item_histories a');
+
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
+
             $this->db->where('a.customer_id', $customer_id);
+
             $this->db->where('a.item_fg_id', $item_fg_id);
-            $this->db->order_by('a.valid_date', 'DESC');
+
+            $this->db->order_by('a.valid_to, a.valid_from', 'DESC');
+
             $records = $this->db->get()->result_array();
+
+
 
             echo json_encode($records);
         }
     }
 
+
+
     public function uploadatt()
+
     {
+
         // Pastikan file disimpan dalam direktori yang diinginkan
+
         $uploadDir = 'assets/image/customer_items/';
 
+
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
             // Pastikan ada file yang diunggah dari permintaan
+
             if (isset($_FILES['file'])) {
+
                 $file = $_FILES['file'];
 
+
+
                 // Validasi ekstensi file yang diunggah
+
                 $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+
                 $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
 
+
+
                 if (!in_array($fileExtension, $allowedExtensions)) {
+
                     echo json_encode(['success' => false, 'message' => 'Only files with the extension .pdf, .jpg, or .png are allowed.']);
+
                     exit; // Menghentikan proses lebih lanjut jika ekstensi tidak valid
+
                 }
+
+
 
                 // Validasi ukuran file yang diunggah (maksimal 5MB)
+
                 $maxFileSize = 2 * 1024 * 1024; // 5MB dalam bytes
+
                 if ($file['size'] > $maxFileSize) {
+
                     echo json_encode(['success' => false, 'message' => 'Ukuran file terlalu besar. Maksimal 2MB yang diperbolehkan.']);
+
                     exit; // Menghentikan proses lebih lanjut jika ukuran terlalu besar
+
                 }
 
+
+
                 // Pastikan tidak ada error dalam proses upload
+
                 if ($file['error'] === UPLOAD_ERR_OK) {
+
                     // Buat nama unik untuk file yang diunggah
+
                     $fileName = uniqid() . '_' . $file['name'];
+
                     $uploadPath = $uploadDir . $fileName;
 
+
+
                     // Pindahkan file dari temporary directory ke lokasi yang diinginkan
+
                     if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+
                         // File berhasil diunggah
+
                         echo json_encode(['success' => true, 'message' => 'File Upload Success.', 'filename' => $fileName]);
                     } else {
+
                         // Gagal menyimpan file
+
                         echo json_encode(['success' => false, 'message' => 'File Upload Failed.']);
                     }
                 } else {
+
                     // Ada error dalam proses upload
+
                     echo json_encode(['success' => false, 'message' => 'Error while Upload.']);
                 }
             } else {
+
                 // File tidak ditemukan dalam permintaan
+
                 echo json_encode(['success' => false, 'message' => 'File Not Found.']);
             }
         } else {
+
             // Metode request yang diperlukan adalah POST
+
             echo json_encode(['success' => false, 'message' => 'Metode request yang diperlukan adalah POST.']);
         }
     }
 
+
+
     //CREATE DATA
+
     public function create()
+
     {
+
         if ($this->input->post()) {
+
             $post = $this->input->post();
 
+
+
             $customer_items = $this->crud->read("customer_items", [], ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id']]);
+
             $customer_item_histories = $this->crud->read("customer_item_histories", [], ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id'], "price" => $post['price']]);
+
             if (@$customer_items->customer_id != "") {
+
                 $send = $this->crud->update('customer_items', ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id']], $post);
+
                 if (@$customer_item_histories->customer_id == "") {
+
                     $send2 = $this->crud->create('customer_item_histories', $post);
                 }
             } else {
+
                 $send = $this->crud->create('customer_items', $post);
+
                 $send2 = $this->crud->create('customer_item_histories', $post);
             }
+
             echo $send;
         } else {
+
             show_error("Cannot Process your request");
         }
     }
@@ -217,6 +385,8 @@ class Customer_items extends CI_Controller
         $send = $this->crud->delete('customer_items', $data);
         echo $send;
     }
+
+
 
     //UPLOAD DATA
     public function upload()
@@ -236,8 +406,9 @@ class Customer_items extends CI_Controller
                 'product_no' => $data->val($i, 3),
                 'product_customer' => $data->val($i, 4),
                 'price' => $data->val($i, 5),
-                'valid_date' => $data->val($i, 6),
-                'remark' => $data->val($i, 7)
+                'valid_to' => $data->val($i, 6),
+                'valid_from' => $data->val($i, 7),
+                'remark' => $data->val($i, 8)
             );
         }
         $datas['total'] = count($datas);
@@ -279,29 +450,47 @@ class Customer_items extends CI_Controller
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
-
-            //Cek Process Number          //table       //field        //field excel
-            $customer_items = $this->crud->read('customer_items', [], ["customer_id" => $data['customer_id'], "item_fg_id" => $data['product_no']]);
-
             //Cek Process Number     //table        //field           //field excel
             $item = $this->crud->read('item_fg', [], ["number" => $data['product_no']]);
             $customer = $this->crud->read('customers', [], ["number" => $data['customer_id']]);
-            $customer_items = $this->crud->read('customer_items', [], ["item_fg_id" => @$item->id, "customer_id" => $data['customer_id']]);
+            $customer_items = $this->crud->read('customer_items', [], ["customer_id" => $customer->id, "item_fg_id" => $item->id]);
 
             if (empty($item->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Product ID " . $data['product_no'] . " Not Found", "theme" => "error"));
+                echo json_encode(array("title" => "Not Found", "message" => "Part ID " . $data['product_no'] . " Not Found", "theme" => "error"));
             } elseif (empty($customer->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Customer " . $data['customer_id'] . " Not Found", "theme" => "error"));
-            } elseif (!empty($customer_items->item_fg_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['product_no'] . " Duplicate Data", "theme" => "error"));
+            } elseif (!empty($customer_items->customer_id) && !empty($customer_items->item_fg_id)) {
+                $dataUpdate = array(
+                    "customer_id" => $customer->id,
+                    "item_fg_id" => $item->id,
+                    "item_fg_customer" => $data['product_customer'],
+                    "price" => $data['price'],
+                    "valid_to" => $data['valid_to'],
+                    "valid_from" => $data['valid_from'],
+                    "remark" => $data['remark'],
+                );
+
+                $dataHistory = array(
+                    "customer_id" => $customer_items->customer_id,
+                    "item_fg_id" => $customer_items->item_fg_id,
+                    "item_fg_customer" => $customer_items->item_fg_customer,
+                    "price" => $customer_items->price,
+                    "valid_to" => $customer_items->valid_to,
+                    "valid_from" => $customer_items->valid_from,
+                    "remark" => $customer_items->remark,
+                );
+                $send = $this->crud->update('customer_items', ["customer_id" => $customer->id, "item_fg_id" => $item->id], $dataUpdate);
+                $send2 = $this->crud->create('customer_item_histories', $dataHistory);
+                echo $send;
             } else {
+
                 $dataFinal = array(
-                    //field
                     "customer_id" => @$customer->id,
                     "item_fg_id" => @$item->id,
                     "item_fg_customer" => $data['product_customer'],
                     "price" => $data['price'],
-                    "valid_date" => $data['valid_date'],
+                    "valid_to" => $data['valid_to'],
+                    "valid_from" => $data['valid_from'],
                     "remark" => $data['remark'],
                 );
                 $send   = $this->crud->create('customer_items', $dataFinal);
@@ -332,8 +521,13 @@ class Customer_items extends CI_Controller
         $this->db->from('customer_items a');
         $this->db->join('customers b', 'a.customer_id = b.id');
         $this->db->join('item_fg c', 'a.item_fg_id = c.id');
-        $this->db->like('a.customer_id', $filter_customer_id);
-        $this->db->like('a.item_fg_id', $filter_item_fg_id);
+        // $this->db->where('a.customer_id', $filter_customer_id);
+        if (!empty($filter_customer_id)) {
+            $this->db->where('a.customer_id', $filter_customer_id);
+        }
+        if (!empty($filter_item_fg_id)) {
+            $this->db->where('a.item_fg_id', $filter_item_fg_id);
+        }
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customer_items {border-collapse: collapse;width: 100%;font-size: 12px;}#customer_items td, #customer_items th {border: 1px solid #ddd;padding: 2px;}#customer_items tr:nth-child(even){background-color: #f2f2f2;}#customer_items tr:hover {background-color: #ddd;}#customer_items th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
@@ -359,23 +553,26 @@ class Customer_items extends CI_Controller
                 <h3>MASTER CUSTOMER ITEM</h3>
             </div>
         </center>
-        
+
         <table id="customer_items" border="1">
             <tr>
                 <th width="20">No</th>
                 <th>Customer ID</th>
                 <th>Customer Code</th>
                 <th>Customer Name</th>
-                <th>Product ID</th>
-                <th>Product No.</th>
-                <th>Product Name</th>
-                <th>Product Customer</th>
+                <th>Part ID</th>
+                <th>Part No.</th>
+                <th>Part Name</th>
+                <th>Part Customer</th>
                 <th>Currency</th>
                 <th>Price</th>
-                <th>Valid Date</th>
+                <th>Valid To</th>
+                <th>Valid From</th>
                 <th>Remarks</th>
             </tr>';
+
         $no = 1;
+
         foreach ($records as $data) {
             $html .= '<tr>
                     <td>' . $no . '</td>
@@ -388,7 +585,8 @@ class Customer_items extends CI_Controller
                     <td style="mso-number-format:\@;">' . $data['item_fg_customer'] . '</td>
                     <td>' . $data['currency'] . '</td>
                     <td>' . $data['price'] . '</td>
-                    <td>' . $data['valid_date'] . '</td>
+                    <td>' . $data['valid_to'] . '</td>
+                    <td>' . $data['valid_from'] . '</td>
                     <td>' . $data['remark'] . '</td>';
             $no++;
         }

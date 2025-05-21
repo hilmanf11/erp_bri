@@ -13,6 +13,7 @@
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">Uom</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberFormat">Quantity</th>
             <th rowspan="2" data-options="field:'location',width:100,halign:'center'">Location</th>
+            <th rowspan="2" data-options="field:'transaction_type',width:100,halign:'center'">Type</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -403,8 +404,8 @@
 
     $('#location').combobox({
         url: '<?= base_url('master/locations/reads/RM'); ?>',
-        valueField: 'location',
-        textField: 'location',
+        valueField: 'number',
+        textField: 'number',
         prompt: 'Choose Locations',
     });
 

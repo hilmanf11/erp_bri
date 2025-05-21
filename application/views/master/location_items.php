@@ -23,21 +23,21 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'item_number',width:250,halign:'center'">Product No</th>
-            <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Product Name</th>
-            <th rowspan="2" data-options="field:'location',width:150,halign:'center'">Location</th>
-            <th rowspan="2" data-options="field:'area',width:150,halign:'center'">Area</th>
-            <th rowspan="2" data-options="field:'rack',width:150,halign:'center'">Rack</th>
-            <th rowspan="2" data-options="field:'level',width:150,halign:'center'">Level</th>
-            <th rowspan="2" data-options="field:'level_sub',width:150,halign:'center'">Level Sub</th>
+            <th rowspan="2" data-options="field:'item_number',width:150,halign:'center',sortable:true">Product No</th>
+            <th rowspan="2" data-options="field:'item_name',width:150,halign:'center',sortable:true">Product Name</th>
+            <th rowspan="2" data-options="field:'location',width:100,halign:'center',sortable:true">Location</th>
+            <th rowspan="2" data-options="field:'area',width:100,halign:'center',sortable:true">Area</th>
+            <th rowspan="2" data-options="field:'rack',width:100,halign:'center',sortable:true">Rack</th>
+            <th rowspan="2" data-options="field:'level',width:80,halign:'center',sortable:true">Level</th>
+            <th rowspan="2" data-options="field:'level_sub',width:80,halign:'center',sortable:true">Level Sub</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -72,19 +72,19 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Area</span>
-                <input style="width:60%;" name="area" id="area" required="" class="easyui-combobox">
+                <input style="width:60%;" name="area" id="area" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Rack</span>
-                <input style="width:60%;" name="rack" id="rack" required="" class="easyui-combobox">
+                <input style="width:60%;" name="rack" id="rack" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Level</span>
-                <input style="width:60%;" name="level" id="level" required="" class="easyui-combobox">
+                <input style="width:60%;" name="level" id="level" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Level Sub</span>
-                <input style="width:60%;" name="level_sub" id="level_sub" required="" class="easyui-combobox">
+                <input style="width:60%;" name="level_sub" id="level_sub" required="" class="easyui-textbox">
             </div>
         </fieldset>
     </form>
@@ -124,63 +124,44 @@
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
             url_save = '<?= base_url('master/location_items/update') ?>?id=' + btoa(row.id);
-            
+
             $("#type").combobox({
                 onLoadSuccess: function() {
                     $("#type").combobox('setValue', row.type);
+                    $("#location").combobox({
+                        url: '<?= base_url('master/locations/readLocations?type=') ?>' + row.type,
+                        valueField: 'number',
+                        textField: 'number',
+                        prompt: "Choose Location",
+                        onLoadSuccess: function() {
+                            $("#location").combobox('setValue', row.location);
+                            $("#area").textbox('setValue', row.area);
+                            $("#rack").textbox('setValue', row.rack);
+                            $("#level").textbox('setValue', row.level);
+                            $("#level_sub").textbox('setValue', row.level_sub);
+                        },
+                        onSelect: function(loc) {
+                            $("#area").textbox('setValue', loc.area);
+                            $("#rack").textbox('setValue', loc.rack);
+                            $("#level").textbox('setValue', loc.level);
+                            $("#level_sub").textbox('setValue', loc.level_sub);
+                        }
+                    })
                 },
                 onChange: function(type) {
                     $("#location").combobox({
                         url: '<?= base_url('master/locations/readLocations?type=') ?>' + type,
-                        valueField: 'location',
-                        textField: 'location',
+                        valueField: 'number',
+                        textField: 'number',
                         prompt: "Choose Location",
                         onLoadSuccess: function() {
                             $("#location").combobox('setValue', row.location);
                         },
                         onSelect: function(loc) {
-                            $("#area").combobox({
-                                url: '<?= base_url('master/locations/readAreas?location=') ?>' + loc.location + "&type=" + type,
-                                valueField: 'area',
-                                textField: 'area',
-                                prompt: "Choose Area",
-                                onLoadSuccess: function() {
-                                    $("#area").combobox('setValue', row.area);
-                                },
-                                onSelect: function(ar) {
-                                    $("#rack").combobox({
-                                        url: '<?= base_url('master/locations/readRacks?location=') ?>' + loc.location + "&area=" + ar.area + "&type=" + type,
-                                        valueField: 'rack',
-                                        textField: 'rack',
-                                        prompt: "Choose Rack",
-                                        onLoadSuccess: function() {
-                                            $("#rack").combobox('setValue', row.rack);
-                                        },
-                                        onSelect: function(rc) {
-                                            $("#level").combobox({
-                                                url: '<?= base_url('master/locations/readLevels?location=') ?>' + loc.location + "&area=" + ar.area + "&rack=" + rc.rack + "&type=" + type,
-                                                valueField: 'level',
-                                                textField: 'level',
-                                                prompt: "Choose Level",
-                                                onLoadSuccess: function() {
-                                                    $("#level").combobox('setValue', row.level);
-                                                },
-                                                onSelect: function(lv) {
-                                                    $("#level_sub").combobox({
-                                                        url: '<?= base_url('master/locations/readLevelSubs?location=') ?>' + loc.location + "&area=" + ar.area + "&rack=" + rc.rack + "&level=" + lv.level + "&type=" + type,
-                                                        valueField: 'level_sub',
-                                                        textField: 'level_sub',
-                                                        prompt: "Choose Level Sub",
-                                                        onLoadSuccess: function() {
-                                                            $("#level_sub").combobox('setValue', row.level_sub);
-                                                        },
-                                                    });
-                                                }
-                                            });
-                                        }
-                                    });
-                                }
-                            });
+                            $("#area").textbox('setValue', loc.area);
+                            $("#rack").textbox('setValue', loc.rack);
+                            $("#level").textbox('setValue', loc.level);
+                            $("#level_sub").textbox('setValue', loc.level_sub);
                         }
                     });
                 }
@@ -252,10 +233,12 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            resizable: true,
+            remoteSort: false,
         }).datagrid('enableFilter');
 
         $("#frm_fg").hide();
-        
+
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
@@ -265,6 +248,7 @@
                     $('#frm_insert').form('submit', {
                         url: url_save,
                         onSubmit: function() {
+                            $('#frm_insert :input:disabled').removeAttr('disabled');
                             return $(this).form('validate');
                         },
                         success: function(result) {
@@ -274,7 +258,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
+
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
@@ -361,9 +345,14 @@
             }]
         });
 
+        $("#area").textbox('disable');
+        $("#rack").textbox('disable');
+        $("#level").textbox('disable');
+        $("#level_sub").textbox('disable');
+
         $("#type").combobox({
             onChange: function(type) {
-                if(type == "RM"){
+                if (type == "RM") {
                     $("#frm_fg").hide();
                     $("#frm_rm").show();
                     $('#item_rm_id').combogrid({
@@ -386,7 +375,7 @@
                             }, ]
                         ]
                     });
-                }else if(type == "FG"){
+                } else if (type == "FG") {
                     $("#frm_fg").show();
                     $("#frm_rm").hide();
                     $('#item_fg_id').combogrid({
@@ -413,40 +402,14 @@
 
                 $("#location").combobox({
                     url: '<?= base_url('master/locations/readLocations?type=') ?>' + type,
-                    valueField: 'location',
-                    textField: 'location',
+                    valueField: 'number',
+                    textField: 'number',
                     prompt: "Choose Location",
                     onSelect: function(loc) {
-                        $("#area").combobox({
-                            url: '<?= base_url('master/locations/readAreas?location=') ?>' + loc.location + "&type=" + type,
-                            valueField: 'area',
-                            textField: 'area',
-                            prompt: "Choose Area",
-                            onSelect: function(ar) {
-                                $("#rack").combobox({
-                                    url: '<?= base_url('master/locations/readRacks?location=') ?>' + loc.location + "&area=" + ar.area + "&type=" + type,
-                                    valueField: 'rack',
-                                    textField: 'rack',
-                                    prompt: "Choose Rack",
-                                    onSelect: function(rc) {
-                                        $("#level").combobox({
-                                            url: '<?= base_url('master/locations/readLevels?location=') ?>' + loc.location + "&area=" + ar.area + "&rack=" + rc.rack + "&type=" + type,
-                                            valueField: 'level',
-                                            textField: 'level',
-                                            prompt: "Choose Level",
-                                            onSelect: function(lv) {
-                                                $("#level_sub").combobox({
-                                                    url: '<?= base_url('master/locations/readLevelSubs?location=') ?>' + loc.location + "&area=" + ar.area + "&rack=" + rc.rack + "&level=" + lv.level + "&type=" + type,
-                                                    valueField: 'level_sub',
-                                                    textField: 'level_sub',
-                                                    prompt: "Choose Level Sub",
-                                                });
-                                            }
-                                        });
-                                    }
-                                });
-                            }
-                        });
+                        $("#area").textbox('setValue', loc.area);
+                        $("#rack").textbox('setValue', loc.rack);
+                        $("#level").textbox('setValue', loc.level);
+                        $("#level_sub").textbox('setValue', loc.level_sub);
                     }
                 });
             }

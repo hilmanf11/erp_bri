@@ -44,12 +44,13 @@ class Purchase_requests extends CI_Controller
             e.name as supplier_name,
             e.currency,
             '0' as discount,
-            '0' as month_1,
-            '0' as month_2,
-            '0' as month_3,
-            '0' as month_4,
+            a.month_1 as month_1,
+            a.month_2 as month_2,
+            a.month_3 as month_3,
+            a.month_4 as month_4,
             d.price,
-            (a.qty * d.price) as amount,
+            '' as po_no,
+            ROUND((CAST(a.qty  AS DECIMAL(10, 2)) * CAST(d.price  AS DECIMAL(16, 2))),2) as total,
             (a.request_date + INTERVAL d.leadtime DAY) as delivery_date");
         $this->db->from('purchase_requests a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
@@ -67,7 +68,7 @@ class Purchase_requests extends CI_Controller
 
     public function readRequestno()
     {
-        $records = $this->crud->query("SELECT request_no, request_date, request_name FROM purchase_requests WHERE `status` = '0' GROUP BY request_no ORDER BY created_date desc");
+        $records = $this->crud->query("SELECT request_no, request_date, request_name FROM purchase_requests WHERE `status` = 0 GROUP BY request_no ORDER BY created_date desc");
         echo json_encode($records);
     }
 
@@ -80,14 +81,18 @@ class Purchase_requests extends CI_Controller
             JOIN supplier_items b on a.item_rm_id = b.item_rm_id
             JOIN item_rm c on b.item_rm_id = c.id
             JOIN item_familys d on c.item_family_id = d.id
-            WHERE a.status = '0' and a.request_no = '$request_no' and b.supplier_id = '$supplier_id'
+            WHERE a.status = 0 and a.request_no = '$request_no' and b.supplier_id = '$supplier_id'
             GROUP BY d.number");
         echo json_encode($records);
     }
 
-    public function request_no($category = "")
+    public function request_no()
     {
-        $datenow    = $category . date("ymd");
+        // $datenow    = $category . date("ymd");
+        $category = $this->input->get('category');
+        $request_date   = $this->input->get('request_date');
+        $formattedDate = date('ymd', strtotime($request_date));
+        $datenow    = $category . $formattedDate;
         $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM purchase_requests WHERE request_no like '%$datenow%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
@@ -99,6 +104,27 @@ class Purchase_requests extends CI_Controller
             $autoID = sprintf("%04s", $urutan);
         }
         echo "PR-" . $datenow . "-" . $autoID;
+    }
+
+    public function request_no_additional()
+    {
+        
+        $category = $this->input->get('category');
+        $request_date   = $this->input->get('request_date');
+        $formattedDate = date('ym', strtotime($request_date));
+        $datenow    = $category . $formattedDate;
+        // $datenow    = date("ym"); // Use only year and month
+        $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM purchase_requests WHERE request_no like '%$datenow%'");
+        $rowID      = $sqlGetID->row();
+        $kode       = $rowID->kode;
+        if ($kode == NULL) {
+            $autoID = sprintf("%02s", 1); // Start with sequence 01
+        } else {
+            $urutan = (int) substr($kode, -2); // Get last 2 digits for sequence
+            $urutan++;
+            $autoID = sprintf("%02s", $urutan); // Format sequence as 2 digits
+        }
+        echo "PR" . $datenow . "-A" . $autoID;
     }
 
     public function datatables()
@@ -119,21 +145,43 @@ class Purchase_requests extends CI_Controller
         //Select Query
         $id = $_POST['id'];
         if ($id === "0") {
-            $this->db->select('request_no, request_date, expected_date, request_name, sum(a.qty) as qty, a.status, a.approved_to, c.id as item_family_id, c.number as item_family_number');
+            $this->db->select('request_no, request_date, expected_date, request_name, sum(a.qty) as qty, a.status, a.approved_to, c.id as item_family_id, c.number as item_family_number, b.item_category_id as category_id, d.name as category_name, e.name as plant');
             $this->db->from('purchase_requests a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('item_familys c', 'b.item_family_id = c.id');
+            $this->db->join('item_categories d', 'b.item_category_id = d.id');
+            $this->db->join('divisions e', 'a.division = e.id','left');
             $this->db->where('a.deleted', 0);
             if ($filter_from != "" or $filter_to != "") {
                 $this->db->where('a.request_date >=', $filter_from);
                 $this->db->where('a.request_date <=', $filter_to);
             }
-            $this->db->like('a.request_no', $filter_request_no);
-            $this->db->like('c.id', $filter_item_familys);
-            $this->db->like('c.item_category_id', $filter_item_category);
+            if ($filter_request_no != "") {
+                $this->db->where('a.request_no', $filter_request_no);
+            }
+            if ($filter_item_familys != "") {
+                $this->db->where('c.id', $filter_item_familys);
+            }
+            if ($filter_item_category != "") {
+                $this->db->where('c.item_category_id', $filter_item_category);
+            }
             $this->db->group_by('request_no');
-            $this->db->order_by('a.updated_date', 'DESC');
-            $this->db->order_by('a.request_date', 'DESC');
+            if ($_POST['sort'] = "request_no") {
+                $this->db->order_by('a.request_no', isset($_POST['order']) ? $_POST['order'] : 'desc');
+            }
+            if ($_POST['sort'] = "request_date") {
+                $this->db->order_by('a.request_date', isset($_POST['order']) ? $_POST['order'] : 'desc');
+            }
+            // if ($filter_from != "" or $filter_to != "") {
+            //     $this->db->where('a.request_date >=', $filter_from);
+            //     $this->db->where('a.request_date <=', $filter_to);
+            // }
+            // $this->db->like('a.request_no', $filter_request_no);
+            // $this->db->like('c.id', $filter_item_familys);
+            // $this->db->like('c.item_category_id', $filter_item_category);
+            // $this->db->group_by('request_no');
+            // $this->db->order_by('a.updated_date', 'DESC');
+            // $this->db->order_by('a.request_date', 'DESC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -149,7 +197,10 @@ class Purchase_requests extends CI_Controller
                     "request_date" => $record['request_date'],
                     "expected_date" => $record['expected_date'],
                     "request_name" => $record['request_name'],
+                    "category_id" => $record['category_id'],
+                    "category_name" => $record['category_name'],
                     "qty" => $record['qty'],
+                    "plant" => $record['plant'],
                     "status" => $record['status'],
                     "approved_to" => $record['approved_to'],
                     "state" => "closed",
@@ -165,11 +216,12 @@ class Purchase_requests extends CI_Controller
                 b.name as item_name, 
                 b.uom, 
                 d.po_no, 
-                c.name as category_name');
+                c.name as category_name, e.name as plant');
             $this->db->from('purchase_requests a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('item_familys c', 'b.item_family_id = c.id');
             $this->db->join('purchase_orders d', 'a.request_no = d.request_no and a.item_rm_id = d.item_rm_id', 'left');
+            $this->db->join('divisions e', 'a.division = e.id','left');
             $this->db->where('a.deleted', 0);
             if ($filter_from != "" or $filter_to != "") {
                 $this->db->where('a.request_date >=', $filter_from);
@@ -186,10 +238,12 @@ class Purchase_requests extends CI_Controller
     public function datatable_updates()
     {
         $request_no = base64_decode($this->input->get('request_no'));
-        $records = $this->crud->query("SELECT a.id, c.number as item_number, c.name as item_name, c.id as item_rm_id, a.qty, a.remarks
+        $records = $this->crud->query("SELECT a.id, c.number as item_number, c.name as item_name, c.id as item_rm_id, a.qty, a.remarks, e.name as plant
             FROM purchase_requests a
             JOIN item_rm c on a.item_rm_id = c.id
-            WHERE a.status = '0' and a.request_no = '$request_no'
+            LEFT JOIN divisions e on a.division = e.id
+            -- JOIN item_categories d on d.id = c.item_category_id
+            WHERE a.status = 0 and a.request_no = '$request_no'
             GROUP BY c.number");
         echo json_encode($records);
     }
@@ -211,29 +265,66 @@ class Purchase_requests extends CI_Controller
         }
     }
 
+    public function create_additional()
+    {
+        if ($this->input->post()) {
+            $post   = $this->input->post();
+            $purchase_request_item = $this->crud->read('purchase_requests', [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']]);
+            if (@$purchase_request_item->id != "") {
+                $send = $this->crud->update('purchase_requests', ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']], $post);
+            } else {
+                $send = $this->crud->create('purchase_requests', $post);
+            }
+
+            echo $send;
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+
     public function update()
     {
         if ($this->input->post()) {
             $id   = $this->input->post('id');
+            $request_no  = $this->input->post('request_no');
+            $request_date  = $this->input->post('request_date');
+            $request_name  = $this->input->post('request_name');
+            $item_rm_id  = $this->input->post('item_rm_id');
+            $expected_date  = $this->input->post('expected_date');
             $qty  = $this->input->post('qty');
             $remarks = $this->input->post('remarks');
-
             // Validate inputs
-            if (empty($id) || empty($qty)) {
-                echo json_encode(array("title" => "Error", "message" => "ID and Quantity are required", "theme" => "error"));
+            if (empty($qty)) {
+                echo json_encode(array("title" => "Error", "message" => "Quantity are required", "theme" => "error"));
                 return;
             }
+            // if (empty($id) && empty($qty)) {
+            //     echo json_encode(array("title" => "Error", "message" => "ID and Quantity are required", "theme" => "error"));
+            //     return;
+            // }
 
             // Prepare data for update
             $data = array(
                 "qty" => $qty,
-                "remarks" => $remarks
+                "remarks" => $remarks,
+                "expected_date" => $expected_date,
+                "item_rm_id" => $item_rm_id,
+                "request_name" => $request_name,
+                "request_date" => $request_date,
+                "request_no" => $request_no,
+                "remarks" => $remarks,
+
             );
 
             try {
+                $purchase_request_item = $this->crud->read('purchase_requests', [], ["request_no" => $request_no, "item_rm_id" => $item_rm_id]);
                 // Execute update query
-                $send = $this->crud->update('purchase_requests', ["id" => $id], $data);
-
+                // $send = $this->crud->update('purchase_requests', ["id" => $id], $data);
+                if (@$purchase_request_item->id != "") {
+                    $send = $this->crud->update('purchase_requests', ["id" => $id], $data);
+                } else {
+                    $send = $this->crud->create('purchase_requests', $data);
+                }
                 if ($send) {
                     echo json_encode(array("title" => "Success", "message" => "Data successfully updated", "theme" => "success"));
                 } else {
@@ -250,6 +341,46 @@ class Purchase_requests extends CI_Controller
             show_error("Cannot process your request");
         }
     }
+
+    // public function update()
+    // {
+    //     if ($this->input->post()) {
+    //         $id   = $this->input->post('id');
+    //         $qty  = $this->input->post('qty');
+    //         $remarks = $this->input->post('remarks');
+
+    //         // Validate inputs
+    //         if (empty($id) || empty($qty)) {
+    //             echo json_encode(array("title" => "Error", "message" => "ID and Quantity are required", "theme" => "error"));
+    //             return;
+    //         }
+
+    //         // Prepare data for update
+    //         $data = array(
+    //             "qty" => $qty,
+    //             "remarks" => $remarks
+    //         );
+
+    //         try {
+    //             // Execute update query
+    //             $send = $this->crud->update('purchase_requests', ["id" => $id], $data);
+
+    //             if ($send) {
+    //                 echo json_encode(array("title" => "Success", "message" => "Data successfully updated", "theme" => "success"));
+    //             } else {
+    //                 echo json_encode(array("title" => "Error", "message" => "Failed to update data", "theme" => "error"));
+    //             }
+    //         } catch (Exception $e) {
+    //             // Log exception
+    //             log_message('error', 'Update failed: ' . $e->getMessage());
+
+    //             // Return error response
+    //             echo json_encode(array("title" => "Error", "message" => "An error occurred while updating data", "theme" => "error"));
+    //         }
+    //     } else {
+    //         show_error("Cannot process your request");
+    //     }
+    // }
 
     public function delete()
     {
@@ -289,10 +420,15 @@ class Purchase_requests extends CI_Controller
                 $datas[] = array(
                     'request_no' => $request_no,
                     'request_date' => $data->val($i, 2),
-                    'expected_date' => $data->val($i, 3),
+                    'delivery_date' => $data->val($i, 3),
                     'product_name' => $data->val($i, 4),
                     'qty' => $data->val($i, 5),
-                    'remarks' => $data->val($i, 6)
+                    'plant' => $data->val($i, 6),
+                    'month_1' => $data->val($i, 7),
+                    'month_2' => $data->val($i, 8),
+                    'month_3' => $data->val($i, 9),
+                    'month_4' => $data->val($i, 10),
+                    'remarks' => $data->val($i, 11)
                 );
             }
 
@@ -343,8 +479,9 @@ class Purchase_requests extends CI_Controller
                 'product_name' => 'Product Name',
                 'request_no' => 'Request Number',
                 'request_date' => 'Request Date',
-                'expected_date' => 'Expected Date',
-                'qty' => 'Quantity'
+                'delivery_date' => 'Delivery Date',
+                'qty' => 'Quantity',
+                'plant' => 'Plant'
             ];
             $missing_fields = [];
 
@@ -368,6 +505,8 @@ class Purchase_requests extends CI_Controller
             // Cek Process Number
             $product_name = trim($data['product_name']);
             $item = $this->crud->read('item_rm', [], ["name" => $product_name]);
+            
+            $division = ($data['plant']=="EXT")?"DIV02":"DIV01";
 
             if (empty($item)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Product " . $product_name . " not found", "theme" => "error"));
@@ -384,9 +523,14 @@ class Purchase_requests extends CI_Controller
                     "item_rm_id" => $item->id,
                     "request_no" => $data['request_no'],
                     "request_date" => $data['request_date'],
-                    "expected_date" => $data['expected_date'],
+                    "expected_date" => $data['delivery_date'],
                     "request_name" => $this->session->name,
+                    "month_1" => $data['month_1'],
+                    "month_2" => $data['month_2'],
+                    "month_3" => $data['month_3'],
+                    "month_4" => $data['month_4'],
                     "qty" => $data['qty'],
+                    "division" => $division,
                     "remarks" => $data['remarks']
                 ]);
 
@@ -544,23 +688,36 @@ class Purchase_requests extends CI_Controller
         $filter_to   = $this->input->get('filter_to');
         $filter_request_no = $this->input->get('filter_request_no');
         $filter_item_familys = $this->input->get('filter_item_familys');
+        $order = $this->input->get('order');
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        $this->db->select('a.*, b.number as item_rm_id, b.name as item_name, c.name as item_family_name, e.po_no, b.uom');
+        $this->db->select('a.*, b.number as item_rm_id, b.name as item_name, c.name as item_family_name, e.po_no, b.uom, d.name as plant');
         $this->db->from('purchase_requests a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('item_familys c', 'b.item_family_id = c.id');
         $this->db->join('purchase_orders e', 'a.request_no = e.request_no and a.item_rm_id = e.item_rm_id', 'left');
+        $this->db->join('divisions d', 'a.division = d.id','left');
         $this->db->where('a.deleted', 0);
         if ($filter_from != "" or $filter_to != "") {
             $this->db->where('a.request_date >=', $filter_from);
             $this->db->where('a.request_date <=', $filter_to);
         }
-        $this->db->like('a.request_no', $filter_request_no);
-        $this->db->like('c.id', $filter_item_familys);
-        $this->db->order_by('a.request_date', 'DESC');
+        if ($filter_request_no != "") {
+            $this->db->where('a.request_no', $filter_request_no);
+        }
+        if ($filter_item_familys != "") {
+            $this->db->where('c.id', $filter_item_familys);
+        }
+        $this->db->order_by('a.request_date', empty($order) ? 'desc' : $order);
+        // if ($filter_from != "" or $filter_to != "") {
+        //     $this->db->where('a.request_date >=', $filter_from);
+        //     $this->db->where('a.request_date <=', $filter_to);
+        // }
+        // $this->db->like('a.request_no', $filter_request_no);
+        // $this->db->like('c.id', $filter_item_familys);
+        // $this->db->order_by('a.request_date', 'DESC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: black;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
             <center>
@@ -596,6 +753,7 @@ class Purchase_requests extends CI_Controller
                 <th>Qty</th>
                 <th>Uom</th>
                 <th>PO No</th>
+                <th>Plant</th>
                 <th>Status</th>
                 <th>Remarks</th>
             </tr>';
@@ -617,6 +775,7 @@ class Purchase_requests extends CI_Controller
                         <td>' . number_format($data['qty'], 2) . '</td>
                         <td>' . $data['uom'] . '</td>
                         <td>' . $data['po_no'] . '</td>
+                        <td>' . $data['plant'] . '</td>
                         <td>' . $status . '</td>
                         <td>' . $data['remarks'] . '</td>
                     </tr>';

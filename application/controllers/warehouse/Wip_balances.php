@@ -41,18 +41,24 @@ class Wip_balances extends CI_Controller
             $filters = json_decode($this->input->post('filterRules'));
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
-            //Pagination 1-10
             $page   = isset($page) ? intval($page) : 1;
             $rows   = isset($rows) ? intval($rows) : 10;
             $offset = ($page - 1) * $rows;
             $result = array();
-            //Select Query
-            $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom');
+
+            // Select Query
+            $this->db->select('
+                a.id, a.request_no, a.item_rm_id, a.begin, a.need, a.issued, a.balance, a.warehouse, a.status,
+                b.number as item_number, b.name as item_name, b.uom,
+                IFNULL(c.qty_act, 0) as qty_act
+            ');
             $this->db->from('wip_balances a');
-            $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-            // $this->db->join('uom c', 'b.uom_id = c.id');
+            $this->db->join('item_rm b', 'a.item_rm_id = b.id', 'LEFT');
+            $this->db->join('supply_sheets c', 'a.item_rm_id = c.item_rm_id AND a.request_no = c.request_no', 'LEFT');
             $this->db->where('a.deleted', 0);
-            if (@count($filters) > 0) {
+
+            // Filter rules jika ada
+            if (!empty($filters)) {
                 foreach ($filters as $filter) {
                     if ($filter->field == "item_number") {
                         $this->db->like("b.number", $filter->value);
@@ -65,20 +71,27 @@ class Wip_balances extends CI_Controller
                     }
                 }
             }
-            $this->db->order_by('a.created_date', 'DESC');
-            //$this->db->order_by('a.warehouse', 'DESC');
-            //Total Data
+
+            $this->db->order_by('a.request_no', 'DESC');
+
+            // Hitung total baris sebelum limit
             $totalRows = $this->db->count_all_results('', false);
-            //Limit 1 - 10
+
+            // Batasi jumlah data yang diambil
             $this->db->limit($rows, $offset);
-            //Get Data Array
+
+            // Eksekusi query
             $records = $this->db->get()->result_array();
-            //Mapping Data
+
+            // Mapping hasil
             $result['total'] = $totalRows;
-            $result = array_merge($result, ['rows' => $records]);
+            $result['rows'] = $records;
+
             echo json_encode($result);
         }
     }
+
+
     //CREATE DATA
     public function create()
     {

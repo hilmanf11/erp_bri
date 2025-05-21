@@ -2,10 +2,10 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'request_no',width:200,halign:'center'">Request No</th>
+            <th rowspan="2" data-options="field:'request_no',width:200,halign:'center',sortable:true">Request No</th>
             <th rowspan="2" data-options="field:'status',width:120,align:'center',formatter:statusformat,styler:statusStyle">Status</th>
             <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', align:'center', styler:styleApproved, formatter:formatApproved">Approval</th>
-            <th rowspan="2" data-options="field:'request_date',width:100,halign:'center'">Request Date</th>
+            <th rowspan="2" data-options="field:'request_date',width:150,halign:'center',sortable:true">Request Date</th>
             <th rowspan="2" data-options="field:'expected_date',width:100,halign:'center'">Expected Date</th>
             <th rowspan="2" data-options="field:'request_name',width:150,halign:'center'">Request Name</th>
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
@@ -13,6 +13,7 @@
             <th rowspan="2" data-options="field:'category_name',width:150,halign:'center'">Product Family</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right'">Total Qty</th>
+            <th rowspan="2" data-options="field:'plant',width:120,align:'center'">Plant</th>
             <th rowspan="2" data-options="field:'remarks',width:100,halign:'center'">Remarks</th>
             <th rowspan="2" data-options="field:'po_no',width:120,align:'center'">Po No</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -37,8 +38,8 @@
             <legend><b>Form Filter Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Period</span>
-                <input style="width:28%;" id="filter_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false"> To
-                <input style="width:28%;" id="filter_to" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                <input style="width:28%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false"> To
+                <input style="width:28%;" id="filter_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Request No</span>
@@ -58,6 +59,7 @@
                 <a href="javascript:;" class="easyui-linkbutton" onclick="print_pr()"><i class="fa fa-print"></i> Purchase Request</a>
             </div>
         </fieldset>
+        <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="add_additional()"><i class="fa fa-plus"></i> Additional</a>
         <?= $button ?>
     </div>
 </div>
@@ -82,15 +84,15 @@
                     <input style="width:60%;" name="request_date" id="request_date" value="<?= date("Y-m-d") ?>" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Expected Date</span>
+                    <input style="width:60%;" name="expected_date" id="expected_date" value="<?= date("Y-m-d") ?>" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Request Name</span>
                     <input style="width:60%;" name="request_name" id="request_name" value="<?= $this->session->name ?>" readonly class="easyui-textbox">
                 </div>
             </div>
             <div style="width: 50%; float: left;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Expected Date</span>
-                    <input style="width:60%;" name="expected_date" id="expected_date" value="<?= date("Y-m-d") ?>" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
-                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Category</span>
                     <input style="width:60%;" name="item_category_id" id="item_category_id" class="easyui-combobox" required>
@@ -98,6 +100,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Family</span>
                     <input style="width:60%;" name="item_family_id" id="item_family_id" class="easyui-combobox" required>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Plant</span>
+                    <input style="width:60%;" name="plant" id="plant" class="easyui-combobox" required>
                 </div>
             </div>
         </fieldset>
@@ -132,10 +138,61 @@
     function add() {
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
+        $("#item_category_id").combobox('enable');
         $("#item_family_id").combobox('enable');
         $('#request_no').textbox('clear');
+        $('#item_category_id').combobox('clear');
         $('#item_family_id').combobox('clear');
+        $('#plant').combobox('clear');
         url_save = '<?= base_url('purchase/purchase_requests/create') ?>';
+    }
+
+    function add_additional() {
+        $('#dlg_insert').dialog('open');
+        $('#dg2').datagrid('loadData', []);
+        $("#item_category_id").combobox('enable');
+        $("#item_family_id").combobox('enable');
+        $('#request_no').textbox('clear');
+        $('#item_category_id').combobox('clear');
+        $('#item_family_id').combobox('clear');
+        $('#plant').combobox('clear');
+        url_save = '<?= base_url('purchase/purchase_requests/create_additional') ?>';
+
+        $("#item_category_id").combobox({
+            url: '<?= base_url('master/item_categories/readsnotfg') ?>',
+            valueField: 'id',
+            textField: 'name',
+            prompt: "Select Categories",
+            onSelect: function(category) {
+                var isEdit = $('#item_category_id').combobox('options').disabled;
+                var request_date = $("#request_date").datebox('getValue');
+                url = "?category=" + category.number + "&request_date=" + request_date;
+                if (isEdit === false) {
+                    $.ajax({
+                        type: "post",
+                        url: "<?= base_url('purchase/purchase_requests/request_no_additional/') ?>" + url,
+                        dataType: "html",
+                        success: function(result) {
+                            $("#request_no").textbox('setValue', result);
+                        }
+                    });
+                }
+
+                $("#item_family_id").combobox({
+                    url: '<?= base_url('master/item_familys/reads/') ?>' + category.id,
+                    valueField: 'id',
+                    textField: 'name',
+                    multiple: true,
+                    prompt: "Select Product Family",
+                    onChange: function(row) {
+                        var selectedRows = $("#item_family_id").combobox('getValues');
+
+                        addTableAdditional(selectedRows);
+                    }
+                });
+
+            }
+        });
     }
 
     function addTable(item_family_id, link = "") {
@@ -315,6 +372,162 @@
         });
     }
 
+    function addTableAdditional(item_family_id, link = "") {
+        var lastIndex;
+        var dg = $('#dg2').datagrid({
+            url: link,
+            singleSelect: true,
+            columns: [
+                [{
+                    field: 'id',
+                    width: 150,
+                    readonly: true,
+                    hidden: true,
+                    halign: 'center',
+                    title: "ID",
+                    editor: {
+                        type: 'textbox'
+                    }
+                }, {
+                    field: 'item_number',
+                    width: 250,
+                    halign: 'center',
+                    title: "Product No",
+                    editor: {
+                        type: 'combogrid',
+                        options: {
+                            url: '<?= base_url('master/supplier_items/readItems?item_family_id=') ?>' + item_family_id,
+                            required: true,
+                            panelWidth: 320,
+                            idField: 'item_number',
+                            textField: 'item_number',
+                            mode: 'remote',
+                            fitColumns: true,
+                            prompt: 'Choose Product',
+                            columns: [
+                                [{
+                                    field: 'item_number',
+                                    title: 'Product No',
+                                    width: 150
+                                }, {
+                                    field: 'item_name',
+                                    title: 'Product Name',
+                                    width: 150
+                                }]
+                            ],
+                            onSelect: function(value, rows) {
+                                var dg = $('#dg2');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
+                                var ed = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'item_rm_id'
+                                });
+
+                                var ed2 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'item_name'
+                                });
+
+                                var ed3 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'stock'
+                                });
+
+                                var ed4 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'po'
+                                });
+
+                                $(ed.target).textbox('setValue', rows.item_rm_id);
+                                $(ed2.target).textbox('setValue', rows.item_name);
+
+                                // $.ajax({
+                                //     type: "post",
+                                //     url: "<?= base_url('warehouse/report_history_transactions/readEndingStock') ?>",
+                                //     data: "item_rm_id=" + rows.id,
+                                //     dataType: "json",
+                                //     success: function(json) {
+                                //         if (json != null) {
+                                //             $(ed3.target).numberbox('setValue', json[0].end_stock);
+                                //         } else {
+                                //             $(ed3.target).numberbox('setValue', 0);
+                                //         }
+                                //     }
+                                // });
+
+                                $.ajax({
+                                    type: "post",
+                                    url: "<?= base_url('purchase/purchase_orders/readTotalPo') ?>",
+                                    data: "item_rm_id=" + rows.id,
+                                    dataType: "json",
+                                    success: function(jsonpo) {
+                                        if (jsonpo != null) {
+                                            $(ed4.target).numberbox('setValue', jsonpo.qty);
+                                        } else {
+                                            $(ed4.target).numberbox('setValue', 0);
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
+                }, {
+                    field: 'item_name',
+                    width: 150,
+                    readonly: true,
+                    halign: 'center',
+                    title: "Product Name",
+                    editor: {
+                        type: 'textbox'
+                    }
+                }, {
+                    field: 'item_rm_id',
+                    hidden: true,
+                    width: 100,
+                    halign: 'center',
+                    title: "ID",
+                    editor: {
+                        type: 'textbox'
+                    }
+                }, {
+                    field: 'qty',
+                    width: 80,
+                    halign: 'center',
+                    title: "Qty",
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            required: true,
+                            // precision: 2
+                        }
+                    }
+                }, {
+                    field: 'remarks',
+                    width: 200,
+                    halign: 'center',
+                    title: "Remarks",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            required: true
+                        }
+                    }
+                }]
+            ],
+            onClickRow: function(rowIndex) {
+                if (lastIndex != rowIndex) {
+                    $(this).datagrid('endEdit', lastIndex);
+                    $(this).datagrid('beginEdit', rowIndex);
+                }
+                lastIndex = rowIndex;
+            },
+            onBeginEdit: function(rowIndex, row) {
+                var editors = $('#dg2').datagrid('getEditors', rowIndex);
+            }
+        });
+    }
+
     var editIndex = undefined;
 
     function endEditing() {
@@ -361,7 +574,7 @@
                 if (row.status == "0") {
                     $('#dlg_insert').dialog('open');
                     $('#frm_insert').form('load', row);
-                    $("#item_family_id").combobox('disable');
+                    // $("#item_family_id").combobox('disable');
                     $("#item_category_id").combobox('disable');
                     $("#request_date").combobox('disable');
                     $("#expected_date").combobox('disable');
@@ -371,7 +584,10 @@
 
                     setTimeout(function() {
                         $('#request_no').textbox('setValue', row.request_no);
-                    }, 3000);
+                        $("#item_category_id").combobox('setValue', row.category_id);
+                        $("#item_family_id").combobox('setValue', row.item_family_id);
+                        $("#plant").combobox('setValue', row.plant);
+                    }, 1500);
 
                     addTable(row.item_family_number, '<?= base_url('purchase/purchase_requests/datatable_updates?request_no=') ?>' + window.btoa(row.request_no));
                 } else {
@@ -487,8 +703,11 @@
     }
 
     $(function() {
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to
         $('#dg').treegrid({
-            url: '<?= base_url('purchase/purchase_requests/datatables') ?>',
+            url: '<?= base_url('purchase/purchase_requests/datatables') ?>' + url,
             pagination: true,
             rownumbers: true,
             idField: 'id',
@@ -500,6 +719,30 @@
                     param.id = 0;
                 }
             },
+            onSortColumn: function(sort, order) {
+                var filter_from = $("#filter_from").datebox('getValue');
+                var filter_to = $("#filter_to").datebox('getValue');
+                url = "?filter_from=" + filter_from + "&filter_to=" + filter_to
+                $.ajax({
+                    url: '<?= base_url('purchase/purchase_requests/datatables') ?>' + url,
+                    type: 'POST',
+                    data: {
+                        id: 0,
+                        sort: sort,
+                        order: order
+                    },
+                    success: function(data) {
+                        $('#dg').treegrid('reload', {
+                            total: data.total,
+                            rows: data.rows
+                        });
+                        $("#printout").attr('src', '<?= base_url('purchase/purchase_requests/print') ?>' + url + "&order=" + order);
+                    },
+                    error: function() {
+                        console.error('Failed to fetch sorted data');
+                    }
+                });
+            }
             // rowStyler: function(row) {
             //     if (row.state != "closed") {
             //         return 'background-color:#CFE6FF;font-weight:bold;';
@@ -536,6 +779,7 @@
                     var request_date = $("#request_date").datebox('getValue');
                     var request_name = $("#request_name").textbox('getValue');
                     var expected_date = $("#expected_date").datebox('getValue');
+                    var plant = $("#plant").datebox('getValue');
 
                     $('#dg2').datagrid('acceptChanges');
                     var rows = $('#dg2').datagrid('getRows');
@@ -555,7 +799,8 @@
                                     request_name: request_name,
                                     qty: rows[i].qty,
                                     expected_date: expected_date,
-                                    remarks: rows[i].remarks
+                                    remarks: rows[i].remarks,
+                                    division: plant
                                 },
                                 dataType: "json",
                                 success: function(result) {
@@ -665,14 +910,19 @@
             textField: 'name',
             prompt: "Select Categories",
             onSelect: function(category) {
-                $.ajax({
-                    type: "post",
-                    url: "<?= base_url('purchase/purchase_requests/request_no/') ?>" + category.number,
-                    dataType: "html",
-                    success: function(result) {
-                        $("#request_no").textbox('setValue', result);
-                    }
-                });
+                var isEdit = $('#item_category_id').combobox('options').disabled;
+                var request_date = $("#request_date").datebox('getValue');
+                url = "?category=" + category.number + "&request_date=" + request_date;
+                if (isEdit === false) {
+                    $.ajax({
+                        type: "post",
+                        url: "<?= base_url('purchase/purchase_requests/request_no/') ?>" + url,
+                        dataType: "html",
+                        success: function(result) {
+                            $("#request_no").textbox('setValue', result);
+                        }
+                    });
+                }
 
                 $("#item_family_id").combobox({
                     url: '<?= base_url('master/item_familys/reads/') ?>' + category.id,
@@ -686,7 +936,14 @@
                         addTable(selectedRows);
                     }
                 });
+
             }
+        });
+        $("#plant").combobox({
+                        url: '<?= base_url('master/divisions/reads') ?>',
+                        valueField: 'id',
+                        textField: 'name',
+                        prompt: "Select Plant"
         });
 
         //Get Customer

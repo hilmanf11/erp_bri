@@ -3,21 +3,21 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
-            <th rowspan="2" data-options="field:'number',width:80,halign:'center'">Code</th>
-            <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Name</th>
-            <th rowspan="2" data-options="field:'item_category_name',width:150,halign:'center'">Category</th>
-            <th rowspan="2" data-options="field:'account_number',width:100,halign:'center'">Account No</th>
-            <th rowspan="2" data-options="field:'account_name',width:100,halign:'center'">Account Name</th>
-            <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
+            <th rowspan="2" data-options="field:'id',width:80,align:'center',sortable:true">ID</th>
+            <th rowspan="2" data-options="field:'number',width:80,halign:'center',sortable:true">Code</th>
+            <th rowspan="2" data-options="field:'name',width:150,halign:'center',sortable:true">Name</th>
+            <th rowspan="2" data-options="field:'item_category_name',width:150,halign:'center',sortable:true">Category</th>
+            <th rowspan="2" data-options="field:'account_number',width:120,halign:'center',sortable:true">Account No</th>
+            <th rowspan="2" data-options="field:'account_name',width:120,halign:'center',sortable:true">Account Name</th>
+            <th rowspan="2" data-options="field:'description',width:150,halign:'center',sortable:true">Description</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -69,12 +69,12 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/item_familys/create') ?>';
         $('#frm_insert').form('clear');
-        
+
         $.ajax({
-            type : "post",
-            url : "<?= base_url('master/item_familys/autoid')?>",
-            dataType : "html",
-            success : function(response){
+            type: "post",
+            url: "<?= base_url('master/item_familys/autoid') ?>",
+            dataType: "html",
+            success: function(response) {
                 $('#id').textbox('setValue', response);
             }
         });
@@ -145,6 +145,8 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
+            resizeable: true,
+            remoteSort: false,
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({
@@ -164,7 +166,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
+
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
@@ -175,9 +177,33 @@
     });
 
     $('#item_category_id').combobox({
-        url:'<?= base_url('master/item_categories/reads'); ?>',
-        valueField:'id',
-        textField:'name',
+        url: '<?= base_url('master/item_categories/reads'); ?>',
+        valueField: 'id',
+        textField: 'name',
         prompt: 'Choose Category',
+    });
+
+    $('#account_number').combogrid({
+        url:'<?= base_url('finance/account_coa/read/'); ?>',
+        panelWidth: 300,
+        idField: 'account_number',
+        textField: 'account_number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Account No",
+        columns: [
+            [{
+                field: 'account_number',
+                title: 'Account Code',
+                width: 150
+            }, {
+                field: 'account_name',
+                title: 'Account Name',
+                width: 150
+            }]
+        ],
+            onSelect: function(index, row) {
+                $('#account_name').textbox('setValue', row.account_name);
+            }
     });
 </script>

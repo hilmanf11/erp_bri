@@ -2,28 +2,28 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'number',width:180,halign:'center'">PL No</th>
-            <th rowspan="2" data-options="field:'trans_date',width:100,align:'center'">PL Date</th>
-            <th rowspan="2" data-options="field:'dn_number',width:150,align:'center'">DN No</th>
-            <th rowspan="2" data-options="field:'si_number',width:150,align:'center'">Sales Invoice No</th>
-            <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer</th>
-            <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
-            <th rowspan="2" data-options="field:'item_name',width:200,halign:'center'">Product Name</th>
-            <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformatDefault">Qty</th>
-            <th rowspan="2" data-options="field:'pallet_no',width:80,halign:'center',align:'right',formatter:numberformatDefault">Pallet<br>No</th>
-            <th rowspan="2" data-options="field:'carton',width:80,halign:'center',align:'right',formatter:numberformatDefault">Qty<br>Carton</th>
-            <th rowspan="2" data-options="field:'net_weight',width:80,halign:'center',align:'right',formatter:numberformatDefault">Net<br>Weight</th>
-            <th rowspan="2" data-options="field:'gross_weight',width:80,halign:'center',align:'right',formatter:numberformatDefault">Gross<br>Weight</th>
-            <th rowspan="2" data-options="field:'measure',width:80,halign:'center',align:'right',formatter:numberformatDefault">Measure</th>
-            <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
+            <th rowspan="2" data-options="field:'number',width:180,halign:'center',sortable:true">PL No</th>
+            <th rowspan="2" data-options="field:'trans_date',width:100,align:'center',sortable:true">PL Date</th>
+            <th rowspan="2" data-options="field:'dn_number',width:150,align:'center',sortable:true">DN No</th>
+            <th rowspan="2" data-options="field:'si_number',width:150,align:'center',sortable:true">Sales Invoice No</th>
+            <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center',sortable:true">Customer</th>
+            <th rowspan="2" data-options="field:'item_number',width:150,halign:'center',sortable:true">Product No</th>
+            <th rowspan="2" data-options="field:'item_name',width:200,halign:'center',sortable:true">Product Name</th>
+            <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformatDefault,sortable:true">Qty</th>
+            <th rowspan="2" data-options="field:'pallet_no',width:80,halign:'center',align:'right',formatter:numberformatDefault,sortable:true">Pallet<br>No</th>
+            <th rowspan="2" data-options="field:'carton',width:80,halign:'center',align:'right',formatter:numberformatDefault,sortable:true">Qty<br>Carton</th>
+            <th rowspan="2" data-options="field:'net_weight',width:80,halign:'center',align:'right',formatter:numberformatDefault,sortable:true">Net<br>Weight</th>
+            <th rowspan="2" data-options="field:'gross_weight',width:80,halign:'center',align:'right',formatter:numberformatDefault,sortable:true">Gross<br>Weight</th>
+            <th rowspan="2" data-options="field:'measure',width:80,halign:'center',align:'right',formatter:numberformatDefault,sortable:true">Measure</th>
+            <th rowspan="2" data-options="field:'uom',width:80,align:'center',sortable:true">UoM</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center',sortable:true"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center',sortable:true"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center',sortable:true"> Date</th>
         </tr>
     </thead>
 </table>
@@ -100,7 +100,7 @@
             valueField: 'number',
             textField: 'number',
             prompt: "Choose Delivery Note",
-            onSelect: function(row){
+            onSelect: function(row) {
                 var trans_date = $("#trans_date").datebox('getValue');
                 number(trans_date, row.nickname);
             }
@@ -321,6 +321,8 @@
             fit: true,
             pageList: [10, 50, 100, 500, 1000],
             pageSize: 10,
+            resizable: true,
+            remoteSort: false,
             onBeforeLoad: function(row, param) {
                 if (!row) {
                     param.id = 0;

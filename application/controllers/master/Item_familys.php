@@ -31,7 +31,13 @@ class Item_familys extends CI_Controller
     public function reads($item_category_id)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_familys', ["name" => $post], ["item_category_id" => $item_category_id]);
+        $this->db->select('*');
+        $this->db->from('item_familys');
+        $this->db->where('item_category_id', $item_category_id);
+        if (!empty($post)) {
+            $this->db->like('name', $post);
+        }
+        $send = $this->db->get()->result_array();
         echo json_encode($send);
     }
 

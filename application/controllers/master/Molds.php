@@ -131,16 +131,19 @@ class Molds extends CI_Controller
                 'mold_name' => $data->val($i, 2),
                 'type' => $data->val($i, 3),
                 'customer_number' => $data->val($i, 4),
-                'model' => $data->val($i, 5),
-                'mold_size' => $data->val($i, 6),
-                'project_year' => $data->val($i, 7),
-                'cavity_standard' => $data->val($i, 8),
-                'cavity_actual' => $data->val($i, 9),
-                'shoot_standard' => $data->val($i, 10),
-                'shoot_actual' => $data->val($i, 11),
-                'mold_type' => $data->val($i, 12),
-                'remark' => $data->val($i, 13),
-                'status' => $data->val($i, 14)
+                'project_year' => $data->val($i, 5),
+                'total_mold' => $data->val($i, 6),
+                'mold_no' => $data->val($i, 7),
+                'mold_year' => $data->val($i, 8),
+                'mold_size' => $data->val($i, 9),
+                'cavity_standard' => $data->val($i, 10),
+                'cavity_actual' => $data->val($i, 11),
+                'shoot_standard' => $data->val($i, 12),
+                'shoot_actual' => $data->val($i, 13),
+                'model' => $data->val($i, 14),
+                'mold_type' => $data->val($i, 15),
+                'remark' => $data->val($i, 16),
+                'status' => $data->val($i, 17)
             );
         }
         $datas['total'] = count($datas);
@@ -211,6 +214,10 @@ class Molds extends CI_Controller
                     "mold_type" => $data['mold_type'],
                     "remark" => $data['remark'],
                     "status" => $data['status'],
+                    "total_mold" => $data['total_mold'],
+                    "mold_no" => $data['mold_no'],
+                    "mold_year" => $data['mold_year'],
+                    "mold_size" => $data['mold_size'],
                 );
                 $send   = $this->crud->create('molds', $dataFinal);
                 echo $send;
@@ -265,11 +272,13 @@ class Molds extends CI_Controller
                 <th width="20">No</th>
                 <th>Mold ID</th>
                 <th>Mold Name</th>
-                <th>Type</th>
+                <th>Property of</th>
                 <th>Customer Name</th>
-                <th>Model</th>
-                <th>Mold Size</th>
                 <th>Project Year</th>
+                <th>Total Mold</th>
+                <th>Mold No</th>
+                <th>Mold Year</th>
+                <th>Mold Size</th>
                 <th>Standard Cavity</th>
                 <th>Actual Cavity</th>
                 <th>Standard Shoot</th>
@@ -286,13 +295,15 @@ class Molds extends CI_Controller
                     <td>' . $data['mold_name'] . '</td>
                     <td>' . $data['type'] . '</td>
                     <td>' . $data['customer_name'] . '</td>
-                    <td>' . $data['model'] . '</td>
-                    <td>' . $data['mold_size'] . '</td>
                     <td>' . $data['project_year'] . '</td>
+                    <td>' . $data['total_mold'] . '</td>
+                    <td>' . $data['mold_no'] . '</td>
+                    <td>' . $data['mold_year'] . '</td>
+                    <td>' . $data['mold_size'] . '</td>
                     <td>' . $data['cavity_standard'] . '</td>
                     <td>' . $data['cavity_actual'] . '</td>
                     <td>' . $data['shoot_standard'] . '</td>
-                    <td>' . $data['shoot_standard'] . '</td>
+                    <td>' . $data['shoot_actual'] . '</td>
                     <td>' . $data['mold_type'] . '</td>
                     <td>' . $data['remark'] . '</td>
                     <td>' . $data['status'] . '</td>';
