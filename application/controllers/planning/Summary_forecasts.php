@@ -97,9 +97,11 @@ class Summary_forecasts extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
+        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, d.number as compound_no');
         $this->db->from('forecasts a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->join('bom c', 'a.item_fg_id = c.item_fg_id', 'left');
+        $this->db->join('item_rm d', 'c.item_rm_id = d.id', 'left');
         $this->db->where('a.deleted', 0);
         $this->db->like('a.p_month', $filter_period_month);
         $this->db->like('a.p_year', $filter_period_year);
@@ -186,6 +188,7 @@ class Summary_forecasts extends CI_Controller
                 <th width="20">No</th>
                 <th>Product No.</th>
                 <th>Product Name</th>
+                <th>Compound No</th>
                 <th style="text-align: center;">' . $dates[0]['name'] . '</th>
                 <th style="text-align: center;">' . $dates[1]['name'] . '</th>
                 <th style="text-align: center;">' . $dates[2]['name'] . '</th>
@@ -242,6 +245,7 @@ class Summary_forecasts extends CI_Controller
                         <td>' . $no . '</td>
                         <td>' . $data['item_fg_number'] . '</td>
                         <td>' . $data['item_fg_name'] . '</td>
+                        <td>' . $data['compound_no'] . '</td>
                         <td style="text-align: right;">' . number_format($data['month_1']) . '</td>
                         <td style="text-align: right;">' . number_format($data['month_2']) . '</td>
                         <td style="text-align: right;">' . number_format($data['month_3']) . '</td>
@@ -257,7 +261,7 @@ class Summary_forecasts extends CI_Controller
                 $no++;
             }
             $html .= '<tr>
-                            <th colspan="3">Grand Total</th>
+                            <th colspan="4">Grand Total</th>
                             <th style="text-align: right;">' . number_format($gt_1) . '</th>
                             <th style="text-align: right;">' . number_format($gt_2) . '</th>
                             <th style="text-align: right;">' . number_format($gt_3) . '</th>
@@ -323,6 +327,7 @@ class Summary_forecasts extends CI_Controller
                 <th width="20">No</th>
                 <th>Product No.</th>
                 <th>Product Name</th>
+                <th>Compound No</th>
                 <th style="text-align: center;">' . $dates[0]['name'] . '</th>
                 <th style="text-align: center;">' . $dates[1]['name'] . '</th>
                 <th style="text-align: center;">' . $dates[2]['name'] . '</th>
@@ -379,6 +384,7 @@ class Summary_forecasts extends CI_Controller
                         <td>' . $no . '</td>
                         <td>' . $data['item_fg_number'] . '</td>
                         <td>' . $data['item_fg_name'] . '</td>
+                        <td>' . $data['compound_no'] . '</td>
                         <td style="text-align: right;">' . number_format($data['month_1']) . '</td>
                         <td style="text-align: right;">' . number_format($data['month_2']) . '</td>
                         <td style="text-align: right;">' . number_format($data['month_3']) . '</td>
@@ -394,7 +400,7 @@ class Summary_forecasts extends CI_Controller
                 $no++;
             }
             $html .= '<tr>
-                        <th colspan="3">Grand Total</th>
+                        <th colspan="4">Grand Total</th>
                         <th style="text-align: right;">' . number_format($gt_1) . '</th>
                         <th style="text-align: right;">' . number_format($gt_2) . '</th>
                         <th style="text-align: right;">' . number_format($gt_3) . '</th>
