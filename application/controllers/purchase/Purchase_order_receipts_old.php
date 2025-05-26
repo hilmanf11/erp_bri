@@ -62,26 +62,7 @@ class Purchase_order_receipts extends CI_Controller
     public function readPart($supplier_id)
     {
         $supplier_id = base64_decode($supplier_id);
-        
-        // $records = $this->crud->query("SELECT b.id, b.number, b.name FROM purchase_order_receipts a JOIN item_rm b ON a.item_rm_id = b.id WHERE a.supplier_id = '$supplier_id' and a.status = '0' GROUP BY a.receipt_no ORDER BY a.created_date desc");
-        // echo json_encode($records);
-
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        
-        $this->db->select('b.id, b.number, b.name');
-        $this->db->from('purchase_orders a');
-        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-        $this->db->where('a.deleted', 0);
-        $this->db->where('a.status', 0);
-        $this->db->where('a.supplier_id', $supplier_id);
-        if ($post != "") {
-            $this->db->like('b.number', $post);
-            $this->db->or_like('b.name', $post);
-        }
-        $this->db->group_by('b.number');
-        $this->db->order_by('b.number', 'asc');
-        $records = $this->db->get()->result_array();
-        
+        $records = $this->crud->query("SELECT b.id, b.number, b.name FROM purchase_order_receipts a JOIN item_rm b ON a.item_rm_id = b.id WHERE a.supplier_id = '$supplier_id' and a.status = '0' GROUP BY a.receipt_no ORDER BY a.created_date desc");
         echo json_encode($records);
     }
     public function readDocno($supplier_id)
@@ -810,12 +791,8 @@ class Purchase_order_receipts extends CI_Controller
                 if ($record->item_family_id == 'P06') {
                     $this->createQrcode($record->item_rm_id, "assets/image/qrcode/");
                     $qr_item_rm = '<img src="' . base_url('assets/image/qrcode/' . $record->item_rm_id . '.png') . '" width="30"/>';
-                    $this->createQrcode($record->lot_no, "assets/image/qrcode/");
-                    // Styling QR Lot No agar di pojok kanan atas area Quantity
-                    $qr_lot_no = '<div style="position:absolute; top:4px; right:4px;"><img src="' . base_url('assets/image/qrcode/' . $record->lot_no . '.png') . '" width="22" style="display:block;"/></div>';
                 } else {
                     $qr_item_rm = "";
-                    $qr_lot_no = "";
                 }
                 $html .= '  <div style="width: 48mm; max-height:41mm; float:left; ' . $padding . '">
                                 <table id="customers" border="1" style="margin-bottom:20px;">
@@ -823,12 +800,13 @@ class Purchase_order_receipts extends CI_Controller
                                         <th colspan="3" style="font-size:7px; text-align:center;"><b>' . $config->name . '</b></th>
                                     </tr>
                                     <tr>
-                                        <td colspan="2" style="height:35px; position:relative;">
+                                        <td colspan="2" style="height:35px;">
                                             <div style="float:left;">
                                                 <small style="font-size:10px;"><b>' . $record->number . '</b></small>
                                                 <br>
                                                 <b style="font-size:7px;">' . $record->name . " - " . $record->color . '</b>
                                             </div>
+                                            
                                             <div style="float:right;">
                                                 <small style="font-size:15px;"><b>' . $record->p_month . '</b></small>
                                                 <small style="font-size:15px;"><b> - ' . $record->p_year . '</b></small>
@@ -837,20 +815,15 @@ class Purchase_order_receipts extends CI_Controller
                                         </td>
                                     </tr>
                                     <tr>
-                                        <th style="text-align:left; position:relative;">
-                                            <small>Quantity</small>
-                                            <div style="display:flex; align-items:center; margin-top:2px;">
-                                                <span style="font-size:20px; font-weight:bold; margin-right:8px;">' . number_format($record->qty, 2) . '</span>
-                                                <span style="font-size:15px; font-weight:bold; margin-right:8px;">' . $record->uom . '</span>
-                                                <span>' . $qr_lot_no . '</span>
-                                            </div>
-                                        </th>
                                         <th style="text-align:left">
-                                            <small>Lot No. </small><b style="font-size:10px;">' . $record->lot_no . '</b>
+                                            <small>Quantity</small><br><b style="font-size:20px;">' . number_format($record->qty, 2) . '</b></small>
+                                            <small style="font-size:15px; float: right;"><b>' . $record->uom . '</b></small>
+                                            </th>
+                                        <th style="text-align:left">
                                             <small>Location</small><br><b style="font-size:10px;">' . $record->location . '</b><br>
+                                            <small>Lot No. </small><b style="font-size:10px;">' . $record->lot_no . '</b>
                                         </th>
                                     </tr>
-                                    
                                     <tr>
                                         <th style="text-align:left">
                                             <div style="display: inline-block;">
@@ -1298,12 +1271,8 @@ class Purchase_order_receipts extends CI_Controller
                 if ($record->item_family_id == 'P06') {
                     $this->createQrcode($record->item_rm_id, "assets/image/qrcode/");
                     $qr_item_rm = '<img src="' . base_url('assets/image/qrcode/' . $record->item_rm_id . '.png') . '" width="30"/>';
-                    $this->createQrcode($record->lot_no, "assets/image/qrcode/");
-                    // Styling QR Lot No agar di pojok kanan atas area Quantity
-                    $qr_lot_no = '<div style="position:absolute; top:4px; right:4px;"><img src="' . base_url('assets/image/qrcode/' . $record->lot_no . '.png') . '" width="22" style="display:block;"/></div>';
                 } else {
                     $qr_item_rm = "";
-                    $qr_lot_no = "";
                 }
                 $html .= '  <div style="width: 48mm; max-height:41mm; float:left; ' . $padding . '">
                                 <table id="customers" border="1" style="margin-bottom:20px;">
@@ -1311,12 +1280,13 @@ class Purchase_order_receipts extends CI_Controller
                                         <th colspan="3" style="font-size:7px; text-align:center;"><b>' . $config->name . '</b></th>
                                     </tr>
                                     <tr>
-                                        <td colspan="2" style="height:35px; position:relative;">
+                                        <td colspan="2" style="height:35px;">
                                             <div style="float:left;">
                                                 <small style="font-size:10px;"><b>' . $record->number . '</b></small>
                                                 <br>
                                                 <b style="font-size:7px;">' . $record->name . " - " . $record->color . '</b>
                                             </div>
+                                            
                                             <div style="float:right;">
                                                 <small style="font-size:15px;"><b>' . $record->p_month . '</b></small>
                                                 <small style="font-size:15px;"><b> - ' . $record->p_year . '</b></small>
@@ -1325,17 +1295,13 @@ class Purchase_order_receipts extends CI_Controller
                                         </td>
                                     </tr>
                                     <tr>
-                                        <th style="text-align:left; position:relative;">
-                                            <small>Quantity</small>
-                                            <div style="display:flex; align-items:center; margin-top:2px;">
-                                                <span style="font-size:20px; font-weight:bold; margin-right:8px;">' . number_format($record->qty, 2) . '</span>
-                                                <span style="font-size:15px; font-weight:bold; margin-right:8px;">' . $record->uom . '</span>
-                                                <span>' . $qr_lot_no . '</span>
-                                            </div>
-                                        </th>
                                         <th style="text-align:left">
-                                            <small>Lot No. </small><b style="font-size:10px;">' . $record->lot_no . '</b>
+                                            <small>Quantity</small><br><b style="font-size:20px;">' . number_format($record->qty, 2) . '</b></small>
+                                            <small style="font-size:15px; float: right;"><b>' . $record->uom . '</b></small>
+                                            </th>
+                                        <th style="text-align:left">
                                             <small>Location</small><br><b style="font-size:10px;">' . $record->location . '</b><br>
+                                            <small>Lot No. </small><b style="font-size:10px;">' . $record->lot_no . '</b>
                                         </th>
                                     </tr>
                                     

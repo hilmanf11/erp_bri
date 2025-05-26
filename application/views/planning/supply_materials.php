@@ -73,10 +73,12 @@
                         <span style="width:10%; display:inline-block; text-align:center;">to</span>
                         <input style="width:40%;" id="filter_kanban_date_to" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false, prompt:'To Date'">
                     </div>
-                </div> -->
-                <!-- <div class="fitem">
+                </div>
+            </div>
+            <div style="width: 30%; float: left;">
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status</span>
-                    <select style="width:30%;" id="filter_status" class="easyui-combobox" panelHeight="auto">
+                    <select style="width:60%;" id="filter_status" class="easyui-combobox" panelHeight="auto">
                         <option value="">Choose All</option>
                         <option value="0">OPEN</option>
                         <option value="1">CLOSE</option>

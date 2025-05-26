@@ -104,7 +104,7 @@ class Report_history_transactions_fg extends CI_Controller
             a.item_family_number,
             f.name as family_name,
             COALESCE((
-                -- Total Qty IN (fg_scan_in_label + os_fg)
+                -- Total Qty IN (fg_scan_in_label + os_fg + transaction_fg RE)
                 (
                     SELECT IFNULL(SUM(f2.qty), 0)
                     FROM fg_scan_in_label f2
@@ -118,48 +118,86 @@ class Report_history_transactions_fg extends CI_Controller
                     WHERE o2.item_fg_id = a.id
                     AND o2.deleted = 0
                     AND o2.trans_date < DATE('$filter_from')
+                ) +
+                (
+                    SELECT IFNULL(SUM(tf2.qty), 0)
+                    FROM transaction_fg tf2
+                    WHERE tf2.item_fg_id = a.id
+                    AND tf2.deleted = 0
+                    AND tf2.request_date < DATE('$filter_from')
+                    AND LEFT(tf2.transaction_type, 2) = 'RE'
                 ) -
-                -- Total Qty OUT (shipping_orders)
+                -- Total Qty OUT (shipping_orders + transaction_fg IS)
                 (
                     SELECT IFNULL(SUM(sh2.qty), 0)
                     FROM shipping_orders sh2
                     WHERE sh2.item_fg_id = a.id
                     AND sh2.deleted = 0
                     AND sh2.created_date < DATE('$filter_from')
+                ) -
+                (
+                    SELECT IFNULL(SUM(tf3.qty), 0)
+                    FROM transaction_fg tf3
+                    WHERE tf3.item_fg_id = a.id
+                    AND tf3.deleted = 0
+                    AND tf3.request_date < DATE('$filter_from')
+                    AND LEFT(tf3.transaction_type, 2) = 'IS'
                 )
             ), 0) as begin_stock,
-            COALESCE((SELECT SUM(f.qty) FROM fg_scan_in_label f WHERE f.item_fg_id = a.id AND f.deleted = 0 AND f.scan_date BETWEEN '$filter_from' AND '$filter_to'), 0) +
-            COALESCE((SELECT SUM(o.qty) FROM os_fg o WHERE o.item_fg_id = a.id AND o.deleted = 0 AND o.trans_date BETWEEN '$filter_from' AND '$filter_to'), 0) as qty_in,
-            COALESCE((SELECT SUM(sh.qty) FROM shipping_orders sh 
-                WHERE sh.item_fg_id = a.id 
-                AND sh.deleted = 0 
-                AND DATE(sh.created_date) BETWEEN '$filter_from' AND '$filter_to'), 0) as qty_out,
-            (COALESCE((SELECT 
-                (COALESCE(SUM(CASE 
-                    WHEN f2.deleted = 0 AND DATE(f2.scan_date) < '$filter_from'
-                    THEN f2.qty 
-                    ELSE 0 
-                END),0) + 
-                COALESCE(SUM(CASE 
-                    WHEN o2.deleted = 0 AND DATE(o2.trans_date) < '$filter_from'
-                    THEN o2.qty
-                    ELSE 0 
-                END),0) - 
-                COALESCE(SUM(CASE 
-                    WHEN sh2.deleted = 0 AND DATE(sh2.created_date) < '$filter_from'
-                    THEN sh2.qty
-                    ELSE 0 
-                END),0))
-            FROM fg_scan_in_label f2
-            LEFT JOIN os_fg o2 ON f2.item_fg_id = o2.item_fg_id
-            LEFT JOIN shipping_orders sh2 ON f2.item_fg_id = sh2.item_fg_id
-            WHERE f2.item_fg_id = a.id), 0) +
-            COALESCE((SELECT SUM(f.qty) FROM fg_scan_in_label f WHERE f.item_fg_id = a.id AND f.deleted = 0 AND f.scan_date BETWEEN '$filter_from' AND '$filter_to'), 0) +
-            COALESCE((SELECT SUM(o.qty) FROM os_fg o WHERE o.item_fg_id = a.id AND o.deleted = 0 AND o.trans_date BETWEEN '$filter_from' AND '$filter_to'), 0) -
-            COALESCE((SELECT SUM(sh.qty) FROM shipping_orders sh 
-                WHERE sh.item_fg_id = a.id 
-                AND sh.deleted = 0 
-                AND DATE(sh.created_date) BETWEEN '$filter_from' AND '$filter_to'), 0)) as end_stock
+            (
+                COALESCE((SELECT SUM(f.qty) FROM fg_scan_in_label f WHERE f.item_fg_id = a.id AND f.deleted = 0 AND f.scan_date BETWEEN '$filter_from' AND '$filter_to'), 0) +
+                COALESCE((SELECT SUM(o.qty) FROM os_fg o WHERE o.item_fg_id = a.id AND o.deleted = 0 AND o.trans_date BETWEEN '$filter_from' AND '$filter_to'), 0) +
+                COALESCE((SELECT SUM(tf.qty) FROM transaction_fg tf WHERE tf.item_fg_id = a.id AND tf.deleted = 0 AND tf.request_date BETWEEN '$filter_from' AND '$filter_to' AND LEFT(tf.transaction_type, 2) = 'RE'), 0)
+            ) as qty_in,
+            (
+                COALESCE((SELECT SUM(sh.qty) FROM shipping_orders sh 
+                    WHERE sh.item_fg_id = a.id 
+                    AND sh.deleted = 0 
+                    AND DATE(sh.created_date) BETWEEN '$filter_from' AND '$filter_to'), 0) +
+                COALESCE((SELECT SUM(tf.qty) FROM transaction_fg tf WHERE tf.item_fg_id = a.id AND tf.deleted = 0 AND tf.request_date BETWEEN '$filter_from' AND '$filter_to' AND LEFT(tf.transaction_type, 2) = 'IS'), 0)
+            ) as qty_out,
+            (
+                COALESCE((SELECT 
+                    (COALESCE(SUM(CASE 
+                        WHEN f2.deleted = 0 AND DATE(f2.scan_date) < '$filter_from'
+                        THEN f2.qty 
+                        ELSE 0 
+                    END),0) + 
+                    COALESCE(SUM(CASE 
+                        WHEN o2.deleted = 0 AND DATE(o2.trans_date) < '$filter_from'
+                        THEN o2.qty
+                        ELSE 0 
+                    END),0) +
+                    COALESCE(SUM(CASE 
+                        WHEN tf2.deleted = 0 AND DATE(tf2.request_date) < '$filter_from' AND LEFT(tf2.transaction_type, 2) = 'RE'
+                        THEN tf2.qty
+                        ELSE 0
+                    END),0) - 
+                    COALESCE(SUM(CASE 
+                        WHEN sh2.deleted = 0 AND DATE(sh2.created_date) < '$filter_from'
+                        THEN sh2.qty
+                        ELSE 0 
+                    END),0) -
+                    COALESCE(SUM(CASE 
+                        WHEN tf3.deleted = 0 AND DATE(tf3.request_date) < '$filter_from' AND LEFT(tf3.transaction_type, 2) = 'IS'
+                        THEN tf3.qty
+                        ELSE 0
+                    END),0))
+                FROM fg_scan_in_label f2
+                LEFT JOIN os_fg o2 ON f2.item_fg_id = o2.item_fg_id
+                LEFT JOIN shipping_orders sh2 ON f2.item_fg_id = sh2.item_fg_id
+                LEFT JOIN transaction_fg tf2 ON f2.item_fg_id = tf2.item_fg_id
+                LEFT JOIN transaction_fg tf3 ON f2.item_fg_id = tf3.item_fg_id
+                WHERE f2.item_fg_id = a.id), 0) +
+                COALESCE((SELECT SUM(f.qty) FROM fg_scan_in_label f WHERE f.item_fg_id = a.id AND f.deleted = 0 AND f.scan_date BETWEEN '$filter_from' AND '$filter_to'), 0) +
+                COALESCE((SELECT SUM(o.qty) FROM os_fg o WHERE o.item_fg_id = a.id AND o.deleted = 0 AND o.trans_date BETWEEN '$filter_from' AND '$filter_to'), 0) +
+                COALESCE((SELECT SUM(tf.qty) FROM transaction_fg tf WHERE tf.item_fg_id = a.id AND tf.deleted = 0 AND tf.request_date BETWEEN '$filter_from' AND '$filter_to' AND LEFT(tf.transaction_type, 2) = 'RE'), 0) -
+                COALESCE((SELECT SUM(sh.qty) FROM shipping_orders sh 
+                    WHERE sh.item_fg_id = a.id 
+                    AND sh.deleted = 0 
+                    AND DATE(sh.created_date) BETWEEN '$filter_from' AND '$filter_to'), 0) -
+                COALESCE((SELECT SUM(tf.qty) FROM transaction_fg tf WHERE tf.item_fg_id = a.id AND tf.deleted = 0 AND tf.request_date BETWEEN '$filter_from' AND '$filter_to' AND LEFT(tf.transaction_type, 2) = 'IS'), 0)
+            ) as end_stock
         FROM item_fg a 
         LEFT JOIN item_familys f ON a.item_family_number = f.number
         $where_condition
@@ -320,6 +358,25 @@ class Report_history_transactions_fg extends CI_Controller
                     WHERE o.item_fg_id = '$item_fg_id' 
                     AND DATE(o.trans_date) BETWEEN '$filter_from' AND '$filter_to'
                     AND o.deleted = 0)
+                    UNION ALL
+                    (SELECT 
+                        IF(LEFT(tf.transaction_type, 2) = 'RE', 'IN', 'OUT') as trans_category,
+                        tf.request_date as trans_date,
+                        tf.request_no as ref_no,
+                        IF(LEFT(tf.transaction_type, 2) = 'RE', tf.qty, -tf.qty) as qty,
+                        u.name as username,
+                        t.name as trans_type,
+                        '' as compound_lot,
+                        '' as prod_date,
+                        tf.created_date
+                    FROM transaction_fg tf
+                    JOIN users u ON tf.created_by = u.username
+                    JOIN transaction_type t ON tf.transaction_type = t.type
+                    WHERE tf.item_fg_id = '$item_fg_id'
+                    AND DATE(tf.request_date) BETWEEN '$filter_from' AND '$filter_to'
+                    AND tf.deleted = 0
+                    AND (LEFT(tf.transaction_type, 2) = 'RE' OR LEFT(tf.transaction_type, 2) = 'IS')
+                    )
                     UNION ALL
                     (SELECT 
                         'OUT' as trans_category,

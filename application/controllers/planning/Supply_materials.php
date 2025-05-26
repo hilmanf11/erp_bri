@@ -223,9 +223,6 @@ class Supply_materials extends CI_Controller
                 } else {
                     $this->db->where('a.request_date', date('Y-m-d'));
                 }
-                if($filter_status != ""){
-                    $this->db->where('a.status', $filter_status);
-                }
                 $this->db->group_by('a.request_no');
                 $this->db->order_by('a.request_no', 'DESC');
                 //Total Data
@@ -233,6 +230,7 @@ class Supply_materials extends CI_Controller
                 //Limit 1 - 10
                 $this->db->limit($rows, $offset);
                 $records = $this->db->get()->result_array();
+                $arr = array();
                 foreach ($records as $record) {
                     // Status header: CLOSED jika semua item closed
                     $status = ($record['total_items'] == $record['closed_items']) ? "1" : "0";
@@ -253,7 +251,16 @@ class Supply_materials extends CI_Controller
                         "state" => "closed"
                     );
                 }
-                $result['total'] = $totalRows;
+                // Filter status di array hasil mapping
+                if($filter_status !== "" && isset($arr)){
+                    $arr = array_filter($arr, function($v) use ($filter_status) {
+                        return $v['status'] === $filter_status;
+                    });
+                    $arr = array_values($arr); // reset index
+                    $result['total'] = count($arr);
+                } else {
+                    $result['total'] = $totalRows;
+                }
                 $result = array_merge($result, ['rows' => @$arr]);
                 echo json_encode($result);
             } else {
@@ -276,13 +283,11 @@ class Supply_materials extends CI_Controller
                     $this->db->where('a.request_date >=', $filter_kanban_date_from);
                     $this->db->where('a.request_date <=', $filter_kanban_date_to);
                 }
-                if($filter_status != ""){
-                    $this->db->where('a.status', $filter_status);
-                }
                 $this->db->group_by('a.id');
                 $this->db->order_by('a.request_no', 'DESC');
                 $records = $this->db->get()->result_array();
 
+                $arr = array();
                 foreach ($records as $record) {
                     // Status detail: CLOSED jika qty_actual sama dengan qty request
                     $status = (floatval($record['qty']) == floatval($record['qty_actual'])) ? '1' : '0';
@@ -308,6 +313,13 @@ class Supply_materials extends CI_Controller
                         "updated_date" => $record['updated_date']
                     );
                 }
+                // Filter status di PHP setelah mapping
+                // if($filter_status !== "" && isset($arr)){
+                //     $arr = array_filter($arr, function($v) use ($filter_status) {
+                //         return $v['status'] === $filter_status;
+                //     });
+                //     $arr = array_values($arr); // reset index
+                // }
                 $result = !empty($arr) ? $arr : [];
                 echo json_encode($result);
             }
