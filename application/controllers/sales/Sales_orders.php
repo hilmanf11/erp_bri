@@ -197,26 +197,26 @@ class Sales_orders extends CI_Controller
 {
     if ($this->input->post()) {
         $post = $this->input->post();
-
+        if (!empty($post['sales_order_no'])) {
         // Cek apakah kombinasi customer_order_no, item_fg_id, dan delivery_date sudah ada di sales_order_no berbeda
-        $duplicate_check = $this->crud->read("sales_orders", [], [
-            "customer_order_no" => $post['customer_order_no'],
-            "item_fg_id" => $post['item_fg_id'],
-            "delivery_date" => $post['delivery_date'],
-            "sales_order_no !=" => $post['sales_order_no']
-        ]);
-
-        if (!empty($duplicate_check)) {
-            // Jika ada duplikasi dengan sales_order_no berbeda, tolak permintaan
-            echo json_encode([
-                'status' => false,
-                'message' => 'Cannot create Customer Order No and Product Name already exists',
-                'theme' => 'error'
+            $duplicate_check = $this->crud->read("sales_orders", [], [
+                "customer_order_no" => $post['customer_order_no'],
+                "item_fg_id" => $post['item_fg_id'],
+                "delivery_date" => $post['delivery_date'],
+                "sales_order_no !=" => $post['sales_order_no']
             ]);
-            return;
-        }
 
-        $sales_orders = $this->crud->read("sales_orders", [], ["sales_order_no" => $post['sales_order_no'], "item_fg_id" => $post['item_fg_id']]);
+            if (!empty($duplicate_check)) {
+                // Jika ada duplikasi dengan sales_order_no berbeda, tolak permintaan
+                echo json_encode([
+                    'status' => false,
+                    'message' => 'Cannot create Customer Order No and Product Name already exists',
+                    'theme' => 'error'
+                ]);
+                return;
+            }
+
+            $sales_orders = $this->crud->read("sales_orders", [], ["sales_order_no" => $post['sales_order_no'], "item_fg_id" => $post['item_fg_id']]);
             // if (!empty($sales_orders->sales_order_no)) {
             if (@$sales_orders->sales_order_no != "") {
                 $send = $this->crud->update('sales_orders', ["sales_order_no" => $post['sales_order_no'], "item_fg_id" => $post['item_fg_id']], $post);
@@ -225,9 +225,12 @@ class Sales_orders extends CI_Controller
             }
 
             echo $send;
-        } else {
-            show_error("Cannot Process your request");
+        }else{
+            show_error("Sales order No cannot be empty!");
         }
+    } else {
+        show_error("Cannot Process your request");
+    }
 }
 
 

@@ -45,7 +45,7 @@
                         <option value="1">CLOSE</option>
                     </select>
                 </div>
-                <div class="fitem filter-nbc-hide">
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status OUT</span>
                     <select style="width:60%;" id="filter_status_out" class="easyui-combobox" panelHeight="auto">
                         <option value="-">Select ALL</option>
@@ -84,7 +84,6 @@
             "&filter_status_in=" + filter_status_in +
             "&filter_status_out=" + filter_status_out +
             "&filter_display_by=" + filter_display_by;
-
         if (filter_display_by === "nbc") {
             if (filter_from == "" || filter_to == "") {
                 toastr.warning("Please select Trans Date!");
@@ -187,6 +186,8 @@
         // Trigger saat load pertama kali
         if ($('#filter_display_by').combobox('getValue') === 'nbc') {
             $('.filter-nbc-hide').hide();
+        } else {
+            $('#filter_status_out').combobox('setValue', '-');
         }
     });
     //Format Datepicker

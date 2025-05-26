@@ -171,6 +171,7 @@ class Report_check_serialno extends CI_Controller
         $filter_product_no = $this->input->get("filter_product_no");
         $filter_from = base64_decode($this->input->get("filter_from"));
         $filter_to = base64_decode($this->input->get("filter_to"));
+        $filter_status_out = $this->input->get("filter_status_out");
         $this->db->select('a.*, b.number as item_number, b.name as item_name');
         $this->db->from('new_barcode a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
@@ -182,13 +183,20 @@ class Report_check_serialno extends CI_Controller
             $this->db->where('a.cut_off_date >=', $filter_from);
             $this->db->where('a.cut_off_date <=', $filter_to);
         }
+        if (isset($filter_status_out) && $filter_status_out != "-") {
+            if ($filter_status_out == "0") {
+                $this->db->where('a.status', 0);
+            } else if ($filter_status_out == "1") {
+                $this->db->where('a.status', 1);
+            }
+        }
         $this->db->order_by('a.cut_off_date', 'ASC');
         $this->db->order_by('a.label_no', 'ASC');
         $records = $this->db->get()->result_array();
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body><center><div style="float: left; font-size: 12px; text-align: left;"><table style="width: 100%;"><tr><td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;"><img src="' . $config->favicon . '" width="30"></td><td style="font-size: 14px; text-align: left; margin:2px;"><b>' . $config->name . '</b><br><small>' . $config->description . '</small></td></tr></table></div><div style="float: right; font-size: 12px; text-align: right;">Print Date ' . date("d M Y H:i:s") . ' <br>Print By ' . $this->session->username . '  </div><br><br><br><h3 style="margin:0;">CHECK SERIAL NO (NEW BARCODE)</h3><small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small></center><br><table id="customers" border="1"><tr><th width="20">No</th><th>Created Date</th><th>Label No</th><th>Part No</th><th>Part Name</th><th>Quantity</th><th>UOM</th><th>Cut Off Date</th><th>Status</th><th>Created By</th></tr>';
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body><center><div style="float: left; font-size: 12px; text-align: left;"><table style="width: 100%;"><tr><td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;"><img src="' . $config->favicon . '" width="30"></td><td style="font-size: 14px; text-align: left; margin:2px;"><b>' . $config->name . '</b><br><small>' . $config->description . '</small></td></tr></table></div><div style="float: right; font-size: 12px; text-align: right;">Print Date ' . date("d M Y H:i:s") . ' <br>Print By ' . $this->session->username . '  </div><br><br><br><h3 style="margin:0;">CHECK SERIAL NO (NEW BARCODE)</h3><small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small></center><br><table id="customers" border="1"><tr><th width="20">No</th><th>Created Date</th><th>Label No</th><th>Part No</th><th>Part Name</th><th>Quantity</th><th>UOM</th><th>Cut Off Date</th><th>Status Out</th><th>Created By</th></tr>';
         $no = 1;
         foreach ($records as $data) {
             $status = $data['status'] == 0 ? '<b style="color:green;">OPEN</b>' : '<b style="color:red;">CLOSE</b>';

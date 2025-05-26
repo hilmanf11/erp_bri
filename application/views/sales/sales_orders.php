@@ -1057,6 +1057,11 @@
 
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
+
+                    if(sales_order_no==null || sales_order_no == ''){
+                        return toastr.error("Sales Order No cannot be empty!");
+                    }
+                    
                     endEditing();
 
                     if (customer_address_id != "" && total_grand != "") {
