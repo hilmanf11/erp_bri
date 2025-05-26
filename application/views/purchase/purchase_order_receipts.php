@@ -844,6 +844,11 @@
                     idField: 'name',
                     textField: 'name',
                     mode: 'remote',
+                    filter: function(q, row){
+                        var opts = $(this).combogrid('options');
+                        return row[opts.textField].toLowerCase().indexOf(q.toLowerCase()) >= 0 || 
+                            row['name'].toLowerCase().indexOf(q.toLowerCase()) >= 0;
+                    },
                     fitColumns: true,
                     prompt: "Select Part Name",
                     icons: [{

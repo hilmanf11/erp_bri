@@ -62,7 +62,26 @@ class Purchase_order_receipts extends CI_Controller
     public function readPart($supplier_id)
     {
         $supplier_id = base64_decode($supplier_id);
-        $records = $this->crud->query("SELECT b.id, b.number, b.name FROM purchase_order_receipts a JOIN item_rm b ON a.item_rm_id = b.id WHERE a.supplier_id = '$supplier_id' and a.status = '0' GROUP BY a.receipt_no ORDER BY a.created_date desc");
+        
+        // $records = $this->crud->query("SELECT b.id, b.number, b.name FROM purchase_order_receipts a JOIN item_rm b ON a.item_rm_id = b.id WHERE a.supplier_id = '$supplier_id' and a.status = '0' GROUP BY a.receipt_no ORDER BY a.created_date desc");
+        // echo json_encode($records);
+
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        
+        $this->db->select('b.id, b.number, b.name');
+        $this->db->from('purchase_orders a');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+        $this->db->where('a.deleted', 0);
+        $this->db->where('a.status', 0);
+        $this->db->where('a.supplier_id', $supplier_id);
+        if ($post != "") {
+            $this->db->like('b.number', $post);
+            $this->db->or_like('b.name', $post);
+        }
+        $this->db->group_by('b.number');
+        $this->db->order_by('b.number', 'asc');
+        $records = $this->db->get()->result_array();
+        
         echo json_encode($records);
     }
     public function readDocno($supplier_id)
