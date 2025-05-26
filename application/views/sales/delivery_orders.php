@@ -298,7 +298,7 @@
 
                     <th data-options="field:'qty_del',width:100,editor:{type:'numberbox', options: {onChange: checkValue}}">Delivery</th>
 
-                    <th data-options="field:'stock',width:100,editor:{type:'numberbox', options:{readonly:true}}">Stock</th>
+                    <th data-options="field:'stock',width:100,editor:{type:'numberbox', options:{readonly:true}},formatter:function(val){ return val ? parseInt(val) : 0; }">Stock</th>
 
                     <th data-options="field:'stock_bal',width:100,editor:{type:'numberbox', options:{readonly:true}}">Balance</th>
 
