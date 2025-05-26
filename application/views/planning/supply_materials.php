@@ -25,42 +25,66 @@
 
 <div id="toolbar" style="height: 200px; padding:10px;">
     <div style="width: 100%;">
-        <fieldset style="width: 70%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+        <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
             <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Kanban Date</span>
+                    <div style="width:60%; display:inline-block;">
+                        <input style="width:45%;" id="filter_kanban_date_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false, prompt:'From Date'">
+                        <span style="width:9%; display:inline-block; text-align:center;">to</span>
+                        <input style="width:45%;" id="filter_kanban_date_to" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false, prompt:'To Date'">
+                    </div>
+                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Kanban ID</span>
                     <input style="width:60%;" id="filter_request_no" class="easyui-combobox">
                 </div>
+                <!-- <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product Family</span>
+                    <input style="width:60%;" id="filter_product_family" class="easyui-combobox">
+                </div> -->
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status</span>
+                    <select style="width:60%;" id="filter_status" class="easyui-combobox" panelHeight="auto">
+                        <option value="">Choose All</option>
+                        <option value="0">OPEN</option>
+                        <option value="1">CLOSE</option>
+                    </select>
+                </div>
+                <!-- <div class="fitem">
+                    <span style="width:35%; display:inline-block;"></span>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                </div> -->
+            </div>
+            <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Family</span>
                     <input style="width:60%;" id="filter_product_family" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;"></span>
-                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-                </div>
-            </div>
-            <div style="width: 50%; float: left;">
-                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No</span>
                     <input style="width:60%;" id="filter_product_no" class="easyui-combogrid">
                 </div>
-                <div class="fitem">
+                <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">Kanban Date</span>
                     <div style="width:60%; display:inline-block;">
                         <input style="width:40%;" id="filter_kanban_date_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false, prompt:'From Date'">
                         <span style="width:10%; display:inline-block; text-align:center;">to</span>
                         <input style="width:40%;" id="filter_kanban_date_to" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false, prompt:'To Date'">
                     </div>
-                </div>
-                <div class="fitem">
+                </div> -->
+                <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status</span>
                     <select style="width:30%;" id="filter_status" class="easyui-combobox" panelHeight="auto">
                         <option value="">Choose All</option>
                         <option value="0">OPEN</option>
                         <option value="1">CLOSE</option>
                     </select>
+                </div> -->
+                <div class="fitem">
+                    <span style="width:84%; display:inline-block;"></span>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                 </div>
             </div>
         </fieldset>
@@ -75,7 +99,7 @@
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
 </div>
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; height: 600px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1050px; height: 600px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -112,6 +136,16 @@
 <!-- PDF -->
 <iframe id="printout" src="<?= base_url('planning/supply_materials/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
+
+    $.extend($.fn.validatebox.defaults.rules, {
+        notZero: {
+            validator: function(value) {
+            return parseFloat(value) > 0;
+            },
+            message: 'Value must be greater than 0'
+        }
+    });
+
     //Add Data
     function add() {
         $('#dlg_insert').dialog('open');
@@ -187,6 +221,14 @@
                                     index: rowIndex,
                                     field: 'stock'
                                 });
+                                var ed5 = dg.datagrid('getEditor', { 
+                                    index: rowIndex, 
+                                    field: 'mpq' 
+                                });
+                                var ed6 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'lot_no'
+                                });
 
                                 var item_rm_id = $(ed.target).textbox('setValue', rows.id);
                                 var item_name = $(ed2.target).textbox('setValue', rows.name);
@@ -218,6 +260,31 @@
                                         });
                                     }
                                 });
+
+                                $.ajax({
+                                    type: "post",
+                                    url: "<?= base_url('planning/supply_materials/readMpqByItem') ?>",
+                                    data: "item_rm_id=" + rows.id,
+                                    dataType: "json",
+                                    success: function(response) {
+                                        var mpq = parseInt(response.mpq) || 0;
+                                        $(ed5.target).numberbox('setValue', mpq);
+                                    }
+                                });
+
+                                $.ajax({
+                                    type: "post",
+                                    url: "<?= base_url('planning/supply_materials/readLotNoByItem') ?>",
+                                    data: "item_rm_id=" + rows.id,
+                                    dataType: "json",
+                                    success: function(response) {
+                                        if (response && response.lot_no) {
+                                            $(ed6.target).textbox('setValue', response.lot_no);
+                                        } else {
+                                            $(ed6.target).textbox('setValue', '');
+                                        }
+                                    }
+                                });
                             }
                         }
                     }
@@ -245,6 +312,29 @@
                         }
                     }
                 }, {
+                    field: 'lot_no',
+                    width: 150,
+                    halign: 'center',
+                    title: "Lot No",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'mpq',
+                    width: 100,
+                    halign: 'center',
+                    title: "MPQ",
+                    editor: {
+                        type: 'numberbox',
+                        options: { 
+                            readonly: true, 
+                            precision: 0 
+                        }
+                    }
+                }, {
                     field: 'qty',
                     width: 100,
                     halign: 'center',
@@ -253,7 +343,12 @@
                         type: 'numberbox',
                         options: {
                             required: true,
-                            precision: 2
+                            precision: 2,
+                            validType: {
+                                notZero: function(value) {
+                                    return parseFloat(value) > 0;
+                                }
+                            }
                         }
                     }
                 }, {
@@ -488,6 +583,7 @@
 
                     for (let i = 0; i < totalrows; i++) {
                         if (rows[i].item_rm_id) {
+                            // console.log(rows[i]);
                             $.ajax({
                                 type: "post",
                                 url: '<?= base_url('planning/supply_materials/create') ?>',
@@ -497,7 +593,9 @@
                                     request_name: request_name,
                                     request_type: request_type,
                                     item_rm_id: rows[i].item_rm_id,
-                                    qty: rows[i].qty
+                                    qty: rows[i].qty,
+                                    mpq: rows[i].mpq,
+                                    lot_no: rows[i].lot_no,
                                 },
                                 dataType: "json",
                                 success: function(result) {

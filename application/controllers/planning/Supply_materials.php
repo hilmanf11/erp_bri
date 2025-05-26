@@ -29,6 +29,49 @@ class Supply_materials extends CI_Controller
         }
     }
 
+    public function readMpqByItem()
+    {
+        if ($this->input->post()) {
+            $item_rm_id = $this->input->post('item_rm_id');
+
+            $this->db->select('mpq');
+            $this->db->from('supplier_items');
+            $this->db->where('item_rm_id', $item_rm_id);
+            $query = $this->db->get();
+
+            if ($query->num_rows() > 0) {
+                $row = $query->row();
+                echo json_encode(['mpq' => $row->mpq]);
+            } else {
+                echo json_encode(['mpq' => 0]);
+            }
+        }
+    }
+
+    public function readLotNoByItem()
+    {
+        $item_rm_id = $this->input->post('item_rm_id');
+
+        $this->db->select('b.lot_no');
+        $this->db->from('purchase_order_receipts a');
+        $this->db->join('purchase_order_labels b', 'a.receipt_id = b.receipt_id');
+        $this->db->join('issued_material_details c', 'b.label_no = c.label_no', 'left');
+        $this->db->where('a.item_rm_id', $item_rm_id);
+        $this->db->where('b.deleted', 0);
+        $this->db->where('c.id IS NULL', null, false);
+        $this->db->order_by('b.lot_no', 'ASC');
+        $this->db->limit(1);
+
+        $query = $this->db->get();
+        $data = $query->row();
+
+        if ($data) {
+            echo json_encode(['lot_no' => $data->lot_no]);
+        } else {
+            echo json_encode(['lot_no' => null]);
+        }
+    }
+
     public function readPeriod()
     {
         $records = $this->crud->query("SELECT `period` FROM supply_materials WHERE `status` = '0' GROUP BY `period`");
@@ -280,6 +323,8 @@ class Supply_materials extends CI_Controller
             $item_rm_id = $post['item_rm_id'];
             $qty = $post['qty'];
             $request_type = $post['request_type']; // Add request_type
+            $mpq = $post['mpq'];
+            $lot_no = $post['lot_no'];
     
             // Pastikan jumlah yang dimasukkan tidak nol
             if ($qty <= 0) {
@@ -301,7 +346,7 @@ class Supply_materials extends CI_Controller
                     // "item_fg_id" => $item_fg_id,
                     "item_rm_id" => $item_rm_id
                 ], $post);
-                $supplyMaterialId = $existingData[0]['id'];
+                $supplyMaterialId = $existingData[0]->id;
             } else {
                 $datePrefix = date('Ymd'); 
                 $lastIdQuery = $this->db->select('id')
@@ -513,8 +558,9 @@ class Supply_materials extends CI_Controller
                                         <th>No</th>
                                         <th>Product No</th>
                                         <th>Product Name</th>
-                                        <th>Uom</th>
+                                        <th>Lot No</th>
                                         <th>Qty</th>
+                                        <th>Uom</th>
                                         <th width="80">WHS Stock</th>
                                         <th width="80">WHS Location</th>
                                     </tr>';
@@ -546,8 +592,9 @@ class Supply_materials extends CI_Controller
                                 <td>' . $no . '</td>
                                 <td>' . $record['item_number'] . '</td>
                                 <td>' . $record['item_name'] . '</td>
-                                <td>' . $record['uom'] . '</td>
+                                <td>' . $record['lot_no'] . '</td>
                                 <td style="text-align:right;">' . $record['qty'] . '</td>
+                                <td>' . $record['uom'] . '</td>
                                 <td style="text-align:right;">' . number_format((@$stockWarehouse[0]->end_stock), 2) . '</td>
                                 <td style="text-align:center;">' . $record['location'] . '</td>
                             </tr>';
