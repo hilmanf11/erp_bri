@@ -755,9 +755,42 @@ class Sales_invoices extends CI_Controller
         $this->createQrcode($sales_invoice->number, "assets/image/qrcode/");
         //Header Print
         $html = '<html><head><title>' . $sales_invoice->number . '</title><link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="16x16"></head>';
-        $html .= '<style>body {font-family: Arial, Helvetica, sans-serif;}';
-        $html .= '#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}';
-        $html .= '@media screen {.print {display: none !important;}}@media print {.noprint {display: none !important;}}</style>';
+        $html .= '<style>
+            body {
+                font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";
+            }
+            #customers {
+                border-collapse: collapse;
+                width: 100%;
+                font-size: 11px;
+            }
+            #customers td, #customers th {
+                border: 0.1mm solid black;
+                padding: 2px;
+            }
+            #customers th {
+                padding-top: 2px;
+                padding-bottom: 2px;
+                text-align: center;
+                color: black;
+            }
+            @media screen {
+                .print {
+                    display: none !important;
+                }
+            }
+            @media print {
+                .noprint {
+                    display: none !important;
+                }
+                body { 
+                    font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI"; 
+                }
+                .print { 
+                    font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";
+                }
+            }
+        </style>';
         $html .= '<body><div style="margin:20%;" class="noprint"><center>
                         <h1>Press CTRL + P for Print</h1>
                         <p>Display pages for 10 rows</p>
@@ -820,7 +853,7 @@ class Sales_invoices extends CI_Controller
                 $header = "";
             }
 
-            $html .= '  <table style="width:100%; ">
+            $html .= '  <table style="width:100%;">
                             <tr>
                                 <th width="10"><img src="' . $config->favicon . '" width="60" /></th>
                                 <td width="250" style="padding:10px;">
@@ -828,7 +861,7 @@ class Sales_invoices extends CI_Controller
                                     <span style="font-size:10px;">' . $config->address . '</span><br>
                                 </td>
                                 <th width="100" style="text-align:right;">
-                                    <table style="width:100%; font-size:10px;">
+                                    <table style="width:100%; font-size:10px; font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";">
                                         <tr>
                                             <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $sales_invoice->number . '.png') . '" width="60"/></td>
                                             <td width="60">Doc No</td>
@@ -860,7 +893,7 @@ class Sales_invoices extends CI_Controller
                                     <h3>INVOICE</h3>
                                 </center>
                                 <div style="float:left; width:60%;">
-                                    <table style="width:100%; font-size:12px; margin-bottom:10px;">
+                                    <table style="width:100%; font-size:12px; margin-bottom:10px; font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";">
                                         <tr>
                                             <td width="150">Customer Code</td>
                                             <td width="10">:</td>
@@ -889,7 +922,7 @@ class Sales_invoices extends CI_Controller
                                     </table>
                                 </div>
                                 <div style="float:left; width:40%;">
-                                    <table style="width:100%; font-size:12px; margin-bottom:10px;">
+                                    <table style="width:100%; font-size:12px; margin-bottom:10px; font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";">
                                         <tr>
                                             <td width="100">Sales Invoice No</td>
                                             <td width="10">:</td>
@@ -1035,14 +1068,14 @@ class Sales_invoices extends CI_Controller
                         </tr>';
 
                 $html .= '  <div style="position:fixed; bottom:0; width:98.7%;">
-                    <table id="customers" style="margin-top:10px; font-size:10px; border: 2px solid black;border-collapse: collapse;">
+                    <table id="customers" style="margin-top:10px; font-size:10px; border: 2px solid black;border-collapse: collapse; font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";">
                         <tr>
                             <th width="400" style="text-align:left; vertical-align:top;" rowspan="4">
                                 Total Invoice Value in Words: <br><br>
                                 ' . $this->convertcurrency->convertCurrencyToWords($grand_total, $records[0]['currency']) . ' <br><br><br>
                                 Payment Information <br>
                                 Please transfer the Grand Total Amount to the following bank account: <br>
-                                <table style="width:100%; margin-top:10px; font-size:10px; border: none;">
+                                <table style="width:100%; margin-top:10px; font-size:11px; border: none;">
                                     <tr>
                                         <td style="width:15%; text-align:left; border: none;"><b>Bank Name</td>
                                         <td style="width:2%; text-align:left; border: none;"><b>:</td>
@@ -1062,7 +1095,7 @@ class Sales_invoices extends CI_Controller
                             </th>
                         </tr>
                     </table>
-                    <table id="customers" style="margin-top:10px; font-size:12px;"><br><br>
+                    <table id="customers" style="margin-top:10px; font-size:11px; font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";"><br><br>
                         <tr>
                             <th width="420" style="text-align:left; vertical-align:top;" rowspan="4">
                             Note. <br><br>
@@ -1130,9 +1163,43 @@ class Sales_invoices extends CI_Controller
         $this->createQrcode($sales_invoice->number, "assets/image/qrcode/");
         //Header Print
         $html = '<html><head><title>' . $sales_invoice->number . '</title><link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="16x16"></head>';
-        $html .= '<style>body {font-family: Arial, Helvetica, sans-serif;}';
-        $html .= '#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}';
-        $html .= '@media screen {.print {display: none !important;}}@media print {.noprint {display: none !important;}}</style>';
+        $html .= '<style>
+            body {
+                font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";
+            }
+            #customers {
+                border-collapse: collapse;
+                width: 100%;
+                font-size: 11px;
+            }
+            #customers td, #customers th {
+                border: 0.1mm solid black;
+                padding: 2px;
+            }
+            #customers th {
+                padding-top: 2px;
+                padding-bottom: 2px;
+                text-align: center;
+                color: black;
+            }
+            @media screen {
+                .print {
+                    display: none !important;
+                }
+            }
+            @media print {
+                .noprint {
+                    display: none !important;
+                }
+                body { 
+                    font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI"; 
+                }
+                .print { 
+                    font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";
+                }
+            }
+        </style>';
+
         $html .= '<body><div style="margin:20%;" class="noprint"><center>
                         <h1>Press CTRL + P for Print</h1>
                         <p>Display pages for 10 rows</p>
@@ -1201,7 +1268,7 @@ class Sales_invoices extends CI_Controller
             $customer_number = (!empty($records) && isset($records[0]['customer_number'])) ? $records[0]['customer_number'] : '-';
             $customer_name = (!empty($records) && isset($records[0]['customer_name'])) ? $records[0]['customer_name'] : '-';
 
-            $html .= '  <table style="width:100%; ">
+            $html .= '  <table style="width:100%;">
                             <tr>
                                 <th width="10"><img src="' . $config->favicon . '" width="60" /></th>
                                 <td width="250" style="padding:10px;">
@@ -1209,7 +1276,7 @@ class Sales_invoices extends CI_Controller
                                     <span style="font-size:10px;">' . $config->address . '</span><br>
                                 </td>
                                 <th width="100" style="text-align:right;">
-                                    <table style="width:100%; font-size:10px;">
+                                    <table style="width:100%; font-size:10px; font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";">
                                         <tr>
                                             <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $sales_invoice->number . '.png') . '" width="60"/></td>
                                             <td width="60">Doc No</td>
@@ -1241,7 +1308,7 @@ class Sales_invoices extends CI_Controller
                                     <h3>INVOICE</h3>
                                 </center>
                                 <div style="float:left; width:60%;">
-                                    <table style="width:100%; font-size:12px; margin-bottom:10px;">
+                                    <table style="width:100%; font-size:12px; margin-bottom:10px; font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";">
                                         <tr>
                                             <td width="150">Customer Code</td>
                                             <td width="10">:</td>
@@ -1270,7 +1337,7 @@ class Sales_invoices extends CI_Controller
                                     </table>
                                 </div>
                                 <div style="float:left; width:40%;">
-                                    <table style="width:100%; font-size:12px; margin-bottom:10px;">
+                                    <table style="width:100%; font-size:12px; margin-bottom:10px; font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";">
                                         <tr>
                                             <td width="100">Sales Invoice No</td>
                                             <td width="10">:</td>
@@ -1406,14 +1473,14 @@ class Sales_invoices extends CI_Controller
                         </tr>';
 
                 $html .= '  <div style="position:fixed; bottom:0; width:98.7%;">
-                    <table id="customers" style="margin-top:10px; font-size:10px; border: 2px solid black;border-collapse: collapse;">
+                    <table id="customers" style="margin-top:10px; font-size:10px; border: 2px solid black;border-collapse: collapse; font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";">
                         <tr>
                             <th width="400" style="text-align:left; vertical-align:top;" rowspan="4">
                                 Total Invoice Value in Words: <br><br>
                                 ' . $this->convertcurrency->convertCurrencyToWords($grand_total, $records[0]['currency']) . ' <br><br><br>
                                 Payment Information <br>
                                 Please transfer the Grand Total Amount to the following bank account: <br>
-                                <table style="width:100%; margin-top:10px; font-size:10px; border: none;">
+                                <table style="width:100%; margin-top:10px; font-size:11px; border: none;">
                                     <tr>
                                         <td style="width:15%; text-align:left; border: none;"><b>Bank Name</td>
                                         <td style="width:2%; text-align:left; border: none;"><b>:</td>
@@ -1433,7 +1500,7 @@ class Sales_invoices extends CI_Controller
                             </th>
                         </tr>
                     </table>
-                    <table id="customers" style="margin-top:10px; font-size:12px;"><br><br>
+                    <table id="customers" style="margin-top:10px; font-size:11px; font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";"><br><br>
                         <tr>
                             <th width="420" style="text-align:left; vertical-align:top;" rowspan="4">
                             Note. <br><br>
@@ -1871,29 +1938,37 @@ class Sales_invoices extends CI_Controller
                     </head>
                     <style>
                         body {
-                            font-family: Arial, Helvetica, sans-serif;
+                            font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";
                         }
                         #customers {
-                            border-collapse: collapse;width: 100%;
-                            font-size: 12px;
+                            border-collapse: collapse;
+                            width: 100%;
+                            font-size: 11px;
                         }
                         #customers td, #customers th {
-                            border: 1px solid black;padding: 2px;
+                            border: 0.1mm solid black;
+                            padding: 2px;
                         }
                         #customers th {
                             padding-top: 2px;
                             padding-bottom: 2px;
-                            text-align: center;color: black;
+                            text-align: center;
+                            color: black;
                         }
                         @media screen {
                             .print {
                                 display: none !important;
                             }
                         }
-            
                         @media print {
                             .noprint {
                                 display: none !important;
+                            }
+                            body { 
+                                font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI"; 
+                            }
+                            .print { 
+                                font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";
                             }
                         }
                     </style>
@@ -1923,12 +1998,12 @@ class Sales_invoices extends CI_Controller
             $html .= '<table style="width:100%;">
                             <tr>
                                 <th width="10"><img src="' . $config->favicon . '" width="60" /></th>
-                                <td width="450" style="padding:10px;">
+                                <td width="250" style="padding:10px;">
                                     <b style="font-size:14px;">' . $config->name . '</b><br>
                                     <span style="font-size:10px;">' . $config->address . '</span><br>
                                 </td>
-                                <td width="100" style="text-align:right;">
-                                    <table style="width:100%; font-size:10px;">
+                                <th width="100" style="text-align:right;">
+                                    <table style="width:100%; font-size:10px; font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";">
                                         <tr>
                                             <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $invoice_no . '.png') . '" width="60"/></td>
                                             <td width="60">Doc No</td>
@@ -1951,7 +2026,7 @@ class Sales_invoices extends CI_Controller
                                             <td>' . $this->session->name . '</td>
                                         </tr>
                                     </table>
-                                </td>
+                                </th>
                             </tr>
                         </table>
                         <div style="border: 1px solid black; width:100%;">
@@ -1960,7 +2035,7 @@ class Sales_invoices extends CI_Controller
                                     <h3><u style="padding:5px;">SALES INVOICING</u></h3>
                                 </center>
                                 <div style="float:left; width:50%;"> 
-                                    <table style="width:100%; font-size:12px; margin-bottom:10px;">
+                                    <table style="width:100%; font-size:11px; margin-bottom:10px; font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";">
                                         <tr>
                                             <td width="150">Customer Name</td>
                                             <td width="30">:</td>
@@ -1979,7 +2054,7 @@ class Sales_invoices extends CI_Controller
                                     </table>
                                 </div>
                                 <div style="float:left; width:50%;"> 
-                                    <table style="width:100%; font-size:12px; margin-bottom:10px;">
+                                    <table style="width:100%; font-size:11px; margin-bottom:10px; font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";">
                                         <tr>
                                             <td width="100">Date</td>
                                             <td width="30">:</td>
@@ -1997,8 +2072,8 @@ class Sales_invoices extends CI_Controller
                                         </tr>
                                     </table>
                                 </div>
-                                <div style="width:100%; text-align: right; font-size:12px;">Page ' . $hal . '/' . $page . '</div>
-                                <table id="customers">
+                                <div style="width:100%; text-align: right; font-size:11px;">Page ' . $hal . '/' . $page . '</div>
+                                <table id="customers" style="font-size: 9px; font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";">
                                     <tr>
                                         <th rowspan="2">No</th>
                                         <th rowspan="2">SO No</th>
@@ -2096,7 +2171,7 @@ class Sales_invoices extends CI_Controller
         $html .= '<br><br>
                 <div style="width:100%;">
                     <div style="width:50%; float:left;">
-                        <table id="customers" style="width:100%; font-size:12px;">
+                        <table id="customers" style="width:100%; font-size:11px; font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";">
                             <tr>
                                 <td style="font-weight:bold;">Account No</td>
                                 <td style="font-weight:bold;">Account Name</td>
@@ -2129,7 +2204,7 @@ class Sales_invoices extends CI_Controller
                         &nbsp;
                     </div>
                     <div style="width:30%; float:left;">
-                        <table id="customers" style="width:100%; font-size:12px;">
+                        <table id="customers" style="width:100%; font-size:11px; font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";">
                             <tr>
                                 <td style="font-weight:bold;">Sub Total</td>
                                 <td style="font-weight:bold; text-align:right;">' . @number_format($grand_total, 2) . '</td>
@@ -2149,7 +2224,7 @@ class Sales_invoices extends CI_Controller
                         </table>
                     </div>
                 </div>
-                <table style="width:100%; margin-top: 150px; font-size:12px;">
+                <table style="width:100%; margin-top: 150px; padding-top: 18px; font-size:11px;" font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";>
                     <tr>
                         <td style="text-align:center; font-weight:bold;">Prepared By</td>
                         <td style="text-align:center; font-weight:bold;">Checked By</td>
