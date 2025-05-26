@@ -113,7 +113,7 @@ class Report_check_serialno extends CI_Controller
         $filter_product_no = $this->input->get("filter_product_no");
         $filter_status_in = $this->input->get("filter_status_in");
         $filter_status_out = $this->input->get("filter_status_out");
-        $this->db->select('a.*, b.number as item_number, b.name as item_name, c.label_no, c.status as status_label, c.qty, IF(d.id IS NULL, 0, 1) as status_out');
+        $this->db->select('a.*, b.number as item_number, b.name as item_name, c.label_no, c.lot_no, c.status as status_label, c.qty, IF(d.id IS NULL, 0, 1) as status_out');
         $this->db->from('purchase_order_receipts a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('purchase_order_labels c', 'a.receipt_id = c.receipt_id');
@@ -141,7 +141,7 @@ class Report_check_serialno extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body><center><div style="float: left; font-size: 12px; text-align: left;"><table style="width: 100%;"><tr><td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;"><img src="' . $config->favicon . '" width="30"></td><td style="font-size: 14px; text-align: left; margin:2px;"><b>' . $config->name . '</b><br><small>' . $config->description . '</small></td></tr></table></div><div style="float: right; font-size: 12px; text-align: right;">Print Date ' . date("d M Y H:i:s") . ' <br>Print By ' . $this->session->username . '  </div><br><br><br><h3 style="margin:0;">CHECK SERIAL NO (RM)</h3><small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small></center><br><table id="customers" border="1"><tr><th width="20">No</th><th>Receipt No</th><th>Receipt Date</th><th>Serial No</th><th>Label No</th><th>Part No</th><th>Part Name</th><th>Quantity</th><th>Status IN</th><th>Status OUT</th><th>Created By</th></tr>';
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body><center><div style="float: left; font-size: 12px; text-align: left;"><table style="width: 100%;"><tr><td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;"><img src="' . $config->favicon . '" width="30"></td><td style="font-size: 14px; text-align: left; margin:2px;"><b>' . $config->name . '</b><br><small>' . $config->description . '</small></td></tr></table></div><div style="float: right; font-size: 12px; text-align: right;">Print Date ' . date("d M Y H:i:s") . ' <br>Print By ' . $this->session->username . '  </div><br><br><br><h3 style="margin:0;">CHECK SERIAL NO (RM)</h3><small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small></center><br><table id="customers" border="1"><tr><th width="20">No</th><th>Receipt No</th><th>Receipt Date</th><th>Label No</th><th>Lot No</th><th>Part No</th><th>Part Name</th><th>Quantity</th><th>Status IN</th><th>Status OUT</th><th>Created By</th></tr>';
         $no = 1;
         foreach ($records as $data) {
             if ($data['status_label'] == 0) {
@@ -154,7 +154,7 @@ class Report_check_serialno extends CI_Controller
             } else {
                 $status_out = "<b style='color:red;'>CLOSE</b>";
             }
-            $html .= '  <tr><td style="text-align:center">' . $no . '</td><td>' . $data['receipt_no'] . '</td><td>' . $data['receipt_date'] . '</td><td>' . $data['receipt_id'] . '</td><td>' . $data['label_no'] . '</td><td>' . $data['item_number'] . '</td><td>' . $data['item_name'] . '</td><td style="text-align:right">' . number_format($data['qty'], 2) . '</td><td>' . $status_in . '</td><td>' . $status_out . '</td><td>' . $data['created_by'] . '</td></tr>';
+            $html .= '  <tr><td style="text-align:center">' . $no . '</td><td>' . $data['receipt_no'] . '</td><td>' . $data['receipt_date'] . '</td><td>' . $data['label_no'] . '</td><td>' . $data['lot_no'] . '</td><td>' . $data['item_number'] . '</td><td>' . $data['item_name'] . '</td><td style="text-align:right">' . number_format($data['qty'], 2) . '</td><td>' . $status_in . '</td><td>' . $status_out . '</td><td>' . $data['created_by'] . '</td></tr>';
             $no++;
         }
         $html .= '</table></body></html>';
