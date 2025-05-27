@@ -31,9 +31,9 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Kanban Date</span>
                     <div style="width:60%; display:inline-block;">
-                        <input style="width:45%;" id="filter_kanban_date_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false, prompt:'From Date'">
-                        <span style="width:9%; display:inline-block; text-align:center;">to</span>
-                        <input style="width:45%;" id="filter_kanban_date_to" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false, prompt:'To Date'">
+                        <input style="width:44.3%;" id="filter_kanban_date_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false, prompt:'From Date'">
+                        <span style="width:10%; display:inline-block; text-align:center;">to</span>
+                        <input style="width:44.4%;" id="filter_kanban_date_to" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false, prompt:'To Date'">
                     </div>
                 </div>
                 <div class="fitem">
@@ -84,8 +84,8 @@
                         <option value="1">CLOSE</option>
                     </select>
                 </div> -->
-                <div class="fitem">
-                    <span style="width:84%; display:inline-block;"></span>
+                <div class="fitem" style="text-align: right; padding-right:5%;">
+                    <!-- <span style="width: 35%; display:inline-block;"></span> -->
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                 </div>
             </div>

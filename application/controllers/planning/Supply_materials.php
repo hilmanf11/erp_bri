@@ -252,7 +252,7 @@ class Supply_materials extends CI_Controller
                     );
                 }
                 // Filter status di array hasil mapping
-                if($filter_status !== "" && isset($arr)){
+                if($filter_status != "" && isset($arr)){
                     $arr = array_filter($arr, function($v) use ($filter_status) {
                         return $v['status'] === $filter_status;
                     });
@@ -604,7 +604,7 @@ class Supply_materials extends CI_Controller
                                 <td>' . $no . '</td>
                                 <td>' . $record['item_number'] . '</td>
                                 <td>' . $record['item_name'] . '</td>
-                                <td>' . $record['lot_no'] . '</td>
+                                <td>' . (isset($record['lot_no']) && $record['lot_no'] ? $record['lot_no'] : '') . '</td>
                                 <td style="text-align:right;">' . $record['qty'] . '</td>
                                 <td>' . $record['uom'] . '</td>
                                 <td style="text-align:right;">' . number_format((@$stockWarehouse[0]->end_stock), 2) . '</td>
