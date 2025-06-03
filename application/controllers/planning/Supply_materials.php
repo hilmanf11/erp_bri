@@ -51,25 +51,32 @@ class Supply_materials extends CI_Controller
     public function readLotNoByItem()
     {
         $item_rm_id = $this->input->post('item_rm_id');
+        $used_lot_nos = $this->input->post('used_lot_nos');
 
         $this->db->select('b.lot_no');
         $this->db->from('purchase_order_receipts a');
         $this->db->join('purchase_order_labels b', 'a.receipt_id = b.receipt_id');
         $this->db->join('issued_material_details c', 'b.label_no = c.label_no', 'left');
+        $this->db->join('supply_materials d', 'b.lot_no = d.lot_no', 'left');
         $this->db->where('a.item_rm_id', $item_rm_id);
         $this->db->where('b.deleted', 0);
         $this->db->where('c.id IS NULL', null, false);
+        $this->db->where('d.lot_no IS NULL', null, false);
+
+        if (!empty($used_lot_nos)) {
+            foreach ($used_lot_nos as $used) {
+                [$used_item_id, $used_lot_no] = explode('|', $used);
+                $this->db->where("NOT (a.item_rm_id = '$used_item_id' AND b.lot_no = '$used_lot_no')");
+            }
+        }
+
         $this->db->order_by('b.lot_no', 'ASC');
         $this->db->limit(1);
 
         $query = $this->db->get();
         $data = $query->row();
 
-        if ($data) {
-            echo json_encode(['lot_no' => $data->lot_no]);
-        } else {
-            echo json_encode(['lot_no' => null]);
-        }
+        echo json_encode(['lot_no' => $data ? $data->lot_no : null]);
     }
 
     public function readPeriod()
@@ -304,6 +311,7 @@ class Supply_materials extends CI_Controller
                         "item_number" => $record['item_number'],
                         "item_name" => $record['item_name'],
                         "request_type" => $record['request_type'],
+                        "lot_no" => isset($record['lot_no']) && !empty($record['lot_no']) ? $record['lot_no'] : '',
                         "qty" => $record['qty'],
                         "uom" => $record['uom'],
                         "status" => $status,
@@ -336,7 +344,7 @@ class Supply_materials extends CI_Controller
             $qty = $post['qty'];
             $request_type = $post['request_type']; // Add request_type
             $mpq = $post['mpq'];
-            $lot_no = $post['lot_no'];
+            // $lot_no = $post['lot_no'];
     
             // Pastikan jumlah yang dimasukkan tidak nol
             if ($qty <= 0) {
@@ -348,7 +356,8 @@ class Supply_materials extends CI_Controller
             $existingData = $this->crud->reads('supply_materials', [], [
                 "request_no" => $request_no,
                 // "item_fg_id" => $item_fg_id,
-                "item_rm_id" => $item_rm_id
+                "item_rm_id" => $item_rm_id,
+                // "lot_no" => $lot_no
             ]);
     
             if (count($existingData) > 0) {

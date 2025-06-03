@@ -69,6 +69,12 @@
 <audio id="moreThanQty">
     <source src="<?= base_url('assets/audio/more_than_qty.mp3') ?>" type="audio/mpeg">
 </audio>
+<audio id="FIFOValidation">
+    <source src="<?= base_url('assets/audio/fifo-v1.mp3') ?>" type="audio/mp3">
+</audio>
+<audio id="labelAlreadyScan">
+    <source src="<?= base_url('assets/audio/label_already.mp3') ?>" type="audio/mp3">
+</audio>
 <script>
     function reload() {
         window.location.reload();
@@ -79,6 +85,8 @@
         var serialSuccess = document.getElementById("serialSuccess");
         var serialNotFound = document.getElementById("serialNotFound");
         var moreThanQty = document.getElementById("moreThanQty");
+        var FIFOValidation = document.getElementById("FIFOValidation");
+        var labelAlreadyScan = document.getElementById("labelAlreadyScan");
 
         // Variabel untuk menyimpan item_rm_id yang diharapkan
         var expected_item_rm_ids = [];
@@ -194,6 +202,12 @@
                                                 serialNotFound.play();
                                             // } else if (result.title == "More Than Qty") {
                                             //     // moreThanQty.play();
+                                            } else if(result.title == "FIFO Violation") {
+                                                FIFOValidation.play();
+                                            }else if (result.title == "Label Already Scan"){
+                                                labelAlreadyScan.play();
+                                            }else if (result.title == "Available"){
+                                                labelAlreadyScan.play();
                                             } else {
                                                 serialDuplicate.play();
                                             }

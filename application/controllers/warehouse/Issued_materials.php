@@ -108,7 +108,7 @@ class Issued_materials extends CI_Controller
 
                 $querypo = $this->db->query("SELECT b.item_rm_id, a.qty FROM purchase_order_labels a join purchase_order_receipts b on a.receipt_id = b.receipt_id WHERE a.label_no='".$receipt_id."' and a.status=1");
                
-                if ($querypo->num_rows() > 0) { // ada datanya di supply sheet
+                if ($querypo->num_rows() > 0) {
                     //$rows = $query->result();
                      $rowspo = $querypo->row();
 
@@ -369,23 +369,75 @@ class Issued_materials extends CI_Controller
                 if ($purchase_order_labels) {
                     if ($issued_materials) {
                         $purchase_order_receipts = $this->crud->read("purchase_order_receipts", [], ["receipt_id" => $purchase_order_labels->receipt_id]);
-                        $checkItems = $this->crud->query("SELECT a.receipt_date, b.label_no, a.receipt_id, b.receipt_id, c.label_no, d.label_no
-                        FROM purchase_order_receipts a 
-                        LEFT JOIN purchase_order_labels b ON a.receipt_id = b.receipt_id
-                        LEFT JOIN barcode_divides c ON b.label_no = c.label_no
-                        LEFT JOIN issued_material_details d ON a.item_rm_id = d.item_rm_id and b.label_no = d.label_no
-                        WHERE a.item_rm_id = '$purchase_order_receipts->item_rm_id' and a.receipt_date < '$purchase_order_receipts->receipt_date' AND d.label_no is null and c.label_no is null
-                        ORDER BY receipt_date ASC");
+                        $receipt_date_current = $purchase_order_receipts->receipt_date;
+                        
+                        // Validasi FIFO berdasarkan tanggal lebih tua
+                        $checkOlder = $this->crud->query("
+                            SELECT b.label_no, a.receipt_date
+                            FROM purchase_order_receipts a
+                            JOIN purchase_order_labels b ON a.receipt_id = b.receipt_id
+                            LEFT JOIN barcode_divides c ON b.label_no = c.label_no
+                            LEFT JOIN issued_material_details d ON b.label_no = d.label_no
+                            WHERE a.item_rm_id = '$purchase_order_receipts->item_rm_id'
+                            AND DATE(a.receipt_date) < DATE('$receipt_date_current')
+                            AND c.label_no IS NULL
+                            AND d.label_no IS NULL
+                            ORDER BY a.receipt_date ASC
+                        ");
 
-                        //if (count($checkItems) <= 0) {
-                            $send = $this->crud->create('issued_material_details', $post);
-                            // Update wip_balances table
-                            $this->update_wip_balances($request_no, $item_rm_id, $post['qty']);
-                           // echo $send;
-                            echo json_encode(array("title" => "Success", "message" => "Label processed and details created successfully", "theme" => "success"));
-                        // } else {
-                        //     echo json_encode(array("title" => "FIFO violations", "message" => "Please Scan Sequentially", "theme" => "error"));
-                        // }
+                        if (count($checkOlder) > 0) {
+                            echo json_encode([
+                                "title" => "FIFO Violation",
+                                "message" => "There are old labels that have not been processed",
+                                "theme" => "error"
+                            ]);
+                            return;
+                        }
+
+                        $this->db->select('
+                            COUNT(a.id) as total_items,
+                            SUM(CASE WHEN a.qty = COALESCE(d.qty_actual, 0) THEN 1 ELSE 0 END) as closed_items
+                        ');
+                        $this->db->from('supply_materials a');
+                        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+                        $this->db->join('(
+                            SELECT request_no, item_rm_id, COALESCE(SUM(qty), 0) as qty_actual 
+                            FROM issued_material_details 
+                            GROUP BY request_no, item_rm_id
+                        ) d', 'a.request_no = d.request_no AND a.item_rm_id = d.item_rm_id', 'left');
+
+                        $this->db->where('a.deleted', 0);
+                        $this->db->where('a.request_no', $request_no);
+                        $this->db->where('a.item_rm_id', $item_rm_id);
+
+                        $checkSt = $this->db->get()->row();
+
+                        if ($checkSt && isset($checkSt->total_items) && isset($checkSt->closed_items)) {
+                            $status = ($checkSt->total_items == $checkSt->closed_items) ? "1" : "0";
+                            if ($status === "0") {
+                                if (!empty($purchase_order_labels->lot_no)) {
+                                    $this->crud->update('supply_materials', [
+                                        "request_no" => $request_no,
+                                        "item_rm_id" => $item_rm_id
+                                    ], ['lot_no' => $purchase_order_labels->lot_no]);
+                                }
+                            } else {
+                                echo json_encode([
+                                    "title" => "Label Already Scan",
+                                    "message" => "The label has already been scanned",
+                                    "theme" => "error"
+                                ]);
+                                return;
+                            }
+                        }
+
+                        $this->crud->create('issued_material_details', $post);
+                        $this->update_wip_balances($request_no, $item_rm_id, $post['qty']);
+                        echo json_encode([
+                            "title" => "Success",
+                            "message" => "Label processed successfully",
+                            "theme" => "success"
+                        ]);
                     } else {
                         echo json_encode(array("title" => "Not Registered", "message" => "This label has not been registered in Supply Sheet", "theme" => "error"));
                     }

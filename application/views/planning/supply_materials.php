@@ -8,8 +8,9 @@
             <th rowspan="2" data-options="field:'request_type',width:120,halign:'center',align:'center'">Request Type</th>
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Product Name</th>
-            <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
+            <th rowspan="2" data-options="field:'lot_no',width:100,halign:'center'">Lot No</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformatQpa">Qty</th>
+            <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
             <th rowspan="2" data-options="field:'status',width:120,align:'center',formatter:statusformat,styler:statusStyle">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -31,9 +32,9 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Kanban Date</span>
                     <div style="width:60%; display:inline-block;">
-                        <input style="width:44.3%;" id="filter_kanban_date_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false, prompt:'From Date'">
+                        <input style="width:44.3%;" id="filter_kanban_date_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false, prompt:'From Date'" value="<?= date("Y-m-d") ?>">
                         <span style="width:10%; display:inline-block; text-align:center;">to</span>
-                        <input style="width:44.4%;" id="filter_kanban_date_to" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false, prompt:'To Date'">
+                        <input style="width:44.4%;" id="filter_kanban_date_to" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false, prompt:'To Date'" value="<?= date("Y-m-d") ?>">
                     </div>
                 </div>
                 <div class="fitem">
@@ -101,7 +102,7 @@
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
 </div>
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1050px; height: 600px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 900px; height: 600px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -227,14 +228,22 @@
                                     index: rowIndex, 
                                     field: 'mpq' 
                                 });
-                                var ed6 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'lot_no'
-                                });
+                                // var ed6 = dg.datagrid('getEditor', {
+                                //     index: rowIndex,
+                                //     field: 'lot_no'
+                                // });
 
                                 var item_rm_id = $(ed.target).textbox('setValue', rows.id);
                                 var item_name = $(ed2.target).textbox('setValue', rows.name);
                                 var uom = $(ed3.target).textbox('setValue', rows.uom);
+
+                                // let usedLotNos = [];
+                                // let rowsDataGrid = dg.datagrid('getRows');
+                                // rowsDataGrid.forEach(function (row) {
+                                //     if (row.lot_no && row.item_rm_id) {
+                                //         usedLotNos.push(`${row.item_rm_id}|${row.lot_no}`);
+                                //     }
+                                // });
 
                                 $.ajax({
                                     type: "post",
@@ -243,19 +252,40 @@
                                     dataType: "json",
                                     success: function(stockWarehouse) {
                                         var stock = parseFloat(stockWarehouse[0].end_stock);
-                                        $(ed4.target).numberbox('setValue', stock);
+                                        var totalQtySameItem = 0;
+
+                                        var rowsDataGrid = dg.datagrid('getRows');
+                                        rowsDataGrid.forEach(function(r, i) {
+                                            if (r.item_rm_id === rows.id && i !== rowIndex) {
+                                                totalQtySameItem += parseFloat(r.qty || 0);
+                                            }
+                                        });
+
+                                        var updatedStock = stock - totalQtySameItem;
+                                        $(ed4.target).numberbox('setValue', updatedStock);
 
                                         // Add validation for qty
                                         var edQty = dg.datagrid('getEditor', {
                                             index: rowIndex,
                                             field: 'qty'
                                         });
+
                                         $(edQty.target).numberbox({
                                             onChange: function(newValue) {
-                                                newValue = parseFloat(newValue);
-                                                console.log("Stock: ", stock, "Req Qty: ", newValue);
-                                                if (newValue > stock) {
-                                                    toastr.error("Qty cannot exceed Stock", "Information");
+                                                newValue = parseFloat(newValue) || 0;
+
+                                                // Hitung ulang total qty dari baris lain dengan item_rm_id yang sama
+                                                var otherTotalQty = 0;
+                                                rowsDataGrid.forEach(function(r, i) {
+                                                    if (r.item_rm_id === rows.id && i !== rowIndex) {
+                                                        otherTotalQty += parseFloat(r.qty || 0);
+                                                    }
+                                                });
+
+                                                var allowedQty = stock - otherTotalQty;
+
+                                                if (newValue > allowedQty) {
+                                                    toastr.error("Qty cannot exceed Stock after accumulated usage", "Information");
                                                     $(edQty.target).numberbox('setValue', 0);
                                                 }
                                             }
@@ -274,19 +304,22 @@
                                     }
                                 });
 
-                                $.ajax({
-                                    type: "post",
-                                    url: "<?= base_url('planning/supply_materials/readLotNoByItem') ?>",
-                                    data: "item_rm_id=" + rows.id,
-                                    dataType: "json",
-                                    success: function(response) {
-                                        if (response && response.lot_no) {
-                                            $(ed6.target).textbox('setValue', response.lot_no);
-                                        } else {
-                                            $(ed6.target).textbox('setValue', '');
-                                        }
-                                    }
-                                });
+                                // $.ajax({
+                                //     type: "post",
+                                //     url: "<?= base_url('planning/supply_materials/readLotNoByItem') ?>",
+                                //     data: {
+                                //         item_rm_id: rows.id,
+                                //         used_lot_nos: usedLotNos,
+                                //     },
+                                //     dataType: "json",
+                                //     success: function(response) {
+                                //         if (response && response.lot_no) {
+                                //             $(ed6.target).textbox('setValue', response.lot_no);
+                                //         } else {
+                                //             $(ed6.target).textbox('setValue', '');
+                                //         }
+                                //     }
+                                // });
                             }
                         }
                     }
@@ -313,18 +346,22 @@
                             readonly: true
                         }
                     }
-                }, {
-                    field: 'lot_no',
-                    width: 150,
-                    halign: 'center',
-                    title: "Lot No",
-                    editor: {
-                        type: 'textbox',
-                        options: {
-                            readonly: true
-                        }
-                    }
-                }, {
+                }, 
+                
+                // {
+                //     field: 'lot_no',
+                //     width: 150,
+                //     halign: 'center',
+                //     title: "Lot No",
+                //     editor: {
+                //         type: 'textbox',
+                //         options: {
+                //             readonly: true
+                //         }
+                //     }
+                // }, 
+                
+                {
                     field: 'mpq',
                     width: 100,
                     halign: 'center',
@@ -532,9 +569,13 @@
         window.location.reload();
     }
     $(function() {
+        var filter_kanban_date_from = $("#filter_kanban_date_from").datebox('getValue');
+        var filter_kanban_date_to = $("#filter_kanban_date_to").datebox('getValue');
+        url = "?filter_kanban_date_from=" + filter_kanban_date_from + "&filter_kanban_date_to=" + filter_kanban_date_to
+
         addTable();
         $('#dg').treegrid({
-            url: '<?= base_url('planning/supply_materials/datatables') ?>',
+            url: '<?= base_url('planning/supply_materials/datatables') ?>' + url,
             pagination: true,
             rownumbers: true,
             idField: 'id',
@@ -597,7 +638,7 @@
                                     item_rm_id: rows[i].item_rm_id,
                                     qty: rows[i].qty,
                                     mpq: rows[i].mpq,
-                                    lot_no: rows[i].lot_no,
+                                    // lot_no: rows[i].lot_no,
                                 },
                                 dataType: "json",
                                 success: function(result) {
