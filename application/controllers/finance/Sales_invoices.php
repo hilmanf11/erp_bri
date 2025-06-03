@@ -413,13 +413,17 @@ class Sales_invoices extends CI_Controller
 
     public function number($trans_date, $number)
     {
-        // Ambil format awal: SI-[BULAN][TAHUN]
-        $datenow = "SI-" . date("Ym", strtotime(base64_decode($trans_date)));
-        
-        // Cari nomor terakhir di bulan tersebut tanpa memperhatikan kode customer
-        $sqlGetID = $this->db->query("SELECT max(SUBSTRING_INDEX(`number`, '-', -1)) as kode 
-                                     FROM sales_invoices 
-                                     WHERE `number` like 'SI-%". date("Ym", strtotime(base64_decode($trans_date))) ."%'");
+        // Ambil format awal: SI-[KODECUSTOMER][TAHUN][BULAN]
+        $year = date("Y", strtotime(base64_decode($trans_date)));
+        $month = date("m", strtotime(base64_decode($trans_date)));
+        $datenow = "SI-" . $number . $year . $month;
+
+        // Cari nomor terakhir di tahun tersebut tanpa memperhatikan kode customer
+        $sqlGetID = $this->db->query("
+            SELECT MAX(SUBSTRING_INDEX(`number`, '-', -1)) AS kode 
+            FROM sales_invoices 
+            WHERE `number` LIKE 'SI-%" . $year . "%'
+        ");
         $rowID = $sqlGetID->row();
         $kode = $rowID->kode;
 
@@ -432,8 +436,7 @@ class Sales_invoices extends CI_Controller
             $autoID = sprintf("%04s", $urutan);
         }
 
-        // Format akhir: SI-[KODECUSTOMER][TAHUNBULAN]-[URUT]
-        echo "SI-" . $number . date("Ym", strtotime(base64_decode($trans_date))) . "-" . $autoID;
+        echo $datenow . "-" . $autoID;
     }
     
     //ini format kode per customer
