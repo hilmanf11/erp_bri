@@ -42,12 +42,12 @@
     function filter() {
         var filter_period_year = $("#filter_period_year").datebox("getValue");
         var filter_period_month = $("#filter_period_month").datebox("getValue");
-        var filter_item_fg = $("#filter_item_fg").combobox("getValue");
+        var filter_item_fg = $("#filter_item_fg").combogrid("getValue");
         var url = "?filter_period_year=" + window.btoa(filter_period_year) +
             "&filter_period_month=" + window.btoa(filter_period_month) +
             "&filter_item_fg=" + filter_item_fg;
         if (filter_period_year == "" && filter_period_month == "") {
-            toastr.warning("Please select Periode & Product No.!");
+            toastr.warning("Please select Periode or Product No.!");
         } else {
             $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
             $("#printout").attr('src', '<?= base_url('planning/summary_forecasts/print') ?>' + url);
@@ -62,7 +62,7 @@
             "&filter_period_month=" + window.btoa(filter_period_month) +
             "&filter_item_fg=" + filter_item_fg;
         if (filter_period_year == "" && filter_period_month == "") {
-            toastr.warning("Please select Periode & Product No.!");
+            toastr.warning("Please select Periode or Product No.!");
         } else {
             window.location.assign('<?= base_url('planning/summary_forecasts/print/excel') ?>' + url);
         }
@@ -87,6 +87,9 @@
                 $(e.data.target).combobox('clear').combobox('textbox').focus();
             }
         }],
+        onChange: function(newValue, oldValue) {
+            updateItemFG();
+        }
     });
 
     $('#filter_period_month').combobox({
@@ -100,10 +103,23 @@
                 $(e.data.target).combobox('clear').combobox('textbox').focus();
             }
         }],
+        onChange: function(newValue, oldValue) {
+            updateItemFG();
+        }
     });
 
+    function updateItemFG() {
+        var year = $('#filter_period_year').combobox('getValue');
+        var month = $('#filter_period_month').combobox('getValue');
+
+        if (year && month) {
+            var newUrl = '<?= base_url("planning/summary_forecasts/reads") ?>' + '/' + window.btoa(month) + '/' + window.btoa(year);
+            $('#filter_item_fg').combogrid('grid').datagrid('load', newUrl);
+            $('#filter_item_fg').combogrid('options').url = newUrl;
+        }
+    }
+
     $('#filter_item_fg').combogrid({
-        url: '<?= base_url("master/item_fg/reads") ?>',
         panelWidth: 400,
         idField: 'id',
         textField: 'number',
@@ -117,21 +133,30 @@
             }
         }],
         columns: [
-            [{
-                field: 'number',
-                title: 'Product No',
-                width: 200
-            }, {
-                field: 'name',
-                title: 'Product Name',
-                width: 200
+            [{ 
+                field: 'number', 
+                title: 'Product No', 
+                width: 200 
+            }, { 
+                field: 'name', 
+                title: 'Product Name', 
+                width: 200 
             }]
         ],
+        onChange: function(newValue, oldValue) {
+            var url = $('#filter_item_fg').combogrid('options').url;
+            if (url) {
+                $('#filter_item_fg').combogrid('grid').datagrid('load', {
+                    q: newValue
+                });
+            }
+        }
     });
 
     $(function() {
         var filter_period_year = $("#filter_period_year").combobox('getValue');
         var filter_period_month = $("#filter_period_month").combobox('getValue');
 
+        updateItemFG();
     });
 </script>

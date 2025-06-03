@@ -28,6 +28,42 @@ class Summary_forecasts extends CI_Controller
         }
     }
 
+    public function reads($filter_period_month, $filter_period_year)
+    {
+        $post = $this->input->post('q');
+        $filter_period_month = base64_decode($filter_period_month);
+        $filter_period_year = base64_decode($filter_period_year);
+
+        $this->db->select('b.id, b.number, b.name');
+        $this->db->from('forecasts a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->where('a.deleted', 0);
+
+        if ($filter_period_year) {
+            $this->db->like('a.p_year', $filter_period_year);
+        }
+
+        if ($filter_period_month) {
+            $this->db->like('a.p_month', $filter_period_month);
+        }
+
+        if (!empty($post)) {
+            $this->db->group_start();
+            $this->db->like('b.number', $post);
+            $this->db->or_like('b.number_customer', $post);
+            $this->db->or_like('b.name', $post);
+            $this->db->or_like('b.id', $post);
+            $this->db->group_end();
+        }
+
+        $this->db->where('b.status', 0);
+        $this->db->group_by('b.id');
+        $this->db->order_by('a.item_fg_id', 'ASC');
+
+        $query = $this->db->get();
+        echo json_encode($query->result());
+    }
+
     //GET PERIOD
     public function readPeriod($select)
     {
@@ -243,37 +279,37 @@ class Summary_forecasts extends CI_Controller
                 $gt_12 = $gt_month_12 += $data['month_12'];
                 $html .= '<tr>
                         <td>' . $no . '</td>
-                        <td>' . $data['item_fg_number'] . '</td>
-                        <td>' . $data['item_fg_name'] . '</td>
-                        <td>' . $data['compound_no'] . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_1']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_2']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_3']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_4']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_5']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_6']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_7']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_8']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_9']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_10']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_11']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_12']) . '</td>';
+                        <td style="mso-number-format:\'\\@\';">' . $data['item_fg_number'] . '</td>
+                        <td style="mso-number-format:\'\\@\';">' . $data['item_fg_name'] . '</td>
+                        <td style="mso-number-format:\'\\@\';">' . $data['compound_no'] . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_1'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_2'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_3'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_4'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_5'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_6'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_7'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_8'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_9'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_10'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_11'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_12'], 0, ',', '.') . '</td>';
                 $no++;
             }
             $html .= '<tr>
                             <th colspan="4">Grand Total</th>
-                            <th style="text-align: right;">' . number_format($gt_1) . '</th>
-                            <th style="text-align: right;">' . number_format($gt_2) . '</th>
-                            <th style="text-align: right;">' . number_format($gt_3) . '</th>
-                            <th style="text-align: right;">' . number_format($gt_4) . '</th>
-                            <th style="text-align: right;">' . number_format($gt_5) . '</th>
-                            <th style="text-align: right;">' . number_format($gt_6) . '</th>
-                            <th style="text-align: right;">' . number_format($gt_7) . '</th>
-                            <th style="text-align: right;">' . number_format($gt_8) . '</th>
-                            <th style="text-align: right;">' . number_format($gt_9) . '</th>
-                            <th style="text-align: right;">' . number_format($gt_10) . '</th>
-                            <th style="text-align: right;">' . number_format($gt_11) . '</th>
-                            <th style="text-align: right;">' . number_format($gt_12) . '</th>';
+                            <th style="text-align: right;">' . number_format($gt_1, 0, ',', '.') . '</th>
+                            <th style="text-align: right;">' . number_format($gt_2, 0, ',', '.') . '</th>
+                            <th style="text-align: right;">' . number_format($gt_3, 0, ',', '.') . '</th>
+                            <th style="text-align: right;">' . number_format($gt_4, 0, ',', '.') . '</th>
+                            <th style="text-align: right;">' . number_format($gt_5, 0, ',', '.') . '</th>
+                            <th style="text-align: right;">' . number_format($gt_6, 0, ',', '.') . '</th>
+                            <th style="text-align: right;">' . number_format($gt_7, 0, ',', '.') . '</th>
+                            <th style="text-align: right;">' . number_format($gt_8, 0, ',', '.') . '</th>
+                            <th style="text-align: right;">' . number_format($gt_9, 0, ',', '.') . '</th>
+                            <th style="text-align: right;">' . number_format($gt_10, 0, ',', '.') . '</th>
+                            <th style="text-align: right;">' . number_format($gt_11, 0, ',', '.') . '</th>
+                            <th style="text-align: right;">' . number_format($gt_12, 0, ',', '.') . '</th>';
             $html .= '</table></body></html>';
             echo $html;
         } elseif ($filter_item_fg != "") {
@@ -382,37 +418,37 @@ class Summary_forecasts extends CI_Controller
                 $gt_12 = $gt_month_12 += $data['month_12'];
                 $html .= '<tr>
                         <td>' . $no . '</td>
-                        <td>' . $data['item_fg_number'] . '</td>
-                        <td>' . $data['item_fg_name'] . '</td>
-                        <td>' . $data['compound_no'] . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_1']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_2']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_3']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_4']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_5']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_6']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_7']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_8']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_9']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_10']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_11']) . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_12']) . '</td>';
+                        <td style="mso-number-format:\'\\@\';">' . $data['item_fg_number'] . '</td>
+                        <td style="mso-number-format:\'\\@\';">' . $data['item_fg_name'] . '</td>
+                        <td style="mso-number-format:\'\\@\';">' . $data['compound_no'] . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_1'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_2'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_3'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_4'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_5'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_6'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_7'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_8'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_9'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_10'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_11'], 0, ',', '.') . '</td>
+                        <td style="text-align: right;">' . number_format($data['month_12'], 0, ',', '.') . '</td>';
                 $no++;
             }
             $html .= '<tr>
                         <th colspan="4">Grand Total</th>
-                        <th style="text-align: right;">' . number_format($gt_1) . '</th>
-                        <th style="text-align: right;">' . number_format($gt_2) . '</th>
-                        <th style="text-align: right;">' . number_format($gt_3) . '</th>
-                        <th style="text-align: right;">' . number_format($gt_4) . '</th>
-                        <th style="text-align: right;">' . number_format($gt_5) . '</th>
-                        <th style="text-align: right;">' . number_format($gt_6) . '</th>
-                        <th style="text-align: right;">' . number_format($gt_7) . '</th>
-                        <th style="text-align: right;">' . number_format($gt_8) . '</th>
-                        <th style="text-align: right;">' . number_format($gt_9) . '</th>
-                        <th style="text-align: right;">' . number_format($gt_10) . '</th>
-                        <th style="text-align: right;">' . number_format($gt_11) . '</th>
-                        <th style="text-align: right;">' . number_format($gt_12) . '</th>';
+                        <th style="text-align: right;">' . number_format($gt_1, 0, ',', '.') . '</th>
+                        <th style="text-align: right;">' . number_format($gt_2, 0, ',', '.') . '</th>
+                        <th style="text-align: right;">' . number_format($gt_3, 0, ',', '.') . '</th>
+                        <th style="text-align: right;">' . number_format($gt_4, 0, ',', '.') . '</th>
+                        <th style="text-align: right;">' . number_format($gt_5, 0, ',', '.') . '</th>
+                        <th style="text-align: right;">' . number_format($gt_6, 0, ',', '.') . '</th>
+                        <th style="text-align: right;">' . number_format($gt_7, 0, ',', '.') . '</th>
+                        <th style="text-align: right;">' . number_format($gt_8, 0, ',', '.') . '</th>
+                        <th style="text-align: right;">' . number_format($gt_9, 0, ',', '.') . '</th>
+                        <th style="text-align: right;">' . number_format($gt_10, 0, ',', '.') . '</th>
+                        <th style="text-align: right;">' . number_format($gt_11, 0, ',', '.') . '</th>
+                        <th style="text-align: right;">' . number_format($gt_12, 0, ',', '.') . '</th>';
             $html .= '</table></body></html>';
             echo $html;
         }
