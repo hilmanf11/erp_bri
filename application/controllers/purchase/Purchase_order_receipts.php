@@ -423,7 +423,26 @@ class Purchase_order_receipts extends CI_Controller
         $config = $this->db->get()->row();
         $receipt_no = base64_decode($receipt_no);
         $receipt_data = $this->crud->reads('purchase_order_receipts', [], ["receipt_no" => $receipt_no]);
-        
+
+        if (!empty($receipt_data)) {
+            $first_receipt = $receipt_data[0];
+            $date = new DateTime($first_receipt->receipt_date);
+            $p_month = $date->format('m');
+            $p_year = $date->format('y');
+            $datenow = $p_month . $p_year;
+
+            $sqlGetLot = $this->db->query("SELECT max(lot_no) as kode FROM purchase_order_labels WHERE lot_no LIKE '%$datenow%'");
+            $rowLot = $sqlGetLot->row();
+            $lot_no = $rowLot->kode;
+
+            if ($lot_no === NULL) {
+                $autoLot = sprintf("%03s", 1) . $p_month . $p_year;
+            } else {
+                $urutan = (int) substr($lot_no, 0, 3);
+                $autoLot = sprintf("%03s", $urutan + 1) . $p_month . $p_year;
+            }
+        }
+
         foreach ($receipt_data as $po_receipt) {
             $receipt_id = $po_receipt->receipt_id;
             $qty_receipt = $po_receipt->qty_receipt;
@@ -445,20 +464,6 @@ class Purchase_order_receipts extends CI_Controller
                         $qty = $po_receipt->qty_mpq;
                     } else {
                         $qty = $qty_receipt;
-                    }
-                    $date = new DateTime($po_receipt->receipt_date);
-                    $p_month = $date->format('m');
-                    $p_year = $date->format('y');
-
-                    $sqlGetLot = $this->db->query("SELECT max(lot_no) as kode FROM purchase_order_labels WHERE receipt_id = '$receipt_id'");
-                    $rowLot = $sqlGetLot->row();
-                    $lot_no = $rowLot->kode;
-
-                    if ($lot_no === NULL) {
-                        $autoLot = sprintf("%03s", 1) . $p_month . $p_year; // Jika lot_no NULL, mulai dari 1
-                    } else {
-                        $urutan = (int) substr($lot_no, 0, 3); // Ambil angka urutan dari lot_no yang ada
-                        $autoLot = sprintf("%03s", $urutan + 1) . $p_month . $p_year; // Format urutan yang baru
                     }
 
                     //Simpan Label
@@ -496,7 +501,15 @@ class Purchase_order_receipts extends CI_Controller
         if ($records) {
             $html .= '<div style="width: 60mm;">';
             $no = 1;
+            $printed_labels = [];
+
             foreach ($records as $record) {
+                if (in_array($record->label_no, $printed_labels)) {
+                    continue;
+                }
+
+                $printed_labels[] = $record->label_no;
+
                 if ($no == 2) {
                     $no = 1;
                 }
@@ -574,7 +587,26 @@ class Purchase_order_receipts extends CI_Controller
         $config = $this->db->get()->row();
         $receipt_no = base64_decode($receipt_no);
         $receipt_data = $this->crud->reads('purchase_order_receipts', [], ["receipt_no" => $receipt_no]);
-        
+
+        if (!empty($receipt_data)) {
+            $first_receipt = $receipt_data[0];
+            $date = new DateTime($first_receipt->receipt_date);
+            $p_month = $date->format('m');
+            $p_year = $date->format('y');
+            $datenow = $p_month . $p_year;
+
+            $sqlGetLot = $this->db->query("SELECT max(lot_no) as kode FROM purchase_order_labels WHERE lot_no LIKE '%$datenow%'");
+            $rowLot = $sqlGetLot->row();
+            $lot_no = $rowLot->kode;
+
+            if ($lot_no === NULL) {
+                $autoLot = sprintf("%03s", 1) . $p_month . $p_year;
+            } else {
+                $urutan = (int) substr($lot_no, 0, 3);
+                $autoLot = sprintf("%03s", $urutan + 1) . $p_month . $p_year;
+            }
+        }
+
         foreach ($receipt_data as $po_receipt) {
             $receipt_id = $po_receipt->receipt_id;
             $qty_receipt = $po_receipt->qty_receipt;
@@ -596,20 +628,6 @@ class Purchase_order_receipts extends CI_Controller
                         $qty = $po_receipt->qty_mpq;
                     } else {
                         $qty = $qty_receipt;
-                    }
-                    $date = new DateTime($po_receipt->receipt_date);
-                    $p_month = $date->format('m');
-                    $p_year = $date->format('y');
-
-                    $sqlGetLot = $this->db->query("SELECT max(lot_no) as kode FROM purchase_order_labels WHERE receipt_id = '$receipt_id'");
-                    $rowLot = $sqlGetLot->row();
-                    $lot_no = $rowLot->kode;
-
-                    if ($lot_no === NULL) {
-                        $autoLot = sprintf("%03s", 1) . $p_month . $p_year; // Jika lot_no NULL, mulai dari 1
-                    } else {
-                        $urutan = (int) substr($lot_no, 0, 3); // Ambil angka urutan dari lot_no yang ada
-                        $autoLot = sprintf("%03s", $urutan + 1) . $p_month . $p_year; // Format urutan yang baru
                     }
 
                     //Simpan Label
@@ -647,7 +665,15 @@ class Purchase_order_receipts extends CI_Controller
         if ($records) {
             $html .= '<div style="width: 100%;">';
             $no = 1;
+            $printed_labels = [];
+
             foreach ($records as $record) {
+                if (in_array($record->label_no, $printed_labels)) {
+                    continue;
+                }
+
+                $printed_labels[] = $record->label_no;
+
                 if ($no == 2) {
                     $no = 1;
                 }
@@ -725,6 +751,40 @@ class Purchase_order_receipts extends CI_Controller
         $config = $this->db->get()->row();
         $receipt_id = base64_decode($receipt_id);
         $po_receipt = $this->crud->read('purchase_order_receipts', [], ["receipt_id" => $receipt_id]);
+
+        $date = new DateTime($po_receipt->receipt_date);
+        $p_month = $date->format('m');
+        $p_year = $date->format('y');
+
+        if (!empty($po_receipt)) {
+            $receipt_no = $po_receipt->receipt_no;
+
+            $this->db->select('lot_no');
+            $this->db->from('purchase_order_labels a');
+            $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
+            $this->db->where('b.receipt_no', $receipt_no);
+            $this->db->where('a.deleted', 0);
+            $this->db->limit(1);
+            $rowExist = $this->db->get()->row();
+
+            if ($rowExist) {
+                $autoLot = $rowExist->lot_no;
+            } else {
+                $datenow = $p_month . $p_year;
+
+                $sqlGetLot = $this->db->query("SELECT max(lot_no) as kode FROM purchase_order_labels WHERE lot_no LIKE '%$datenow%'");
+                $rowLot = $sqlGetLot->row();
+                $lot_no = $rowLot->kode;
+
+                if ($lot_no === NULL) {
+                    $autoLot = sprintf("%03s", 1) . $p_month . $p_year;
+                } else {
+                    $urutan = (int) substr($lot_no, 0, 3);
+                    $autoLot = sprintf("%03s", $urutan + 1) . $p_month . $p_year;
+                }
+            }
+        }
+
         $qty_receipt = $po_receipt->qty_receipt;
         //Cek Label
         $po_receipt_label = $this->crud->reads('purchase_order_labels', [], ["receipt_id" => $receipt_id]);
@@ -744,20 +804,6 @@ class Purchase_order_receipts extends CI_Controller
                     $qty = $po_receipt->qty_mpq;
                 } else {
                     $qty = $qty_receipt;
-                }
-                $date = new DateTime($po_receipt->receipt_date);
-                $p_month = $date->format('m');
-                $p_year = $date->format('y');
-
-                $sqlGetLot = $this->db->query("SELECT max(lot_no) as kode FROM purchase_order_labels WHERE receipt_id = '$receipt_id'");
-                $rowLot = $sqlGetLot->row();
-                $lot_no = $rowLot->kode;
-
-                if ($lot_no === NULL) {
-                    $autoLot = sprintf("%03s", 1) . $p_month . $p_year; // Jika lot_no NULL, mulai dari 1
-                } else {
-                    $urutan = (int) substr($lot_no, 0, 3); // Ambil angka urutan dari lot_no yang ada
-                    $autoLot = sprintf("%03s", $urutan + 1) . $p_month . $p_year; // Format urutan yang baru
                 }
 
                 //Simpan Label
@@ -794,7 +840,15 @@ class Purchase_order_receipts extends CI_Controller
         if ($records) {
             $html .= '<div style="width: 60mm;">';
             $no = 1;
+            $printed_labels = [];
+
             foreach ($records as $record) {
+                if (in_array($record->label_no, $printed_labels)) {
+                    continue;
+                }
+
+                $printed_labels[] = $record->label_no;
+
                 if ($no == 2) {
                     $no = 1;
                 }
@@ -1214,6 +1268,40 @@ class Purchase_order_receipts extends CI_Controller
         $config = $this->db->get()->row();
         $receipt_id = base64_decode($receipt_id);
         $po_receipt = $this->crud->read('purchase_order_receipts', [], ["receipt_id" => $receipt_id]);
+
+        $date = new DateTime($po_receipt->receipt_date);
+        $p_month = $date->format('m');
+        $p_year = $date->format('y');
+
+        if (!empty($po_receipt)) {
+            $receipt_no = $po_receipt->receipt_no;
+
+            $this->db->select('lot_no');
+            $this->db->from('purchase_order_labels a');
+            $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
+            $this->db->where('b.receipt_no', $receipt_no);
+            $this->db->where('a.deleted', 0);
+            $this->db->limit(1);
+            $rowExist = $this->db->get()->row();
+
+            if ($rowExist) {
+                $autoLot = $rowExist->lot_no;
+            } else {
+                $datenow = $p_month . $p_year;
+
+                $sqlGetLot = $this->db->query("SELECT max(lot_no) as kode FROM purchase_order_labels WHERE lot_no LIKE '%$datenow%'");
+                $rowLot = $sqlGetLot->row();
+                $lot_no = $rowLot->kode;
+
+                if ($lot_no === NULL) {
+                    $autoLot = sprintf("%03s", 1) . $p_month . $p_year;
+                } else {
+                    $urutan = (int) substr($lot_no, 0, 3);
+                    $autoLot = sprintf("%03s", $urutan + 1) . $p_month . $p_year;
+                }
+            }
+        }
+
         $qty_receipt = $po_receipt->qty_receipt;
         //Cek Label
         $po_receipt_label = $this->crud->reads('purchase_order_labels', [], ["receipt_id" => $receipt_id]);
@@ -1233,20 +1321,6 @@ class Purchase_order_receipts extends CI_Controller
                     $qty = $po_receipt->qty_mpq;
                 } else {
                     $qty = $qty_receipt;
-                }
-                $date = new DateTime($po_receipt->receipt_date);
-                $p_month = $date->format('m');
-                $p_year = $date->format('y');
-
-                $sqlGetLot = $this->db->query("SELECT max(lot_no) as kode FROM purchase_order_labels WHERE receipt_id = '$receipt_id'");
-                $rowLot = $sqlGetLot->row();
-                $lot_no = $rowLot->kode;
-
-                if ($lot_no === NULL) {
-                    $autoLot = sprintf("%03s", 1) . $p_month . $p_year; // Jika lot_no NULL, mulai dari 1
-                } else {
-                    $urutan = (int) substr($lot_no, 0, 3); // Ambil angka urutan dari lot_no yang ada
-                    $autoLot = sprintf("%03s", $urutan + 1) . $p_month . $p_year; // Format urutan yang baru
                 }
 
                 //Simpan Label
@@ -1282,7 +1356,15 @@ class Purchase_order_receipts extends CI_Controller
         if ($records) {
             $html .= '<div style="width: 100%;">';
             $no = 1;
+            $printed_labels = [];
+
             foreach ($records as $record) {
+                if (in_array($record->label_no, $printed_labels)) {
+                    continue;
+                }
+
+                $printed_labels[] = $record->label_no;
+
                 if ($no == 2) {
                     $no = 1;
                 }
