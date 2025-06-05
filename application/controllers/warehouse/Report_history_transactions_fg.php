@@ -87,7 +87,12 @@ class Report_history_transactions_fg extends CI_Controller
             $having_condition = $qty_out_condition;
         }
 
-        $where_condition = "WHERE a.id like '%$filter_items%'";
+        if (!empty($filter_items)) {
+            $where_condition = "WHERE a.id LIKE '%$filter_items%'";
+        } else {
+            $where_condition = "WHERE a.status = 0";
+        }
+        
         if (!empty($filter_product_family)) {
             $where_condition .= " AND a.item_family_number = '$filter_product_family'";
         }
