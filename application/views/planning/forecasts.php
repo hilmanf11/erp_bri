@@ -166,6 +166,7 @@
         $('#dg2').datagrid('loadData', []);
         url_save = '<?= base_url('planning/forecasts/create') ?>';
         $('#frm_insert').form('clear');
+        $('#frm_insert').data('mode', 'insert');
         $("#customer_id").combogrid('enable');
         $("#p_month").combobox('enable');
         $("#p_year").combobox('enable');
@@ -199,7 +200,7 @@
                             editor: {
                                 type: 'combogrid',
                                 options: {
-                                    url: '<?= base_url('master/customer_items/reads/'); ?>' + window.btoa(customer_id),
+                                    url: '<?= base_url('planning/forecasts/read_items/'); ?>' + window.btoa(customer_id),
                                     required: true,
                                     panelWidth: 400,
                                     idField: 'number',
@@ -216,6 +217,10 @@
                                             field: 'name',
                                             title: 'Product Name',
                                             width: 200
+                                        }, {
+                                            field: 'item_fg_customer',
+                                            title: 'Product Customer',
+                                            width: 150
                                         }]
                                     ],
                                     onSelect: function(value, rows) {
@@ -238,7 +243,7 @@
 
                                         $(ed.target).textbox('setValue', rows.name);
                                         $(ed2.target).textbox('setValue', rows.id);
-                                        $(ed3.target).textbox('setValue', rows.number_customer);
+                                        $(ed3.target).textbox('setValue', rows.item_fg_customer);
                                     }
                                 }
                             }
@@ -476,6 +481,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
+            $('#frm_insert').data('mode', 'update');
             $("#customer_id").combogrid('disable');
             $("#p_month").combobox('disable');
             $("#p_year").combobox('disable');
@@ -740,6 +746,8 @@
                 text: 'Save All',
                 iconCls: 'icon-ok',
                 handler: function() {
+                    var mode = $('#frm_insert').data('mode');
+
                     var p_month = $("#p_month").combobox('getValue');
                     var p_year = $("#p_year").combobox('getValue');
                     var customer_id = $("#customer_id").combogrid('getValue');
@@ -754,8 +762,8 @@
 
                     for (let i = 0; i < totalrows; i++) {
                         if (rows[i].item_fg_id) {
-                            validateBeforeSave(customer_id, rows[i].item_fg_id, revision, p_month, p_year, function(exists) {
-                                if (exists) {
+                            validateBeforeSave(customer_id, rows[i].item_fg_id, revision, p_month, p_year, "insert", function(exists) {
+                                if (exists && mode === 'insert') {
                                     toastr.error("Customer ID, Product No, Revision, Month, and Year already exists.");
                                 } else {
                                     $.ajax({
@@ -810,7 +818,7 @@
             }]
         });
 
-        function validateBeforeSave(customer_id, item_fg_id, revision, p_month, p_year, callback) {
+        function validateBeforeSave(customer_id, item_fg_id, revision, p_month, p_year, mode, callback) {
             $.ajax({
                 type: "post",
                 url: "<?= base_url('planning/forecasts/checkDuplicate') ?>",
@@ -819,7 +827,8 @@
                     item_fg_id: item_fg_id,
                     revision: revision,
                     p_month: p_month,
-                    p_year: p_year
+                    p_year: p_year,
+                    mode: mode
                 },
                 dataType: "json",
                 success: function(response) {

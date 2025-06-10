@@ -81,6 +81,17 @@ class Forecasts extends CI_Controller
         echo json_encode($send);
     }
 
+    //GET DATA ITEMS
+    public function read_items($customer_id)
+    {
+        $customer_id = base64_decode($customer_id);
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT b.id, b.number, b.name, b.number_customer, a.price, a.item_fg_customer FROM customer_items a 
+            JOIN item_fg b ON a.item_fg_id = b.id 
+            WHERE a.customer_id = '$customer_id' and (b.number LIKE '%$post%' or b.name LIKE '%$post%')");
+        echo json_encode($send);
+    }
+
     //GET PERIOD
     public function readPeriod($select)
     {
@@ -448,9 +459,15 @@ class Forecasts extends CI_Controller
                 }
             // if ($this->form_validation->run() == TRUE) {
                 // Validasi apakah customer_id ada di tabel customers
-                $customer_exists = $this->crud->read('customers', [], ["number" => $data['customer_id']]);
-                if (empty($customer_exists)) {
-                    echo json_encode(array("title" => "Not Found", "message" => "Customer ID " . $data['customer_id'] . " not found", "theme" => "error"));
+
+                if(!empty($data['customer_id'])) {
+                    $customer_exists = $this->crud->read('customers', [], ["number" => $data['customer_id']]);
+                    if (empty($customer_exists)) {
+                        echo json_encode(array("title" => "Not Found", "message" => "Customer Code " . $data['customer_id'] . " not found", "theme" => "error"));
+                        return;
+                    }
+                }else{
+                    echo json_encode(array("title" => "Failed", "message" => "Customer Code cannot empty", "theme" => "error"));
                     return;
                 }
 
@@ -834,7 +851,7 @@ class Forecasts extends CI_Controller
         $templateSheet->setCellValue('A1', 'TEMPLATE UPLOAD MASTER FORECAST');
         $templateSheet->setCellValue('A2', 'No');
         $templateSheet->setCellValue('B2', 'CUSTOMER CODE');
-        $templateSheet->setCellValue('C2', 'PRODUCT ID');
+        $templateSheet->setCellValue('C2', 'PRODUCT NO');
         $templateSheet->setCellValue('D2', 'ISSUED DATE');
         $templateSheet->setCellValue('E2', 'PERIOD');
         $templateSheet->setCellValue('F2', 'PERIOD');
@@ -969,7 +986,28 @@ class Forecasts extends CI_Controller
 
         exit;
     }
+    
+    // public function checkDuplicate()
+    // {
+    //     if ($this->input->post()) {
+    //         $customer_id = $this->input->post('customer_id');
+    //         $item_fg_id = $this->input->post('item_fg_id');
+    //         $revision = $this->input->post('revision');
+    //         $p_month = $this->input->post('p_month');
+    //         $p_year = $this->input->post('p_year');
 
+    //         $existingForecast = $this->crud->read("forecasts", [], [
+    //             "customer_id" => $customer_id,
+    //             "item_fg_id" => $item_fg_id,
+    //             "revision" => $revision,
+    //             "p_month" => $p_month,
+    //             "p_year" => $p_year
+    //         ]);
+
+    //         echo json_encode(['exists' => !empty($existingForecast)]);
+    //     }
+    // }
+    
     public function checkDuplicate()
     {
         if ($this->input->post()) {
@@ -978,16 +1016,25 @@ class Forecasts extends CI_Controller
             $revision = $this->input->post('revision');
             $p_month = $this->input->post('p_month');
             $p_year = $this->input->post('p_year');
+            $mode = $this->input->post('mode');
 
-            $existingForecast = $this->crud->read("forecasts", [], [
+            $where = [
                 "customer_id" => $customer_id,
                 "item_fg_id" => $item_fg_id,
                 "revision" => $revision,
                 "p_month" => $p_month,
                 "p_year" => $p_year
-            ]);
+            ];
 
-            echo json_encode(['exists' => !empty($existingForecast)]);
+            $existingForecast = $this->crud->read("forecasts", [], $where);
+
+            // Jika mode update, dan data yang ditemukan adalah data yang sama, maka anggap tidak duplikat
+            if ($mode === 'update' && !empty($existingForecast)) {
+                echo json_encode(['exists' => false]);
+            } else {
+                echo json_encode(['exists' => !empty($existingForecast)]);
+            }
         }
     }
+
 }
