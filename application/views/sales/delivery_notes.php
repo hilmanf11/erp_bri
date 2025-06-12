@@ -1021,6 +1021,8 @@
     function cellStyler(value, row, index) {
         if (value == 0) {
             return 'background: #53D636; color:white;';
+        } else if(value == 2) {
+            return 'background: #F3A26D; color: white';
         } else {
             return 'background: #FF5F5F; color:white;';
         }
@@ -1037,8 +1039,10 @@
     function cellFormatterDeliveryStatus(value) {
         if (value == 0) {
             return 'ON SCHEDULE';
-        } else {
+        } else if(value == 1) {
             return 'DELAY';
+        }else {
+            return 'EARLY';
         }
     };
 

@@ -437,12 +437,21 @@ class Delivery_notes extends CI_Controller
         $no = 1;
         $page = ceil(count($delivery_orders) / $rows_per_page);
         for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.name as customer_name, d.customer_order_no, d.attention_to, h.name as created_by_name, i.address, i.contact_person');
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.name as customer_name, d.customer_order_no, d.attention_to, h.name as created_by_name, i.address, i.contact_person, COALESCE(f.shipping, 0) as qty_shipping');
             $this->db->from('delivery_orders a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('customers c', 'a.customer_id = c.id');
             $this->db->join('sales_orders d', 'a.sales_order_no = d.sales_order_no and a.item_fg_id = d.item_fg_id and a.customer_id = d.customer_id');
             $this->db->join('delivery_notes e', 'a.delivery_order_no = e.delivery_order_no and a.item_fg_id = e.item_fg_id and a.customer_id = e.customer_id');
+            $this->db->join('(SELECT 
+                                delivery_order_no, 
+                                item_fg_id,
+                                SUM(qty) as shipping 
+                            FROM shipping_orders 
+                            GROUP BY delivery_order_no, item_fg_id
+                            ) f', 
+                            'a.delivery_order_no = f.delivery_order_no AND a.item_fg_id = f.item_fg_id', 
+                            'left');
             $this->db->join('users h', 'e.created_by = h.username');
             $this->db->join('customer_address i', 'd.customer_address_id = i.id');
             $this->db->where('a.delivery_order_no', $delivery_order_no);
@@ -524,7 +533,7 @@ class Delivery_notes extends CI_Controller
                             <td style="text-align:center">' . $no . '</td>
                             <td>' . $record['item_fg_number'] . '</td>
                             <td>' . $record['item_fg_name'] . '</td>
-                            <td style="text-align:right">' . number_format($record['qty_del'], 0, ",", ".") . '</td>
+                            <td style="text-align:right">' . number_format($record['qty_shipping'], 0, ",", ".") . '</td>
                             <td>' . $record['uom'] . '</td>
                         </tr>';
                 $no++;
