@@ -2124,6 +2124,89 @@
             rownumbers: true,
             fit: true,
             view: detailview,
+            onLoadSuccess: function(data) {
+                const dg = $(this);                
+
+                if (data.rows.length > 0 && data.summary) {
+
+                    // Buat baris total
+                    const totalRow = {
+                        number: 'TOTAL',
+                        is_total: true,
+                        status: '',
+                        trans_date: '',
+                        customer_name: '',
+                        taxes: '',
+                        payment_term: '',
+                        due_date: '',
+                        currency: '',
+                        total_sub: data.summary[0].total_sub,
+                        total_vat: data.summary[0].total_vat,
+                        total_pph: data.summary[0].total_pph,
+                        total_grand: data.summary[0].total_grand,
+                        remarks: '',
+                        created_by: '',
+                        created_date: '',
+                        updated_by: '',
+                        updated_date: ''
+                    };
+
+                    dg.datagrid('appendRow', totalRow);
+
+                    const lastIndex = dg.datagrid('getRows').length - 1;
+                    const panel = dg.datagrid('getPanel');
+
+                    const rowEl = panel.find(`tr.datagrid-row[datagrid-row-index="${lastIndex}"]`);
+                    rowEl.css('display', 'none');
+
+                    // Hapus input checkbox dan hapus event klik pada checkbox-nya
+                    rowEl.find('td[field="ck"]').off().empty();
+
+                    // Prevent klik pada seluruh baris total
+                    rowEl.off('click').on('click', function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        return false;
+                    });
+                    rowEl.find('.datagrid-row-expander').css('visibility', 'hidden');
+
+                    rowEl.find('td[field="ck"], td[field="remarks"], td[field="created_by"], td[field="created_date"], td[field="updated_by"], td[field="updated_date"]').css({
+                        'border-left': 'none',
+                        'border-right': 'none',
+                    });
+
+                    rowEl.find('td[field="_expander"]').each(function () {
+                        this.style.setProperty('border-left', 'none', 'important');
+                        this.style.setProperty('border-right', 'none', 'important');
+                    });
+
+                    setTimeout(() => {
+                        dg.datagrid('mergeCells', {
+                            index: lastIndex,
+                            field: 'number',
+                            colspan: 8 // jumlah kolom yang digabung
+                        });
+
+                        const row = panel.find(`div.datagrid-body tr.datagrid-row[datagrid-row-index="${lastIndex}"]`);
+                        row.css({
+                            backgroundColor: '#f0f0f0',
+                            fontWeight: 'bold'
+                        });
+
+                        row.find('td[field="number"] .datagrid-cell').css({
+                            'text-align': 'center',
+                            'padding-right': '42px'
+                        });
+
+                        // row.find('td[field="remarks"], td[field="created_by"], td[field="created_date"], td[field="updated_by"], td[field="updated_date"]').css('display', 'none');
+
+                        row.find('td.datagrid-td-rownumber div').text('');
+                        row.find('td.datagrid-td-rownumber').css('border-right', 'none');
+                        row.find('td.datagrid-td-rownumber').css('background-color', '#f0f0f0');
+                        row.css('display', ''); 
+                    }, 10);
+                }
+            },
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.number + '"></table></div>';
             },
@@ -2215,10 +2298,65 @@
                     onResize: function() {
                         $('#dg').datagrid('fixDetailRowHeight', index);
                     },
-                    onLoadSuccess: function() {
-                        setTimeout(function() {
+                    onLoadSuccess: function(data) {
+                        const target = $(this);
+
+                        const totalQty = data.rows.reduce((sum, r) => sum + parseFloat(r.qty || 0), 0);
+                        const totalPrice = data.rows.reduce((sum, r) => sum + parseFloat(r.price || 0), 0);
+                        const totalAmount = data.rows.reduce((sum, r) => sum + parseFloat(r.total || 0), 0);
+
+                        // Tambahkan baris Total
+                        target.datagrid('appendRow', {
+                            delivery_note_no: 'TOTAL',
+                            sales_order_no: '',
+                            customer_order_no: '',
+                            item_no: '',
+                            item_name: '',
+                            qty: totalQty,
+                            uom: '',
+                            currency: '',
+                            price: totalPrice,
+                            total: totalAmount,
+                            approved_to: '',
+                            approved_by: '',
+                            approved_date: ''
+                        });
+
+                        const lastIndex = data.rows.length - 1;
+
+                        setTimeout(() => {
+                            target.datagrid('mergeCells', {
+                                index: lastIndex,
+                                field: 'delivery_note_no',
+                                colspan: 5,
+                                align: 'center'
+                            });
+
+                            const panel = target.datagrid('getPanel');
+                            const row = panel.find('div.datagrid-body tr.datagrid-row[datagrid-row-index="' + lastIndex + '"]');
+                            row.css('display', 'none');
+                            
+                            row.find('td[field="approved_to"], td[field="approved_by"], td[field="approved_date"]').css('display', 'none');
+
+                            row.find('td.datagrid-td-rownumber div').text('');
+                            row.find('td.datagrid-td-rownumber').css('border-right', 'none');
+                            row.find('td.datagrid-td-rownumber').css('background-color', '#f0f0f0');
+
+                            row.css({
+                                backgroundColor: '#f0f0f0',
+                                fontWeight: 'bold'
+                            });
+
+                            const totalCell = row.find('td[field="delivery_note_no"] div');
+                            totalCell.css({
+                                textAlign: 'center',
+                                verticalAlign: 'middle',
+                                paddingRight: '15px'
+                            });
+                            
                             $('#dg').datagrid('fixDetailRowHeight', index);
-                        }, 0);
+                            row.css('display', '');
+                        }, 5);
                     }
                 });
                 $('#dg').datagrid('fixDetailRowHeight', index);

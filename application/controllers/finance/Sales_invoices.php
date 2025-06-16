@@ -611,9 +611,29 @@ class Sales_invoices extends CI_Controller
         }
         //Get Data Array
         $records = $this->db->get()->result_array();
+
+        $total_sub = 0;
+        $total_vat = 0;
+        $total_pph = 0;
+        $total_grand = 0;
+
+        foreach ($records as $r) {
+            $total_sub += $r['total_sub'];
+            $total_vat += $r['total_vat'];
+            $total_pph += $r['total_pph'];
+            $total_grand += $r['total_grand'];
+        }
+
         //Mapping Data
         $result['total'] = $totalRows;
         $result = array_merge($result, ['rows' => $records]);
+        $result['summary'] = [[
+            'number' => '<b>Total</b>',
+            'total_sub' => $total_sub,
+            'total_vat' => $total_vat,
+            'total_pph' => $total_pph,
+            'total_grand' => $total_grand
+        ]];
         echo json_encode($result);
     }
 
