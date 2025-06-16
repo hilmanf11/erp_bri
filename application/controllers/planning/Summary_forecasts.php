@@ -117,6 +117,7 @@ class Summary_forecasts extends CI_Controller
         $filter_period_year = base64_decode($this->input->get("filter_period_year"));
         $filter_period_month = base64_decode($this->input->get("filter_period_month"));
         $filter_item_fg = $this->input->get("filter_item_fg");
+        $filter_product_family = base64_decode($this->input->get("filter_product_family"));
 
         $p_date_start = date("Y-m-d", strtotime($filter_period_year . "-" . $filter_period_month . "-01"));
         $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
@@ -133,7 +134,7 @@ class Summary_forecasts extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, d.number as compound_no');
+        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, d.number as compound_no, b.item_family_number as item_prodfam');
         $this->db->from('forecasts a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('bom c', 'a.item_fg_id = c.item_fg_id', 'left');
@@ -144,6 +145,9 @@ class Summary_forecasts extends CI_Controller
         $this->db->like('a.item_fg_id', $filter_item_fg);
         // $this->db->where("a.p_year '$filter_period_year'");
         // $this->db->where("a.p_month '$filter_period_month'");
+        if ($filter_product_family != "") {
+            $this->db->where('b.item_family_number', $filter_product_family);
+        }
         $this->db->group_by('a.item_fg_id');
         // $this->db->group_by('a.p_month');
         // $this->db->group_by('a.p_year');
@@ -277,11 +281,12 @@ class Summary_forecasts extends CI_Controller
                 $gt_10 = $gt_month_10 += $data['month_10'];
                 $gt_11 = $gt_month_11 += $data['month_11'];
                 $gt_12 = $gt_month_12 += $data['month_12'];
+                $compound_no = ($data['item_prodfam'] === 'CD') ? '-' : $data['compound_no'];
                 $html .= '<tr>
                         <td>' . $no . '</td>
                         <td style="mso-number-format:\'\\@\';">' . $data['item_fg_number'] . '</td>
                         <td style="mso-number-format:\'\\@\';">' . $data['item_fg_name'] . '</td>
-                        <td style="mso-number-format:\'\\@\';">' . $data['compound_no'] . '</td>
+                        <td style="mso-number-format:\'\\@\';">' . $compound_no . '</td>
                         <td style="text-align: right;">' . number_format($data['month_1'], 0, ',', '.') . '</td>
                         <td style="text-align: right;">' . number_format($data['month_2'], 0, ',', '.') . '</td>
                         <td style="text-align: right;">' . number_format($data['month_3'], 0, ',', '.') . '</td>
@@ -416,11 +421,12 @@ class Summary_forecasts extends CI_Controller
                 $gt_10 = $gt_month_10 += $data['month_10'];
                 $gt_11 = $gt_month_11 += $data['month_11'];
                 $gt_12 = $gt_month_12 += $data['month_12'];
+                $compound_no = ($data['item_prodfam'] === 'CD') ? '-' : $data['compound_no'];
                 $html .= '<tr>
                         <td>' . $no . '</td>
                         <td style="mso-number-format:\'\\@\';">' . $data['item_fg_number'] . '</td>
                         <td style="mso-number-format:\'\\@\';">' . $data['item_fg_name'] . '</td>
-                        <td style="mso-number-format:\'\\@\';">' . $data['compound_no'] . '</td>
+                        <td style="mso-number-format:\'\\@\';">' . $compound_no . '</td>
                         <td style="text-align: right;">' . number_format($data['month_1'], 0, ',', '.') . '</td>
                         <td style="text-align: right;">' . number_format($data['month_2'], 0, ',', '.') . '</td>
                         <td style="text-align: right;">' . number_format($data['month_3'], 0, ',', '.') . '</td>

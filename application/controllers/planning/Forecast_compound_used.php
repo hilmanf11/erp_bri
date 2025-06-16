@@ -35,9 +35,10 @@ class Forecast_compound_used extends CI_Controller
 
         $this->db->select('d.number as number');
         $this->db->from('forecasts a');
-        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        // $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('bom c', 'a.item_fg_id = c.item_fg_id', 'left');
         $this->db->join('item_rm d', 'c.item_rm_id = d.id', 'left');
+        $this->db->where('d.item_family_id', 'P03');
         $this->db->where('a.deleted', 0);
         $this->db->where('d.status', 0);
 
@@ -108,6 +109,7 @@ class Forecast_compound_used extends CI_Controller
         $filter_period_year = base64_decode($this->input->get("filter_period_year"));
         $filter_period_month = base64_decode($this->input->get("filter_period_month"));
         $filter_compound_no = $this->input->get("filter_compound_no");
+        $filter_product_family = base64_decode($this->input->get("filter_product_family"));
 
         $p_date_start = date("Y-m-d", strtotime($filter_period_year . "-" . $filter_period_month . "-01"));
         $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
@@ -144,11 +146,15 @@ class Forecast_compound_used extends CI_Controller
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('bom c', 'a.item_fg_id = c.item_fg_id', 'left');
         $this->db->join('item_rm d', 'c.item_rm_id = d.id', 'left');
+        $this->db->where('d.item_family_id', 'P03');
         $this->db->where('a.deleted', 0);
         $this->db->like('a.p_month', $filter_period_month);
         $this->db->like('a.p_year', $filter_period_year);
         // if (!empty($filter_compound_no)) {
             // }
+        if ($filter_product_family != "") {
+            $this->db->where('b.item_family_number', $filter_product_family);
+        }
         $this->db->like('d.number', $filter_compound_no);
         $this->db->group_by('d.number');
         // $this->db->group_by('a.item_fg_id');

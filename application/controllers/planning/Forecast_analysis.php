@@ -92,6 +92,7 @@ class Forecast_analysis extends CI_Controller
         $filter_period_month = base64_decode($this->input->get("filter_period_month"));
         $filter_customer_name = $this->input->get("filter_customer_name");
         $filter_item_fg = $this->input->get("filter_item_fg");
+        $filter_product_family = base64_decode($this->input->get("filter_product_family"));
 
         $p_date_start = date("Y-m-d", strtotime($filter_period_year . "-" . $filter_period_month . "-01"));
         $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
@@ -129,6 +130,9 @@ class Forecast_analysis extends CI_Controller
         }
         if ($filter_item_fg != '') {
             $this->db->where('a.item_fg_id', $filter_item_fg);
+        }
+        if ($filter_product_family != "") {
+            $this->db->where('b.item_family_number', $filter_product_family);
         }
         $this->db->group_by('a.customer_id');
         $this->db->group_by('a.item_fg_id');
@@ -222,6 +226,12 @@ class Forecast_analysis extends CI_Controller
         $total_amount_2 = 0;
         $total_amount_3 = 0;
 
+        $grand_total_qty_1 = 0;
+        $grand_total_qty_2 = 0;
+        $grand_total_qty_3 = 0;
+        $grand_total_amount_1 = 0;
+        $grand_total_amount_2 = 0;
+        $grand_total_amount_3 = 0;
 
         foreach ($records as $data) {
 
@@ -269,9 +279,16 @@ class Forecast_analysis extends CI_Controller
             $total_amount_1 += $data['amount_month_1'];
             $total_amount_2 += $data['amount_month_2'];
             $total_amount_3 += $data['amount_month_3'];
+
+            $grand_total_qty_1 += $data['qty_month_1'];
+            $grand_total_qty_2 += $data['qty_month_2'];
+            $grand_total_qty_3 += $data['qty_month_3'];
+            $grand_total_amount_1 += $data['amount_month_1'];
+            $grand_total_amount_2 += $data['amount_month_2'];
+            $grand_total_amount_3 += $data['amount_month_3'];
         }
         if ($current_customer !== '') {
-            $html .= "<tr>
+            $html .= "<tr style='background-color:#FFFF00;'>
                         <td style='text-align:center; font-weight:bold;' colspan='4'>Total</td>
                         <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_1)}</td>
                         <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_2)}</td>
@@ -281,6 +298,17 @@ class Forecast_analysis extends CI_Controller
                         <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($total_amount_3)}</td>
                         </tr>";
         }
+           
+        $html .= "<tr style='background-color:#C6EFCE;'>
+                    <td style='text-align:center; font-weight:bold;' colspan='4'>Grand Total</td>
+                    <td style='text-align:right; font-weight:bold;'>{$this->format_number($grand_total_qty_1)}</td>
+                    <td style='text-align:right; font-weight:bold;'>{$this->format_number($grand_total_qty_2)}</td>
+                    <td style='text-align:right; font-weight:bold;'>{$this->format_number($grand_total_qty_3)}</td>
+                    <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($grand_total_amount_1)}</td>
+                    <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($grand_total_amount_2)}</td>
+                    <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($grand_total_amount_3)}</td>
+                </tr>";
+
         $html .= '</table></body></html>';
         echo $html;
     }
