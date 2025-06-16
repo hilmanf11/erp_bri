@@ -1,5 +1,12 @@
 <!-- TABLE DATAGRID -->
-
+<style>
+    .swal2-container {
+        z-index: 9999 !important;
+    }
+    .swal2-popup {
+        z-index: 99999 !important;
+    }
+</style>
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
 
     <thead>
@@ -103,13 +110,13 @@
 
             <div style="width: 50%; float: left;">
 
-                <div class="fitem">
+                <!-- <div class="fitem">
 
                     <span style="width:35%; display:inline-block;">Sales Order No</span>
 
                     <input style="width:60%;" id="filter_sales_order_no" class="easyui-combobox">
 
-                </div>
+                </div> -->
 
                 <div class="fitem">
 
@@ -157,7 +164,7 @@
 
 <!-- Insert & Update -->
 
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1200px; height: 600px; padding:10px; top: 20px; left: 10px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1260px; height: 600px; padding:10px; top: 20px; left: 10px;">
 
     <form id="frm_insert" method="post" novalidate>
 
@@ -300,7 +307,14 @@
 
                     <th data-options="field:'stock',width:100,editor:{type:'numberbox', options:{readonly:true}},formatter:function(val){ return val ? parseInt(val) : 0; }">Stock</th>
 
-                    <th data-options="field:'stock_bal',width:100,editor:{type:'numberbox', options:{readonly:true}}">Balance</th>
+                    <!-- <th data-options="field:'stock_bal',width:100,editor:{type:'numberbox', options:{readonly:true}}">Balance</th> -->
+
+                    <th data-options="field:'partial',width:65,align:'center',
+                        editor:{type:'checkbox',options:{on:'1',off:'0'}},
+                        formatter:partialFormatter">
+                        Partial
+                    </th>
+
 
                 </tr>
 
@@ -341,7 +355,8 @@
         $("#delivery_order_date").datebox('setValue', "<?= date("Y-m-d") ?>");
 
         // Set the default value of sales_order to "FG" (Finish Good) and trigger onChange event
-        $("#sales_order").combobox('setValue', 'FG');
+        // $("#sales_order").combobox('setValue', 'FG');
+        $("#sales_order").combobox('setValue', 'FG').combobox('setText', 'FINISH GOOD').combobox('reload'); // Trigger reload after setting value
 
         $("#sales_order").combobox({
             onChange: function(sales_order) {
@@ -363,7 +378,7 @@
                     prompt: 'Choose Schedule Delivery Date',
                     onSelect: function(deliverys) {
                         $("#actual_delivery_date").datebox('setValue',deliverys.trans_date);
-
+                        updateDeliveryOrderNo(deliverys.trans_date);
                     }
                 });
 
@@ -434,7 +449,8 @@
                 url: urlGet,
                 fitColumns: true,
                 onClickRow: function(rowIndex) {
-                    if (lastIndex != rowIndex) {
+                    // if (lastIndex != rowIndex) {
+                    if ($('#dg_request').datagrid('validateRow', lastIndex)) {
                         $(this).datagrid('endEdit', lastIndex);
                         $(this).datagrid('beginEdit', rowIndex);
                     }
@@ -450,14 +466,14 @@
                             var accum_qty_do = $(editors[4].target);
                             var qty_del = $(editors[6].target);
                             var stock = $(editors[8].target);
-                            var stock_bal = $(editors[9].target);
+                            // var stock_bal = $(editors[9].target);
 
                             var f_qty_del = parseFloat(qty_del.numberbox('getValue'));
                             var f_stock = parseFloat(stock.numberbox('getValue'));
 
                             var f_balance = parseFloat(f_stock - f_qty_del);
 
-                            stock_bal.numberbox('setValue', f_balance);
+                            // stock_bal.numberbox('setValue', f_balance);
 
 
                             // var f_item_fg_id = item_fg_id.textbox('getValue');
@@ -476,9 +492,24 @@
                             //     }
                             // });
                             // }
-                            $('#dg_request').datagrid('endEdit', i);
+                            // $('#dg_request').datagrid('endEdit', i);
                         }
                     }
+
+                     // Tangani event change tanpa memicu checkbox baris
+                    $('.partial-checkbox').off('change').on('change', function () {
+                        const index = $(this).data('index');
+                        const isChecked = $(this).is(':checked') ? '1' : '0';
+
+                        // Update ke data row
+                        const rows = $('#dg_request').datagrid('getRows');
+                        if (rows[index]) {
+                            rows[index].partial = isChecked;
+                        }
+
+                        $('#dg_request').datagrid('refreshRow', index);
+                    });
+
                 },
                 onBeginEdit: function(rowIndex, row) {
                     var editors = $('#dg_request').datagrid('getEditors', rowIndex);
@@ -486,7 +517,7 @@
                     var qty_remain = $(editors[5].target);
                     var qty_del = $(editors[6].target);
                     var stock = $(editors[8].target);
-                    var stock_bal = $(editors[9].target);
+                    // var stock_bal = $(editors[9].target);
 
                     qty_del.numberbox({
                         onChange: function(delivery) {
@@ -495,7 +526,7 @@
                             var f_stock = parseFloat(stock.numberbox('getValue'));
                             var f_balance = parseFloat(f_stock - f_qty_del);
 
-                            stock_bal.numberbox('setValue', f_balance);
+                            // stock_bal.numberbox('setValue', f_balance);
 
                             if (f_qty_del > f_qty_remain) {
                                 qty_del.numberbox('setValue', 0);
@@ -507,6 +538,27 @@
             });
         }
     }
+
+    function updateDeliveryOrderNo(date) {
+        const selectedDate = new Date(date);
+        const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+        const year = String(selectedDate.getFullYear()).slice(-2);
+
+        let currentVal = $('#delivery_order_no').textbox('getValue');
+        let parts = currentVal.split('/');
+        if (parts.length === 4) {
+            parts[2] = month;
+            parts[3] = year;
+            let newVal = parts.join('/');
+            $('#delivery_order_no').textbox('setValue', newVal);
+        }
+    }
+
+    $('#actual_delivery_date').datebox({
+        onSelect: function(date) {
+            updateDeliveryOrderNo(date);
+        }
+    });
 
     function number(delivery_order_date, customer_id, customer_no ) {
         $.ajax({
@@ -735,33 +787,38 @@
 
         var row = $('#dg').treegrid('getSelected');
 
-        if (row) {
+        if(row) {
+            if (row.status == "0") {
 
-            $('#dlg_insert').dialog('open');
+                $('#dlg_insert').dialog('open');
 
-            $('#frm_insert').form('load', row);
-
-
-
-            $("#delivery_order_date").datebox('disable');
-
-            $("#delivery_date").combobox('disable');
-            $("#actual_delivery_date").datebox('disable');
-
-            $("#customer_id").combobox('disable');
-
-            $("#customer_order_no").combobox('disable');
-
-            $("#btnPreview").linkbutton('disable');
+                $('#frm_insert').form('load', row);
 
 
 
-            preview("<?= base_url('sales/delivery_orders/datatableUpdates?delivery_order_no=') ?>" + btoa(row.delivery_order_no));
+                $("#delivery_order_date").datebox('disable');
 
+                $("#delivery_date").combobox('disable');
+                $("#actual_delivery_date").datebox('disable');
+
+                $("#customer_id").combobox('disable');
+
+                $("#customer_order_no").combobox('disable');
+
+                $("#btnPreview").linkbutton('disable');
+
+
+
+                preview("<?= base_url('sales/delivery_orders/datatableUpdates?delivery_order_no=') ?>" + btoa(row.delivery_order_no));
+
+            } else if(row.status == "1") {
+
+                toastr.error("This data is already closed and cannot be updated.");
+            } else {
+                toastr.warning("Please select one of the data in the table first!", "Information");
+            }
         } else {
-
             toastr.warning("Please select one of the data in the table first!", "Information");
-
         }
 
     }
@@ -771,63 +828,35 @@
     //DELETE DATA
 
     function deleted() {
-
         var rows = $('#dg').datagrid('getSelections');
 
         if (rows.length > 0) {
-
-            $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
-
+            $.messager.confirm('Warning', 'Are you sure you want to delete the selected data?', function (r) {
                 if (r) {
+                    let deliveryNos = rows.map(row => row.delivery_order_no);
 
-                    for (var i = 0; i < rows.length; i++) {
-
-                        var row = rows[i];
-
-                        $.ajax({
-
-                            method: 'post',
-
-                            url: '<?= base_url('sales/delivery_orders/delete') ?>',
-
-                            data: {
-
-                                delivery_order_no: row.delivery_order_no
-
-                            },
-
-                            success: function(result) {
-
-                                var result = eval('(' + result + ')');
-
-                            },
-
-                            error: function(jqXHR, textStatus, errorThrown) {
-
-                                toastr.error(jqXHR.statusText);
-
-                            },
-
-                            complete: function(data) {
-
-                                $('#dg').datagrid('reload');
-
+                    $.ajax({
+                        method: 'post',
+                        url: '<?= base_url('sales/delivery_orders/delete') ?>',
+                        data: { delivery_order_no: deliveryNos },
+                        dataType: 'json',
+                        success: function (res) {
+                            if (res.theme === 'success') {
+                                toastr.success(res.message, res.title);
+                            } else {
+                                toastr.error(res.message, res.title);
                             }
-
-                        });
-
-                    }
-
+                            $('#dg').datagrid('reload');
+                        },
+                        error: function (xhr) {
+                            toastr.error(xhr.statusText || 'Server error occurred.');
+                        }
+                    });
                 }
-
             });
-
         } else {
-
             toastr.warning("Please select one of the data in the table first!", "Information");
-
         }
-
     }
 
 
@@ -844,7 +873,7 @@
 
         var filter_delivery_order_no = $("#filter_delivery_order_no").combobox('getValue');
 
-        var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
+        // var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
 
         var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
 
@@ -862,7 +891,7 @@
 
             "&filter_delivery_order_no=" + window.btoa(filter_delivery_order_no) +
 
-            "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            // "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
 
             "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
 
@@ -1044,21 +1073,23 @@
 
                             formatter: numberFormat
 
-                        }, {
+                        }, 
+                        // {
 
-                            field: 'stock_bal',
+                        //     field: 'stock_bal',
 
-                            title: 'Balance<br>Stock',
+                        //     title: 'Balance<br>Stock',
 
-                            halign: 'center',
+                        //     halign: 'center',
 
-                            align: 'right',
+                        //     align: 'right',
 
-                            width: 80,
+                        //     width: 80,
 
-                            formatter: numberFormat
+                        //     formatter: numberFormat
 
-                        }]
+                        // }
+                    ]
 
                     ],
 
@@ -1118,7 +1149,7 @@
 
         var filter_delivery_order_no = $("#filter_delivery_order_no").combobox('getValue');
 
-        var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
+        // var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
 
         var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
 
@@ -1136,7 +1167,7 @@
 
             "&filter_delivery_order_no=" + window.btoa(filter_delivery_order_no) +
 
-            "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            // "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
 
             "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
 
@@ -1173,151 +1204,151 @@
         //SAVE DATA
 
         $('#dlg_insert').dialog({
-
             buttons: [{
-
                 text: 'Save All',
-
                 iconCls: 'icon-ok',
-
-                handler: function() {
-
+                handler: function () {
                     var customer_id = $("#customer_id").combobox('getValue');
-
                     var delivery_order_date = $("#delivery_order_date").datebox('getValue');
-
                     var delivery_date = $("#delivery_date").combobox('getValue');
                     var actual_delivery_date = $("#actual_delivery_date").datebox('getValue');
-
                     var delivery_order_no = $("#delivery_order_no").textbox('getValue');
-
                     var trans_type = $("#trans_type").combobox('getValue');
-
                     var remarks = $("#remarks").textbox('getValue');
 
                     let a = new Date(delivery_order_date);
                     let b = new Date(actual_delivery_date);
                     if (b < a) {
-                      return toastr.error("Actual Delivery Date cannot be earlier than Delivery Order Date");
+                        return toastr.error("Actual Delivery Date cannot be earlier than Delivery Order Date");
                     }
 
+                    $('.partial-checkbox').each(function () {
+                        const index = $(this).data('index');
+                        const isChecked = $(this).is(':checked') ? '1' : '0';
+                        $('#dg_request').datagrid('getRows')[index].partial = isChecked;
+                    });
+                    
                     $('#dg_request').datagrid('acceptChanges');
-
-                    var rows = $('#dg_request').datagrid('getSelections');
-
+                    lastIndex = undefined;
+                    var rows = $('#dg_request').datagrid('getChecked');
                     var totalrows = rows.length;
 
-                    if(totalrows===0){
+                    if (totalrows === 0) {
                         return toastr.error("Please select any data first!");
                     }
 
                     if (customer_id != "" && trans_type != "" && delivery_order_date != "" && delivery_date != "" && actual_delivery_date != "") {
 
+                        let items = [];
+                        let hasStockIssue = false;
+
                         for (let i = 0; i < totalrows; i++) {
+                            let row = rows[i];
+                            // if (row.item_fg_id) {
+                                
+                                if (!row.item_fg_id) continue;
 
-                            if (rows[i].item_fg_id) {
+                                if (row.qty_del === undefined || row.qty_del <= 0) {
+                                    return toastr.error("Qty Delivery cannot be 0 or less than 0");
+                                }
 
-                                $.ajax({
+                                if (parseFloat(row.stock) < parseFloat(row.qty_del)) {
+                                    hasStockIssue = true;
+                                }
 
-                                    type: "post",
+                                // console.log( i + '. ' + row.partial);
 
-                                    url: '<?= base_url('sales/delivery_orders/create') ?>',
-
-                                    data: {
-
-                                        customer_id: customer_id,
-
-                                        delivery_order_date: delivery_order_date,
-
-                                        delivery_order_no: delivery_order_no,
-
-                                        delivery_date: delivery_date,
-                                        actual_delivery_date: actual_delivery_date,
-
-                                        trans_type: trans_type,
-
-                                        remarks: remarks,
-
-                                        item_fg_id: rows[i].item_fg_id,
-
-                                        customer_order_no: rows[i].customer_order_no,
-
-                                        sales_order_no: rows[i].sales_order_no,
-
-                                        uom: rows[i].uom,
-
-                                        qty_so: rows[i].qty_so,
-
-                                        qty_remain: rows[i].qty_remain,
-
-                                        qty_do: rows[i].qty_do,
-
-                                        qty_del: rows[i].qty_del,
-
-                                        stock: rows[i].stock,
-
-                                        stock_bal: rows[i].stock_bal,
-
-                                    },
-
-                                    dataType: "json",
-
-                                    success: function(result) {
-
-                                        if (i == (totalrows - 1)) {
-
-                                            Swal.fire({
-
-                                                title: result.message,
-
-                                                icon: result.theme,
-
-                                                confirmButtonText: 'Ok',
-
-                                                allowOutsideClick: false,
-
-                                            }).then((result) => {
-
-                                                if (result.isConfirmed) {
-                                                    
-                                                    print_do(delivery_order_no);
-
-                                                    window.location.reload();
-
-                                                }
-
-                                            });
-
-                                        }
-
-                                    }
-
+                                items.push({
+                                    customer_id: customer_id,
+                                    delivery_order_date: delivery_order_date,
+                                    delivery_order_no: delivery_order_no,
+                                    delivery_date: delivery_date,
+                                    actual_delivery_date: actual_delivery_date,
+                                    trans_type: trans_type,
+                                    remarks: remarks,
+                                    item_fg_id: row.item_fg_id,
+                                    customer_order_no: row.customer_order_no,
+                                    sales_order_no: row.sales_order_no,
+                                    uom: row.uom,
+                                    qty_so: row.qty_so,
+                                    qty_remain: row.qty_remain,
+                                    qty_do: row.qty_do,
+                                    qty_del: row.qty_del,
+                                    stock: row.stock,
+                                    // stock_bal: row.stock_bal,
+                                    partial: row.partial
                                 });
-
-                            }
-
+                            // }
                         }
 
+                        function doSaveRequest() {
+                            $.ajax({
+                                type: "POST",
+                                url: "<?= base_url('sales/delivery_orders/create') ?>",
+                                data: { items: items },
+                                dataType: "json",
+                                success: function (res) {
+                                    toastr.clear();
+                                    if (res.theme === 'success') {
+                                        $('#dg_request').datagrid('clearSelections');
+                                        Swal.fire({
+                                            title: res.message,
+                                            icon: res.theme,
+                                            confirmButtonText: 'Ok',
+                                            allowOutsideClick: false,
+                                        }).then((result) => {
+                                            if (result.isConfirmed) {
+                                                print_do(delivery_order_no);
+                                                window.location.reload();
+                                            }
+                                        });
 
+                                        $('#dg').datagrid('reload');
+                                        $('#dlg_insert').dialog('close');
+                                    } else {
+                                        $('#dg_request').datagrid('clearSelections');
+                                        toastr.clear();
+                                        toastr.error(res.message, res.title || 'error');
+                                    }
+                                },
+                                error: function () {
+                                    $('#dg_request').datagrid('clearSelections');
+                                    toastr.clear();
+                                    toastr.error('An error occurred while processing the data. Please try again');
 
-                        $('#dg').datagrid('reload');
+                                    $('#dg').datagrid('reload');
+                                    $('#dlg_insert').dialog('close');
+                                }
+                            });
+                        }
 
-                        $('#dlg_insert').dialog('close');
+                        if (hasStockIssue) {
+                            Swal.fire({
+                                title: 'Stock < Qty Delivery, are you sure want to process?',
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonText: 'Yes',
+                                cancelButtonText: 'No',
+                                allowOutsideClick: false
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    doSaveRequest();
+                                } else {
+                                    return;
+                                }
+                            });
+                        } else {
+                            doSaveRequest();
+                        }
 
-                    } else {
-
-                        toastr.error("Please Completed your input");
-
+                    }else {
+                        toastr.error("Please complete your input");
                     }
-
                 }
-
             }]
-
         });
 
     });
-
 
 
     $('#filter_customer_id').combobox({
@@ -1342,90 +1373,54 @@
 
         }],
 
-        onSelect: function(customer) {
-
-            $('#filter_delivery_order_no').combobox({
-
-                url: '<?= base_url('sales/delivery_orders/readDeliveryOrders/'); ?>' + customer.id,
-
-                valueField: 'delivery_order_no',
-
-                textField: 'delivery_order_no',
-
-                prompt: 'Choose All',
-
-                icons: [{
-
-                    iconCls: 'icon-clear',
-
-                    handler: function(e) {
-
-                        $(e.data.target).combobox('clear').combobox('textbox').focus();
-
-                    }
-
-                }],
-
-                onSelect: function(deliver_order) {
-
-                    $('#filter_sales_order_no').combobox({
-
-                        url: '<?= base_url('sales/delivery_orders/readSalesOrder/'); ?>' + deliver_order.deliver_order_no,
-
-                        valueField: 'sales_order_no',
-
-                        textField: 'sales_order_no',
-
-                        prompt: 'Choose All',
-
-                        icons: [{
-
-                            iconCls: 'icon-clear',
-
-                            handler: function(e) {
-
-                                $(e.data.target).combobox('clear').combobox('textbox').focus();
-
-                            }
-
-                        }],
-
-                    });
-
-
-
-                    $('#filter_customer_order_no').combobox({
-
-                        url: '<?= base_url('sales/delivery_orders/readCustomerOrder/'); ?>' + deliver_order.deliver_order_no,
-
-                        valueField: 'customer_order_no',
-
-                        textField: 'customer_order_no',
-
-                        prompt: 'Choose All',
-
-                        icons: [{
-
-                            iconCls: 'icon-clear',
-
-                            handler: function(e) {
-
-                                $(e.data.target).combobox('clear').combobox('textbox').focus();
-
-                            }
-
-                        }],
-
-                    });
-
-                }
-
-            });
-
-        }
-
     });
 
+    $('#filter_from, #filter_to').datebox({
+        onSelect: function() {
+            loadDeliveryOrderCombobox();
+        },
+        onChange: function() {
+            loadDeliveryOrderCombobox();
+        }
+    });
+
+    $('#filter_customer_order_no').combobox({
+        valueField: 'customer_order_no',
+        textField: 'customer_order_no',
+        prompt: 'Choose All',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_delivery_order_no').combobox({
+        valueField: 'delivery_order_no',
+        textField: 'delivery_order_no',
+        prompt: 'Choose All',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    function loadDeliveryOrderCombobox() {
+        var filter_from = $('#filter_from').datebox('getValue');
+        var filter_to = $('#filter_to').datebox('getValue');
+
+        if (filter_from && filter_to) {
+            var encoded_from = window.btoa(filter_from);
+            var encoded_to = window.btoa(filter_to);
+
+            $('#filter_customer_order_no').combobox('reload', '<?= base_url('sales/delivery_orders/readCustomerOrder'); ?>' + '?filter_from=' + encoded_from + '&filter_to=' + encoded_to);
+
+            $('#filter_delivery_order_no').combobox('reload', '<?= base_url('sales/delivery_orders/readDeliveryOrders/'); ?>' + '?filter_from=' + encoded_from + '&filter_to=' + encoded_to);
+        }
+    }
 
 
     $('#filter_item_fg').combogrid({
@@ -1603,4 +1598,10 @@
         }
 
     }
+
+    function partialFormatter(value, row, index) {
+        const checked = value === '1' ? 'checked' : '';
+        return `<input type="checkbox" class="partial-checkbox" data-index="${index}" ${checked} onclick="event.stopPropagation()">`;
+    }
+
 </script>
