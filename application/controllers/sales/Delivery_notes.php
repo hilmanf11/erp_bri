@@ -156,12 +156,14 @@ class Delivery_notes extends CI_Controller
             $filter_to = @base64_decode($get['filter_to']);
             $filter_customer_id = @base64_decode($get['filter_customer_id']);
             $filter_delivery_note_no = @base64_decode($get['filter_delivery_note_no']);
-            $filter_delivery_order_no = @base64_decode($get['filter_delivery_order_no']);
-            $filter_sales_order_no = @base64_decode($get['filter_sales_order_no']);
+            // $filter_delivery_order_no = @base64_decode($get['filter_delivery_order_no']);
+            // $filter_sales_order_no = @base64_decode($get['filter_sales_order_no']);
             $filter_customer_order_no = @base64_decode($get['filter_customer_order_no']);
             $filter_item_fg = @base64_decode($get['filter_item_fg']);
             $filter_status_delivery = @base64_decode($get['filter_status_delivery']);
             $filter_status = @base64_decode($get['filter_status']);
+            $filter_product_family = @base64_decode($get['filter_product_family']);
+            $filter_plant = @base64_decode($get['filter_plant']);
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -177,15 +179,20 @@ class Delivery_notes extends CI_Controller
             $this->db->join('customer_address d', 'b.id = d.customer_id');
             $this->db->join('delivery_orders e', 'a.delivery_order_no = e.delivery_order_no');
             $this->db->join('sales_orders c', 'a.sales_order_no = c.sales_order_no and a.item_fg_id = c.item_fg_id and a.customer_id = c.customer_id');
+            $this->db->join('item_fg f', 'a.item_fg_id = f.id');
             if ($filter_from != "" && $filter_to != "") {
                 $this->db->where('e.actual_delivery_date >=', $filter_from);
                 $this->db->where('e.actual_delivery_date <=', $filter_to);
             }
+            if ($filter_product_family != "") {
+                $this->db->where('f.item_family_number', $filter_product_family);
+            }
             $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->like('a.delivery_note_no', $filter_delivery_note_no);
-            $this->db->like('a.delivery_order_no', $filter_delivery_order_no);
-            $this->db->like('a.sales_order_no', $filter_sales_order_no);
+            // $this->db->like('a.delivery_order_no', $filter_delivery_order_no);
+            // $this->db->like('a.sales_order_no', $filter_sales_order_no);
             $this->db->like('c.customer_order_no', $filter_customer_order_no);
+            $this->db->like('c.division', $filter_plant);
             $this->db->like('a.item_fg_id', $filter_item_fg);
             $this->db->like('a.status_delivery', $filter_status_delivery);
             $this->db->like('a.status', $filter_status);
@@ -209,6 +216,7 @@ class Delivery_notes extends CI_Controller
     {
         if ($this->input->get()) {
             $delivery_note_no = base64_decode($this->input->get('delivery_note_no'));
+            $product_family = base64_decode($this->input->get('product_family'));
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name,COALESCE(e.shipping, 0) as qty_shipping');
             $this->db->from('delivery_notes a');
@@ -223,6 +231,9 @@ class Delivery_notes extends CI_Controller
                             ) e", 'a.delivery_order_no = e.delivery_order_no AND a.item_fg_id = e.item_fg_id', 'left');
             $this->db->where('a.delivery_note_no', $delivery_note_no);
             // $this->db->order_by('b.number', 'ASC');
+            if ($product_family != "") {
+                $this->db->where('b.item_family_number', $product_family);
+            }
             $this->db->order_by('a.delivery_order_no');
             $records = $this->db->get()->result_array();
 
@@ -687,12 +698,14 @@ class Delivery_notes extends CI_Controller
         $filter_to = @base64_decode($get['filter_to']);
         $filter_customer_id = @base64_decode($get['filter_customer_id']);
         $filter_delivery_note_no = @base64_decode($get['filter_delivery_note_no']);
-        $filter_delivery_order_no = @base64_decode($get['filter_delivery_order_no']);
-        $filter_sales_order_no = @base64_decode($get['filter_sales_order_no']);
+        // $filter_delivery_order_no = @base64_decode($get['filter_delivery_order_no']);
+        // $filter_sales_order_no = @base64_decode($get['filter_sales_order_no']);
         $filter_customer_order_no = @base64_decode($get['filter_customer_order_no']);
         $filter_item_fg = @base64_decode($get['filter_item_fg']);
         $filter_status_delivery = @base64_decode($get['filter_status_delivery']);
         $filter_status = @base64_decode($get['filter_status']);
+        $filter_product_family = @base64_decode($get['filter_product_family']);
+        $filter_plant = @base64_decode($get['filter_plant']);
 
         //Config
         $this->db->select('*');
@@ -721,12 +734,12 @@ class Delivery_notes extends CI_Controller
         if ($filter_delivery_note_no != "") {
             $this->db->where('a.delivery_note_no', $filter_delivery_note_no);
         }
-        if ($filter_delivery_order_no != "") {
-            $this->db->where('a.delivery_order_no', $filter_delivery_order_no);
-        }
-        if ($filter_sales_order_no != "") {
-            $this->db->where('a.sales_order_no', $filter_sales_order_no);
-        }
+        // if ($filter_delivery_order_no != "") {
+        //     $this->db->where('a.delivery_order_no', $filter_delivery_order_no);
+        // }
+        // if ($filter_sales_order_no != "") {
+        //     $this->db->where('a.sales_order_no', $filter_sales_order_no);
+        // }
         if ($filter_customer_order_no != "") {
             $this->db->where('c.customer_order_no', $filter_customer_order_no);
         }
@@ -738,6 +751,12 @@ class Delivery_notes extends CI_Controller
         }
         if ($filter_status != "") {
             $this->db->where('a.status', $filter_status);
+        }
+        if ($filter_product_family != "") {
+            $this->db->where('f.item_family_number', $filter_product_family);
+        }
+        if ($filter_plant != "") {
+            $this->db->where('c.division', $filter_plant);
         }
         
         //$this->db->group_by('a.delivery_note_no');
