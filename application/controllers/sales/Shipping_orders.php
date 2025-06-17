@@ -239,9 +239,13 @@ class Shipping_orders extends CI_Controller
             $delivery_note_no = $part1 . '/' . $part2 . '/' . $part3 . '/' . $part4;
             $delivery_order_no = $part1 . '/' . $part2 . '/' . $part3 . '/' . $part4;
 
-            $delivery_orders = $this->crud->query("SELECT a.*, SUM(b.qty) as qty_shipping, d.plant as division, e.id as address_id
-            FROM delivery_orders a 
-            JOIN shipping_orders b ON a.delivery_order_no = b.delivery_order_no AND a.item_fg_id = b.item_fg_id
+            $delivery_orders = $this->crud->query("SELECT a.*, b.qty_shipping, d.plant as division, e.id as address_id
+            FROM delivery_orders a
+            JOIN (
+                SELECT delivery_order_no, item_fg_id, SUM(qty) AS qty_shipping
+                FROM shipping_orders
+                GROUP BY delivery_order_no, item_fg_id
+            ) b ON a.delivery_order_no = b.delivery_order_no AND a.item_fg_id = b.item_fg_id
             JOIN customers c ON a.customer_id = c.id
             JOIN sales_orders d ON c.id = d.customer_id
             JOIN customer_address e ON d.customer_address_id = e.id
@@ -256,6 +260,17 @@ class Shipping_orders extends CI_Controller
             }
 
             foreach ($delivery_orders as $delivery_order) {
+
+                $status_delivery = 1;
+
+                if ($delivery_order->actual_delivery_date == $delivery_order->delivery_date) {
+                    $status_delivery = 0; // Tepat waktu
+                } else if ($delivery_order->actual_delivery_date > $delivery_order->delivery_date) {
+                    $status_delivery = 1; // Terlambat
+                } else {
+                    $status_delivery = 2; // Lebih awal
+                }
+
                 $data_to_insert = [
                     'created_by' => $this->session->username,
                     'created_date' => date('Y-m-d H:i:s'),
@@ -270,9 +285,44 @@ class Shipping_orders extends CI_Controller
                     'qty' => $delivery_order->qty_shipping,
                     'division' => $delivery_order->division,
                     'address_id' => $delivery_order->address_id,
-                    'status_delivery' => 1, // Atur status pengiriman
+                    'status_delivery' => $status_delivery, // Atur status pengiriman
                     'status' => 0,
                 ];
+
+                // Ambil data sales_order terkait
+                $total_sales_order_qty = $this->db->select_sum('qty')
+                    ->from('sales_orders')
+                    ->where('sales_order_no', $delivery_order->sales_order_no)
+                    ->where('customer_id', $delivery_order->customer_id)
+                    ->get()
+                    ->row()
+                    ->qty ?? 0;
+
+                if ($total_sales_order_qty) {
+                    // Total qty_del untuk semua DO dengan sales_order_no yang sama
+                    $total_qty_do = $this->db->select_sum('qty_del')
+                        ->from('delivery_orders')
+                        ->where('sales_order_no', $delivery_order->sales_order_no)
+                        ->where('customer_id', $delivery_order->customer_id)
+                        ->get()
+                        ->row()
+                        ->qty_del ?? 0;
+
+                    $status = 0;
+
+                    if($total_qty_do == $total_sales_order_qty) {
+                        $status = 1;
+                    }else if($total_qty_do > 0 && $total_qty_do < $total_sales_order_qty){
+                        $status = 2;
+                    }else{
+                        $status = 0;
+                    }
+
+                    $this->crud->update('sales_orders', [
+                        'sales_order_no' => $delivery_order->sales_order_no,
+                        'customer_id'    => $delivery_order->customer_id
+                    ], ['status' => $status]);
+                }
 
                 // Simpan data baru ke database
                 $this->crud->create('delivery_notes', $data_to_insert);
