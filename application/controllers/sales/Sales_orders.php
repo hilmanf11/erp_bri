@@ -145,6 +145,7 @@ class Sales_orders extends CI_Controller
             $filter_sales_order_no = @base64_decode($get['filter_sales_order_no']);
             $filter_division = @base64_decode($get['filter_division']);
             $filter_status = @base64_decode($get['filter_status']);
+            $filter_product_family = @base64_decode($get['filter_product_family']);
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -158,9 +159,13 @@ class Sales_orders extends CI_Controller
             $this->db->from('sales_orders a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('divisions c', 'a.division = c.number', 'left');
+            $this->db->join('item_fg d', 'a.item_fg_id = d.id');
             if ($filter_from != "" && $filter_to != "") {
                 $this->db->where('a.sales_order_date >=', $filter_from);
                 $this->db->where('a.sales_order_date <=', $filter_to);
+            }
+            if ($filter_product_family != "") {
+                $this->db->where('d.item_family_number', $filter_product_family);
             }
             $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->like('a.item_fg_id', $filter_sales_order_no);
@@ -187,11 +192,19 @@ class Sales_orders extends CI_Controller
     {
         if ($this->input->get()) {
             $sales_order_no = base64_decode($this->input->get('sales_order_no'));
+            $product_family = base64_decode($this->input->get('product_family'));
+            $filter_division = base64_decode($this->input->get('filter_division'));
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
             $this->db->from('sales_orders a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->where('a.sales_order_no', $sales_order_no);
+            if ($product_family != "") {
+                $this->db->where('b.item_family_number', $product_family);
+            }
+            if ($filter_division != "") {
+                $this->db->where('a.division', $filter_division);
+            }
             $this->db->order_by('b.number', 'ASC');
             $records = $this->db->get()->result_array();
 
@@ -217,47 +230,123 @@ class Sales_orders extends CI_Controller
     }
 
     public function create()
-{
-    if ($this->input->post()) {
-        $post = $this->input->post();
-        if (!empty($post['sales_order_no'])) {
-        // Cek apakah kombinasi customer_order_no, item_fg_id, dan delivery_date sudah ada di sales_order_no berbeda
-            $duplicate_check = $this->crud->read("sales_orders", [], [
+    {
+        if (!$this->input->post('items')) {
+            show_error("Cannot process your request.");
+        }
+
+        $items = $this->input->post('items');
+        $errors = [];
+        $success_count = 0;
+
+        $this->db->trans_begin();
+
+        foreach ($items as $post) {
+            if (empty($post['sales_order_no'])) {
+                $errors[] = "Sales Order No cannot be empty.";
+                continue;
+            }
+
+            // Validasi duplikasi berdasarkan customer_order_no + item_fg_id dengan delivery_date berbeda
+            $date_conflict_check = $this->crud->read("sales_orders", [], [
                 "customer_order_no" => $post['customer_order_no'],
                 "item_fg_id" => $post['item_fg_id'],
-                "delivery_date" => $post['delivery_date'],
+                "delivery_date !=" => $post['delivery_date'],
                 "sales_order_no !=" => $post['sales_order_no']
             ]);
 
-            if (!empty($duplicate_check)) {
-                // Jika ada duplikasi dengan sales_order_no berbeda, tolak permintaan
-                echo json_encode([
-                    'status' => false,
-                    'message' => 'Cannot create Customer Order No and Product Name already exists',
-                    'theme' => 'error'
-                ]);
-                return;
+            if (!empty($date_conflict_check)) {
+                $errors[] = "Duplicate: Customer Order No and Product Name exist with another delivery date";
+                continue;
             }
 
-            $sales_orders = $this->crud->read("sales_orders", [], ["sales_order_no" => $post['sales_order_no'], "item_fg_id" => $post['item_fg_id']]);
-            // if (!empty($sales_orders->sales_order_no)) {
-            if (@$sales_orders->sales_order_no != "") {
-                $send = $this->crud->update('sales_orders', ["sales_order_no" => $post['sales_order_no'], "item_fg_id" => $post['item_fg_id']], $post);
+            // Cek apakah data sudah ada
+            $sales_orders = $this->crud->read("sales_orders", [], [
+                "customer_order_no" => $post['customer_order_no'],
+                "sales_order_no" => $post['sales_order_no'],
+                "item_fg_id" => $post['item_fg_id'],
+                "delivery_date"  => $post["delivery_date"],
+            ]);
+
+            if (!empty($sales_orders)) {
+                $old_qty = $sales_orders->qty;
+                $new_qty = $post['qty'];
+
+                if($old_qty > $new_qty) {
+                    $errors[] = "Qty must be greater than before";
+                    continue;
+                }
+
+                $result = $this->crud->update('sales_orders', [
+                    "customer_order_no" => $post['customer_order_no'],
+                    "sales_order_no" => $post['sales_order_no'],
+                    "item_fg_id" => $post['item_fg_id'],
+                    "delivery_date"  => $post["delivery_date"],
+                ], $post);
+
+                if ($result) {
+                    if ($new_qty > $old_qty) {
+                        // Ambil semua delivery_orders terkait dan urutkan berdasarkan ID ASC
+                        $this->db->select('id, qty_del');
+                        $this->db->where([
+                            "customer_order_no" => $post['customer_order_no'],
+                            "sales_order_no"    => $post['sales_order_no'],
+                            "item_fg_id"        => $post['item_fg_id'],
+                        ]);
+                        $this->db->order_by('id', 'ASC');
+                        $delivery_orders = $this->db->get('delivery_orders')->result();
+
+                        if (!empty($delivery_orders)) {
+                            $qty_so = $post['qty'];
+                            $total_qty_del = 0;
+
+                            foreach ($delivery_orders as $do) {
+                                // qty_remain dihitung berdasarkan qty_so - total qty_del sebelum baris ini
+                                $qty_remain = $qty_so - $total_qty_del;
+
+                                // Update baris ini
+                                $this->db->where('id', $do->id);
+                                $this->db->update('delivery_orders', [
+                                    'qty_so'     => $qty_so,
+                                    'qty_remain' => $qty_remain
+                                ]);
+
+                                // Tambahkan qty_del untuk iterasi berikutnya
+                                $total_qty_del += $do->qty_del;
+                            }
+                        }
+                    }
+                }
+
+
             } else {
-                $send = $this->crud->create('sales_orders', $post);
+                $result = $this->crud->create('sales_orders', $post);
             }
 
-            echo $send;
-        }else{
-            show_error("Sales order No cannot be empty!");
+            if ($result) {
+                $success_count++;
+            } else {
+                $errors[] = "Failed to save item for Sales Order No: {$post['sales_order_no']}.";
+            }
         }
-    } else {
-        show_error("Cannot Process your request");
+
+        if ($this->db->trans_status() === FALSE || !empty($errors)) {
+            $this->db->trans_rollback();
+            echo json_encode([
+                "title" => "Failed to Save",
+                "message" => implode("\n", array_unique($errors)),
+                "theme" => "error"
+            ]);
+            return;
+        }
+
+        $this->db->trans_commit();
+        echo json_encode([
+            "title" => "Success",
+            "message" => "$success_count items have been saved successfully",
+            "theme" => "success"
+        ]);
     }
-}
-
-
-
 
     
     public function updateSO()
@@ -332,12 +421,44 @@ class Sales_orders extends CI_Controller
     }
 
     //DELETE DATA
-    public function delete()
+    public function deleted()
     {
         $data = $this->input->post();
         $send = $this->crud->delete('sales_orders', $data);
         echo $send;
     }
+
+    public function delete()
+    {
+        $sales_order_no = $this->input->post('sales_order_no');
+        $item_fg_id = $this->input->post('item_fg_id');
+
+        // Cek apakah ada relasi ke delivery_orders
+        $this->db->where([
+            'sales_order_no' => $sales_order_no
+        ]);
+        $exists = $this->db->get('delivery_orders')->num_rows();
+
+        if ($exists > 0) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Cannot delete. This Sales Order is already linked to a Delivery Order.'
+            ]);
+            return;
+        }
+
+        // Jika tidak ada relasi, hapus
+        $deleted = $this->crud->delete('sales_orders', [
+            'sales_order_no' => $sales_order_no,
+            'item_fg_id'     => $item_fg_id
+        ]);
+
+        echo json_encode([
+            'success' => $deleted,
+            'message' => $deleted ? 'Sales Order deleted successfully' : 'Failed to delete Sales Order'
+        ]);
+    }
+
     public function upload()
     {
         error_reporting(0);
@@ -770,6 +891,7 @@ class Sales_orders extends CI_Controller
         $filter_sales_order_no = @base64_decode($get['filter_sales_order_no']);
         $filter_division = @base64_decode($get['filter_division']);
         $filter_status = @base64_decode($get['filter_status']);
+        $filter_product_family = @base64_decode($get['filter_product_family']);
 
         //Config
         $this->db->select('*');
@@ -784,6 +906,9 @@ class Sales_orders extends CI_Controller
         if ($filter_from != "" && $filter_to != "") {
             $this->db->where('a.sales_order_date >=', $filter_from);
             $this->db->where('a.sales_order_date <=', $filter_to);
+        }
+        if ($filter_product_family != "") {
+            $this->db->where('c.item_family_number', $filter_product_family);
         }
         $this->db->like('a.customer_id', $filter_customer_id);
         $this->db->like('a.item_fg_id', $filter_sales_order_no);

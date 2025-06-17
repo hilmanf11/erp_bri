@@ -1,9 +1,17 @@
+<style>
+    .swal2-container {
+        z-index: 9999 !important;
+    }
+    .swal2-popup {
+        z-index: 99999 !important;
+    }
+</style>
 <div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
     <div class="easyui-accordion" style="width:100%; height: 100%;">
         <div title="RELATION" style="padding: 20px;">
             <ul>
                 <li>The Data Customers is taken from <b>Master Data > Marketing > Customers</b></li>
-                <!-- <li>The Data Division is taken from <b>Master Data > General Master > Division</b></li> -->
+                <!-- <li>The Data Plant is taken from <b>Master Data > General Master > Plant</b></li> -->
                 <li>The Data Plants is taken from the results of Customer selection</li>
                 <li>Departement, Shipping Address and Attention to is taken from the results of Plant Selection</li>
                 <li>The Data Product No is taken from <b>Master Data > Marketing > Customer Items</b> by Type = 'FG'</li>
@@ -36,7 +44,7 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th>
-            <th rowspan="2" data-options="field:'division_name',width:100,halign:'center',sortable:true">Division</th>
+            <th rowspan="2" data-options="field:'division_name',width:100,halign:'center',sortable:true">Plant</th>
             <th rowspan="2" data-options="field:'so_type',width:100,halign:'center',sortable:true">SO Type</th>
             <th rowspan="2" data-options="field:'sales_order_no',width:150,halign:'center',sortable:true">Sales Order No</th>
             <th rowspan="2" data-options="field:'customer_order_no',width:150,halign:'center',sortable:true">Customer Order No</th>
@@ -72,11 +80,15 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Sales Order Date</span>
                     <input style="width:30%;" id="filter_from" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
-                    <input style="width:30%;" id="filter_to" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
+                    <input style="width:29.5%;" id="filter_to" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Customer Name</span>
                     <input style="width:60%;" id="filter_customer_id" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product Family</span>
+                    <input style="width:60%;" id="filter_product_family" class="easyui-combogrid">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No</span>
@@ -85,7 +97,7 @@
             </div>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Division</span>
+                    <span style="width:35%; display:inline-block;">Plant</span>
                     <input style="width:60%;" id="filter_division" class="easyui-combobox">
                 </div>
                 <div class="fitem">
@@ -98,9 +110,10 @@
                         <option value="">Choose All</option>
                         <option value="0">OPEN</option>
                         <option value="1">CLOSE</option>
+                        <option value="2">CREATE</option>
                     </select>
                 </div>
-                <div class="fitem">
+                <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
                     <span style="width:35%; display:inline-block;"></span>
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                 </div>
@@ -123,7 +136,7 @@
             <legend><b>Form Data</b></legend>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Division</span>
+                    <span style="width:35%; display:inline-block;">Plant</span>
                     <input style="width:60%;" name="division" id="division" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
@@ -158,7 +171,7 @@
 
             <div style="width: 50%; float: left;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Plant</span>
+                    <span style="width:35%; display:inline-block;">Customer Plant</span>
                     <input style="width:60%;" name="plant" id="plant" required="" class="easyui-combogrid">
                 </div>
                 <div class="fitem">
@@ -268,18 +281,35 @@
             `)
             .appendTo('head');
 
-        $("#customer_id").combobox('enable');
+        $('#customer_id').combobox('readonly', false).combobox('enable');
+        // $("#customer_id").combobox('enable');
         $("#sales_order_no").textbox('enable');
         $("#sales_order_date").datebox('enable');
         $("#customer_address_id").textbox('enable');
         $("#pph").numberbox('setValue', 0);
+                
+        $("#division").combobox('enable');
+        $("#customer_order_no").textbox('enable');
+        $("#delivery_date").datebox('enable');
+        $("#order_type").combobox('enable');
+        $("#department").textbox('enable');
+        $("#customer_address_name").textbox('enable');
+        $("#customer_address_id").textbox('enable');
+        $("#attention_to").textbox('enable');
 
+        $("#sales_order_date").datebox('clear');
+        $("#customer_id").combobox('clear');
+
+        $("#sales_order_date").datebox('options').onChange = function () {};
+
+        setTimeout(() => {
         $("#sales_order_date").datebox({
             onChange: function(sales_order_date) {
                 var customer_id = $("#customer_id").combobox('getValue');
                 if (customer_id == "") {
-                    toastr.error("Please Choose Customer Name");
+                    // toastr.error("Please Choose Customer Name");
                     $("#sales_order_date").datebox('clear');
+                    return;
                 } else {
                     number(customer_id, sales_order_date);
                     addTable(customer_id);
@@ -351,6 +381,7 @@
                 });
             }
         });
+         }, 100);
     }
 
     function number(customer_id, sales_order_date) {
@@ -637,7 +668,10 @@
             ],
             onClickCell: onClickCell,
             onLoadSuccess: function(data) {
-                calculate();
+                // calculate();
+                if (data.rows && data.rows.length > 0) {
+                    calculate();
+                }
             }
         });
     }
@@ -711,8 +745,18 @@
                 item_fg_id: item_fg_id
             },
             success: function(result) {
-                var result = eval('(' + result + ')');
-                toastr.success(result.message);
+                var result = JSON.parse(result);
+                if (result.success) {
+                    toastr.success(result.message);
+                    $('#dg2').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
+                    editIndex = undefined;
+                } else {
+                    toastr.error(result.message);
+                    // Tetap di edit mode atau cancel edit tapi jangan hapus baris
+                    $('#dg2').datagrid('cancelEdit', editIndex);
+                    // Jika perlu, highlight baris
+                    $('#dg2').datagrid('selectRow', rowIndex);
+                }
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 toastr.error(jqXHR.statusText);
@@ -721,26 +765,38 @@
                 $('#dg').datagrid('reload');
             }
         });
-
-        $('#dg2').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
-        editIndex = undefined;
     }
 
     //EDIT DATA
     function update() {
         var row = $('#dg').treegrid('getSelected');
         if (row) {
-            $('#dlg_insert').dialog('open');
-            $('#frm_insert').form('load', row);
-            $("#customer_id").combobox('disable');
-            $("#sales_order_no").textbox('disable');
-            $("#sales_order_date").datebox('disable');
-            $("#plant").textbox('disable');
-            $("#order_type").combobox('setValue', row.order_type);
+            if(row.status == 0 || row.status == "2") {
+                $('#dlg_insert').dialog('open');
+                $('#frm_insert').form('load', row);
+                $("#customer_id").combobox('disable');
+                $("#sales_order_no").textbox('disable');
+                $("#sales_order_date").datebox('disable');
+                $("#plant").textbox('disable');
+                
+                $("#division").combobox('disable');
+                $("#customer_order_no").textbox('disable');
+                $("#delivery_date").datebox('disable');
+                $("#department").textbox('disable');
+                $("#customer_address_name").textbox('disable');
+                $("#customer_address_id").textbox('disable');
+                $("#attention_to").textbox('disable');
+                
+                $("#order_type").combobox('setValue', row.order_type).combobox('disable');
 
-            url_save = '<?= base_url('sales/sales_orders/create') ?>';
+                url_save = '<?= base_url('sales/sales_orders/create') ?>';
 
-            addTable(row.customer_id, '<?= base_url('sales/sales_orders/datatableUpdates?sales_order_no=') ?>' + window.btoa(row.sales_order_no));
+                addTable(row.customer_id, '<?= base_url('sales/sales_orders/datatableUpdates?sales_order_no=') ?>' + window.btoa(row.sales_order_no));
+            }else if(row.status == "1") {
+                toastr.error("This data is already closed and cannot be updated.");
+            }else{
+                toastr.warning("Please select one of the data in the table first!", "Information");
+            }
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -756,12 +812,13 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('sales/sales_orders/delete') ?>',
+                            url: '<?= base_url('sales/sales_orders/deleted') ?>',
                             data: {
                                 sales_order_no: row.sales_order_no
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
+                                toastr.success(result.message);
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
                                 toastr.error(jqXHR.statusText);
@@ -787,6 +844,7 @@
         var filter_division = $("#filter_division").combobox('getValue');
         var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
+        var filter_product_family = $("#filter_product_family").combogrid('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
@@ -794,7 +852,8 @@
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
             "&filter_division=" + window.btoa(filter_division) +
             "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
-            "&filter_status=" + window.btoa(filter_status);
+            "&filter_status=" + window.btoa(filter_status) +
+            "&filter_product_family=" + window.btoa(filter_product_family);
 
         $('#dg').datagrid({
             url: '<?= base_url('sales/sales_orders/datatables') ?>' + url,
@@ -811,8 +870,14 @@
             onExpandRow: function(index, row) {
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
 
+                var filterProductFamily = $('#filter_product_family').combogrid('getValue');
+                var encodedProductFamily = filterProductFamily ? "&product_family=" + window.btoa(filterProductFamily) : "";
+
+                var filterPlant = $('#filter_division').combogrid('getValue');
+                var encodedPlant = filterPlant ? "&filter_division=" + window.btoa(filterPlant) : "";
+
                 ddv.datagrid({
-                    url: '<?= base_url('sales/sales_orders/datatableDetails?sales_order_no=') ?>' + window.btoa(row.sales_order_no),
+                    url: '<?= base_url('sales/sales_orders/datatableDetails?sales_order_no=') ?>' + window.btoa(row.sales_order_no) + encodedProductFamily + encodedPlant,
                     singleSelect: true,
                     rownumbers: true,
                     columns: [
@@ -918,6 +983,7 @@
         var filter_division = $("#filter_division").combobox('getValue');
         var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
+        var filter_product_family = $("#filter_product_family").combogrid('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
@@ -925,7 +991,8 @@
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
             "&filter_division=" + window.btoa(filter_division) +
             "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
-            "&filter_status=" + window.btoa(filter_status);
+            "&filter_status=" + window.btoa(filter_status) +
+            "&filter_product_family=" + window.btoa(filter_product_family);
 
         window.location.assign('<?= base_url('sales/sales_orders/print/excel') ?>' + url);
     }
@@ -1065,12 +1132,12 @@
                     endEditing();
 
                     if (customer_address_id != "" && total_grand != "") {
+                        let items = [];
                         for (let i = 0; i < totalrows; i++) {
-                            if (rows[i].item_fg_id) {
-                                $.ajax({
-                                    type: "post",
-                                    url: url_save,
-                                    data: {
+                            let row = rows[i];
+
+                            if (row.item_fg_id) {
+                                items.push({
                                         customer_id: customer_id,
                                         customer_order_no: customer_order_no,
                                         sales_order_date: sales_order_date,
@@ -1089,37 +1156,52 @@
                                         taxes: taxes,
                                         total_pph: total_pph,
                                         total_grand: total_grand,
-                                        item_fg_id: rows[i].item_fg_id,
-                                        uom: rows[i].uom,
-                                        qty: rows[i].qty,
-                                        delivery: rows[i].delivery,
-                                        outstanding: rows[i].outstanding,
-                                        currency: rows[i].currency,
-                                        price: rows[i].price,
-                                        total: rows[i].total,
+                                        item_fg_id: row.item_fg_id,
+                                        uom: row.uom,
+                                        qty: row.qty,
+                                        delivery: row.delivery,
+                                        outstanding: row.outstanding,
+                                        currency: row.currency,
+                                        price: row.price,
+                                        total: row.total,
                                         order_type: order_type,
-                                    },
-                                    dataType: "json",
-                                    success: function(result) {
-                                        if (i == (totalrows - 1)) {
-                                            Swal.fire({
-                                                title: result.message,
-                                                icon: result.theme,
-                                                confirmButtonText: 'Ok',
-                                                allowOutsideClick: false,
-                                            }).then((result) => {
-                                                if (result.isConfirmed) {
-                                                    window.location.reload();
-                                                }
-                                            });
-                                        }
-                                    }
                                 });
                             }
                         }
 
-                        $('#dg').datagrid('reload');
-                        $('#dlg_insert').dialog('close');
+                        $.ajax({
+                            type: "post",
+                            url: url_save,
+                            data: { items: items },
+                            dataType: "json",
+                            success: function(res) {
+                                toastr.clear();
+                                if (res.theme === 'success') {
+                                    Swal.fire({
+                                        title: res.message,
+                                        icon: res.theme,
+                                        confirmButtonText: 'Ok',
+                                        allowOutsideClick: false,
+                                    }).then((result) => {
+                                        if (result.isConfirmed) {
+                                            window.location.reload();
+                                        }
+                                    });
+
+                                    $('#dg').datagrid('reload');
+                                    $('#dlg_insert').dialog('close');
+                                } else {
+                                    toastr.clear();
+                                    toastr.error(res.message, res.title || 'error');
+                                }
+                            }, error: function (xhr) {
+                                toastr.clear();
+                                toastr.error('Server error occurred');
+
+                                $('#dg').datagrid('reload');
+                                $('#dlg_insert').dialog('close');
+                            }
+                        });
                     } else {
                         toastr.error("Please Completed your input");
                     }
@@ -1169,7 +1251,7 @@
         valueField: 'number',
         textField: 'name',
         panelHeight: 'panelHeight',
-        prompt: 'Choose Division',
+        prompt: 'Choose Plant',
         icons: [{
             iconCls: 'icon-clear',
             handler: function(e) {
@@ -1196,13 +1278,35 @@
         valueField: 'number',
         textField: 'name',
         panelHeight: 'panelHeight',
-        prompt: 'Choose Division',
+        prompt: 'Choose Plant',
+    });
+
+    $('#filter_product_family').combogrid({
+        url: '<?= base_url('planning/forecasts/readsProductFamily') ?>',
+        panelWidth: 420,
+        idField: 'number',
+        textField: 'name',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Select Product Family",
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
+        columns: [[
+            {field: 'number', title: 'Code', width: 100},
+            {field: 'name', title: 'Product Family', width: 200}
+        ]]
     });
 
     //CELLSTYLE STATUS
     function cellStyler(value, row, index) {
         if (value == 0) {
             return 'background: #53D636; color:white;';
+        } else if(value == 2) {
+            return 'background: #F3A26D; color: white';
         } else {
             return 'background: #FF5F5F; color:white;';
         }
@@ -1211,6 +1315,8 @@
     function cellFormatter(value) {
         if (value == 0) {
             return 'OPEN';
+        } else if(value == 2) {
+            return 'CREATE';
         } else {
             return 'CLOSE';
         }
