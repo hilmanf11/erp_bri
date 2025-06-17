@@ -81,6 +81,18 @@ class Forecasts extends CI_Controller
         echo json_encode($send);
     }
 
+    // GET PRODUCT FAMILY USE ALL FORECAST MODULE
+    public function readsProductFamily()
+    {
+        $this->db->select('*');
+        $this->db->from('item_familys');
+        $this->db->where('item_category_id', 'C01');
+        $this->db->order_by('name', 'ASC');
+
+        $data = $this->db->get()->result();
+        echo json_encode($data);
+    }
+
     //GET DATA ITEMS
     public function read_items($customer_id)
     {
@@ -164,6 +176,8 @@ class Forecasts extends CI_Controller
             $filter_period_year = @base64_decode($get['filter_period_year']);
             $filter_customer_id = @base64_decode($get['filter_customer_id']);
             $filter_revision = @base64_decode($get['filter_revision']);
+            $filter_product_family = @base64_decode($get['filter_product_family']);
+            $filter_plant = @base64_decode($get['filter_plant']);
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -176,6 +190,7 @@ class Forecasts extends CI_Controller
             $this->db->select('a.*, b.number as customer_number, b.name as customer_name');
             $this->db->from('forecasts a');
             $this->db->join('customers b', 'a.customer_id = b.id');
+            $this->db->join('item_fg c', 'a.item_fg_id = c.id');
             if ($filter_issued_date_from != "" && $filter_issued_date_to != "") {
                 $this->db->where('a.issued_date >=', $filter_issued_date_from);
                 $this->db->where('a.issued_date <=', $filter_issued_date_to);
@@ -187,6 +202,12 @@ class Forecasts extends CI_Controller
             }
             if ($filter_revision != "") {
                 $this->db->where('a.revision', $filter_revision);
+            }
+            if ($filter_product_family != "") {
+                $this->db->where('c.item_family_number', $filter_product_family);
+            }
+            if ($filter_plant != "") {
+                $this->db->where('a.plant', $filter_plant);
             }
             $this->db->group_by('a.customer_id');
             $this->db->group_by('a.p_month');
@@ -215,6 +236,8 @@ class Forecasts extends CI_Controller
             $p_month = base64_decode($this->input->get('p_month'));
             $p_year = base64_decode($this->input->get('p_year'));
             $revision = base64_decode($this->input->get('revision'));
+            $product_family = base64_decode($this->input->get('product_family'));
+            $filter_plant = base64_decode($this->input->get('filter_plant'));
 
             $this->db->select('a.*, c.number as item_fg_number, c.name as item_fg_name, d.item_fg_customer as item_fg_customer');
             $this->db->from('forecasts a');
@@ -225,6 +248,12 @@ class Forecasts extends CI_Controller
             $this->db->where('a.p_month', $p_month);
             $this->db->where('a.p_year', $p_year);
             $this->db->where('a.revision', $revision);
+            if ($product_family != "") {
+                $this->db->where('c.item_family_number', $product_family);
+            }
+            if ($filter_plant != "") {
+                $this->db->where('a.plant', $filter_plant);
+            }
             $this->db->group_by('a.id');
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
@@ -265,6 +294,7 @@ class Forecasts extends CI_Controller
             $item_fg_id = base64_decode($this->input->get('item_fg_id'));
             $p_month = base64_decode($this->input->get('p_month'));
             $p_year = base64_decode($this->input->get('p_year'));
+            $revision = base64_decode($this->input->get('revision'));
 
             $this->db->select('*');
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
@@ -274,6 +304,7 @@ class Forecasts extends CI_Controller
             $this->db->where('a.item_fg_id', $item_fg_id);
             $this->db->where('a.p_month', $p_month);
             $this->db->where('a.p_year', $p_year);
+            $this->db->where('a.revision', $revision);
             $this->db->order_by('a.created_date', 'DESC');
             $records = $this->db->get()->result_array();
 
@@ -302,34 +333,158 @@ class Forecasts extends CI_Controller
     //CREATE DATA
     public function create()
     {
-        if ($this->input->post()) {
-            $post = $this->input->post();
-
-            $forecasts = $this->crud->read("forecasts", [], ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id'], "p_month" => $post['p_month'], "p_year" => $post['p_year']]);
-            $forecast_histories = $this->crud->read("forecast_histories", [], ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id'], "p_month" => $post['p_month'], "p_year" => $post['p_year'], "revision" => $post['revision'], "month_1" => $post['month_1'], "month_2" => $post['month_2'], "month_3" => $post['month_3'], "month_4" => $post['month_4'], "month_5" => $post['month_5'], "month_6" => $post['month_6'], "month_7" => $post['month_7'], "month_8" => $post['month_8'], "month_9" => $post['month_9'], "month_10" => $post['month_10'], "month_11" => $post['month_11'], "month_12" => $post['month_12']]);
-
-            if (@$forecasts->customer_id != "") {
-                $send = $this->crud->update('forecasts', ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id'], "p_month" => $post['p_month'], "p_year" => $post['p_year']], $post);
-                if (@$forecast_histories->customer_id == "") {
-                    $send2 = $this->crud->create('forecast_histories', $post);
-                }
-            } else {
-                $send = $this->crud->create('forecasts', $post);
-                $send2 = $this->crud->create('forecast_histories', $post);
-            }
-            echo $send;
-        } else {
-            show_error("Cannot Process your request");
+        if (!$this->input->post('items')) {
+            show_error("Cannot process your request");
         }
+
+        $items = $this->input->post('items');
+        $errors = [];
+        $success_count = 0;
+
+        $this->db->trans_begin();
+
+        foreach ($items as $post) {
+            $mode = isset($post['mode']) ? $post['mode'] : 'insert';
+
+            $where = [
+                "customer_id" => $post['customer_id'],
+                "item_fg_id" => $post['item_fg_id'],
+                "revision" => $post['revision'],
+                "p_month" => $post['p_month'],
+                "p_year" => $post['p_year']
+            ];
+
+            $existing = $this->crud->read("forecasts", [], $where);
+            unset($post['mode']);
+
+            if ($mode === 'insert') {
+                if (!empty($existing)) {
+                    $errors[] = "Customer ID, Product No, Revision, Month, and Year already exists";
+                    continue;
+                }
+
+                $res1 = $this->crud->create("forecasts", $post);
+                $res2 = $this->crud->create("forecast_histories", $post);
+            } else if($mode === 'update') {
+
+                $checkForcast = $this->crud->read("forecasts", [], [
+                    "customer_id" => $post['customer_id'], 
+                    "item_fg_id" => $post['item_fg_id'], 
+                    "revision" => $post['revision'],
+                    "p_month" => $post['p_month'], 
+                    "p_year" => $post['p_year']
+                ]);
+
+                if(@$checkForcast->customer_id != "") {
+                    $res1 = $this->crud->update('forecasts', [
+                        "customer_id" => $post['customer_id'], 
+                        "item_fg_id" => $post['item_fg_id'],  
+                        "revision" => $post['revision'],
+                        "p_month" => $post['p_month'], 
+                        "p_year" => $post['p_year']
+                    ], $post);
+                }else{
+                    $res1 = $this->crud->create("forecasts", $post);
+                    // $res1 = true;
+                }
+
+                // Untuk `forecast_histories`, hanya insert jika belum ada histori identik
+                $historyExists = $this->crud->read("forecast_histories", [], [
+                    "customer_id" => $post['customer_id'], 
+                    "item_fg_id" => $post['item_fg_id'], 
+                    "p_month" => $post['p_month'], 
+                    "p_year" => $post['p_year'], 
+                    "revision" => $post['revision'], 
+                    "month_1" => $post['month_1'], 
+                    "month_2" => $post['month_2'], 
+                    "month_3" => $post['month_3'], 
+                    "month_4" => $post['month_4'], 
+                    "month_5" => $post['month_5'], 
+                    "month_6" => $post['month_6'], 
+                    "month_7" => $post['month_7'], 
+                    "month_8" => $post['month_8'], 
+                    "month_9" => $post['month_9'], 
+                    "month_10" => $post['month_10'], 
+                    "month_11" => $post['month_11'], 
+                    "month_12" => $post['month_12']
+                ]);
+
+                if (!$historyExists) {
+                    $res2 = $this->crud->create("forecast_histories", $post);
+                } else {
+                    $res2 = true;
+                }
+            }
+
+            if (!$res1 || !$res2) {
+                $errors[] = "Failed to save forecasts customer data";
+            } else {
+                $success_count++;
+            }
+        }
+
+        if ($this->db->trans_status() === FALSE || !empty($errors)) {
+            $this->db->trans_rollback();
+            echo json_encode([
+                "title" => "Failed to Save",
+                "message" => implode("\n", array_unique($errors)),
+                "theme" => "error"
+            ]);
+            return;
+        }
+
+        $this->db->trans_commit();
+        echo json_encode([
+            "title" => "Success",
+            "message" => "$success_count items have been saved successfully",
+            "theme" => "success"
+        ]);
     }
 
-    //DELETE DATA
-    public function delete()
+    public function deleted()
     {
         $data = $this->input->post();
         $send = $this->crud->delete('forecasts', $data);
         $send2 = $this->crud->delete('forecast_histories', $data);
         echo $send;
+    }
+
+    public function delete()
+    {
+        $items = $this->input->post('items');
+
+        if (!is_array($items) || empty($items)) {
+            echo json_encode([
+                "title" => "Delete Failed",
+                "message" => "No forecasts customer selected",
+                "theme" => "error"
+            ]);
+            return;
+        }
+
+        $this->db->trans_begin();
+
+        foreach ($items as $item) {
+            $this->crud->delete('forecasts', $item);
+            $this->crud->delete('forecast_histories', $item);
+        }
+
+        // Commit / Rollback
+        if ($this->db->trans_status() === FALSE) {
+            $this->db->trans_rollback();
+            echo json_encode([
+                "title" => "Delete Failed",
+                "message" => "Some data failed to delete",
+                "theme" => "error"
+            ]);
+        } else {
+            $this->db->trans_commit();
+            echo json_encode([
+                "title" => "Success",
+                "message" => "Forecasts customer deleted successfully",
+                "theme" => "success"
+            ]);
+        }
     }
 
     // //UPLOAD DATA
@@ -558,6 +713,8 @@ class Forecasts extends CI_Controller
         $filter_period_year = @base64_decode($get['filter_period_year']);
         $filter_customer_id = @base64_decode($get['filter_customer_id']);
         $filter_revision = @base64_decode($get['filter_revision']);
+        $filter_product_family = @base64_decode($get['filter_product_family']);
+        $filter_plant = @base64_decode($get['filter_plant']);
 
         $p_date_start = date("Y-m-d", strtotime($filter_period_year . "-" . $filter_period_month . "-01"));
         $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
@@ -589,6 +746,12 @@ class Forecasts extends CI_Controller
         }
         if ($filter_revision != "") {
             $this->db->where('a.revision', $filter_revision);
+        }
+        if ($filter_product_family != "") {
+            $this->db->where('c.item_family_number', $filter_product_family);
+        }
+        if ($filter_plant != "") {
+            $this->db->where('a.plant', $filter_plant);
         }
         // $this->db->like('a.p_month', $filter_period_month);
         // $this->db->like('a.p_year', $filter_period_year);

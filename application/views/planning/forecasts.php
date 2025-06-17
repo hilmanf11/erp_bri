@@ -35,7 +35,7 @@
 </table>
 
 <!-- TOOLBAR DATAGRID -->
-<div id="toolbar" style="height: 200px; padding: 10px;">
+<div id="toolbar" style="height: 230px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
         <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
@@ -43,8 +43,9 @@
             <div style="float: left; width: 50%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Issued Date</span>
-                    <input style="width:30%;" id="filter_issued_date_from" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser" class="easyui-datebox">
-                    <input style="width:30%;" id="filter_issued_date_to" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser" class="easyui-datebox">
+                    <input style="width:26.5%;" id="filter_issued_date_from" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser" class="easyui-datebox">
+                    <span style="width:6.35%; display:inline-block; text-align:center;">to</span>
+                    <input style="width:26.5%;" id="filter_issued_date_to" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser" class="easyui-datebox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Period</span>
@@ -52,18 +53,8 @@
                     <input style="width:30%;" id="filter_period_year" value="<?= date("Y") ?>" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;"></span>
-                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-                </div>
-            </div>
-            <div style="float: left; width: 50%;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Customer</span>
-                    <input style="width:60%;" id="filter_customer_id" class="easyui-combogrid">
-                </div>
-                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Revision</span>
-                    <select style="width:30%;" id="filter_revision" class="easyui-combobox" panelHeight="auto">
+                    <select style="width:60.4%;" id="filter_revision" class="easyui-combobox" panelHeight="auto">
                         <option value="" selected disabled>Choose All</option>
                         <option value="0">0</option>
                         <option value="1">1</option>
@@ -72,6 +63,25 @@
                         <option value="4">4</option>
                         <option value="5">5</option>
                     </select>
+                </div>
+            </div>
+            <div style="float: left; width: 50%;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Plant</span>
+                    <input style="width:60%;" id="filter_plant" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Customer</span>
+                    <input style="width:60%;" id="filter_customer_id" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product Family</span>
+                    <input style="width:60.4%;" id="filter_product_family" class="easyui-combogrid">
+                </div>
+                <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()">
+                        <i class="fa fa-search"></i> Filter Data
+                    </a>
                 </div>
             </div>
         </fieldset>
@@ -92,27 +102,16 @@
             <legend><b>Form Data</b></legend>
             <div style="float: left; width: 50%;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Period</span>
-                    <input style="width:30%;" name="p_month" id="p_month" required="" class="easyui-combobox">
-                    <input style="width:30%;" name="p_year" id="p_year" required="" class="easyui-combobox">
+                    <span style="width:35%; display:inline-block;">Plant</span>
+                    <input style="width:60%;" name="plant" id="plant" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Customer</span>
                     <input style="width:60%;" name="customer_id" id="customer_id" required="" class="easyui-combogrid">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Document No</span>
-                    <input style="width:60%;" name="document_no" id="document_no" required="" class="easyui-textbox" readonly>
-                </div>
-            </div>
-            <div style="float: left; width: 50%;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Issued Date</span>
-                    <input style="width:30%;" name="issued_date" id="issued_date" required="" data-options="formatter:myformatter,parser:myparser" class="easyui-datebox">
-                </div>
-                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Revision</span>
-                    <select style="width:30%;" name="revision" id="revision" class="easyui-combobox" panelHeight="auto">
+                    <select style="width:60%;" name="revision" id="revision" class="easyui-combobox" panelHeight="auto">
                         <option value="0">0</option>
                         <option value="1">1</option>
                         <option value="2">2</option>
@@ -120,6 +119,21 @@
                         <option value="4">4</option>
                         <option value="5">5</option>
                     </select>
+                </div>
+                <div class="fitem" style="display: none !important">
+                    <span style="width:35%; display:inline-block;">Document No</span>
+                    <input style="width:60%;" name="document_no" id="document_no" required="" class="easyui-textbox" readonly>
+                </div>
+            </div>
+            <div style="float: left; width: 50%;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Period</span>
+                    <input style="width:30%;" name="p_month" id="p_month" required="" class="easyui-combobox">
+                    <input style="width:30%;" name="p_year" id="p_year" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Issued Date</span>
+                    <input style="width:60%;" name="issued_date" id="issued_date" required="" data-options="formatter:myformatter,parser:myparser" class="easyui-datebox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Remarks</span>
@@ -168,6 +182,7 @@
         $('#frm_insert').form('clear');
         $('#frm_insert').data('mode', 'insert');
         $("#customer_id").combogrid('enable');
+        $("#plant").combobox('enable');
         $("#p_month").combobox('enable');
         $("#p_year").combobox('enable');
 
@@ -429,28 +444,30 @@
     }
 
     function removeit() {
-        if (editIndex == undefined) {
-            return true;
-        }
+        if (editIndex == undefined) return true;
 
         var dg = $('#dg2');
         var row = dg.datagrid('getSelected');
         var rowIndex = dg.datagrid('getRowIndex', row);
+
+        var mode = $('#frm_insert').data('mode');
+        if (mode === 'insert') {
+            $('#dg2').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
+            editIndex = undefined;
+            toastr.success("Data Deleted Successfully");
+            return;
+        }
 
         var ed = dg.datagrid('getEditor', {
             index: editIndex,
             field: 'item_fg_id'
         });
 
-        var customer_id = $("#customer_id").combogrid('getValue');
-        // var p_month = $("#p_month").combobox('getValue');
-        // var p_year = $("#p_year").combobox('getValue');
-        // var revision = $("#revision").combobox('getValue');
         var item_fg_id = $(ed.target).textbox('getValue');
 
         $.ajax({
             method: 'post',
-            url: '<?= base_url('planning/forecasts/delete') ?>',
+            url: '<?= base_url('planning/forecasts/deleted') ?>',
             data: {
                 customer_id: row.customer_id,
                 p_month: row.p_month,
@@ -484,6 +501,7 @@
             $('#frm_insert').data('mode', 'update');
             $("#customer_id").combogrid('disable');
             $("#p_month").combobox('disable');
+            $("#plant").combobox('disable');
             $("#p_year").combobox('disable');
 
             addTable(row.customer_id, '<?= base_url('planning/forecasts/datatableUpdates?customer_id=') ?>' + btoa(row.customer_id) + "&p_month=" + btoa(row.p_month) + "&p_year=" + btoa(row.p_year) + "&revision=" + btoa(row.revision));
@@ -495,31 +513,42 @@
     //DELETE DATA
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
+
         if (rows.length > 0) {
-            $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
+            $.messager.confirm('Warning', 'Are you sure you want to delete the selected data?', function (r) {
                 if (r) {
-                    for (var i = 0; i < rows.length; i++) {
-                        var row = rows[i];
-                        $.ajax({
-                            method: 'post',
-                            url: '<?= base_url('planning/forecasts/delete') ?>',
-                            data: {
-                                customer_id: row.customer_id,
-                                p_month: row.p_month,
-                                p_year: row.p_year,
-                            },
-                            success: function(result) {
-                                var result = eval('(' + result + ')');
-                            },
-                            error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error(jqXHR.statusText);
-                                $.messager.alert("Error", jqXHR.statusText, 'error');
-                            },
-                            complete: function(data) {
-                                $('#dg').datagrid('reload');
-                            }
+
+                    let items = [];
+
+                    for (let i = 0; i < rows.length; i++) {
+                        let row = rows[i];
+
+                        items.push({
+                            customer_id: row.customer_id,
+                            p_month: row.p_month,
+                            p_year: row.p_year,
+                            revision: row.revision,
                         });
+                        
                     }
+
+                    $.ajax({
+                        method: 'post',
+                        url: '<?= base_url('planning/forecasts/delete') ?>',
+                        data: { items: items },
+                        dataType: 'json',
+                        success: function (res) {
+                            if (res.theme === 'success') {
+                                toastr.success(res.message, res.title);
+                            } else {
+                                toastr.error(res.message, res.title);
+                            }
+                            $('#dg').datagrid('reload');
+                        },
+                        error: function (xhr) {
+                            toastr.error(xhr.statusText || 'Server error occurred.');
+                        }
+                    });
                 }
             });
         } else {
@@ -545,13 +574,17 @@
         var filter_period_year = $("#filter_period_year").combobox('getValue');
         var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
+        var filter_product_family = $("#filter_product_family").combogrid('getValue');
+        var filter_plant = $("#filter_plant").combobox('getValue');
 
         var url = "?filter_issued_date_from=" + window.btoa(filter_issued_date_from) +
             "&filter_issued_date_to=" + window.btoa(filter_issued_date_to) +
             "&filter_period_month=" + window.btoa(filter_period_month) +
             "&filter_period_year=" + window.btoa(filter_period_year) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_revision=" + window.btoa(filter_revision);
+            "&filter_revision=" + window.btoa(filter_revision) +
+            "&filter_product_family=" + window.btoa(filter_product_family) +
+            "&filter_plant=" + window.btoa(filter_plant);
 
         $('#dg').datagrid({
             url: '<?= base_url('planning/forecasts/datatables') ?>' + url
@@ -574,13 +607,17 @@
         var filter_period_year = $("#filter_period_year").combobox('getValue');
         var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
+        var filter_product_family = $("#filter_product_family").combogrid('getValue');
+        var filter_plant = $("#filter_plant").combobox('getValue');
 
         var url = "?filter_issued_date_from=" + window.btoa(filter_issued_date_from) +
             "&filter_issued_date_to=" + window.btoa(filter_issued_date_to) +
             "&filter_period_month=" + window.btoa(filter_period_month) +
             "&filter_period_year=" + window.btoa(filter_period_year) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_revision=" + window.btoa(filter_revision);
+            "&filter_revision=" + window.btoa(filter_revision) +
+            "&filter_product_family=" + window.btoa(filter_product_family) +
+            "&filter_plant=" + window.btoa(filter_plant);
 
         window.location.assign('<?= base_url('planning/forecasts/print/excel') ?>' + url);
     }
@@ -607,6 +644,12 @@
             onExpandRow: function(index, row) {
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
 
+                var filterProductFamily = $('#filter_product_family').combogrid('getValue');
+                var encodedProductFamily = filterProductFamily ? "&product_family=" + window.btoa(filterProductFamily) : "";
+
+                var filterPlant = $('#filter_plant').combogrid('getValue');
+                var encodedPlant = filterPlant ? "&filter_plant=" + window.btoa(filterPlant) : "";
+
                 $.ajax({
                     type: "post",
                     url: "<?= base_url('planning/forecasts/readPeriodLists') ?>",
@@ -614,7 +657,7 @@
                     dataType: "json",
                     success: function(result) {
                         ddv.datagrid({
-                            url: '<?= base_url('planning/forecasts/datatableDetails?customer_id=') ?>' + window.btoa(row.customer_id) + "&p_month=" + window.btoa(row.p_month) + "&p_year=" + window.btoa(row.p_year) + "&revision=" + window.btoa(row.revision),
+                            url: '<?= base_url('planning/forecasts/datatableDetails?customer_id=') ?>' + window.btoa(row.customer_id) + "&p_month=" + window.btoa(row.p_month) + "&p_year=" + window.btoa(row.p_year) + "&revision=" + window.btoa(row.revision) + encodedProductFamily + encodedPlant,
                             singleSelect: true,
                             rownumbers: true,
                             columns: [
@@ -747,95 +790,129 @@
                 iconCls: 'icon-ok',
                 handler: function() {
                     var mode = $('#frm_insert').data('mode');
-
+                    // console.log('Mode: ', mode);
                     var p_month = $("#p_month").combobox('getValue');
                     var p_year = $("#p_year").combobox('getValue');
                     var customer_id = $("#customer_id").combogrid('getValue');
                     var document_no = $("#document_no").textbox('getValue');
                     var issued_date = $("#issued_date").datebox('getValue');
+                    var plant = $("#plant").combobox('getValue');
                     var revision = $("#revision").textbox('getValue');
                     var remark = $("#remark").textbox('getValue');
 
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
+                    
                     endEditing();
+                    
+                    var items = [];
 
                     for (let i = 0; i < totalrows; i++) {
-                        if (rows[i].item_fg_id) {
-                            validateBeforeSave(customer_id, rows[i].item_fg_id, revision, p_month, p_year, "insert", function(exists) {
-                                if (exists && mode === 'insert') {
-                                    toastr.error("Customer ID, Product No, Revision, Month, and Year already exists.");
-                                } else {
-                                    $.ajax({
-                                        type: "post",
-                                        url: '<?= base_url('planning/forecasts/create') ?>',
-                                        data: {
-                                            p_month: p_month,
-                                            p_year: p_year,
-                                            customer_id: customer_id,
-                                            document_no: document_no,
-                                            issued_date: issued_date,
-                                            revision: revision,
-                                            remark: remark,
-                                            item_fg_id: rows[i].item_fg_id,
-                                            month_1: rows[i].month_1,
-                                            month_2: rows[i].month_2,
-                                            month_3: rows[i].month_3,
-                                            month_4: rows[i].month_4,
-                                            month_5: rows[i].month_5,
-                                            month_6: rows[i].month_6,
-                                            month_7: rows[i].month_7,
-                                            month_8: rows[i].month_8,
-                                            month_9: rows[i].month_9,
-                                            month_10: rows[i].month_10,
-                                            month_11: rows[i].month_11,
-                                            month_12: rows[i].month_12,
-                                        },
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (i == (totalrows - 1)) {
-                                                Swal.fire({
-                                                    title: result.message,
-                                                    icon: result.theme,
-                                                    confirmButtonText: 'Ok',
-                                                    allowOutsideClick: false,
-                                                }).then((result) => {
-                                                    if (result.isConfirmed) {
-                                                        window.location.reload();
-                                                    }
-                                                });
-                                            }
-                                        }
-                                    });
-                                }
+                        let row = rows[i];
+
+                        if (row.item_fg_id) {
+                            items.push({
+                                p_month: p_month,
+                                p_year: p_year,
+                                customer_id: customer_id,
+                                document_no: document_no,
+                                issued_date: issued_date,
+                                plant: plant,
+                                mode: mode,
+                                revision: revision,
+                                remark: remark,
+                                item_fg_id: row.item_fg_id,
+                                month_1: row.month_1,
+                                month_2: row.month_2,
+                                month_3: row.month_3,
+                                month_4: row.month_4,
+                                month_5: row.month_5,
+                                month_6: row.month_6,
+                                month_7: row.month_7,
+                                month_8: row.month_8,
+                                month_9: row.month_9,
+                                month_10: row.month_10,
+                                month_11: row.month_11,
+                                month_12: row.month_12,
                             });
                         }
                     }
 
-                    $('#dg').datagrid('reload');
-                    $('#dlg_insert').dialog('close');
+                    $.ajax({
+                        type: "post",
+                        url: '<?= base_url('planning/forecasts/create') ?>',
+                        data: { items: items },
+                        dataType: "json",
+                        success: function(res) {
+                            toastr.clear();
+                            if (res.theme === 'success') {
+                                Swal.fire({
+                                    title: res.message,
+                                    icon: res.theme,
+                                    confirmButtonText: 'Ok',
+                                    allowOutsideClick: false,
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        window.location.reload();
+                                    }
+                                });
+
+                                $('#dg').datagrid('reload');
+                                $('#dlg_insert').dialog('close');
+                            } else {
+                                toastr.clear();
+                                toastr.error(res.message, res.title || 'error');
+                            }
+                        }, error: function (xhr) {
+                            toastr.clear();
+                            toastr.error('Server error occurred');
+
+                            $('#dg').datagrid('reload');
+                            $('#dlg_insert').dialog('close');
+                        }
+                    });
                 }
             }]
         });
 
-        function validateBeforeSave(customer_id, item_fg_id, revision, p_month, p_year, mode, callback) {
-            $.ajax({
-                type: "post",
-                url: "<?= base_url('planning/forecasts/checkDuplicate') ?>",
-                data: {
-                    customer_id: customer_id,
-                    item_fg_id: item_fg_id,
-                    revision: revision,
-                    p_month: p_month,
-                    p_year: p_year,
-                    mode: mode
-                },
-                dataType: "json",
-                success: function(response) {
-                    callback(response.exists);
+        // function validateBeforeSave(customer_id, item_fg_id, revision, p_month, p_year, mode, callback) {
+        //     $.ajax({
+        //         type: "post",
+        //         url: "<?= base_url('planning/forecasts/checkDuplicate') ?>",
+        //         data: {
+        //             customer_id: customer_id,
+        //             item_fg_id: item_fg_id,
+        //             revision: revision,
+        //             p_month: p_month,
+        //             p_year: p_year,
+        //             mode: mode
+        //         },
+        //         dataType: "json",
+        //         success: function(response) {
+        //             callback(response.exists);
+        //         }
+        //     });
+        // }
+
+        $('#filter_product_family').combogrid({
+            url: '<?= base_url('planning/forecasts/readsProductFamily') ?>',
+            panelWidth: 420,
+            idField: 'number',
+            textField: 'name',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Select Product Family",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
                 }
-            });
-        }
+            }],
+            columns: [[
+                {field: 'number', title: 'Code', width: 100},
+                {field: 'name', title: 'Product Family', width: 200}
+            ]]
+        });
     });
 
     $('#customer_id').combogrid({
@@ -985,7 +1062,7 @@
         return '<a class="btn btn-primary w-100" onClick="' + history + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i></a>';
     }
 
-    function viewHistories(customer_id, item_fg_id, p_month, p_year) {
+    function viewHistories(customer_id, item_fg_id, p_month, p_year, revision) {
         $("#dlg_history").dialog('open');
 
         $.ajax({
@@ -995,7 +1072,7 @@
             dataType: "json",
             success: function(result) {
                 $("#dg_history").datagrid({
-                    url: '<?= base_url('planning/forecasts/datatableHistories?customer_id=') ?>' + btoa(customer_id) + "&item_fg_id=" + btoa(item_fg_id) + "&p_month=" + btoa(p_month) + "&p_year=" + btoa(p_year),
+                    url: '<?= base_url('planning/forecasts/datatableHistories?customer_id=') ?>' + btoa(customer_id) + "&item_fg_id=" + btoa(item_fg_id) + "&p_month=" + btoa(p_month) + "&p_year=" + btoa(p_year) + "&revision=" + btoa(revision),
                     singleSelect: true,
                     rownumbers: true,
                     columns: [
@@ -1104,6 +1181,28 @@
             }
         });
     }
+
+    $('#plant').combobox({
+        url: '<?= base_url('master/divisions/reads'); ?>',
+        valueField: 'number',
+        textField: 'name',
+        panelHeight: 'panelHeight',
+        prompt: 'Choose Plant',
+    });
+
+    $('#filter_plant').combobox({
+        url: '<?= base_url('master/divisions/reads'); ?>',
+        valueField: 'number',
+        textField: 'name',
+        panelHeight: 'panelHeight',
+        prompt: 'Choose Plant',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
