@@ -140,15 +140,15 @@ class Item_process_flow extends CI_Controller
             'process_c' => 'CUTTING',
             'process_d' => 'BONDING',
             'process_e' => 'PRESS',
+            'process_n' => 'EXTRUSION',
+            'process_m' => 'COOLING',
+            'process_o' => 'OVEN',
             'process_f' => 'FINISHING',
             'process_g' => 'VISUAL CHECK',
             'process_h' => 'SUBCONT',
             'process_i' => 'SLITTING',
             'process_j' => 'POST CURE',
             'process_k' => 'PACKING',
-            // 'process_l' => 'EXTRUSION',
-            // 'process_m' => 'COOLING',
-            // 'process_n' => 'SEALER',
         ];
 
         // Membuat tampilan HTML

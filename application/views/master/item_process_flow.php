@@ -12,6 +12,9 @@
             <th rowspan="2" data-options="field:'process_c',width:150,halign:'center',sortable:true">CUTTING</th>
             <th rowspan="2" data-options="field:'process_d',width:150,halign:'center',sortable:true">BONDING</th>
             <th rowspan="2" data-options="field:'process_e',width:150,halign:'center',sortable:true">PRESS</th>
+            <th rowspan="2" data-options="field:'process_n',width:150,halign:'center',sortable:true">EXTRUSION</th>
+            <th rowspan="2" data-options="field:'process_m',width:150,halign:'center',sortable:true">COOLING</th>
+            <th rowspan="2" data-options="field:'process_o',width:150,halign:'center',sortable:true">OVEN</th>
             <th rowspan="2" data-options="field:'process_f',width:150,halign:'center',sortable:true">FINISHING</th>
             <th rowspan="2" data-options="field:'process_g',width:150,halign:'center',sortable:true">VISUAL CHECK</th>
             <!-- <th rowspan="2" data-options="field:'process_n',width:150,halign:'center',sortable:true">SEALER</th> -->
@@ -72,11 +75,23 @@
                     <span style="width:35%; display:inline-block;">BONDING</span>
                     <input style="width:60%;" name="process_d" id="process_d" class="easyui-textbox">
                 </div>
-            </div>
-            <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">PRESS</span>
                     <input style="width:60%;" name="process_e" id="process_e" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">EXTRUSION</span>
+                    <input style="width:60%;" name="process_n" id="process_n" class="easyui-textbox">
+                </div>
+            </div>
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">COOLING</span>
+                    <input style="width:60%;" name="process_m" id="process_m" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">OVEN</span>
+                    <input style="width:60%;" name="process_o" id="process_o" class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">FINISHING</span>
@@ -121,17 +136,18 @@
         $('#process_a').textbox('textbox').attr('placeholder', '0');
         $('#process_b').textbox('textbox').attr('placeholder', '0');
         $('#process_l').textbox('textbox').attr('placeholder', '0');
-        // $('#process_m').textbox('textbox').attr('placeholder', '0');
+        $('#process_m').textbox('textbox').attr('placeholder', '0');
         $('#process_c').textbox('textbox').attr('placeholder', '0');
         $('#process_d').textbox('textbox').attr('placeholder', '0');
         $('#process_e').textbox('textbox').attr('placeholder', '0');
         $('#process_f').textbox('textbox').attr('placeholder', '0');
         $('#process_g').textbox('textbox').attr('placeholder', '0');
-        // $('#process_n').textbox('textbox').attr('placeholder', '0');
+        $('#process_n').textbox('textbox').attr('placeholder', '0');
         $('#process_h').textbox('textbox').attr('placeholder', '0');
         $('#process_i').textbox('textbox').attr('placeholder', '0');
         $('#process_j').textbox('textbox').attr('placeholder', '0');
         $('#process_k').textbox('textbox').attr('placeholder', '0');
+        $('#process_o').textbox('textbox').attr('placeholder', '0');
 
         $.ajax({
             type: "post",
