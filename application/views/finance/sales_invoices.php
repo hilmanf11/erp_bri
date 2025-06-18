@@ -2121,6 +2121,8 @@
         $('#dg').datagrid({
             url: '<?= base_url('finance/sales_invoices/datatables') ?>',
             pagination: true,
+            pageList: [10, 20, 30, 40, 50, 100, 1000],
+            pageSize: 10,
             rownumbers: true,
             fit: true,
             view: detailview,
@@ -2204,7 +2206,7 @@
                         row.find('td.datagrid-td-rownumber').css('border-right', 'none');
                         row.find('td.datagrid-td-rownumber').css('background-color', '#f0f0f0');
                         row.css('display', ''); 
-                    }, 10);
+                    }, 0);
                 }
             },
             detailFormatter: function(index, row) {
@@ -2356,7 +2358,7 @@
                             
                             $('#dg').datagrid('fixDetailRowHeight', index);
                             row.css('display', '');
-                        }, 5);
+                        }, 0);
                     }
                 });
                 $('#dg').datagrid('fixDetailRowHeight', index);

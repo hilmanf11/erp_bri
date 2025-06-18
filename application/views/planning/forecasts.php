@@ -771,9 +771,77 @@
                             onResize: function() {
                                 $('#dg').datagrid('fixDetailRowHeight', index);
                             },
-                            onLoadSuccess: function() {
-                                setTimeout(function() {
+                            onLoadSuccess: function(data) {
+                                const target = $(this);
+
+                                const month_1 = data.rows.reduce((sum, r) => sum + parseFloat(r.month_1 || 0), 0);
+                                const month_2 = data.rows.reduce((sum, r) => sum + parseFloat(r.month_2 || 0), 0);
+                                const month_3 = data.rows.reduce((sum, r) => sum + parseFloat(r.month_3 || 0), 0);
+                                const month_4 = data.rows.reduce((sum, r) => sum + parseFloat(r.month_4 || 0), 0);
+                                const month_5 = data.rows.reduce((sum, r) => sum + parseFloat(r.month_5 || 0), 0);
+                                const month_6 = data.rows.reduce((sum, r) => sum + parseFloat(r.month_6 || 0), 0);
+                                const month_7 = data.rows.reduce((sum, r) => sum + parseFloat(r.month_7 || 0), 0);
+                                const month_8 = data.rows.reduce((sum, r) => sum + parseFloat(r.month_8 || 0), 0);
+                                const month_9 = data.rows.reduce((sum, r) => sum + parseFloat(r.month_9 || 0), 0);
+                                const month_10 = data.rows.reduce((sum, r) => sum + parseFloat(r.month_10 || 0), 0);
+                                const month_11 = data.rows.reduce((sum, r) => sum + parseFloat(r.month_11 || 0), 0);
+                                const month_12 = data.rows.reduce((sum, r) => sum + parseFloat(r.month_12 || 0), 0);
+
+                                // Tambahkan baris Total
+                                target.datagrid('appendRow', {
+                                    btn: '',
+                                    item_fg_number: 'TOTAL',
+                                    item_fg_name: '',
+                                    item_fg_customer: '',
+                                    month_1: month_1,
+                                    month_2: month_2,
+                                    month_3: month_3,
+                                    month_4: month_4,
+                                    month_5: month_5,
+                                    month_6: month_6,
+                                    month_7: month_7,
+                                    month_8: month_8,
+                                    month_9: month_9,
+                                    month_10: month_10,
+                                    month_11: month_11,
+                                    month_12: month_12,
+                                });
+
+                                const lastIndex = data.rows.length - 1;
+
+                                setTimeout(() => {
+                                    target.datagrid('mergeCells', {
+                                        index: lastIndex,
+                                        field: 'item_fg_number',
+                                        colspan: 3,
+                                        align: 'center'
+                                    });
+
+                                    const panel = target.datagrid('getPanel');
+                                    const row = panel.find('div.datagrid-body tr.datagrid-row[datagrid-row-index="' + lastIndex + '"]');
+                                    // row.css('display', 'none');
+
+                                    row.find('td[field="btn"] div').css('visibility', 'hidden');
+                                    row.find('td[field="btn"]').css('border-right', 'none');
+
+                                    row.find('td.datagrid-td-rownumber div').text('');
+                                    row.find('td.datagrid-td-rownumber').css('border-right', 'none');
+                                    row.find('td.datagrid-td-rownumber').css('background-color', '#f0f0f0');
+
+                                    row.css({
+                                        backgroundColor: '#f0f0f0',
+                                        fontWeight: 'bold'
+                                    });
+
+                                    const totalCell = row.find('td[field="item_fg_number"] div');
+                                    totalCell.css({
+                                        textAlign: 'center',
+                                        verticalAlign: 'middle',
+                                        paddingRight: '15px'
+                                    });
+                                    
                                     $('#dg').datagrid('fixDetailRowHeight', index);
+                                    // row.css('display', '');
                                 }, 0);
                             }
                         });
