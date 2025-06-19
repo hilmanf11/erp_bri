@@ -125,6 +125,7 @@ class Report_history_transactions extends CI_Controller
         $filter_trans_type = $this->input->get('filter_trans_type');
         $filter_qty_in = $this->input->get("filter_qty_in");
         $filter_qty_out = $this->input->get("filter_qty_out");
+        $filter_plant = $this->input->get("filter_plant");
 
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
@@ -162,12 +163,21 @@ class Report_history_transactions extends CI_Controller
             $having_condition = $qty_out_condition;
         }
 
+        $where_condition = '';
+        if (!empty($filter_plant)) {
+            $where_condition .= " AND 
+                CASE 
+                    WHEN b.number = 'PP' THEN 'EXT'
+                    ELSE 'RP'
+                END = '$filter_plant'";
+        }
+
         $records = $this->crud->query("SELECT
             a.id,
             a.number, 
             a.name, 
             b.name as prodfam, 
-            a.uom, 
+            a.uom,
             COALESCE(0,0) as begin_stock,
             (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty, 0) + COALESCE(h.qty_stock_rm, 0) + COALESCE(i.qty_in, 0)) as qty_in,
             (COALESCE(f.qty, 0) + COALESCE(j.qty_out, 0)) as qty_out,
@@ -199,6 +209,7 @@ class Report_history_transactions extends CI_Controller
             AND request_date between '$filter_from' and '$filter_to'
             GROUP BY item_rm_id) j ON a.id = j.item_rm_id
         WHERE b.number like '%$filter_item_family%' and a.id like '%$filter_items%'
+        $where_condition
         GROUP BY a.id
         $having_condition
         ORDER BY a.number");

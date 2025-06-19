@@ -5,9 +5,14 @@
         <legend><b>Form Filter Data</b></legend>
         <div style="width: 50%; float:left;">
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Plant</span>
+                <input style="width:60%;" id="filter_plant" class="easyui-combobox">
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Receipt Date</span>
-                <input style="width:28%;" id="filter_from" class="easyui-datebox" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser, editable:false"> To
-                <input style="width:29%;" id="filter_to" class="easyui-datebox" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
+                <input style="width:26.6%;" id="filter_from" class="easyui-datebox" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
+                <span style="width:6%; display:inline-block; text-align:center;">to</span>
+                <input style="width:26.62%;" id="filter_to" class="easyui-datebox" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product Family</span>
@@ -89,7 +94,10 @@
         var filter_trans_type = $("#filter_trans_type").combobox('getValue');
         var filter_qty_in = $("#filter_qty_in").combobox('getValue');
         var filter_qty_out = $("#filter_qty_out").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_qty_in=" + filter_qty_in + "&filter_qty_out=" + filter_qty_out + "&filter_trans_type=" + filter_trans_type;
+        var filter_plant = $("#filter_plant").combobox('getValue');
+
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_qty_in=" + filter_qty_in + "&filter_qty_out=" + filter_qty_out + "&filter_trans_type=" + filter_trans_type + "&filter_plant=" + filter_plant;
+
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
         $("#printout").attr('src', '<?= base_url('warehouse/report_history_transactions/print') ?>' + url);
     }
@@ -104,7 +112,9 @@
         var filter_trans_type = $("#filter_trans_type").combobox('getValue');
         var filter_qty_in = $("#filter_qty_in").combobox('getValue');
         var filter_qty_out = $("#filter_qty_out").combobox('getValue');
-        var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_qty_in=" + filter_qty_in + "&filter_qty_out=" + filter_qty_out + "&filter_trans_type=" + filter_trans_type;
+        var filter_plant = $("#filter_plant").combobox('getValue');
+
+        var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_qty_in=" + filter_qty_in + "&filter_qty_out=" + filter_qty_out + "&filter_trans_type=" + filter_trans_type + "&filter_plant=" + filter_plant;
 
         // Tampilkan overlay
         $("#loadingOverlay").show();
@@ -198,12 +208,18 @@
         }
     });
 
-    $('#filter_division').combobox({
+    $('#filter_plant').combobox({
         url: '<?= base_url('master/divisions/reads'); ?>',
         valueField: 'number',
-        textField: 'number',
+        textField: 'name',
         panelHeight: 'panelHeight',
-        prompt: 'Choose Division',
+        prompt: 'Choose Plant',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
     });
 
     $("#filter_display").combobox({
