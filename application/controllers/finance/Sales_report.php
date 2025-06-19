@@ -49,7 +49,7 @@ class Sales_report extends CI_Controller
         $filter_customer_id = $this->input->get("filter_customer_id");
 
         $division = $this->crud->read('divisions',[],["number"=> $filter_division]);
-        $division_num = isset($division->number) && !empty($division->number) ? $division->number : '-';
+        $division_name = isset($division->name) && !empty($division->name) ? $division->name : '-';
 
         $customer = $this->crud->read('customers',[],["id"=> $filter_customer_id]);
         $customer_name = isset($customer->name) && !empty($customer->name) ? $customer->name : 'ALL';
@@ -69,7 +69,7 @@ class Sales_report extends CI_Controller
                     a.item_fg_id,
                     b.number as item_fg_number,
                     b.name as item_fg_name,
-                    COALESCE(a.sales_order_no,a.sales_order_no_rm) as sales_order_no,
+                    a.sales_order_no as sales_order_no,
                     a.customer_order_no,
                     a.uom,
                     a.qty,
@@ -78,10 +78,12 @@ class Sales_report extends CI_Controller
                 FROM delivery_notes a
                 LEFT JOIN item_fg b ON a.item_fg_id = b.id
                 LEFT JOIN customers c ON a.customer_id = c.id
-                LEFT JOIN sales_orders d ON a.sales_order_no = d.sales_order_no and a.item_fg_id = d.item_fg_id
-                LEFT JOIN sales_order_rm e ON a.sales_order_no_rm = e.sales_order_no and a.item_fg_id = e.item_fg_id
-                WHERE a.customer_id LIKE '%$filter_customer_id%' and a.division LIKE '%$filter_division%' and 
-                DATE_FORMAT(a.delivery_note_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' AND a.trans_type = 'SALES'
+                LEFT JOIN sales_orders d ON a.sales_order_no = d.sales_order_no AND a.item_fg_id = d.item_fg_id
+                LEFT JOIN sales_order_rm e ON a.sales_order_no = e.sales_order_no AND a.item_fg_id = e.item_fg_id
+                WHERE a.customer_id LIKE '%$filter_customer_id%' 
+                    AND d.division LIKE '%$filter_division%' 
+                    AND DATE_FORMAT(a.delivery_note_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' 
+                    AND a.trans_type = 'SALES'
                 GROUP BY a.id  
                 ORDER BY a.delivery_note_no ASC, b.number ASC, c.name ASC";
             $records = $this->crud->query($query);
@@ -118,7 +120,7 @@ class Sales_report extends CI_Controller
                         <tr>
                             <td width="100">Division</td>
                             <td width="5">:</td>
-                            <td>' . $division_num . '</td>
+                            <td>' . $division_name . '</td>
                         </tr>
                         <tr>
                             <td width="100">Customer</td>
@@ -200,20 +202,26 @@ class Sales_report extends CI_Controller
             $html .= '</table></body></html>';
             echo $html;
         }else{
-                    $query= "SELECT 
+                $query= "SELECT 
                     a.customer_id,
                     c.name AS customer_name,
                     a.delivery_note_date,
                     SUM(a.qty) AS total_qty,
+                    SUM(CASE WHEN f.number = 'CD' THEN COALESCE(d.price, e.price) * a.qty ELSE 0 END) AS compound_amount,
+                    SUM(CASE WHEN f.number = 'RP' THEN COALESCE(d.price, e.price) * a.qty ELSE 0 END) AS rubber_amount,
+                    SUM(CASE WHEN f.number = 'TB' THEN COALESCE(d.price, e.price) * a.qty ELSE 0 END) AS tube_amount,
                     SUM(COALESCE(d.price, e.price) * a.qty) AS amount,
                     COALESCE(d.currency, e.currency) AS currency
                 FROM delivery_notes a
                 LEFT JOIN item_fg b ON a.item_fg_id = b.id
+                LEFT JOIN item_familys f ON b.item_family_number = f.number
                 LEFT JOIN customers c ON a.customer_id = c.id
                 LEFT JOIN sales_orders d ON a.sales_order_no = d.sales_order_no AND a.item_fg_id = d.item_fg_id
-                LEFT JOIN sales_order_rm e ON a.sales_order_no_rm = e.sales_order_no AND a.item_fg_id = e.item_fg_id
-                WHERE a.customer_id LIKE '%$filter_customer_id%' and a.division LIKE '%$filter_division%' and 
-                DATE_FORMAT(a.delivery_note_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' AND a.trans_type = 'SALES'
+                LEFT JOIN sales_order_rm e ON a.sales_order_no = e.sales_order_no AND a.item_fg_id = e.item_fg_id
+                WHERE a.customer_id LIKE '%$filter_customer_id%'
+                    AND d.division LIKE '%$filter_division%'
+                    AND DATE_FORMAT(a.delivery_note_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' 
+                    AND a.trans_type = 'SALES'
                 GROUP BY a.customer_id 
                 ORDER BY b.name ASC";
             $records = $this->crud->query($query);
@@ -248,9 +256,9 @@ class Sales_report extends CI_Controller
                             <td>' . $filter_from . ' to ' . $filter_to . '</td>
                         </tr>
                         <tr>
-                            <td width="100">Division</td>
+                            <td width="100">Plant</td>
                             <td width="5">:</td>
-                            <td>' . $division_num . '</td>
+                            <td>' . $division_name . '</td>
                         </tr>
                         <tr>
                             <td width="100">Customer</td>
@@ -261,13 +269,25 @@ class Sales_report extends CI_Controller
                 </div>
                 <table id="customers" border="1" style="font-size: 11px;">
                     <tr>
-                        <th width="20">No</th>
-                        <th width="200">Customer Name</th>
-                        <th width="100">Amount (IDR)</th>
+                        <th rowspan="2" width="20">No</th>
+                        <th rowspan="2" width="400">Customer Name</th>
+                        <th colspan="3">Segment</th>
+                        <th rowspan="2" width="200">Amount (IDR)</th>
+                    </tr>
+                    <tr>
+                        <th width="200">Compound</th>
+                        <th width="200">Rubber Part</th>
+                        <th width="200">Tube</th>
                     </tr>';
+
             $no = 1;
-            $totalAmount = 0;
+            // $totalAmount = 0;
             $totalAmountIDR = 0;
+
+            $totalCompound = 0;
+            $totalRubber = 0;
+            $totalTube = 0;
+
             foreach ($records as $record) {
                 $currency = $record->currency;
                 $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($record->delivery_note_date)));
@@ -283,20 +303,34 @@ class Sales_report extends CI_Controller
                     $exchange_rate = 1;
                 }
 
+                $compound = $record->compound_amount * $exchange_rate;
+                $rubber = $record->rubber_amount * $exchange_rate;
+                $tube = $record->tube_amount * $exchange_rate;
+                // $total = $compound + $rubber + $tube;
+                
                 $amountIDR = ($record->amount * $exchange_rate);
 
                 $html .= '  <tr>
                                 <td style="text-align:center">' . $no . '</td>
                                 <td>' . $record->customer_name . '</td>
+                                <td style="text-align:right">' . number_format($compound, 2, ',', '.') . '</td>
+                                <td style="text-align:right">' . number_format($rubber, 2, ',', '.') . '</td>
+                                <td style="text-align:right">' . number_format($tube, 2, ',', '.') . '</td>
                                 <td style="text-align:right">' . number_format($amountIDR, 2, ',', '.') . '</td>
                             </tr>';
                 $no++;
                 $totalAmountIDR += $amountIDR;
+
+                $totalCompound += $compound;
+                $totalRubber += $rubber;
+                $totalTube += $tube;
             }
 
             $html .= '<tr>
                 <td colspan="2" style="text-align:right;"><b>GRAND TOTAL</b></td>
-                
+                <td style="text-align:right"><b>' . number_format($totalCompound, 2, ',', '.') . '</b></td>
+                <td style="text-align:right"><b>' . number_format($totalRubber, 2, ',', '.') . '</b></td>
+                <td style="text-align:right"><b>' . number_format($totalTube, 2, ',', '.') . '</b></td>
                 <td style="text-align:right">' . number_format($totalAmountIDR, 2, ',', '.') . '</td>
             </tr>';
 

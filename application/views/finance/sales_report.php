@@ -6,16 +6,13 @@
         <div style="width: 50%; float:left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Delivery Date</span>
-                <input style="width:28%;" id="filter_from" class="easyui-datebox" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser, editable:false"> To
-                <input style="width:28%;" id="filter_to" class="easyui-datebox" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
+                <input style="width:26.6%;" id="filter_from" class="easyui-datebox" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
+                <span style="width:6%; display:inline-block; text-align:center;">to</span>
+                <input style="width:26.63%;" id="filter_to" class="easyui-datebox" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Division</span>
+                <span style="width:35%; display:inline-block;">Plant</span>
                 <input style="width:60%;" id="filter_division" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;"></span>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
             </div>
         </div>
         <div style="width: 50%; float:left;">
@@ -29,6 +26,10 @@
                     <option value="DETAIL">DETAIL</option>
                     <option value="SUMMARY">SUMMARY</option>
                 </select>
+            </div>
+            <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
+                <span style="width:35%; display:inline-block;"></span>
+                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
             </div>
         </div>
     </fieldset>
@@ -90,10 +91,11 @@
     }
 
     $('#filter_division').combobox({
-        url: '<?= base_url('finance/sales_report/readsDivision/'); ?>',
+        url: '<?= base_url('finance/sales_report/readsDivision'); ?>',
         valueField: 'number',
-        textField: 'number',
-        prompt: 'Choose Division',
+        textField: 'name',
+        panelHeight: 'panelHeight',
+        prompt: 'Choose Plant',
         icons: [{
             iconCls: 'icon-clear',
             handler: function(e) {
