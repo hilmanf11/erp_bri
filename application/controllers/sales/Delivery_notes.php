@@ -508,7 +508,7 @@ class Delivery_notes extends CI_Controller
                                             <tr>
                                                 <td width="150px">Delivery Date</td>
                                                 <td width="10px">:</td>
-                                                <td><b>' . date("d F Y", strtotime(@$records[0]['delivery_date'])) . '</b></td>
+                                                <td><b>' . date("d F Y", strtotime(@$records[0]['actual_delivery_date'])) . '</b></td>
                                             </tr>
                                             <tr>
                                                 <td width="150px">Customer Order No</td>

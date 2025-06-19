@@ -280,11 +280,12 @@ class Shipping_orders extends CI_Controller
                     'customer_order_no' => $delivery_order->customer_order_no,
                     'delivery_order_no' => $delivery_order->delivery_order_no,
                     'delivery_note_no' => $delivery_note_no,
-                    'delivery_note_date' => date('Y-m-d'),
+                    'delivery_note_date' => $delivery_order->actual_delivery_date,
                     'uom' => $delivery_order->uom,
                     'qty' => $delivery_order->qty_shipping,
                     'division' => $delivery_order->division,
                     'address_id' => $delivery_order->address_id,
+                    'trans_type' => $delivery_order->trans_type,
                     'status_delivery' => $status_delivery, // Atur status pengiriman
                     'status' => 0,
                 ];
