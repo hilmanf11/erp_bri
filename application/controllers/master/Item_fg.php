@@ -142,6 +142,7 @@ class item_fg extends CI_Controller
                 'item_category_number' => $post['item_category_number'],
                 'item_family_number' => $post['item_family_number'],
                 'item_family_sub_number' => $post['item_family_sub_number'],
+                'division_id' => $post['division_id'],
                 'lot' => $post['lot'],
                 'weight' => $post['weight'],
                 'leadtime' => $post['leadtime'],

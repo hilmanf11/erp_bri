@@ -120,7 +120,11 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Weight (Gram)</span>
-                    <input style="width:30%;" name="weight" id="weight" precision="2" class="easyui-numberbox">
+                    <input style="width:60%;" name="weight" id="weight" precision="2" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Plant</span>
+                    <input style="width:60%;" name="division_id" id="division_id" required="" class="easyui-combobox">
                 </div>
             </div>
             <div style="float:left; width:50%;">
@@ -604,6 +608,14 @@
                 }
             });
         }
+    });
+
+    $('#division_id').combobox({
+        url: '<?= base_url('master/divisions/reads'); ?>',
+        valueField: 'id',
+        textField: 'name',
+        panelHeight: 'panelHeight',
+        prompt: 'Choose Plant',
     });
 
     //CELLSTYLE STATUS
