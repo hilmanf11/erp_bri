@@ -504,9 +504,9 @@ class Sales_invoices extends CI_Controller
             e.account_number, 
             e.account_name,
             e.currency, 
-            d.qty_del as qty, 
+            a.qty, 
             COALESCE(g.price) as price, 
-            (d.qty_del * COALESCE(g.price)) as total');
+            (a.qty * COALESCE(g.price)) as total');
 
         $this->db->from('delivery_orders d');
         $this->db->join('item_fg b', 'd.item_fg_id = b.id');

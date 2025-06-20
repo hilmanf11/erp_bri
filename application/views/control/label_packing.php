@@ -1,3 +1,16 @@
+<style>
+.swal2-deny-custom {
+    background-color: #4CAF50 !important;
+    color: white !important;
+}
+
+.swal2-cancel-custom {
+    /* background-color: #FABC3F !important; */
+    background-color: #FFB200 !important;
+    color: white !important;
+}
+</style>
+
 <table id="dg" class="easyui-treegrid" style="width:99.5%;" toolbar="#toolbar" pagination="true" rownumbers="true" idField="id" treeField="id" fit="true" singleSelect="false">
     <thead>
         <tr>
@@ -174,8 +187,8 @@
                                     $(edQtyPacking.target).numberbox('setValue', row.box_sub);
 
                                     // Ambil data material dari specification di item_fg
-                                    $(edItemRmNumber.target).textbox('setValue', row.specification || '-');
-                                    $(edItemRmId.target).textbox('setValue', null);
+                                    // $(edItemRmNumber.target).textbox('setValue', row.specification || '-');
+                                    // $(edItemRmId.target).textbox('setValue', null);
                                 }
                             }
                         }
@@ -660,11 +673,25 @@
             text: "Select Print Barcode Mode!",
             icon: 'info',
             showCancelButton: true,
-            confirmButtonText: 'Print Label',
-            cancelButtonText: 'Cancel'
+            showDenyButton: true,
+            confirmButtonText: 'Print RP/Com',
+            denyButtonText: 'Print Ext',
+            cancelButtonText: 'Cancel',
+            width: '420px',
+            customClass: {
+                denyButton: 'swal2-deny-custom',
+                cancelButton: 'swal2-cancel-custom'
+            }
         }).then((result) => {
             if (result.isConfirmed) {
                 let url = '<?= base_url('control/label_packing/print_label?serial_no=') ?>' + serial_no;
+                if (item_fg_id) {
+                    url += '&item_fg_id=' + item_fg_id;
+                }
+                window.open(url, '_blank');
+
+            } else if (result.isDenied) {
+                let url = '<?= base_url('control/label_packing/print_label_ext?serial_no=') ?>' + serial_no;
                 if (item_fg_id) {
                     url += '&item_fg_id=' + item_fg_id;
                 }
@@ -680,13 +707,25 @@
             text: "Select Print Barcode Mode!",
             icon: 'info',
             showCancelButton: true,
-            confirmButtonText: 'Print Label',
-            cancelButtonText: 'Cancel'
+            showDenyButton: true,
+            confirmButtonText: 'Print RP/Com',
+            denyButtonText: 'Print Ext',
+            cancelButtonText: 'Cancel',
+            width: '420px',
+            customClass: {
+                denyButton: 'swal2-deny-custom',
+                cancelButton: 'swal2-cancel-custom'
+            }
         }).then((result) => {
             if (result.isConfirmed) {
                 let url = '<?= base_url('control/label_packing/print_label_by_request?request_no=') ?>' + request_no;
                 window.open(url, '_blank');
+
+            } else if (result.isDenied) {
+                let url = '<?= base_url('control/label_packing/print_label_ext_by_request?request_no=') ?>' + request_no;
+                window.open(url, '_blank');
             }
         });
     }
+
 </script>

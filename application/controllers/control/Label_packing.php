@@ -49,7 +49,7 @@ class Label_packing extends CI_Controller
     public function readitemsFG()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT id, number as item_number, name as item_name, box_sub, specification FROM item_fg WHERE item_family_number IN ('RP','CD') AND (number like '%$post%' or name like '%$post%')");
+        $send = $this->crud->query("SELECT id, number as item_number, name as item_name, box_sub, specification FROM item_fg WHERE item_family_number IN ('RP','CD','TB') AND (number like '%$post%' or name like '%$post%')");
         echo json_encode($send);
     }
 
@@ -499,6 +499,212 @@ class Label_packing extends CI_Controller
     
         die($html);
     }
+
+    public function print_label_ext() {
+
+        $serial_no = $this->input->get('serial_no');
+        $item_fg_id = $this->input->get('item_fg_id');
+        
+        if (empty($serial_no)) {
+            show_error("Missing parameter: serial_no", 400);
+        }
+        
+        $this->db->select('
+            lp.trans_date, 
+            lp.leader, 
+            lp.packing_size, 
+            lp.compound_lot, 
+            lp.prod_date, 
+            lp.operator, 
+            lp.qc, 
+            lpd.serial_label, 
+            fg.number AS product_no, 
+            fg.name AS product_name, 
+            lpd.qty_packing,
+            lp.specification,
+            fg.uom
+        ');
+        $this->db->from('label_packing_detail lpd');
+        $this->db->join('label_packing lp', 'lp.serial_no = lpd.serial_no', 'left');
+        $this->db->join('item_fg fg', 'lp.item_fg_id = fg.id', 'left');
+        $this->db->where('lpd.serial_no', $serial_no);
+        
+        if (!empty($item_fg_id)) {
+            $this->db->where('lp.item_fg_id', $item_fg_id);
+        }
+        
+        $this->db->group_by('lpd.serial_label');
+        
+        $label_packing_details = $this->db->get()->result();
+        
+        if (empty($label_packing_details)) {
+            echo "<center><h3>Data not found</h3></center>";
+            return;
+        }
+        
+        $first_serial_label = $label_packing_details[0]->serial_label;
+        
+        foreach ($label_packing_details as $detail) {
+            $this->createQrcode($detail->serial_label, "assets/image/qrcode/");
+        }
+        
+        $html = '<html>
+                    <head>
+                        <title>Label Packing - ' . $first_serial_label . '</title>
+                        <link rel="icon" type="image/png" href="' . base_url('assets/image/icon.png') . '">
+                        <style>
+                            body { 
+                                font-family: Arial, Helvetica, sans-serif; 
+                                margin: 2; 
+                            }
+
+                            table { 
+                                border-collapse: collapse; 
+                                width: 48mm; 
+                                height: 41mm; 
+                                font-size: 10px; 
+                                border: 1px solid black; 
+                                table-layout: fixed; 
+                            }
+
+                            th, td { 
+                                border: 1px solid black; 
+                                padding: 1.5px; 
+                                text-align: left; 
+                            }
+
+                            th { 
+                                text-align: center; 
+                                font-size: 5px; 
+                                font-weight: bold; 
+                            }
+
+                            .header { 
+                                text-align: center; 
+                                font-size: 11px; 
+                                font-weight: bold; 
+                            }
+
+                            .logo { 
+                                text-align: center; 
+                                width: 100%; 
+                                padding-left: 3px; 
+                                padding-right: 3px; 
+                            }
+
+                            .operator-sign, .qc-sign, .qr-code { 
+                                font-size: 7px; 
+                                text-align: center; 
+                                vertical-align: bottom; 
+                                font-weight: bold; 
+                            }
+                            .qc-sign { 
+                                text-align: center; 
+                                height: 10mm; 
+                            }
+                            .qr-code img { 
+                                width: 40px; 
+                                height: 40px; 
+                                display: block; 
+                                margin: 0 auto;
+                            }
+                            .serial-label { 
+                                font-size: 5px; 
+                                text-align: center; 
+                                word-wrap: break-word; 
+                                overflow: hidden; 
+                                font-weight: bold; 
+                            }
+                            @page {
+                                    size: 48mm 41mm;
+                                    margin: 0;
+                                    }
+                            @media print {
+                                    .printLabel {
+                                        page-break-after: auto:
+                                        width: 48mm;
+                                        height: 41mm;
+                                        display: block;
+                                        padding: 0;
+                                        margin: 0;
+                                    }
+
+                                    table {
+                                        width: 100%;
+                                        font-size: 6px;
+                                        margin: 0;
+                                        padding: 0;
+                                    }
+
+                                    body {
+                                        margin: 0;
+                                        padding: 0;
+                                    }
+                                }
+                        </style>
+                    </head>
+                <body>';
+        
+        foreach ($label_packing_details as $detail) {
+            $qty_packing_formatted = number_format($detail->qty_packing, 0, ',', '.') . ' ' .strtoupper($label_packing_details[0]->uom);
+            $html .= '<div class="printLabel">
+                        <table style="width: 48mm; height: 41mm;">
+                        <tr>
+                            <th class="logo" colspan="6" style="text-align: center;">
+                                <img src="' . base_url('assets/image/bri_logo.png') . '" width="10" align="left"/>
+                                <span class="header" style="font-size: 10px; height: 10px;">LABEL PACKING</span>
+                            </th>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Part No:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->product_no . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Part Name:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->product_name . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Qty/pack:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $qty_packing_formatted . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Material:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->specification . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Prod Date:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->prod_date . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Pack Date:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->trans_date . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>LOT No:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->compound_lot . '</td>
+                        </tr>
+                        <tr>
+                            <th colspan="2">QC</th>
+                            <th colspan="4">QR Code</th>
+                        </tr>
+                        <tr>
+                            <td class="operator-sign" colspan="2">' . $detail->qc . '</td>
+                            <td class="qr-code" colspan="4">
+                                <img src="' . base_url('assets/image/qrcode/' . $detail->serial_label . '.png') . '"/>
+                                <div class="serial-label">' . $detail->serial_label . '</div>
+                            </td>
+                        </tr>
+                    </table>
+            
+            </div>';
+        } 
+    
+        $html .= '<script>window.print()</script>
+                </body>
+            </html>';
+    
+        die($html);
+    }
     
     public function print_label_by_request() {
         $request_no = $this->input->get('request_no');
@@ -647,9 +853,206 @@ class Label_packing extends CI_Controller
     
         die($html);
     }
+
+    public function print_label_ext_by_request() {
+        $request_no = $this->input->get('request_no');
+        
+        if (empty($request_no)) {
+            show_error("Missing parameter: request_no", 400);
+        }
+        
+        $this->db->select('
+            lp.trans_date, 
+            lp.leader, 
+            lp.packing_size, 
+            lp.compound_lot, 
+            lp.prod_date, 
+            lp.operator, 
+            lp.qc, 
+            lpd.serial_label, 
+            fg.number AS product_no, 
+            fg.name AS product_name, 
+            lpd.qty_packing,
+            lp.specification,
+            fg.uom
+        ');
+        $this->db->from('label_packing_detail lpd');
+        $this->db->join('label_packing lp', 'lp.serial_no = lpd.serial_no', 'left');
+        $this->db->join('item_fg fg', 'lp.item_fg_id = fg.id', 'left');
+        $this->db->where('lpd.request_no', $request_no);
+        
+        $this->db->group_by('lpd.serial_label');
+        
+        $label_packing_details = $this->db->get()->result();
+        
+        if (empty($label_packing_details)) {
+            echo "<center><h3>Data not found</h3></center>";
+            return;
+        }
+        
+        $first_serial_label = $label_packing_details[0]->serial_label;
+        
+        foreach ($label_packing_details as $detail) {
+            $this->createQrcode($detail->serial_label, "assets/image/qrcode/");
+        }
+        
+        $html = '<html>
+                    <head>
+                        <title>Label Packing - ' . $first_serial_label . '</title>
+                        <link rel="icon" type="image/png" href="' . base_url('assets/image/icon.png') . '">
+                        <style>
+                            body { 
+                                font-family: Arial, Helvetica, sans-serif; 
+                                margin: 2; 
+                            }
+
+                            table { 
+                                border-collapse: collapse; 
+                                width: 48mm; 
+                                height: 41mm; 
+                                font-size: 10px; 
+                                border: 1px solid black; 
+                                table-layout: fixed; 
+                            }
+
+                            th, td { 
+                                border: 1px solid black; 
+                                padding: 1.5px; 
+                                text-align: left; 
+                            }
+
+                            th { 
+                                text-align: center; 
+                                font-size: 5px; 
+                                font-weight: bold; 
+                            }
+
+                            .header { 
+                                text-align: center; 
+                                font-size: 11px; 
+                                font-weight: bold; 
+                            }
+
+                            .logo { 
+                                text-align: center; 
+                                width: 100%; 
+                                padding-left: 3px; 
+                                padding-right: 3px; 
+                            }
+
+                            .operator-sign, .qc-sign, .qr-code { 
+                                font-size: 7px; 
+                                text-align: center; 
+                                vertical-align: bottom; 
+                                font-weight: bold; 
+                            }
+                            .qc-sign { 
+                                text-align: center; 
+                                height: 10mm; 
+                            }
+                            .qr-code img { 
+                                width: 40px; 
+                                height: 40px; 
+                                display: block; 
+                                margin: 0 auto;
+                            }
+                            .serial-label { 
+                                font-size: 5px; 
+                                text-align: center; 
+                                word-wrap: break-word; 
+                                overflow: hidden; 
+                                font-weight: bold; 
+                            }
+                            @page {
+                                    size: 48mm 41mm;
+                                    margin: 0;
+                                    }
+                            @media print {
+                                    .printLabel {
+                                        page-break-after: auto:
+                                        width: 48mm;
+                                        height: 41mm;
+                                        display: block;
+                                        padding: 0;
+                                        margin: 0;
+                                    }
+
+                                    table {
+                                        width: 100%;
+                                        font-size: 6px;
+                                        margin: 0;
+                                        padding: 0;
+                                    }
+
+                                    body {
+                                        margin: 0;
+                                        padding: 0;
+                                    }
+                                }
+                        </style>
+                    </head>
+                <body>';
+        
+        foreach ($label_packing_details as $detail) {
+            $qty_packing_formatted = number_format($detail->qty_packing, 0, ',', '.') . ' ' .strtoupper($label_packing_details[0]->uom);
+            $html .= '<div class="printLabel">
+                        <table style="width: 48mm; height: 41mm;">
+                        <tr>
+                            <th class="logo" colspan="6" style="text-align: center;">
+                                <img src="' . base_url('assets/image/bri_logo.png') . '" width="10" align="left"/>
+                                <span class="header" style="font-size: 10px; height: 10px;">LABEL PACKING</span>
+                            </th>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Part No:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->product_no . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Part Name:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->product_name . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Qty/pack:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $qty_packing_formatted . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Material:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->specification . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Prod Date:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->prod_date . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Pack Date:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->trans_date . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>LOT No:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->compound_lot . '</td>
+                        </tr>
+                        <tr>
+                            <th colspan="2">QC</th>
+                            <th colspan="4">QR Code</th>
+                        </tr>
+                        <tr>
+                            <td class="operator-sign" colspan="2">' . $detail->qc . '</td>
+                            <td class="qr-code" colspan="4">
+                                <img src="' . base_url('assets/image/qrcode/' . $detail->serial_label . '.png') . '"/>
+                                <div class="serial-label">' . $detail->serial_label . '</div>
+                            </td>
+                        </tr>
+                    </table>
+            
+            </div>';
+        } 
     
+        $html .= '<script>window.print()</script>
+                </body>
+            </html>';
     
-    
+        die($html);
+    }
 
     public function print($option = "")
     {

@@ -853,7 +853,7 @@ class Delivery_notes extends CI_Controller
                         <td class="no-wrap">'.$row['customer_order_no'].'</td>
                         <td class="no-wrap" style="mso-number-format:&quot;@&quot;">'.$row['item_fg_number'].'</td>
                         <td class="no-wrap">'.$row['item_fg_name'].'</td>
-                        <td style="text-align: right;">'.number_format($row['qty_delivery'],0,".",".").'</td>
+                        <td style="text-align: right;">'.number_format($row['qty'],0,".",".").'</td>
                         <td class="no-wrap">'.$row['uom'].'</td>
                     </tr>';
             $no++;
