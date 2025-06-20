@@ -53,6 +53,7 @@ class Report_history_transactions_fg extends CI_Controller
         $filter_product_family = $this->input->get("filter_product_family");
         $filter_qty_in = $this->input->get("filter_qty_in");
         $filter_qty_out = $this->input->get("filter_qty_out");
+        $filter_plant = $this->input->get("filter_plant");
         
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
@@ -96,6 +97,10 @@ class Report_history_transactions_fg extends CI_Controller
         if (!empty($filter_product_family)) {
             $where_condition .= " AND a.item_family_number = '$filter_product_family'";
         }
+
+        if (!empty($filter_plant)) {
+            $where_condition .= " AND a.division_id = '$filter_plant'";
+        }
         
         $cols3 = ($filter_display == "DETAIL") ? "3" : "1";
         $cols2 = ($filter_display == "DETAIL") ? "2" : "1";
@@ -132,13 +137,13 @@ class Report_history_transactions_fg extends CI_Controller
                     AND tf2.request_date < DATE('$filter_from')
                     AND LEFT(tf2.transaction_type, 2) = 'RE'
                 ) -
-                -- Total Qty OUT (shipping_orders + transaction_fg IS)
+                -- Total Qty OUT (delivery_notes + transaction_fg IS)
                 (
                     SELECT IFNULL(SUM(sh2.qty), 0)
-                    FROM shipping_orders sh2
+                    FROM delivery_notes sh2
                     WHERE sh2.item_fg_id = a.id
                     AND sh2.deleted = 0
-                    AND sh2.created_date < DATE('$filter_from')
+                    AND sh2.delivery_note_date < DATE('$filter_from')
                 ) -
                 (
                     SELECT IFNULL(SUM(tf3.qty), 0)
@@ -155,10 +160,44 @@ class Report_history_transactions_fg extends CI_Controller
                 COALESCE((SELECT SUM(tf.qty) FROM transaction_fg tf WHERE tf.item_fg_id = a.id AND tf.deleted = 0 AND tf.request_date BETWEEN '$filter_from' AND '$filter_to' AND LEFT(tf.transaction_type, 2) = 'RE'), 0)
             ) as qty_in,
             (
-                COALESCE((SELECT SUM(sh.qty) FROM shipping_orders sh 
-                    WHERE sh.item_fg_id = a.id 
-                    AND sh.deleted = 0 
-                    AND DATE(sh.created_date) BETWEEN '$filter_from' AND '$filter_to'), 0) +
+                -- COALESCE((SELECT SUM(sh.qty) FROM delivery_notes sh 
+                --     WHERE sh.item_fg_id = a.id 
+                --     AND sh.deleted = 0 
+                --     AND DATE(sh.delivery_note_date) BETWEEN '$filter_from' AND '$filter_to'), 0) +
+
+                -- COALESCE((
+                --     SELECT SUM(s.qty)
+                --     FROM shipping_orders s
+                --     JOIN delivery_notes dns 
+                --         ON s.delivery_order_no = dns.delivery_order_no
+                --         AND s.item_fg_id = dns.item_fg_id
+                --         AND s.customer_order_no = dns.customer_order_no
+                --     WHERE s.item_fg_id = a.id
+                --     AND s.deleted = 0
+                --     AND dns.deleted = 0
+                --     AND DATE(dns.delivery_note_date) BETWEEN '$filter_from' AND '$filter_to'
+                -- ), 0) +
+
+                COALESCE((
+                    SELECT SUM(dn.qty)
+                    FROM delivery_notes dn
+                    JOIN (
+                        SELECT 
+                            delivery_order_no, 
+                            item_fg_id, 
+                            customer_order_no,
+                            SUM(qty) AS total_shipping_qty
+                        FROM shipping_orders
+                        WHERE deleted = 0
+                        GROUP BY delivery_order_no, item_fg_id, customer_order_no
+                    ) s ON dn.delivery_order_no = s.delivery_order_no
+                        AND dn.item_fg_id = s.item_fg_id
+                        AND dn.customer_order_no = s.customer_order_no
+                        AND dn.qty = s.total_shipping_qty
+                    WHERE dn.item_fg_id = a.id
+                    AND dn.deleted = 0
+                    AND DATE(dn.delivery_note_date) BETWEEN '$filter_from' AND '$filter_to'
+                ), 0) + 
                 COALESCE((SELECT SUM(tf.qty) FROM transaction_fg tf WHERE tf.item_fg_id = a.id AND tf.deleted = 0 AND tf.request_date BETWEEN '$filter_from' AND '$filter_to' AND LEFT(tf.transaction_type, 2) = 'IS'), 0)
             ) as qty_out,
             (
@@ -179,7 +218,7 @@ class Report_history_transactions_fg extends CI_Controller
                         ELSE 0
                     END),0) - 
                     COALESCE(SUM(CASE 
-                        WHEN sh2.deleted = 0 AND DATE(sh2.created_date) < '$filter_from'
+                        WHEN sh2.deleted = 0 AND DATE(sh2.delivery_note_date) < '$filter_from'
                         THEN sh2.qty
                         ELSE 0 
                     END),0) -
@@ -190,21 +229,22 @@ class Report_history_transactions_fg extends CI_Controller
                     END),0))
                 FROM fg_scan_in_label f2
                 LEFT JOIN os_fg o2 ON f2.item_fg_id = o2.item_fg_id
-                LEFT JOIN shipping_orders sh2 ON f2.item_fg_id = sh2.item_fg_id
+                LEFT JOIN delivery_notes sh2 ON f2.item_fg_id = sh2.item_fg_id
                 LEFT JOIN transaction_fg tf2 ON f2.item_fg_id = tf2.item_fg_id
                 LEFT JOIN transaction_fg tf3 ON f2.item_fg_id = tf3.item_fg_id
                 WHERE f2.item_fg_id = a.id), 0) +
                 COALESCE((SELECT SUM(f.qty) FROM fg_scan_in_label f WHERE f.item_fg_id = a.id AND f.deleted = 0 AND f.scan_date BETWEEN '$filter_from' AND '$filter_to'), 0) +
                 COALESCE((SELECT SUM(o.qty) FROM os_fg o WHERE o.item_fg_id = a.id AND o.deleted = 0 AND o.trans_date BETWEEN '$filter_from' AND '$filter_to'), 0) +
                 COALESCE((SELECT SUM(tf.qty) FROM transaction_fg tf WHERE tf.item_fg_id = a.id AND tf.deleted = 0 AND tf.request_date BETWEEN '$filter_from' AND '$filter_to' AND LEFT(tf.transaction_type, 2) = 'RE'), 0) -
-                COALESCE((SELECT SUM(sh.qty) FROM shipping_orders sh 
+                COALESCE((SELECT SUM(sh.qty) FROM delivery_notes sh 
                     WHERE sh.item_fg_id = a.id 
                     AND sh.deleted = 0 
-                    AND DATE(sh.created_date) BETWEEN '$filter_from' AND '$filter_to'), 0) -
+                    AND DATE(sh.delivery_note_date) BETWEEN '$filter_from' AND '$filter_to'), 0) -
                 COALESCE((SELECT SUM(tf.qty) FROM transaction_fg tf WHERE tf.item_fg_id = a.id AND tf.deleted = 0 AND tf.request_date BETWEEN '$filter_from' AND '$filter_to' AND LEFT(tf.transaction_type, 2) = 'IS'), 0)
             ) as end_stock
         FROM item_fg a 
         LEFT JOIN item_familys f ON a.item_family_number = f.number
+        LEFT JOIN divisions dv ON a.division_id = dv.id
         $where_condition
         GROUP BY a.id
         $having_condition
@@ -275,10 +315,10 @@ class Report_history_transactions_fg extends CI_Controller
                     -- Total Qty OUT (shipping_orders)
                     (
                         SELECT IFNULL(SUM(sh2.qty), 0)
-                        FROM shipping_orders sh2
+                        FROM delivery_notes sh2
                         WHERE sh2.item_fg_id = a.id
                         AND sh2.deleted = 0
-                        AND sh2.created_date < DATE('$filter_from')
+                        AND sh2.delivery_note_date < DATE('$filter_from')
                     )
                 ), 0) as begin_stock
             FROM item_fg a 
@@ -383,54 +423,209 @@ class Report_history_transactions_fg extends CI_Controller
                     AND (LEFT(tf.transaction_type, 2) = 'RE' OR LEFT(tf.transaction_type, 2) = 'IS')
                     )
                     UNION ALL
-                    (SELECT 
-                        'OUT' as trans_category,
-                        do.actual_delivery_date as trans_date,
-                        sh.delivery_order_no as ref_no,
-                        -sh.qty as qty,
-                        u.name as username,
-                        'Shipping Order' as trans_type,
-                        CASE 
-                            WHEN NULLIF(lp.compound_lot, '') IS NOT NULL THEN lp.compound_lot
-                            WHEN NULLIF(nbf.compound_lot, '') IS NOT NULL THEN nbf.compound_lot
-                            ELSE (
-                                SELECT compound_lot 
-                                FROM new_barcode_fg 
-                                WHERE item_fg_id = sh.item_fg_id 
-                                AND compound_lot IS NOT NULL 
-                                AND LENGTH(TRIM(compound_lot)) > 0
-                                GROUP BY compound_lot 
-                                ORDER BY COUNT(*) DESC 
-                                LIMIT 1
-                            )
-                        END as compound_lot,
-                        CASE
-                            WHEN lp.prod_date IS NOT NULL THEN lp.prod_date
-                            WHEN nbf.prod_date IS NOT NULL THEN nbf.prod_date
-                            ELSE (
-                                SELECT prod_date 
-                                FROM new_barcode_fg 
-                                WHERE item_fg_id = sh.item_fg_id 
-                                AND prod_date IS NOT NULL 
-                                AND LENGTH(TRIM(prod_date)) > 0
-                                GROUP BY prod_date 
-                                ORDER BY COUNT(*) DESC 
-                                LIMIT 1
-                            )
-                        END as prod_date,
-                        sh.created_date
-                    FROM shipping_orders sh
-                    JOIN users u ON sh.created_by = u.username
-                    LEFT JOIN label_packing_detail lpd ON sh.delivery_order_no = lpd.serial_label
-                    LEFT JOIN label_packing lp ON lpd.serial_no = lp.serial_no
-                    LEFT JOIN new_barcode_fg_detail nbfd ON sh.serial_label = nbfd.serial_label
-                    LEFT JOIN new_barcode_fg nbf ON nbfd.request_no = nbf.request_no
-                    LEFT JOIN delivery_orders do ON sh.delivery_order_no = do.delivery_order_no
-                    WHERE sh.item_fg_id = '$item_fg_id' 
-                    AND DATE(sh.created_date) BETWEEN '$filter_from' AND '$filter_to'
-                    AND sh.deleted = 0)
-                ) as combined_transactions
-                ORDER BY trans_date ASC, created_date ASC");
+                    (
+                        SELECT 
+                            'OUT' AS trans_category,
+                            do.actual_delivery_date AS trans_date,
+                            sh.delivery_order_no AS ref_no,
+                            -sh.qty AS qty,
+                            -- -so_qty.total_qty AS qty,
+                            u.name AS username,
+                            'Shipping Order' AS trans_type,
+
+                            -- compound_lot
+                            CASE 
+                                WHEN NULLIF(lp.compound_lot, '') IS NOT NULL THEN lp.compound_lot
+                                WHEN (
+                                    SELECT NULLIF(nbf.compound_lot, '')
+                                    FROM shipping_orders so
+                                    JOIN new_barcode_fg_detail nbfd ON so.serial_label = nbfd.serial_label
+                                    JOIN new_barcode_fg nbf ON nbfd.request_no = nbf.request_no
+                                    WHERE so.delivery_order_no = sh.delivery_order_no
+                                    AND so.item_fg_id = sh.item_fg_id
+                                    AND so.customer_order_no = sh.customer_order_no
+                                    LIMIT 1
+                                ) IS NOT NULL THEN (
+                                    SELECT nbf.compound_lot
+                                    FROM shipping_orders so
+                                    JOIN new_barcode_fg_detail nbfd ON so.serial_label = nbfd.serial_label
+                                    JOIN new_barcode_fg nbf ON nbfd.request_no = nbf.request_no
+                                    WHERE so.delivery_order_no = sh.delivery_order_no
+                                    AND so.item_fg_id = sh.item_fg_id
+                                    AND so.customer_order_no = sh.customer_order_no
+                                    LIMIT 1
+                                ) ELSE (
+                                    SELECT compound_lot 
+                                    FROM new_barcode_fg 
+                                    WHERE item_fg_id = sh.item_fg_id 
+                                    AND compound_lot IS NOT NULL 
+                                    AND LENGTH(TRIM(compound_lot)) > 0
+                                    GROUP BY compound_lot 
+                                    ORDER BY COUNT(*) DESC 
+                                    LIMIT 1
+                                )
+                            END AS compound_lot,
+
+                            -- prod_date
+                            CASE
+                                WHEN lp.prod_date IS NOT NULL THEN lp.prod_date
+                                WHEN (
+                                    SELECT nbf.prod_date
+                                    FROM shipping_orders so
+                                    JOIN new_barcode_fg_detail nbfd ON so.serial_label = nbfd.serial_label
+                                    JOIN new_barcode_fg nbf ON nbfd.request_no = nbf.request_no
+                                    WHERE so.delivery_order_no = sh.delivery_order_no
+                                    AND so.item_fg_id = sh.item_fg_id
+                                    AND so.customer_order_no = sh.customer_order_no
+                                    LIMIT 1
+                                ) IS NOT NULL THEN (
+                                    SELECT nbf.prod_date
+                                    FROM shipping_orders so
+                                    JOIN new_barcode_fg_detail nbfd ON so.serial_label = nbfd.serial_label
+                                    JOIN new_barcode_fg nbf ON nbfd.request_no = nbf.request_no
+                                    WHERE so.delivery_order_no = sh.delivery_order_no
+                                    AND so.item_fg_id = sh.item_fg_id
+                                    AND so.customer_order_no = sh.customer_order_no
+                                    LIMIT 1
+                                ) ELSE (
+                                    SELECT prod_date 
+                                    FROM new_barcode_fg 
+                                    WHERE item_fg_id = sh.item_fg_id 
+                                    AND prod_date IS NOT NULL 
+                                    AND LENGTH(TRIM(prod_date)) > 0
+                                    GROUP BY prod_date 
+                                    ORDER BY COUNT(*) DESC 
+                                    LIMIT 1
+                                )
+                            END AS prod_date,
+
+                            sh.delivery_note_date
+                        FROM delivery_notes sh
+                        JOIN users u ON sh.created_by = u.username
+
+                        -- Label packing
+                        LEFT JOIN label_packing_detail lpd ON sh.delivery_order_no = lpd.serial_label
+                        LEFT JOIN label_packing lp ON lpd.serial_no = lp.serial_no
+
+                        -- Aggregated qty from shipping_orders
+                        -- LEFT JOIN (
+                        --     SELECT 
+                        --         delivery_order_no, 
+                        --         item_fg_id, 
+                        --         customer_order_no,
+                        --         SUM(qty) AS total_qty 
+                        --     FROM shipping_orders 
+                        --     GROUP BY delivery_order_no, item_fg_id, customer_order_no
+                        -- ) so_qty ON sh.delivery_order_no = so_qty.delivery_order_no 
+                        --         AND sh.item_fg_id = so_qty.item_fg_id
+                        --         AND sh.customer_order_no = so_qty.customer_order_no
+
+                        -- Shipping summary join 
+                        JOIN (
+                            SELECT 
+                                delivery_order_no, 
+                                item_fg_id, 
+                                customer_order_no,
+                                SUM(qty) AS total_shipping_qty
+                            FROM shipping_orders
+                            WHERE deleted = 0
+                            GROUP BY delivery_order_no, item_fg_id, customer_order_no
+                        ) so ON sh.delivery_order_no = so.delivery_order_no
+                            AND sh.item_fg_id = so.item_fg_id
+                            AND sh.customer_order_no = so.customer_order_no
+                            AND sh.qty = so.total_shipping_qty
+
+                        -- Delivery orders
+                        LEFT JOIN delivery_orders do ON sh.delivery_order_no = do.delivery_order_no
+
+                        WHERE sh.item_fg_id = '$item_fg_id' 
+                        AND DATE(sh.delivery_note_date) BETWEEN '$filter_from' AND '$filter_to'
+                        AND sh.deleted = 0
+                )) as combined_transactions
+                ORDER BY trans_date ASC");
+                                    
+                // --     UNION ALL
+                // --     (SELECT 
+                // --         'OUT' as trans_category,
+                // --         do.actual_delivery_date as trans_date,
+                // --         sh.delivery_order_no as ref_no,
+                // --         -- -sh.qty as qty,
+                // --         -so_qty.total_qty as qty,
+                // --         u.name as username,
+                // --         'Shipping Order' as trans_type,
+                // --         CASE 
+                // --             WHEN NULLIF(lp.compound_lot, '') IS NOT NULL THEN lp.compound_lot
+                // --             WHEN NULLIF(nbf.compound_lot, '') IS NOT NULL THEN nbf.compound_lot
+                // --             ELSE (
+                // --                 SELECT compound_lot 
+                // --                 FROM new_barcode_fg 
+                // --                 WHERE item_fg_id = sh.item_fg_id 
+                // --                 AND compound_lot IS NOT NULL 
+                // --                 AND LENGTH(TRIM(compound_lot)) > 0
+                // --                 GROUP BY compound_lot 
+                // --                 ORDER BY COUNT(*) DESC 
+                // --                 LIMIT 1
+                // --             )
+                // --         END as compound_lot,
+                // --         CASE
+                // --             WHEN lp.prod_date IS NOT NULL THEN lp.prod_date
+                // --             WHEN nbf.prod_date IS NOT NULL THEN nbf.prod_date
+                // --             ELSE (
+                // --                 SELECT prod_date 
+                // --                 FROM new_barcode_fg 
+                // --                 WHERE item_fg_id = sh.item_fg_id 
+                // --                 AND prod_date IS NOT NULL 
+                // --                 AND LENGTH(TRIM(prod_date)) > 0
+                // --                 GROUP BY prod_date 
+                // --                 ORDER BY COUNT(*) DESC 
+                // --                 LIMIT 1
+                // --             )
+                // --         END as prod_date,
+                // --         sh.delivery_note_date
+                // --     FROM delivery_notes sh
+                // --     JOIN users u ON sh.created_by = u.username
+                // --     LEFT JOIN label_packing_detail lpd ON sh.delivery_order_no = lpd.serial_label
+                // --     LEFT JOIN label_packing lp ON lpd.serial_no = lp.serial_no
+                // --     -- LEFT JOIN shipping_orders so ON sh.delivery_order_no = so.delivery_order_no 
+                // --     -- AND sh.item_fg_id = so.item_fg_id
+                // --     -- LEFT JOIN (
+                // --     --     SELECT 
+                // --     --         delivery_order_no, 
+                // --     --         item_fg_id, 
+                // --     --         customer_order_no,
+                // --     --         serial_label,
+                // --     --         SUM(qty) AS total_qty 
+                // --     --     FROM shipping_orders 
+                // --     --     GROUP BY delivery_order_no, item_fg_id, customer_order_no, serial_label
+                // --     -- ) so ON sh.delivery_order_no = so.delivery_order_no 
+                // --     --     AND sh.item_fg_id = so.item_fg_id
+                // --     --     AND sh.customer_order_no = so.customer_order_no
+                // --     --     AND sh.delivery_order_no = so.delivery_order_no
+                // --     LEFT JOIN (
+                // --         SELECT 
+                // --             delivery_order_no, 
+                // --             item_fg_id, 
+                // --             customer_order_no,
+                // --             SUM(qty) AS total_qty 
+                // --         FROM shipping_orders 
+                // --         GROUP BY delivery_order_no, item_fg_id, customer_order_no
+                // --     ) so_qty ON sh.delivery_order_no = so_qty.delivery_order_no 
+                // --             AND sh.item_fg_id = so_qty.item_fg_id
+                // --             AND sh.customer_order_no = so_qty.customer_order_no
+                // --     LEFT JOIN shipping_orders so 
+                // --         ON sh.delivery_order_no = so.delivery_order_no 
+                // --         AND sh.item_fg_id = so.item_fg_id 
+                // --         AND sh.customer_order_no = so.customer_order_no
+                // --     LEFT JOIN new_barcode_fg_detail nbfd ON so.serial_label = nbfd.serial_label
+                // --     LEFT JOIN new_barcode_fg nbf ON nbfd.request_no = nbf.request_no
+                // --     LEFT JOIN delivery_orders do ON sh.delivery_order_no = do.delivery_order_no
+                // --     WHERE sh.item_fg_id = '$item_fg_id' 
+                // --     -- AND DATE(sh.created_date) BETWEEN '$filter_from' AND '$filter_to'
+                // --     AND DATE(sh.delivery_note_date) BETWEEN '$filter_from' AND '$filter_to'
+                // --     AND sh.deleted = 0)
+                // -- ) as combined_transactions
+                // -- ORDER BY trans_date ASC");
+                
 
                 foreach ($all_transactions as $trans) {
                     $balance += $trans->qty;

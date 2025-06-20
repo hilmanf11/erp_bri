@@ -11,12 +11,17 @@
         <div style="width: 50%; float:left;">
 
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Plant</span>
+                <input style="width:60%;" id="filter_plant" class="easyui-combobox">
+            </div>
+
+            <div class="fitem">
 
                 <span style="width:35%; display:inline-block;">Receipt Date</span>
 
-                <input style="width:28%;" id="filter_from" class="easyui-datebox" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser, editable:false"> To
-
-                <input style="width:28%;" id="filter_to" class="easyui-datebox" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
+                <input style="width:26.6%;" id="filter_from" class="easyui-datebox" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
+                <span style="width:6%; display:inline-block; text-align:center;">to</span>
+                <input style="width:26.62%;" id="filter_to" class="easyui-datebox" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
 
             </div>
 
@@ -39,14 +44,6 @@
                     <option value="DETAIL">DETAIL</option>
 
                 </select>
-
-            </div>
-
-            <div class="fitem">
-
-                <span style="width:35%; display:inline-block;"></span>
-
-                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
 
             </div>
 
@@ -74,6 +71,14 @@
                     <option value="ZERO">=0</option>
                     <option value="NONZERO">>0</option>
                 </select>
+            </div>
+
+            <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
+
+                <span style="width:35%; display:inline-block;"></span>
+
+                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+
             </div>
         </div>
 
@@ -123,9 +128,12 @@
 
         var filter_qty_out = $("#filter_qty_out").combobox('getValue');
 
+        var filter_plant = $("#filter_plant").combobox('getValue');
 
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_product_family=" + filter_product_family + "&filter_qty_in=" + filter_qty_in + "&filter_qty_out=" + filter_qty_out;
+
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_product_family=" + filter_product_family + "&filter_qty_in=" + filter_qty_in + "&filter_qty_out=" + filter_qty_out +
+        "&filter_plant=" + filter_plant;
 
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
 
@@ -151,9 +159,12 @@
 
         var filter_qty_out = $("#filter_qty_out").combobox('getValue');
 
+        var filter_plant = $("#filter_plant").combobox('getValue');
 
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_product_family=" + filter_product_family + "&filter_qty_in=" + filter_qty_in + "&filter_qty_out=" + filter_qty_out;
+
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_product_family=" + filter_product_family + "&filter_qty_in=" + filter_qty_in + "&filter_qty_out=" + filter_qty_out +
+        "&filter_plant=" + filter_plant;
 
         window.location.assign('<?= base_url('warehouse/report_history_transactions_fg/print/excel') ?>' + url);
 
@@ -277,6 +288,20 @@
 
         });
 
+    });
+
+    $('#filter_plant').combobox({
+        url: '<?= base_url('master/divisions/reads'); ?>',
+        valueField: 'id',
+        textField: 'name',
+        panelHeight: 'panelHeight',
+        prompt: 'Choose Plant',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
     });
 
     //Format Datepicker
