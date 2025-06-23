@@ -259,6 +259,8 @@ class Shipping_orders extends CI_Controller
                 return; // Keluar dari fungsi jika sudah ada
             }
 
+            $this->db->trans_begin();
+
             foreach ($delivery_orders as $delivery_order) {
 
                 $status_delivery = 1;
@@ -326,11 +328,53 @@ class Shipping_orders extends CI_Controller
                 }
 
                 // Simpan data baru ke database
-                $this->crud->create('delivery_notes', $data_to_insert);
-                $this->crud->update('delivery_orders', ['delivery_order_no' => $delivery_order_no], ['status' => 1]);
+                // $this->crud->create('delivery_notes', $data_to_insert);
+                // $this->crud->update('delivery_orders', ['delivery_order_no' => $delivery_order_no], ['status' => 1]);
+
+                $insert_dn = $this->crud->create('delivery_notes', $data_to_insert);
+                if (!$insert_dn) {
+                    $this->db->trans_rollback();
+                    echo json_encode([
+                        "theme" => "error",
+                        "message" => "Delivery Note failed to be created",
+                        "title" => "Error"
+                    ]);
+                    return;
+                }
+
+                $update_ds = $this->crud->update('delivery_orders',
+                    ['delivery_order_no' => $delivery_order_no],
+                    ['status' => 1]
+                );
+
+                if (!$update_ds) {
+                    $this->db->trans_rollback();
+                    echo json_encode([
+                        "theme" => "error",
+                        "message" => "Delivery Order failed to be updated",
+                        "title" => "Error"
+                    ]);
+                    return;
+                }
             }
 
-            echo json_encode(array("theme" => "success", "message" => "Delivery Note has been created", "title" => "Success"));
+            if ($this->db->trans_status() === FALSE) {
+                $this->db->trans_rollback();
+                echo json_encode([
+                    "title" => "Error",
+                    "message" => "Failed to be create or update data",
+                    "theme" => "error"
+                ]);
+                return;
+            }
+
+            $this->db->trans_commit();
+
+            echo json_encode([
+                "title" => "Success",
+                "message" => "Delivery Note has been created",
+                "theme" => "success"
+            ]);
         } else {
             show_error("Cannot Process your request");
         }
