@@ -261,8 +261,11 @@
 <iframe id="printout" src="<?= base_url('sales/sales_orders/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
+    let form_mode = '';
+
     //ADD DATA
     function add() {
+        form_mode = 'add';
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
         url_save = '<?= base_url('sales/sales_orders/create') ?>';
@@ -310,7 +313,7 @@
                     // toastr.error("Please Choose Customer Name");
                     $("#sales_order_date").datebox('clear');
                     return;
-                } else {
+                } else if (form_mode === 'add') {
                     number(customer_id, sales_order_date);
                     addTable(customer_id);
                 }
@@ -326,7 +329,7 @@
                 var sales_order_date = $("#sales_order_date").datebox('getValue');
                 $("#taxes").numberbox('setValue', customer.taxes);
 
-                if (sales_order_date != "") {
+                if (sales_order_date != "" && form_mode === 'add') {
                     number(customer.id, sales_order_date);
                 }
 
@@ -769,6 +772,7 @@
 
     //EDIT DATA
     function update() {
+        form_mode = 'update';
         var row = $('#dg').treegrid('getSelected');
         if (row) {
             if(row.status == 0 || row.status == "2") {
