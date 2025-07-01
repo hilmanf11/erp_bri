@@ -149,6 +149,8 @@ class Item_process_flow extends CI_Controller
             'process_i' => 'SLITTING',
             'process_j' => 'POST CURE',
             'process_k' => 'PACKING',
+            'process_p' => 'SEALING',
+            'process_q' => 'REWIND',
         ];
 
         // Membuat tampilan HTML

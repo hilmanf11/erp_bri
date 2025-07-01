@@ -22,6 +22,10 @@
             <th rowspan="2" data-options="field:'process_i',width:150,halign:'center',sortable:true">SLITTING</th>
             <th rowspan="2" data-options="field:'process_j',width:150,halign:'center',sortable:true">POST CURE</th>
             <th rowspan="2" data-options="field:'process_k',width:150,halign:'center',sortable:true">PACKING</th>
+            
+            <th rowspan="2" data-options="field:'process_p',width:150,halign:'center',sortable:true">SEALING</th>
+            <th rowspan="2" data-options="field:'process_q',width:150,halign:'center',sortable:true">REWIND</th>
+            
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -83,12 +87,16 @@
                     <span style="width:35%; display:inline-block;">EXTRUSION</span>
                     <input style="width:60%;" name="process_n" id="process_n" class="easyui-textbox">
                 </div>
-            </div>
-            <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">COOLING</span>
                     <input style="width:60%;" name="process_m" id="process_m" class="easyui-textbox">
                 </div>
+            </div>
+            <div style="width: 50%; float: left;">
+                <!-- <div class="fitem">
+                    <span style="width:35%; display:inline-block;">COOLING</span>
+                    <input style="width:60%;" name="process_m" id="process_m" class="easyui-textbox">
+                </div> -->
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">OVEN</span>
                     <input style="width:60%;" name="process_o" id="process_o" class="easyui-textbox">
@@ -121,6 +129,15 @@
                     <span style="width:35%; display:inline-block;">PACKING</span>
                     <input style="width:60%;" name="process_k" id="process_k" class="easyui-textbox">
                 </div>
+
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">SEALING</span>
+                    <input style="width:60%;" name="process_p" id="process_p" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">REWIND</span>
+                    <input style="width:60%;" name="process_q" id="process_q" class="easyui-textbox">
+                </div>
             </div>
         </fieldset>
     </form>
@@ -148,6 +165,8 @@
         $('#process_j').textbox('textbox').attr('placeholder', '0');
         $('#process_k').textbox('textbox').attr('placeholder', '0');
         $('#process_o').textbox('textbox').attr('placeholder', '0');
+        $('#process_p').textbox('textbox').attr('placeholder', '0');
+        $('#process_q').textbox('textbox').attr('placeholder', '0');
 
         $.ajax({
             type: "post",
