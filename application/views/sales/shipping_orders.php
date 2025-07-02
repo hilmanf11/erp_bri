@@ -306,7 +306,12 @@
     }
 
     function numberStyle2(value, row, index) {
-        if (row.delivery > row.shipping) {
+        let shipping = parseFloat(row.shipping || 0);
+        let delivery = parseFloat(row.delivery || 0);
+
+        // console.log("Delivery:", delivery, "Shipping:", shipping);
+    
+        if (shipping < delivery) {
             return 'background-color:#FFC8C8;';
         } else {
             return 'background-color:#C8FFCC;';
