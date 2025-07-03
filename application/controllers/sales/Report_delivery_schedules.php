@@ -29,11 +29,55 @@ class Report_delivery_schedules extends CI_Controller
         }
     }
 
+    // public function readCustomerOrder()
+    // {
+    //     $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));
+    //     $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
+    //     $customer_id = $this->input->get("customer_id");
+
+    //     // $customer_orders = $this->crud->query("SELECT customer_order_no, sales_order_no
+    //     //     FROM sales_orders
+    //     //     WHERE sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'
+    //     //     AND customer_id = '$customer_id'
+    //     //     GROUP BY sales_order_no
+    //     //     ORDER BY sales_order_no ASC");
+    //     $customer_orders = $this->crud->query("SELECT a.customer_id, 
+    //     b.customer_order_no, 
+    //     b.sales_order_no, 
+    //     b.sales_order_date, 
+    //     a.trans_date
+    //     FROM sales_order_deliveries a
+    //     JOIN sales_orders b 
+    //     ON a.customer_id = b.customer_id 
+    //     AND a.sales_order_no = b.sales_order_no
+    //     WHERE a.customer_id = '$customer_id'
+        
+    //     AND (
+    //     b.sales_order_date BETWEEN '$filter_so_date_from' and '$filter_so_date_to'
+    //     OR a.trans_date BETWEEN '$filter_so_date_from' and '$filter_so_date_to'
+        
+    //     ) GROUP BY a.sales_order_no  ORDER BY a.sales_order_no ASC");
+    //     echo json_encode($customer_orders);
+    // }
+
+
     public function readCustomerOrder()
     {
+        $filter_type = base64_decode($this->input->get("filter_type"));
         $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));
         $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
         $customer_id = $this->input->get("customer_id");
+
+        $where_date = '';
+        if($filter_type != "WITHOUT_SCHEDULE") {
+            if (!empty($filter_so_date_from) && !empty($filter_so_date_to)) {
+                $where_date = "AND (
+                b.sales_order_date BETWEEN '$filter_so_date_from' AND '$filter_so_date_to'
+                OR a.trans_date BETWEEN '$filter_so_date_from' AND '$filter_so_date_to'
+            )";
+            }
+        
+        }
 
         // $customer_orders = $this->crud->query("SELECT customer_order_no, sales_order_no
         //     FROM sales_orders
@@ -41,7 +85,7 @@ class Report_delivery_schedules extends CI_Controller
         //     AND customer_id = '$customer_id'
         //     GROUP BY sales_order_no
         //     ORDER BY sales_order_no ASC");
-        $customer_orders = $this->crud->query("SELECT a.customer_id, 
+        $customer_orders = $this->crud->query("SELECT a.customer_id,
         b.customer_order_no, 
         b.sales_order_no, 
         b.sales_order_date, 
@@ -51,10 +95,9 @@ class Report_delivery_schedules extends CI_Controller
         ON a.customer_id = b.customer_id 
         AND a.sales_order_no = b.sales_order_no
         WHERE a.customer_id = '$customer_id'
-        AND (
-        b.sales_order_date BETWEEN '$filter_so_date_from' and '$filter_so_date_to'
-        OR a.trans_date BETWEEN '$filter_so_date_from' and '$filter_so_date_to'
-        ) GROUP BY a.sales_order_no  ORDER BY a.sales_order_no ASC");
+        $where_date
+        GROUP BY a.sales_order_no 
+        ORDER BY a.sales_order_no ASC");
         echo json_encode($customer_orders);
     }
 
@@ -82,6 +125,7 @@ class Report_delivery_schedules extends CI_Controller
             header("Content-Disposition: attachment; filename=report_outstanding_so_$format.xls");
         }
 
+        $filter_type  = base64_decode($this->input->get('filter_type'));
         $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));
         $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
         $filter_customer_name = base64_decode($this->input->get("filter_customer_name"));
@@ -99,6 +143,9 @@ class Report_delivery_schedules extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
+
+        $schedule_display = $filter_so_date_from . ' To ' . $filter_so_date_to;
+        $periode_display = $filter_type == "WITHOUT_SCHEDULE" ? "ALL" : $schedule_display;
 
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
                 <center>
@@ -128,7 +175,7 @@ class Report_delivery_schedules extends CI_Controller
                     <tr>
                         <th style="width:100px; text-align:left;">Period</th>
                         <td style="width:10px;">:</td>
-                        <td style="width:200px;">' . $filter_so_date_from . ' To ' . $filter_so_date_to . '</td>
+                        <td style="width:200px;">' . $periode_display . '</td>
                     </tr>
                     <tr>
                         <th style="width:100px; text-align:left;">Customer Name</th>
@@ -149,27 +196,48 @@ class Report_delivery_schedules extends CI_Controller
                 <br>';
 
         if ($filter_display == "RECAP") {
-            $this->db->select('a.sales_order_no, a.trans_date, a.qty, b.number as customer_number, b.name as customer_name, c.customer_order_no, d.id as item_fg_id, d.name as item_fg_name, d.number as item_fg_number, d.uom as item_fg_uom');
+            $this->db->select('
+                a.trans_date, 
+                a.customer_id,
+                b.number as customer_number, 
+                b.name as customer_name, 
+                c.customer_order_no, 
+                a.item_fg_id, 
+                d.name as item_fg_name, 
+                d.number as item_fg_number, 
+                d.uom as item_fg_uom, 
+                a.sales_order_no,
+                COALESCE(SUM(a.qty), 0) as qty_plan, 
+                COALESCE(SUM(e.qty), 0) as qty_del'
+            );
+            
             $this->db->from('sales_order_deliveries a');
             $this->db->join('customers b', 'a.customer_id = b.id');
-            $this->db->join('sales_orders c', 'a.sales_order_no = c.sales_order_no');
+            $this->db->join('sales_orders c', 'a.sales_order_no = c.sales_order_no and a.customer_id = c.customer_id and a.item_fg_id = c.item_fg_id');
             $this->db->join('item_fg d', 'a.item_fg_id = d.id');
-            $this->db->where("a.trans_date between '$filter_so_date_from' and '$filter_so_date_to'");
+            $this->db->join('delivery_notes e', 'a.sales_order_no = e.sales_order_no and a.item_fg_id = e.item_fg_id and a.customer_id = e.customer_id and a.trans_date = e.delivery_note_date', 'left');
+
+            if($filter_type != "WITHOUT_SCHEDULE") {
+                $this->db->where("a.trans_date BETWEEN '$filter_so_date_from' AND '$filter_so_date_to'");
+            }
+
             $this->db->like('a.customer_id', $filter_customer_name);
             $this->db->like('a.item_fg_id', $filter_item_fg);
             $this->db->like('c.customer_order_no', $filter_customer_order_no);
-            //$this->db->like('a.sales_order_no', $filter_sales_order_no);
-            $this->db->order_by('a.item_fg_id', 'DESC');
-            $this->db->group_by('a.trans_date');
+            
+            // $this->db->group_by('a.trans_date');
             $this->db->group_by('a.customer_id');
+            $this->db->group_by('a.customer_order_no');
             $this->db->group_by('a.item_fg_id');
             $this->db->group_by('a.sales_order_no');
+
+            // $this->db->order_by('a.sales_order_no', 'ASC');
+
             $records = $this->db->get()->result_array();
 
             $html .= '<table id="customers" border="1">
                         <tr>
                             <th width="20">No</th>
-                            <th>Delivery Date</th>
                             <th>Customer Name</th>
                             <th>Sales Order No.</th>
                             <th>Customer Order No.</th>
@@ -177,16 +245,32 @@ class Report_delivery_schedules extends CI_Controller
                             <th>Product No</th>
                             <th>Product Name</th>
                             <th>UoM</th>
-                            <th>Delivery Qty</th>
+                            <th>Plan</th>
+                            <th>Actual</th>
+                            <th>Status</th>
                         </tr>';
 
             $no = 1;
-            
+
             foreach ($records as $data) {
-            
+
+                // $status = ($data['qty_plan'] == $data['qty_del']) ? 'CLOSE' : 'OPEN';
+                // $color = ($status == 'CLOSE') ? 'red' : 'green';
+
+                if ($data['qty_del'] < $data['qty_plan'] && $data['qty_del'] > 0) {
+                    $status = 'ON GOING';
+                    $color = '#FF9B17';
+                } elseif ($data['qty_del'] == $data['qty_plan']) {
+                    $status = 'CLOSE';
+                    $color = 'red';
+                } else {
+                    $status = 'OPEN';
+                    $color = 'green';
+                }
+
+
                 $html .= '<tr>
                             <td>' . $no . '</td>
-                            <td>' . $data['trans_date'] . '</td>
                             <td>' . $data['customer_name'] . '</td>
                             <td>' . $data['sales_order_no'] . '</td>
                             <td align="center">' . $data['customer_order_no'] . '</td>
@@ -194,20 +278,46 @@ class Report_delivery_schedules extends CI_Controller
                             <td>' . $data['item_fg_number'] . '</td>
                             <td>' . $data['item_fg_name'] . '</td>
                             <td>' . $data['item_fg_uom'] . '</td>
-                            <td align="center">' . $data['qty'] . '</td>
-                            
-                           
+                            <td align="center">' . $data['qty_plan'] . '</td>
+                            <td align="center">' . $data['qty_del'] . '</td>
+                            <td align="center" style="color:' . $color . '; font-weight:bold;">' . $status . '</td>
                         </tr>';
                 $no++;
             }
         } else {
+
+            if($filter_type == "WITHOUT_SCHEDULE") {
+                $this->db->select_min('trans_date', 'min_date');
+                $this->db->select_max('trans_date', 'max_date');
+                $this->db->from('sales_order_deliveries');
+                
+                if ($filter_customer_order_no != "") {
+                    $this->db->where('customer_order_no', $filter_customer_order_no);
+                }
+                if ($filter_customer_name != "") {
+                    $this->db->where('customer_id', $filter_customer_name);
+                }
+                $dates = $this->db->get()->row_array();
+
+                // $filter_so_date_from = $dates['min_date'];
+                // $filter_so_date_to = $dates['max_date'];
+
+                $filter_so_date_from = date('Y-m-01', strtotime($dates['min_date']));
+                $filter_so_date_to = date('Y-m-t', strtotime($dates['max_date']));                
+            }
 
             $this->db->select('a.sales_order_no, a.trans_date, a.qty, a.customer_id, b.number as customer_number, b.name as customer_name, c.customer_order_no, d.id as item_fg_id, d.name as item_fg_name, d.number as item_fg_number, d.uom as item_fg_uom');
             $this->db->from('sales_order_deliveries a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('sales_orders c', 'a.customer_id = c.customer_id and a.sales_order_no = c.sales_order_no');
             $this->db->join('item_fg d', 'a.item_fg_id = d.id');
-            $this->db->where("a.trans_date between '$filter_so_date_from' and '$filter_so_date_to'");
+
+            if($filter_type != "WITHOUT_SCHEDULE") {
+                $this->db->where("a.trans_date BETWEEN '$filter_so_date_from' AND '$filter_so_date_to'");
+            }
+
+            // $this->db->where("a.trans_date between '$filter_so_date_from' and '$filter_so_date_to'");
+
             if($filter_customer_name!=""){
                 $this->db->where('a.customer_id', $filter_customer_name);
             }
@@ -219,7 +329,7 @@ class Report_delivery_schedules extends CI_Controller
             }
             //$this->db->like('a.sales_order_no', $filter_sales_order_no);
            $this->db->group_by('a.item_fg_id');
-            $this->db->order_by('a.status', 'ASC');
+            $this->db->order_by('a.trans_date', 'ASC');
             $records = $this->db->get()->result_array();
 
             $p_date_start = date("Y-m-d", strtotime($filter_so_date_from));
@@ -234,49 +344,50 @@ class Report_delivery_schedules extends CI_Controller
             $p_date_start = date("Y-m-d", strtotime($filter_so_date_from));
             $p_date_to = date('Y-m-d', strtotime($filter_so_date_to));
 
-    $html .= '<table id="customers" border="1">
-        <tr>
-            <th rowspan="3" width="20">No</th>
-            <th rowspan="3">Product ID</th>
-            <th rowspan="3">Product No</th>
-            <th rowspan="3">Product Name</th>
-            <th rowspan="3">UoM</th>
-            <th rowspan="3">Desc</th>
-        </tr><tr>';
-// Convert strings to DateTime objects
-$start = new DateTime($filter_so_date_from);
-$end = new DateTime($filter_so_date_to);
+            $html .= '<table id="customers" border="1">
+                <tr>
+                    <th rowspan="3" width="20">No</th>
+                    <th rowspan="3">Product ID</th>
+                    <th rowspan="3">Product No</th>
+                    <th rowspan="3">Product Name</th>
+                    <th rowspan="3">UoM</th>
+                    <th rowspan="3">Desc</th>
+                </tr><tr>';
 
-// Array to store the results
-$month_days = [];
+        // Convert strings to DateTime objects
+        $start = new DateTime($filter_so_date_from);
+        $end = new DateTime($filter_so_date_to);
 
-// Loop through each month between start and end date
-while ($start <= $end) {
-    // Get the year and month
-    $month = $start->format('M Y'); // e.g., 2024-11
-    $year = $start->format('Y');   // e.g., 2024
-    $month_num = $start->format('m'); // e.g., 11 for November
+        // Array to store the results
+        $month_days = [];
 
-    // Get the last day of the current month
-    $last_day_of_month = $start->format('Y-m-t'); // 'Y-m-t' gives the last day of the month
+        // Loop through each month between start and end date
+        while ($start <= $end) {
+            // Get the year and month
+            $month = $start->format('M Y'); // e.g., 2024-11
+            $year = $start->format('Y');   // e.g., 2024
+            $month_num = $start->format('m'); // e.g., 11 for November
 
-    // Create a DateTime object for the last day of the current month
-    $last_day = new DateTime($last_day_of_month);
+            // Get the last day of the current month
+            $last_day_of_month = $start->format('Y-m-t'); // 'Y-m-t' gives the last day of the month
 
-    // Get the total number of days in the current month
-    $days_in_month = $last_day->format('d'); // Get the 'day' part of the date, which will be the total number of days
+            // Create a DateTime object for the last day of the current month
+            $last_day = new DateTime($last_day_of_month);
 
-    // Store the result
-    $month_days[$month] = $days_in_month;
+            // Get the total number of days in the current month
+            $days_in_month = $last_day->format('d'); // Get the 'day' part of the date, which will be the total number of days
 
-    // Move to the first day of the next month
-    $start->modify('first day of next month');
-}
-// Print the result
-foreach ($month_days as $month => $days) {
-    //echo "Month: $month - Total days: $days\n";
-    $html .= '<th align="center" colspan="'.$days.'">'.$month .'</th>';
-}
+            // Store the result
+            $month_days[$month] = $days_in_month;
+
+            // Move to the first day of the next month
+            $start->modify('first day of next month');
+        }
+        // Print the result
+        foreach ($month_days as $month => $days) {
+            //echo "Month: $month - Total days: $days\n";
+            $html .= '<th align="center" colspan="'.$days.'">'.$month .'</th>';
+        }
 
         $html .= '</tr><tr>';
         while (strtotime($p_date_start) <= strtotime($p_date_to)) {
@@ -323,7 +434,7 @@ foreach ($month_days as $month => $days) {
             if ($delivery) {
                 $plan_delivery_qty = $delivery['qty_del'];
                 if(@$plan_delivery_qty > 0){
-                    $html .='<td>'.@$plan_delivery_qty.'</td>';
+                    $html .='<td style="background-color: #00ff00; color:black; font-weight:bold;">'.@$plan_delivery_qty.'</td>';
                 }else{
                     $html.='<td>0</td>';
                 }
@@ -348,9 +459,9 @@ foreach ($month_days as $month => $days) {
                     $trans_date = date("Y-m-d", strtotime($p_date_start));
 
                     $this->db->select('qty as qty_del');
-                    $this->db->from('delivery_reports');
+                    $this->db->from('delivery_notes');
                     //$this->db->join('sales_orders a', 'd.sales_order_no = a.sales_order_no and d.item_fg_id = a.item_fg_id and d.customer_id = a.customer_id','left');
-                    $this->db->where('delivery_report_date', $trans_date);
+                    $this->db->where('delivery_note_date', $trans_date);
                     $this->db->where('customer_id', $data['customer_id']);
                     //$this->db->where('sales_order_no', $data['sales_order_no']);
                     $this->db->where('customer_order_no', $data['customer_order_no']);
@@ -364,7 +475,7 @@ foreach ($month_days as $month => $days) {
                         $actual_delivery_qty = $delivery['qty_del'];
                         //$balance_qty = @$actual_delivery_qty - @$plan_delivery_qty;
                         if(@$actual_delivery_qty > 0){
-                            $html .='<td>'.@$actual_delivery_qty.'</td>';
+                            $html .='<td style="background-color: yellow; color:black; font-weight:bold;">'.@$actual_delivery_qty.'</td>';
                         }else{
                             $html.='<td>0</td>';
                         }
@@ -383,8 +494,8 @@ foreach ($month_days as $month => $days) {
                 while (strtotime($p_date_start) <= strtotime($p_date_to)) {
                     $trans_date = date("Y-m-d", strtotime($p_date_start));
                     $this->db->select('qty as qty_del');
-                    $this->db->from('delivery_reports');
-                    $this->db->where('delivery_report_date', $trans_date);
+                    $this->db->from('delivery_notes');
+                    $this->db->where('delivery_note_date', $trans_date);
                     $this->db->where('customer_id', $data['customer_id']);
                     $this->db->where('customer_order_no', $data['customer_order_no']);
                     $this->db->where('item_fg_id', $data['item_fg_id']);
@@ -403,9 +514,14 @@ foreach ($month_days as $month => $days) {
                     $valActual = !empty($actual)?$actual['qty_del']:0;
                     $valPlan = !empty($plan)?$plan['qty_del']:0;
 
-                        $balance_qty = intval($valActual) - intval($valPlan) ;
-                            $html .='<td>'.@$balance_qty.'</td>';
-                    
+                    $balance_qty = intval($valActual) - intval($valPlan) ;
+                            // $html .='<td >'.@$balance_qty.'</td>';
+                    if ($balance_qty != 0) {
+                        $html .= '<td style="background-color: #ff8b8b; color: black; font-weight: bold;">' . $balance_qty . '</td>';
+                    } else {
+                        $html .= '<td>0</td>';
+                    }
+
                     $p_date_start = date("Y-m-d", strtotime("+1 days", strtotime($p_date_start)));
                 }
 

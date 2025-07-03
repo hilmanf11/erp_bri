@@ -4,7 +4,16 @@
             <legend><b>Form Filter Data</b></legend>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">SO Date</span>
+                    <span style="width:35%; display:inline-block;">Type Search</span>
+                    <select style="width:60%;" id="filter_type" class="easyui-combobox" panelHeight="auto">
+                        <option value="">All Types</option>
+                        <option value="WITH_SCHEDULE">With Schedule Date</option>
+                        <option value="WITHOUT_SCHEDULE">Without Schedule Date</option>
+                    </select>
+                </div>
+
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Schedule Date</span>
                     <input style="width:30%;" id="filter_so_date_from" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser" class="easyui-datebox">
                     <input style="width:30%;" id="filter_so_date_to" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser" class="easyui-datebox">
                 </div>
@@ -16,16 +25,20 @@
                     <span style="width:35%; display:inline-block;">Customer Order No</span>
                     <input style="width:60%;" id="filter_customer_order_no" class="easyui-combobox">
                 </div>
-                <div class="fitem">
+                <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No</span>
                     <input style="width:60%;" id="filter_item_fg" class="easyui-combobox">
-                </div>
+                </div> -->
                 <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">Sales Order No</span>
                     <input style="width:60%;" id="filter_sales_order_no" class="easyui-combobox">
                 </div> -->
             </div>
             <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product No</span>
+                    <input style="width:60%;" id="filter_item_fg" class="easyui-combobox">
+                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Name</span>
                     <input style="width:60%;" id="filter_item_fg_name" class="easyui-textbox">
@@ -37,7 +50,7 @@
                         <option value="DETAIL">DETAIL</option>
                     </select>
                 </div>
-                <div class="fitem">
+                <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
                     <span style="width:35%; display:inline-block;"></span>
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                 </div>
@@ -55,6 +68,7 @@
 
 <script>
     function filter() {
+        var filter_type = $("#filter_type").combobox('getValue');
         var filter_so_date_from = $("#filter_so_date_from").datebox("getValue");
         var filter_so_date_to = $("#filter_so_date_to").datebox("getValue");
         var filter_customer_name = $("#filter_customer_name").combobox("getValue");
@@ -64,7 +78,8 @@
         var filter_item_fg_name = $("#filter_item_fg_name").textbox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
 
-        var url = "?filter_so_date_from=" + window.btoa(filter_so_date_from) +
+        var url = "?filter_type=" + window.btoa(filter_type) + 
+            "&filter_so_date_from=" + window.btoa(filter_so_date_from) +
             "&filter_so_date_to=" + window.btoa(filter_so_date_to) +
             "&filter_customer_name=" + window.btoa(filter_customer_name) +
             "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
@@ -73,15 +88,44 @@
             "&filter_item_fg_name=" + window.btoa(filter_item_fg_name) +
             "&filter_display=" + window.btoa(filter_display);
 
-        if (filter_so_date_from == "" && filter_so_date_to == "") {
-            toastr.warning("Please Select Trans Date");
-        } else {
-            $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-            $("#printout").attr('src', '<?= base_url('sales/report_delivery_schedules/print') ?>' + url);
+        // if(filter_type == "") {
+        //     if (filter_so_date_from == "" && filter_so_date_to == "") {
+        //         toastr.warning("Please Select Trans Date");
+        //     }
+        // }else if(filter_type == "WITH_SCHEDULE" && (filter_so_date_from == "" || filter_so_date_to == "")) {
+        //     toastr.warning("Please Select Schedule Date");
+        // }else if(filter_type == "WITHOUT_SCHEDULE" && filter_customer_order_no == "") {
+        //     toastr.warning("Please Select Customer Order No");
+        // } else {
+        //     $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+        //     $("#printout").attr('src', '<?= base_url('sales/report_delivery_schedules/print') ?>' + url);
+        // }
+
+        if (filter_type === "") {
+            if (filter_so_date_from === "" && filter_so_date_to === "") {
+                toastr.warning("Please select Schedule Date");
+                return;
+            }
+        } else if (filter_type === "WITH_SCHEDULE") {
+            if (filter_so_date_from === "" || filter_so_date_to === "") {
+                toastr.warning("Please select Schedule Date");
+                return;
+            }
+        } else if (filter_type === "WITHOUT_SCHEDULE") {
+            if (filter_customer_order_no === "") {
+                toastr.warning("Please select Customer Order No");
+                return;
+            }
         }
+
+        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+        $("#printout").attr('src', '<?= base_url('sales/report_delivery_schedules/print') ?>' + url);
+
+    
     }
 
     function excel() {
+        var filter_type = $("#filter_type").combobox('getValue');
         var filter_so_date_from = $("#filter_so_date_from").datebox("getValue");
         var filter_so_date_to = $("#filter_so_date_to").datebox("getValue");
         var filter_customer_name = $("#filter_customer_name").combobox("getValue");
@@ -91,7 +135,8 @@
         var filter_item_fg_name = $("#filter_item_fg_name").textbox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
 
-        var url = "?filter_so_date_from=" + window.btoa(filter_so_date_from) +
+        var url = "?filter_type=" + window.btoa(filter_type) +
+            "&filter_so_date_from=" + window.btoa(filter_so_date_from) +
             "&filter_so_date_to=" + window.btoa(filter_so_date_to) +
             "&filter_customer_name=" + window.btoa(filter_customer_name) +
             "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
@@ -100,11 +145,30 @@
             "&filter_item_fg_name=" + window.btoa(filter_item_fg_name) +
             "&filter_display=" + window.btoa(filter_display);
 
-        if (filter_so_date_from == "" && filter_so_date_to == "") {
-            toastr.warning("Please Select Trans Date");
-        } else {
-            window.location.assign('<?= base_url('sales/report_delivery_schedules/print/excel') ?>' + url);
+        // if (filter_so_date_from == "" && filter_so_date_to == "") {
+        //     toastr.warning("Please Select Trans Date");
+        // } else {
+        //     window.location.assign('<?= base_url('sales/report_delivery_schedules/print/excel') ?>' + url);
+        // }
+
+        if (filter_type === "") {
+            if (filter_so_date_from === "" && filter_so_date_to === "") {
+                toastr.warning("Please select Schedule Date");
+                return;
+            }
+        } else if (filter_type === "WITH_SCHEDULE") {
+            if (filter_so_date_from === "" || filter_so_date_to === "") {
+                toastr.warning("Please select Schedule Date");
+                return;
+            }
+        } else if (filter_type === "WITHOUT_SCHEDULE") {
+            if (filter_customer_order_no === "") {
+                toastr.warning("Please select Customer Order No");
+                return;
+            }
         }
+
+        window.location.assign('<?= base_url('sales/report_delivery_schedules/print/excel') ?>' + url);
     }
 
     function pdf() {
@@ -130,9 +194,15 @@
             onSelect: function(cus) {
                 var filter_so_date_from = $("#filter_so_date_from").datebox("getValue");
                 var filter_so_date_to = $("#filter_so_date_to").datebox("getValue");
+                var filter_type = $("#filter_type").combobox('getValue');
+
+                // filter_so_date_from = $('#filter_so_date_from').datebox('getValue') || '';
+                // filter_so_date_to = $('#filter_so_date_to').datebox('getValue') || '';
+
+                // console.log(filter_so_date_from, filter_so_date_to);
 
                 $('#filter_customer_order_no').combobox({
-                    url: '<?php echo base_url('sales/report_delivery_schedules/readCustomerOrder?customer_id='); ?>' + cus.id + "&filter_so_date_from=" + window.btoa(filter_so_date_from) + "&filter_so_date_to=" + window.btoa(filter_so_date_to),
+                    url: '<?php echo base_url('sales/report_delivery_schedules/readCustomerOrder?customer_id='); ?>' + cus.id + "&filter_so_date_from=" + window.btoa(filter_so_date_from) + "&filter_so_date_to=" + window.btoa(filter_so_date_to) + "&filter_type=" + window.btoa(filter_type),
                     valueField: 'customer_order_no',
                     textField: 'customer_order_no',
                     prompt: 'Select Customer Order No.',
@@ -191,6 +261,22 @@
                 //         });
                 //     }
                 // });
+            }
+        });
+
+
+        $("#filter_type").combobox({
+            onChange: function(val) {
+                if (val == "WITH_SCHEDULE") {
+                    $("#filter_so_date_from").datebox('enable');
+                    $("#filter_so_date_to").datebox('enable');
+                } else if (val == "WITHOUT_SCHEDULE") {
+                    $("#filter_so_date_from").datebox('disable');
+                    $("#filter_so_date_to").datebox('disable');
+                } else {
+                    $("#filter_so_date_from").datebox('enable');
+                    $("#filter_so_date_to").datebox('enable');
+                }
             }
         });
 
