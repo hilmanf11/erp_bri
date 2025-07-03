@@ -1009,8 +1009,8 @@ class Sales_orders extends CI_Controller
                         <td>' . $data['delivery'] . '</td>
                         <td>' . $data['outstanding'] . '</td>
                         <td>' . $data['currency'] . '</td>
-                        <td>' . $data['price'] . '</td>
-                        <td>' . $data['total'] . '</td>
+                        <td>' . number_format($data['price'], 2, ',', '.') . '</td>
+                        <td>' . number_format($data['total'], 2, ',', '.') . '</td>
                     </tr>';
             $no++;
         }

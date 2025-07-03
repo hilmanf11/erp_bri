@@ -271,7 +271,7 @@
                     <th data-options="field:'price',width:80, halign:'center',align:'right', formatter:priceformat,editor: {type: 'numberbox', 
                         options: {
                             required: true,
-                            precision: 4,
+                            precision: 2,
                             readonly: true,
                             onChange: function(value) {
                                 var dg = $('#dg2');
@@ -292,7 +292,7 @@
                                 $(ed.target).textbox('setValue', (parseFloat(value) * parseFloat(qty)));
                             }
                         }}">Price</th>
-                    <th data-options="field:'total',width:120, formatter:priceformat,halign:'center',align:'right',editor: {type: 'numberbox', options: {required: true, readonly: true, precision: 4}}">Amount</th>
+                    <th data-options="field:'total',width:120, formatter:priceformat,halign:'center',align:'right',editor: {type: 'numberbox', options: {required: true, readonly: true, precision: 2}}">Amount</th>
                     <th data-options="field:'account_number',width:100, halign:'center', editor: {
                         type: 'combogrid',
                         options: {
@@ -1789,6 +1789,7 @@
             var dg = $('#dg2').datagrid({
                 url: '<?= base_url('finance/sales_invoices/datatablesTemp/') ?>?delivery_note_no=' + window.btoa(delivery_note_no),
                 onLoadSuccess: function(row) {
+                    // console.log(row);
                     $("#total_sub").numberbox('setValue', row.total_sub);
                     
                     var total_dpp = parseFloat((row.total_sub) * 11/12);
@@ -2897,7 +2898,7 @@
 
     function priceformat(value, row) {
         if (row.currency == "USD") {
-            var digits = 4;
+            var digits = 2;
             var currency = 'USD';
             var format = "en-IN";
         } else if (row.currency == "JPY") {
@@ -2909,7 +2910,7 @@
             var currency = 'EUR';
             var format = "de-DE";
         } else {
-            var digits = 0;
+            var digits = 2;
             var currency = 'IDR';
             var format = "id-ID";
         }

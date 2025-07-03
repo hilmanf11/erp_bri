@@ -77,7 +77,7 @@ class Purchase_report extends CI_Controller
                     b.name as item_rm_name,
                     a.qty_receipt,
                     f.currency,
-                    g.uom_default as uom,
+                    b.uom,
                     d.price
                 FROM purchase_order_receipts a
                 LEFT JOIN item_rm b ON a.item_rm_id = b.id
@@ -86,7 +86,7 @@ class Purchase_report extends CI_Controller
                 LEFT JOIN item_categories e ON b.item_category_id = e.id
                 LEFT JOIN suppliers f ON d.supplier_id = f.id
                 LEFT JOIN supplier_items g ON d.item_rm_id = g.item_rm_id and d.supplier_id = g.supplier_id
-                WHERE a.supplier_id LIKE '%$filter_supplier_id%' and b.division LIKE '%$filter_division%' and 
+                WHERE a.supplier_id LIKE '%$filter_supplier_id%' and 
                 DATE_FORMAT(a.receipt_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and b.item_category_id LIKE '%$filter_category_id%'
                 GROUP BY a.id  
                 ORDER BY a.receipt_no ASC, b.number DESC";
@@ -225,7 +225,7 @@ class Purchase_report extends CI_Controller
                 LEFT JOIN item_categories e ON b.item_category_id = e.id
                 LEFT JOIN suppliers f ON d.supplier_id = f.id
                 LEFT JOIN supplier_items g ON d.item_rm_id = g.item_rm_id and d.supplier_id = g.supplier_id
-                WHERE a.supplier_id LIKE '%$filter_supplier_id%' and b.division LIKE '%$filter_division%' and 
+                WHERE a.supplier_id LIKE '%$filter_supplier_id%' and 
                 DATE_FORMAT(a.receipt_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and b.item_category_id LIKE '%$filter_category_id%'
                 GROUP BY a.supplier_id 
                 ORDER BY b.name ASC";

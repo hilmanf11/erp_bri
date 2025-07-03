@@ -49,7 +49,7 @@ class New_barcode_fg extends CI_Controller
     public function readitemsFG()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT id, number as item_number, name as item_name, box_sub, specification FROM item_fg WHERE item_family_number IN ('RP','CD') AND (number like '%$post%' or name like '%$post%')");
+        $send = $this->crud->query("SELECT id, number as item_number, name as item_name, box_sub, specification FROM item_fg WHERE item_family_number IN ('RP','CD','TB') AND (number like '%$post%' or name like '%$post%')");
         echo json_encode($send);
     }
 

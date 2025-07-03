@@ -584,7 +584,7 @@ class Customer_items extends CI_Controller
                     <td style="mso-number-format:\@;">' . $data['item_fg_name'] . '</td>
                     <td style="mso-number-format:\@;">' . $data['item_fg_customer'] . '</td>
                     <td>' . $data['currency'] . '</td>
-                    <td>' . $data['price'] . '</td>
+                    <td>' . (fmod($data['price'], 1) == 0 ? intval($data['price']) : number_format($data['price'], 2)) . '</td>
                     <td>' . $data['valid_to'] . '</td>
                     <td>' . $data['valid_from'] . '</td>
                     <td>' . $data['remark'] . '</td>';
