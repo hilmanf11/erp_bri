@@ -14,11 +14,11 @@
             <th rowspan="2" data-options="field:'qpa',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">QPA</th>
             <th rowspan="2" data-options="field:'mpq',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">MPQ</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">WO Qty</th>
-            <th rowspan="2" data-options="field:'qty_req',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">Qty Need</th>
-            <th rowspan="2" data-options="field:'qty_act',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">Qty Supply</th>
+            <th rowspan="2" data-options="field:'qty_act',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">Qty Need</th>
+            <th rowspan="2" data-options="field:'qty_req',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">Qty Supply</th>
             <th rowspan="2" data-options="field:'qty_issued',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">Issued</th>
-            <th rowspan="2" data-options="field:'qty_issued_bal',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">Balance Wip</th>
-            <th rowspan="2" data-options="field:'supply_type',width:80,align:'center',formatter:issuedformat,styler:statusIssued" sortable="true">Supply<br>Type</th>
+            <th rowspan="2" data-options="field:'qty_bal',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">Balance Wip</th>
+            <th rowspan="2" data-options="field:'supply_type',width:80,align:'center',formatter:issuedformat,styler:statusIssued" sortable="true">Supply<br>Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -37,7 +37,7 @@
             <legend><b>Form Filter Data</b></legend>
             <div style="width: 50%; float:left;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Supply Type</span>
+                    <span style="width:35%; display:inline-block;">Supply Status</span>
                     <input style="width:60%;" id="filter_supply_type" class="easyui-combobox" panelHeight="auto">
                 </div>
                 <div class="fitem">
@@ -101,6 +101,7 @@
                     <span style="width:35%; display:inline-block;">Work Order ID</span>
                     <input style="width:60%;" name="workorder" id="workorder" class="easyui-combobox">
                 </div>
+                <input type="hidden" name="process_id" id="process_id">
                 <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Sales Order ID</span>
                     <input style="width:60%;" name="so_number" id="so_number" readonly class="easyui-textbox">
@@ -123,7 +124,7 @@
                 </div>
             </div>
         </fieldset>
-        <table id="dg_request" class="easyui-datagrid" style="width:100%;" title="Supply Sheet List" data-options="rownumbers: true, singleSelect: false" idField="component_number">
+        <table id="dg_request" class="easyui-datagrid" style="width:100%;height: 300px;overflow-y: scroll;" title="Supply Sheet List" data-options="rownumbers: true, singleSelect: false" idField="component_number">
 
         </table>
     </form>
@@ -173,10 +174,14 @@
                                             { field: 'item_name', title: 'Product Name', width: 250 }
                                         ]
                                     ],
+                                    onSelect: function(index, row) {
+                                        $("#process_id").val(row.process_id);
+                                    },
                                     onLoadSuccess: function(data) {
                                         if (data.rows.length === 1) {
                                             // Jika hanya ada satu item, otomatis pilih
                                             $("#item_fg_id").combogrid('setValue', data.rows[0].item_fg_id);
+                                            $("#process_id").val(data.rows[0].process_id);
                                         }
                                     }
                                 });
@@ -258,19 +263,18 @@
         var item_fg_id = $("#item_fg_id").combogrid('getValue');
         var workorder = $("#workorder").textbox('getValue');
         // var operation = $("#operation").combobox('getValue');
+        var process_id = $("#process_id").val();
+
         if (workorder == "" || item_fg_id == "") {
             toastr.warning('Please select Product No', 'Required');
         } else {
             var lastIndex;
             var dg = $('#dg_request').datagrid({
-                url: '<?= base_url('planning/supply_sheets/datatablesTemp') ?>?workorder=' + workorder + '&item_fg_id=' + item_fg_id,
+                url: '<?= base_url('planning/supply_sheets/datatablesTemp') ?>?workorder=' + workorder + '&item_fg_id=' + item_fg_id + '&process_id=' + process_id,
                 singleSelect: false,
                 idField: 'item_rm_id',
                 columns: [
                     [{
-                        field: 'ck',
-                        checkbox: true,
-                    }, {
                         field: 'item_rm_no',
                         width: 150,
                         halign: 'center',
@@ -554,7 +558,9 @@
                     var workorder = $("#workorder").textbox('getValue');
                     var item_fg_id = $("#item_fg_id").combogrid('getValue');
 
-                    var rows = $('#dg_request').datagrid('getSelections');
+                    // var rows = $('#dg_request').datagrid('getSelections');
+                    var rows = $('#dg_request').datagrid('getRows');
+                    
                     if (rows.length > 0) {
                         $.messager.confirm('Warning', 'Are you sure you want to save this data?', function(r) {
                             if (r) {
@@ -607,10 +613,12 @@
                 "text": "OPEN",
             }, {
                 "text": "CLOSE",
+            }, {
+                "text": "ALL STATUS",
             }],
             valueField: 'text',
             textField: 'text',
-            prompt: "Select Supply Type",
+            prompt: "Select Supply Status",
             icons: [{
                 iconCls: 'icon-clear',
                 handler: function(e) {

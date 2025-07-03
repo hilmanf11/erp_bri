@@ -84,7 +84,7 @@ class Production_schedules extends CI_Controller
         $wp = base64_decode($this->input->get('wp'));
         $workorder = base64_decode($this->input->get('workorder'));
 
-        $send = $this->crud->query("SELECT a.workorder, b.id as item_fg_id, b.number as item_number, b.name as item_name  
+        $send = $this->crud->query("SELECT a.workorder, a.process_id, b.id as item_fg_id, b.number as item_number, b.name as item_name  
             FROM production_schedules a
             JOIN item_fg b on a.item_fg_id = b.id
             WHERE a.status = 0 and a.period = '$period' and a.wp = '$wp' and a.workorder = '$workorder' 

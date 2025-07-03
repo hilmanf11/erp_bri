@@ -47,14 +47,15 @@ class Wip_balances extends CI_Controller
             $result = array();
 
             // Select Query
-            $this->db->select('
+            $this->db->select('a.created_by, a.created_date, a.updated_by, a.updated_date,
                 a.id, a.request_no, a.item_rm_id, a.begin, a.need, a.issued, a.balance, a.warehouse, a.status,
-                b.number as item_number, b.name as item_name, b.uom,
-                IFNULL(c.qty_act, 0) as qty_act
+                b.number as item_number, b.name as item_name, b.uom, IFNULL(c.qty_req, 0) AS qty_req,,
+                IFNULL(c.qty_act, 0) as qty_act, g.mpq
             ');
             $this->db->from('wip_balances a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id', 'LEFT');
             $this->db->join('supply_sheets c', 'a.item_rm_id = c.item_rm_id AND a.request_no = c.request_no', 'LEFT');
+            $this->db->join('supplier_items g', 'a.item_rm_id = g.item_rm_id', 'left');
             $this->db->where('a.deleted', 0);
 
             // Filter rules jika ada
@@ -72,7 +73,8 @@ class Wip_balances extends CI_Controller
                 }
             }
 
-            $this->db->order_by('a.request_no', 'DESC');
+            $this->db->order_by('a.request_no', 'ASC');
+            $this->db->order_by('a.item_rm_id', 'ASC');
 
             // Hitung total baris sebelum limit
             $totalRows = $this->db->count_all_results('', false);
