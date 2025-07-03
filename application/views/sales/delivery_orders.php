@@ -448,12 +448,13 @@
             var dg = $('#dg_request').datagrid({
                 url: urlGet,
                 fitColumns: true,
+                idField: 'item_fg_id',
                 onClickRow: function(rowIndex) {
-                    // if (lastIndex != rowIndex) {
-                    if ($('#dg_request').datagrid('validateRow', lastIndex)) {
-                        $(this).datagrid('endEdit', lastIndex);
-                        $(this).datagrid('beginEdit', rowIndex);
+                    if (lastIndex !== undefined && lastIndex != rowIndex) {
+                        $('#dg_request').datagrid('endEdit', lastIndex);
                     }
+
+                    $('#dg_request').datagrid('beginEdit', rowIndex);
                     lastIndex = rowIndex;
                 },
                 onLoadSuccess: function(data) {
@@ -492,7 +493,7 @@
                             //     }
                             // });
                             // }
-                            // $('#dg_request').datagrid('endEdit', i);
+                            $('#dg_request').datagrid('endEdit', i);
                         }
                     }
 
@@ -538,6 +539,79 @@
             });
         }
     }
+
+    function partialFormatter(value, row, index) {
+        const checked = value === '1' ? 'checked' : '';
+        return `<input type="checkbox" class="partial-checkbox" data-index="${index}" ${checked} onclick="event.stopPropagation()">`;
+    }
+
+    // function preview(url = "") {
+    //     var sales_order = $("#sales_order").combobox('getValue');
+    //     var delivery_date = $("#delivery_date").combobox('getValue');
+    //     var actual_delivery_date = $("#actual_delivery_date").datebox('getValue');
+    //     var customer_id = $("#customer_id").combobox('getValue');
+    //     var customer_order_no = $("#customer_order_no").combobox('getText');
+
+    //     if (!sales_order || !delivery_date || !actual_delivery_date || !customer_id || !customer_order_no) {
+    //         toastr.warning('Please Select Schedule Delivery Date, Actual Delivery Date, Customer and Customer Order No', 'Required');
+    //         return;
+    //     }
+
+    //     var urlGet = url !== "" ? url : "<?= base_url('sales/delivery_orders/datatablesTemp/') ?>" + sales_order + "/" + btoa(delivery_date) + "/" + btoa(customer_id) + "/" + btoa(customer_order_no);
+
+    //     var lastIndex;
+    //     $('#dg_request').datagrid({
+    //         url: urlGet,
+    //         fitColumns: true,
+    //         idField: 'item_fg_id',
+    //         onClickRow: function(rowIndex) {
+    //             if ($('#dg_request').datagrid('validateRow', lastIndex)) {
+    //                 $('#dg_request').datagrid('endEdit', lastIndex);
+    //                 $('#dg_request').datagrid('beginEdit', rowIndex);
+    //                 lastIndex = rowIndex;
+    //             }
+    //         },
+    //         onLoadSuccess: function(data) {
+    //             if (data.rows.length > 0) {
+    //                 for (var i = 0; i < data.rows.length; i++) {
+    //                     $('#dg_request').datagrid('beginEdit', i);
+
+    //                     const editors = $('#dg_request').datagrid('getEditors', i);
+    //                     const qty_del = $(editors[6].target); // qty_del
+    //                     const stock = $(editors[8].target);   // stock
+
+    //                     const f_qty_del = parseFloat(qty_del.numberbox('getValue')) || 0;
+    //                     const f_stock = parseFloat(stock.numberbox('getValue')) || 0;
+    //                     const f_balance = f_stock - f_qty_del;
+
+    //                     // Tambahkan validasi jika qty_del melebihi stock atau remain
+    //                     qty_del.numberbox({
+    //                         onChange: function(val) {
+    //                             const f_qty = parseFloat(val) || 0;
+    //                             const f_stok = parseFloat(stock.numberbox('getValue')) || 0;
+    //                             if (f_qty > f_stok) {
+    //                                 qty_del.numberbox('setValue', 0);
+    //                                 toastr.error("Qty Delivery > Stock, Please adjust");
+    //                             }
+    //                         }
+    //                     });
+    //                 }
+    //             }
+
+    //             // Re-attach event checkbox partial agar tidak dobel
+    //             $('.partial-checkbox').off('change').on('change', function () {
+    //                 const index = $(this).data('index');
+    //                 const isChecked = $(this).is(':checked') ? '1' : '0';
+    //                 const rows = $('#dg_request').datagrid('getRows');
+    //                 if (rows[index]) {
+    //                     rows[index].partial = isChecked;
+    //                 }
+    //                 $('#dg_request').datagrid('refreshRow', index);
+    //             });
+    //         }
+    //     });
+    // }
+
 
     function updateDeliveryOrderNo(date) {
         const selectedDate = new Date(date);
@@ -1599,9 +1673,9 @@
 
     }
 
-    function partialFormatter(value, row, index) {
-        const checked = value === '1' ? 'checked' : '';
-        return `<input type="checkbox" class="partial-checkbox" data-index="${index}" ${checked} onclick="event.stopPropagation()">`;
-    }
+    // function partialFormatter(value, row, index) {
+    //     const checked = value === '1' ? 'checked' : '';
+    //     return `<input type="checkbox" class="partial-checkbox" data-index="${index}" ${checked} onclick="event.stopPropagation()">`;
+    // }
 
 </script>
