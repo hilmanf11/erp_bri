@@ -1,3 +1,15 @@
+<style>
+  .dialog-button{
+    border-bottom: 0 !important;
+  }
+
+    .btn-clicked {
+        background-color: #e0e0e0 !important;
+        transform: scale(0.97);
+        transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+</style>
+
 <table id="dg" class="easyui-treegrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
         <tr>
@@ -77,11 +89,7 @@
 
     </div>
 </div>
-<!-- TOOLBAR DATAGRID -->
-<div id="toolbar2">
-    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="append()"><i class="fa fa-plus"></i> Add</a>
-    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
-</div>
+
 <!-- Insert & Update -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; height: 600px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
@@ -124,10 +132,41 @@
         </table>
     </form>
 </div>
-
+<!-- TOOLBAR DATAGRID -->
+<div id="toolbar2" style="padding: 2px; margin-top: -36px; background-color: #f5f5f5 !important">
+    <a href="javascript:void(0)" id="btn-add" class="easyui-linkbutton" data-options="plain:true" onclick="append()"><i class="fa fa-plus"></i> Add</a>
+    <a href="javascript:void(0)" id="btn-remove" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
+</div>
 <!-- PDF -->
 <iframe id="printout" src="<?= base_url('warehouse/transaction_rm/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
+    $(document).ready(function () {
+        $('#dlg_insert').dialog({
+            onOpen: function () {
+                setTimeout(() => {
+                    const panel = $('#dlg_insert').closest('.panel.window.panel-htop');
+                    const toolbar = $('#toolbar2');
+
+                    // Pindahkan toolbar ke dalam panel jika belum
+                    if (!toolbar.parent().hasClass('panel')) {
+                        panel.append(toolbar);
+                    }
+
+                    // Tambahkan class & posisi sticky
+                    function positionToolbar() {
+                        const panelHeight = panel.height();
+                        const toolbarHeight = toolbar.outerHeight();
+                        toolbar.css({
+                            top: (panelHeight - toolbarHeight - 10) + 'px'
+                        });
+                    }
+
+                    positionToolbar();
+                    $(window).on('resize', positionToolbar);
+                }, 100); // delay karena dialog render async
+            }
+        });
+    });    
     //Add Data
     function add() {
         $('#dlg_insert').dialog('open');
@@ -327,7 +366,15 @@
         }
     }
 
+    function buttonClickEffect(btn) {
+        $(btn).addClass('btn-clicked');
+        setTimeout(() => {
+            $(btn).removeClass('btn-clicked');
+        }, 300);
+    }
+
     function append() {
+    buttonClickEffect('#btn-add');
         if (endEditing()) {
             $('#dg2').datagrid('appendRow', {
                 qty: '0'
@@ -338,6 +385,7 @@
     }
 
     function removeit() {
+    buttonClickEffect('#btn-remove');
         if (endEditing()) {
             var row = $('#dg2').datagrid('getSelected'); // Dapatkan baris yang dipilih
             if (row) {
