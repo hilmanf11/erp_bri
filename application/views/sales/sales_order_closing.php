@@ -15,7 +15,7 @@
             <th rowspan="2" data-options="field:'total_pph',width:100,halign:'center',align:'right',formatter: numberFormat,sortable:true">PPh</th>
             <th rowspan="2" data-options="field:'total_grand',width:100,halign:'center',align:'right',formatter: numberFormat,sortable:true">Grand Total</th>
             <th rowspan="2" data-options="field:'remarks',width:150,halign:'center',sortable:true">Remarks</th>
-            <th rowspan="2" data-options="field:'attachment',width:150,halign:'center',sortable:true">Attachment</th>
+            <th rowspan="2" data-options="field:'attachment_closing',width:150,halign:'center',formatter: btnDetails,sortable:true">Attachment</th>
             <th rowspan="2" data-options="field:'closing_reason',width:150,halign:'center',sortable:true">Reason</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -90,6 +90,14 @@
                 </select>
             </div>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Attachment</span>
+                <input style="width:60%;" name="attachment_closing_upload" id="attachment_closing_upload" class="easyui-filebox">
+            </div>
+            <div class="fitem" hidden>
+                <span style="width:35%; display:inline-block;">Attachment</span>
+                <input style="width:60%;" name="attachment_closing" id="attachment_closing" class="easyui-textbox">
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Reason</span>
                 <input style="width:60%; height: 80px;" name="closing_reason" id="closing_reason" class="easyui-textbox" multiline="true" required="true">
             </div>
@@ -106,9 +114,20 @@
         var row = $('#dg').treegrid('getSelected');
         if (row) {
             $('#dlg_insert').dialog('open');
-            $('#frm_insert').form('load', row);
 
-            // Disable kolom status jika status CLOSE
+            var rowCopy = { ...row };
+            delete rowCopy.status;
+
+            $('#frm_insert').form('load', rowCopy);
+
+            if (row.status == 2) {
+                $('#status').combobox('setValue', '0');
+            } else {
+                $('#status').combobox('setValue', String(row.status));
+            }
+
+            // $('#frm_insert').form('load', row);
+
             if (row.status == 1) { // CLOSE
                 $("#status").combobox('disable');
             } else {
@@ -188,6 +207,7 @@
                     var sales_order_no = $("#sales_order_no").textbox('getValue');
                     var status = $("#status").combobox('getValue');
                     var closing_reason = $("#closing_reason").textbox('getValue');
+                    var attachment_closing = $("#attachment_closing").textbox('getValue');
 
                     // Validasi apakah kolom Reason kosong
                     if (!closing_reason.trim()) {
@@ -203,6 +223,7 @@
                             sales_order_no: sales_order_no,
                             status: status,
                             closing_reason: closing_reason,
+                            attachment_closing: attachment_closing,
                         },
                         dataType: "json",
                         success: function(result) {
@@ -268,7 +289,7 @@
 
     //CELLSTYLE STATUS
     function cellStyler(value, row, index) {
-        if (value == 0) {
+        if (value == 0 || value == 2) {
             return 'background: #53D636; color:white;';
         } else {
             return 'background: #FF5F5F; color:white;';
@@ -276,7 +297,7 @@
     }
     //FORMATTER STATUS
     function cellFormatter(value) {
-        if (value == 0) {
+        if (value == 0 || value == 2) {
             return 'OPEN';
         } else {
             return 'CLOSE';
@@ -310,4 +331,45 @@
         });
         return "<b>" + formatter.format(value) + "</b>";
     }
+
+    function btnDetails(val, row, index) {
+        var attachment = row.attachment_closing;
+
+        if (attachment != null && attachment != "") {
+            return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/sales_order_closing/') ?>' + row.attachment_closing + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+        } else {
+            return '-';
+        }
+    }    
+
+    $('#attachment_closing_upload').filebox({
+        buttonText: 'Browse File',
+        accept: '.jpg, .png, .pdf',
+        onChange: function() {
+            var files = $(this).filebox('files');
+            var formData = new FormData();
+
+            for (var i = 0; i < files.length; i++) {
+                var file = files[i];
+                formData.append('file', file, file.name);
+            }
+
+            $.ajax({
+                url: '<?= base_url('sales/sales_order_closing/upload_att_closing') ?>',
+                type: 'post',
+                data: formData,
+                contentType: false,
+                processData: false,
+                dataType: 'json',
+                success: function(data) {
+                    if (data.success == true) {
+                        toastr.success(data.message);
+                        $('#attachment_closing').textbox('setValue', data.filename); // Mengatur nilai pada textbox
+                    } else {
+                        toastr.error(data.message);
+                    }
+                }
+            });
+        }
+    });
 </script>

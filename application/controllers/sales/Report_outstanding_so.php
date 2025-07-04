@@ -193,6 +193,8 @@ class Report_outstanding_so extends CI_Controller
 
                 if (($data['qty_order'] - $data['qty_delivery']) > 0) {
                     $status = "<b style='color:green;'>OPEN</b>";
+                } else if ($data['qty_outstanding'] < 0) {
+                    $status = "<b style='color:orange;'>OVER</b>";
                 } else {
                     $status = "<b style='color:red;'>CLOSE</b>";
                 }
