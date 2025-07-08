@@ -137,13 +137,26 @@ class Report_history_transactions_fg extends CI_Controller
                     AND tf2.request_date < DATE('$filter_from')
                     AND LEFT(tf2.transaction_type, 2) = 'RE'
                 ) -
-                -- Total Qty OUT (delivery_notes + transaction_fg IS)
+                -- Total Qty OUT (VALID delivery_notes + transaction_fg IS)
                 (
-                    SELECT IFNULL(SUM(sh2.qty), 0)
-                    FROM delivery_notes sh2
-                    WHERE sh2.item_fg_id = a.id
-                    AND sh2.deleted = 0
-                    AND sh2.delivery_note_date < DATE('$filter_from')
+                    SELECT IFNULL(SUM(dn.qty), 0)
+                    FROM delivery_notes dn
+                    JOIN (
+                        SELECT 
+                            delivery_order_no, 
+                            item_fg_id, 
+                            customer_order_no,
+                            SUM(qty) AS total_shipping_qty
+                        FROM shipping_orders
+                        WHERE deleted = 0
+                        GROUP BY delivery_order_no, item_fg_id, customer_order_no
+                    ) s ON dn.delivery_order_no = s.delivery_order_no
+                        AND dn.item_fg_id = s.item_fg_id
+                        AND dn.customer_order_no = s.customer_order_no
+                        AND dn.qty = s.total_shipping_qty
+                    WHERE dn.item_fg_id = a.id
+                    AND dn.deleted = 0
+                    AND dn.delivery_note_date < DATE('$filter_from')
                 ) -
                 (
                     SELECT IFNULL(SUM(tf3.qty), 0)
@@ -294,37 +307,84 @@ class Report_history_transactions_fg extends CI_Controller
         foreach ($records as $record) {
             $item_fg_id = $record->id;
 
-            $endstock = $this->crud->query("SELECT
-                a.id,
-                COALESCE((
-                    -- Total Qty IN (fg_scan_in_label + os_fg)
-                    (
-                        SELECT IFNULL(SUM(f2.qty), 0)
-                        FROM fg_scan_in_label f2
-                        WHERE f2.item_fg_id = a.id
-                        AND f2.deleted = 0
-                        AND f2.scan_date < DATE('$filter_from')
-                    ) +
-                    (
-                        SELECT IFNULL(SUM(o2.qty), 0)
-                        FROM os_fg o2
-                        WHERE o2.item_fg_id = a.id
-                        AND o2.deleted = 0
-                        AND o2.trans_date < DATE('$filter_from')
-                    ) -
-                    -- Total Qty OUT (shipping_orders)
-                    (
-                        SELECT IFNULL(SUM(sh2.qty), 0)
-                        FROM delivery_notes sh2
-                        WHERE sh2.item_fg_id = a.id
-                        AND sh2.deleted = 0
-                        AND sh2.delivery_note_date < DATE('$filter_from')
-                    )
-                ), 0) as begin_stock
-            FROM item_fg a 
-            WHERE a.id = '$item_fg_id'
-            GROUP BY a.id
-            ORDER BY a.number");
+            // $endstock = $this->crud->query("SELECT
+            //     a.id,
+            //     COALESCE((
+            //         -- Total Qty IN (fg_scan_in_label + os_fg)
+            //         (
+            //             SELECT IFNULL(SUM(f2.qty), 0)
+            //             FROM fg_scan_in_label f2
+            //             WHERE f2.item_fg_id = a.id
+            //             AND f2.deleted = 0
+            //             AND f2.scan_date < DATE('$filter_from')
+            //         ) +
+            //         (
+            //             SELECT IFNULL(SUM(o2.qty), 0)
+            //             FROM os_fg o2
+            //             WHERE o2.item_fg_id = a.id
+            //             AND o2.deleted = 0
+            //             AND o2.trans_date < DATE('$filter_from')
+            //         ) -
+            //         -- Total Qty OUT (shipping_orders)
+            //         (
+            //             SELECT IFNULL(SUM(sh2.qty), 0)
+            //             FROM delivery_notes sh2
+            //             WHERE sh2.item_fg_id = a.id
+            //             AND sh2.deleted = 0
+            //             AND sh2.delivery_note_date < DATE('$filter_from')
+            //         )
+            //     ), 0) as begin_stock
+            // FROM item_fg a 
+            // WHERE a.id = '$item_fg_id'
+            // GROUP BY a.id
+            // ORDER BY a.number");
+
+            $endstock = $this->crud->query("
+                SELECT
+                    a.id,
+                    COALESCE((
+                        -- Total Qty IN (fg_scan_in_label + os_fg)
+                        (
+                            SELECT IFNULL(SUM(f2.qty), 0)
+                            FROM fg_scan_in_label f2
+                            WHERE f2.item_fg_id = a.id
+                            AND f2.deleted = 0
+                            AND f2.scan_date < DATE('$filter_from')
+                        ) +
+                        (
+                            SELECT IFNULL(SUM(o2.qty), 0)
+                            FROM os_fg o2
+                            WHERE o2.item_fg_id = a.id
+                            AND o2.deleted = 0
+                            AND o2.trans_date < DATE('$filter_from')
+                        ) -
+                        -- Total Qty OUT (validated delivery_notes)
+                        (
+                            SELECT IFNULL(SUM(dn.qty), 0)
+                            FROM delivery_notes dn
+                            JOIN (
+                                SELECT 
+                                    delivery_order_no, 
+                                    item_fg_id, 
+                                    customer_order_no,
+                                    SUM(qty) AS total_shipping_qty
+                                FROM shipping_orders
+                                WHERE deleted = 0
+                                GROUP BY delivery_order_no, item_fg_id, customer_order_no
+                            ) s ON dn.delivery_order_no = s.delivery_order_no
+                            AND dn.item_fg_id = s.item_fg_id
+                            AND dn.customer_order_no = s.customer_order_no
+                            AND dn.qty = s.total_shipping_qty
+                            WHERE dn.item_fg_id = a.id
+                            AND dn.deleted = 0
+                            AND dn.delivery_note_date < DATE('$filter_from')
+                        )
+                    ), 0) AS begin_stock
+                FROM item_fg a 
+                WHERE a.id = '$item_fg_id'
+                GROUP BY a.id
+                ORDER BY a.number
+            ");
 
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
@@ -332,17 +392,17 @@ class Report_history_transactions_fg extends CI_Controller
                             <td colspan='.$cols2.' style="mso-number-format:\@">' . $record->name . '</td>
                             <td>' . $record->uom . '</td>
                             <td>' . $record->family_name . '</td>
-                            <td style="text-align:right;">' . number_format(@$endstock[0]->begin_stock, 0, '.', '.') . '</td>
+                            <td style="text-align:right;">' . number_format($record->begin_stock, 0, '.', '.') . '</td>
                             <td style="text-align:right;">' . number_format($record->qty_in, 0, '.', '.') . '</td>
                             <td style="text-align:right;">' . number_format($record->qty_out, 0, '.', '.') . '</td>
-                            <td style="text-align:right">' . number_format((@$endstock[0]->begin_stock + $record->qty_in - $record->qty_out), 0, '.', '.') . '</td>
+                            <td style="text-align:right">' . number_format(($record->begin_stock + $record->qty_in - $record->qty_out), 0, '.', '.') . '</td>
                         </tr>';
 
             // Menghitung total
-            $total_begin += @$endstock[0]->begin_stock;
+            $total_begin += $record->begin_stock;
             $total_in += $record->qty_in;
             $total_out += $record->qty_out;
-            $total_end += (@$endstock[0]->begin_stock + $record->qty_in - $record->qty_out);
+            $total_end += ($record->begin_stock + $record->qty_in - $record->qty_out);
 
             if ($filter_display == "DETAIL") {
                 $html .= '  <tr>
@@ -363,7 +423,7 @@ class Report_history_transactions_fg extends CI_Controller
                                 <th>Balance</th>
                             </tr>';
                 $nod = 1;
-                $begin = @$endstock[0]->begin_stock;
+                $begin = $record->begin_stock;
                 $balance = $begin;
 
                 // Mengambil semua transaksi dalam satu query
@@ -542,90 +602,7 @@ class Report_history_transactions_fg extends CI_Controller
                         AND DATE(sh.delivery_note_date) BETWEEN '$filter_from' AND '$filter_to'
                         AND sh.deleted = 0
                 )) as combined_transactions
-                ORDER BY trans_date ASC");
-                                    
-                // --     UNION ALL
-                // --     (SELECT 
-                // --         'OUT' as trans_category,
-                // --         do.actual_delivery_date as trans_date,
-                // --         sh.delivery_order_no as ref_no,
-                // --         -- -sh.qty as qty,
-                // --         -so_qty.total_qty as qty,
-                // --         u.name as username,
-                // --         'Shipping Order' as trans_type,
-                // --         CASE 
-                // --             WHEN NULLIF(lp.compound_lot, '') IS NOT NULL THEN lp.compound_lot
-                // --             WHEN NULLIF(nbf.compound_lot, '') IS NOT NULL THEN nbf.compound_lot
-                // --             ELSE (
-                // --                 SELECT compound_lot 
-                // --                 FROM new_barcode_fg 
-                // --                 WHERE item_fg_id = sh.item_fg_id 
-                // --                 AND compound_lot IS NOT NULL 
-                // --                 AND LENGTH(TRIM(compound_lot)) > 0
-                // --                 GROUP BY compound_lot 
-                // --                 ORDER BY COUNT(*) DESC 
-                // --                 LIMIT 1
-                // --             )
-                // --         END as compound_lot,
-                // --         CASE
-                // --             WHEN lp.prod_date IS NOT NULL THEN lp.prod_date
-                // --             WHEN nbf.prod_date IS NOT NULL THEN nbf.prod_date
-                // --             ELSE (
-                // --                 SELECT prod_date 
-                // --                 FROM new_barcode_fg 
-                // --                 WHERE item_fg_id = sh.item_fg_id 
-                // --                 AND prod_date IS NOT NULL 
-                // --                 AND LENGTH(TRIM(prod_date)) > 0
-                // --                 GROUP BY prod_date 
-                // --                 ORDER BY COUNT(*) DESC 
-                // --                 LIMIT 1
-                // --             )
-                // --         END as prod_date,
-                // --         sh.delivery_note_date
-                // --     FROM delivery_notes sh
-                // --     JOIN users u ON sh.created_by = u.username
-                // --     LEFT JOIN label_packing_detail lpd ON sh.delivery_order_no = lpd.serial_label
-                // --     LEFT JOIN label_packing lp ON lpd.serial_no = lp.serial_no
-                // --     -- LEFT JOIN shipping_orders so ON sh.delivery_order_no = so.delivery_order_no 
-                // --     -- AND sh.item_fg_id = so.item_fg_id
-                // --     -- LEFT JOIN (
-                // --     --     SELECT 
-                // --     --         delivery_order_no, 
-                // --     --         item_fg_id, 
-                // --     --         customer_order_no,
-                // --     --         serial_label,
-                // --     --         SUM(qty) AS total_qty 
-                // --     --     FROM shipping_orders 
-                // --     --     GROUP BY delivery_order_no, item_fg_id, customer_order_no, serial_label
-                // --     -- ) so ON sh.delivery_order_no = so.delivery_order_no 
-                // --     --     AND sh.item_fg_id = so.item_fg_id
-                // --     --     AND sh.customer_order_no = so.customer_order_no
-                // --     --     AND sh.delivery_order_no = so.delivery_order_no
-                // --     LEFT JOIN (
-                // --         SELECT 
-                // --             delivery_order_no, 
-                // --             item_fg_id, 
-                // --             customer_order_no,
-                // --             SUM(qty) AS total_qty 
-                // --         FROM shipping_orders 
-                // --         GROUP BY delivery_order_no, item_fg_id, customer_order_no
-                // --     ) so_qty ON sh.delivery_order_no = so_qty.delivery_order_no 
-                // --             AND sh.item_fg_id = so_qty.item_fg_id
-                // --             AND sh.customer_order_no = so_qty.customer_order_no
-                // --     LEFT JOIN shipping_orders so 
-                // --         ON sh.delivery_order_no = so.delivery_order_no 
-                // --         AND sh.item_fg_id = so.item_fg_id 
-                // --         AND sh.customer_order_no = so.customer_order_no
-                // --     LEFT JOIN new_barcode_fg_detail nbfd ON so.serial_label = nbfd.serial_label
-                // --     LEFT JOIN new_barcode_fg nbf ON nbfd.request_no = nbf.request_no
-                // --     LEFT JOIN delivery_orders do ON sh.delivery_order_no = do.delivery_order_no
-                // --     WHERE sh.item_fg_id = '$item_fg_id' 
-                // --     -- AND DATE(sh.created_date) BETWEEN '$filter_from' AND '$filter_to'
-                // --     AND DATE(sh.delivery_note_date) BETWEEN '$filter_from' AND '$filter_to'
-                // --     AND sh.deleted = 0)
-                // -- ) as combined_transactions
-                // -- ORDER BY trans_date ASC");
-                
+                ORDER BY trans_date ASC");                
 
                 foreach ($all_transactions as $trans) {
                     $balance += $trans->qty;
