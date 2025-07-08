@@ -944,6 +944,14 @@
                             align: 'right',
                             width: 100,
                             formatter: numberFormat
+                        }, {
+                            field: 'type_closing',
+                            title: 'Type Closing',
+                            halign: 'center',
+                            align: 'center',
+                            width: 100,
+                            styler: cellStylerClosingSO,
+                            formatter: cellFormatterClosingSO
                         }]
                     ],
                     onResize: function() {
@@ -1323,6 +1331,32 @@
             return 'CREATE';
         } else {
             return 'CLOSE';
+        }
+    };
+
+    //CELLSTYLE CLOSING SO
+    function cellStylerClosingSO(value, row, index) {
+        if (value == "CLOSING SO") {
+            return 'background: #FF5F5F; color:white;';
+        } else if(row.outstanding == 0) {
+            return 'background: #53D636; color:white;';       
+        } else if(row.outstanding > 0) {
+            return 'background: #F3A26D; color: white';
+        } else {
+            return 'background: #F3A26D; color: white';
+        }
+    }
+    
+    //FORMATTER STATUS
+    function cellFormatterClosingSO(value,row, index) {
+        if (value == "CLOSING SO") {
+            return 'CLOSING SO';
+        } else if(row.outstanding == 0) {
+            return 'DELIVERED';
+        } else if(row.outstanding > 0) {
+            return 'ON GOING';
+        } else {
+            return 'ON GOING';
         }
     };
 

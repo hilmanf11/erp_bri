@@ -99,21 +99,69 @@ class Sales_order_closing extends CI_Controller
     }
 
     //CREATE DATA
+    // public function create()
+    // {
+    //     if ($this->input->post()) {
+    //         $post = $this->input->post();
+    //         $post['type_closing'] = 'CLOSING SO';
+
+    //         $sales_orders = $this->crud->read("sales_orders", [], ["sales_order_no" => $post['sales_order_no']]);
+    //         if (@$sales_orders->sales_order_no != "") {
+    //             $send = $this->crud->update('sales_orders', ["sales_order_no" => $post['sales_order_no']], $post);
+    //         } else {
+    //             show_error("Sales Order Not Found");
+    //         }
+
+    //         echo $send;
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+
     public function create()
     {
         if ($this->input->post()) {
             $post = $this->input->post();
+            $sales_order_no = $post['sales_order_no'];
+            $status = $post['status'];
+            $closing_reason = $post['closing_reason'];
+            $attachment_closing = $post['attachment_closing'];
 
-            $sales_orders = $this->crud->read("sales_orders", [], ["sales_order_no" => $post['sales_order_no']]);
-            if (@$sales_orders->sales_order_no != "") {
-                $send = $this->crud->update('sales_orders', ["sales_order_no" => $post['sales_order_no']], $post);
-            } else {
-                show_error("Sales Order Not Found");
+            // Ambil semua baris sales_order berdasarkan sales_order_no
+            $sales_orders = $this->db
+                ->select('so.id, so.sales_order_no, so.item_fg_id, so.qty, COALESCE(dn.qty, 0) as qty_delivery')
+                ->from('sales_orders so')
+                ->join("(SELECT item_fg_id, sales_order_no, SUM(qty) as qty 
+                        FROM delivery_notes 
+                        GROUP BY item_fg_id, sales_order_no) dn",
+                        'so.sales_order_no = dn.sales_order_no AND so.item_fg_id = dn.item_fg_id', 'left')
+                ->where('so.sales_order_no', $sales_order_no)
+                ->get()
+                ->result();
+
+            $updated_count = 0;
+            foreach ($sales_orders as $so) {
+                $outstanding = $so->qty - $so->qty_delivery;
+
+                // Update semua data kecuali type_closing dulu
+                $data_update = [
+                    'status' => $status,
+                    'closing_reason' => $closing_reason,
+                    'attachment_closing' => $attachment_closing
+                ];
+
+                // Jika outstanding, tambahkan type_closing
+                if ($outstanding != 0) {
+                    $data_update['type_closing'] = 'CLOSING SO';
+                }
+
+                $send = $this->crud->update('sales_orders', ['id' => $so->id], $data_update);
+                $updated_count++;
             }
 
             echo $send;
         } else {
-            show_error("Cannot Process your request");
+            show_error("Cannot process your request");
         }
     }
 
