@@ -143,7 +143,16 @@ class Summary_forecasts extends CI_Controller
             a.p_year,
             b.number as item_fg_number,
             b.name as item_fg_name,
-            d.number as compound_no,
+            CASE 
+                WHEN b.item_family_number != "CD" THEN (
+                    SELECT d.number 
+                    FROM bom c 
+                    LEFT JOIN item_rm d ON c.item_rm_id = d.id 
+                    WHERE c.item_fg_id = a.item_fg_id AND c.priority = 1 
+                    LIMIT 1
+                )
+                ELSE NULL
+            END as compound_no,
             b.item_family_number as item_prodfam,
             SUM(a.month_1) as month_1,
             SUM(a.month_2) as month_2,
@@ -161,8 +170,8 @@ class Summary_forecasts extends CI_Controller
 
         $this->db->from('forecasts a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-        $this->db->join('bom c', 'a.item_fg_id = c.item_fg_id', 'left');
-        $this->db->join('item_rm d', 'c.item_rm_id = d.id', 'left');
+        // $this->db->join('bom c', 'a.item_fg_id = c.item_fg_id and c.priority = 1', 'left');
+        // $this->db->join('item_rm d', 'c.item_rm_id = d.id', 'left');
         $this->db->where('a.deleted', 0);
         $this->db->like('a.p_month', $filter_period_month);
         $this->db->like('a.p_year', $filter_period_year);

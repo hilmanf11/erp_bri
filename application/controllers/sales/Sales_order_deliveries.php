@@ -56,7 +56,7 @@ class Sales_order_deliveries extends CI_Controller
 
     public function readCustomerOrderNo($customerId)
     {
-        $send = $this->crud->query("SELECT DISTINCT customer_order_no, sales_order_date, qty, order_type FROM sales_orders WHERE customer_id = '$customerId' AND status=0 group by customer_order_no");
+        $send = $this->crud->query("SELECT DISTINCT customer_order_no, sales_order_date, qty, order_type FROM sales_orders WHERE customer_id = '$customerId' AND (status = 0 OR status = 2) group by customer_order_no");
         echo json_encode($send);
     }
 

@@ -33,9 +33,9 @@ class Forecast_compound_used extends CI_Controller
         $periode_month = base64_decode($filter_period_month);
         $periode_year = base64_decode($filter_period_year);
 
+        //* 1. Compound sebagai RM (di BOM)
         $this->db->select('d.number as number');
         $this->db->from('forecasts a');
-        // $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('bom c', 'a.item_fg_id = c.item_fg_id', 'left');
         $this->db->join('item_rm d', 'c.item_rm_id = d.id', 'left');
         $this->db->where('d.item_family_id', 'P03');
@@ -51,9 +51,38 @@ class Forecast_compound_used extends CI_Controller
         }
 
         $this->db->group_by('d.number');
-        $this->db->order_by('a.item_fg_id', 'ASC');
-        $records = $this->db->get()->result_object();
-        echo json_encode($records);
+        $rm_compounds = $this->db->get()->result_array();
+
+        //* 2. Compound sebagai FG
+        $this->db->select('b.number as number');
+        $this->db->from('forecasts a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->where('a.deleted', 0);
+        $this->db->where('b.item_family_number', 'CD');
+        $this->db->where('b.status', 0);
+
+        if ($periode_year) {
+            $this->db->like('a.p_year', $periode_year);
+        }
+
+        if ($periode_month) {
+            $this->db->like('a.p_month', $periode_month);
+        }
+
+        $this->db->group_by('b.number');
+        $fg_compounds = $this->db->get()->result_array();
+
+        //* 3. Gabungkan dan hilangkan duplikat berdasarkan `number`
+        $all = array_merge($rm_compounds, $fg_compounds);
+
+        $unique = [];
+        foreach ($all as $row) {
+            $unique[$row['number']] = $row;
+        }
+
+        $final_result = array_values($unique);
+
+        echo json_encode($final_result);
     }
 
     //GET PERIOD
@@ -144,14 +173,12 @@ class Forecast_compound_used extends CI_Controller
         ');
         $this->db->from('forecasts a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-        $this->db->join('bom c', 'a.item_fg_id = c.item_fg_id', 'left');
+        $this->db->join('bom c', 'a.item_fg_id = c.item_fg_id and c.priority = 1', 'left');
         $this->db->join('item_rm d', 'c.item_rm_id = d.id', 'left');
         $this->db->where('d.item_family_id', 'P03');
         $this->db->where('a.deleted', 0);
         $this->db->like('a.p_month', $filter_period_month);
         $this->db->like('a.p_year', $filter_period_year);
-        // if (!empty($filter_compound_no)) {
-            // }
         if ($filter_product_family != "") {
             $this->db->where('b.item_family_number', $filter_product_family);
         }
@@ -161,6 +188,57 @@ class Forecast_compound_used extends CI_Controller
         $this->db->order_by('a.item_fg_id', 'ASC');
         $records = $this->db->get()->result_array();
 
+        $this->db->select("
+            b.number as compound_no,
+            a.item_fg_id,
+            SUM(a.month_1) as month_1,
+            SUM(a.month_2) as month_2,
+            SUM(a.month_3) as month_3,
+            SUM(a.month_4) as month_4,
+            SUM(a.month_5) as month_5,
+            SUM(a.month_6) as month_6,
+            SUM(a.month_7) as month_7,
+            SUM(a.month_8) as month_8,
+            SUM(a.month_9) as month_9,
+            SUM(a.month_10) as month_10,
+            SUM(a.month_11) as month_11,
+            SUM(a.month_12) as month_12
+        ");
+        $this->db->from('forecasts a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->where('a.deleted', 0);
+        $this->db->where('b.item_family_number', 'CD'); // hanya compound sebagai FG
+        $this->db->like('a.p_month', $filter_period_month);
+        $this->db->like('a.p_year', $filter_period_year);
+        if ($filter_product_family != "") {
+            $this->db->where('b.item_family_number', $filter_product_family);
+        }
+        $this->db->like('b.number', $filter_compound_no);
+        $this->db->group_by('b.number');
+        $this->db->order_by('a.item_fg_id', 'ASC');
+        $compound_fg_records = $this->db->get()->result_array();
+
+        // $records = array_merge($records, $compound_fg_records);
+
+        $combined = [];
+
+        foreach (array_merge($records, $compound_fg_records) as $row) {
+            $key = $row['compound_no'];
+
+            if (!isset($combined[$key])) {
+                $combined[$key] = $row;
+            } else {
+                for ($i = 1; $i <= 12; $i++) {
+                    $combined[$key]["month_$i"] += $row["month_$i"];
+                }
+            }
+        }
+
+        $records = array_values($combined);
+
+        usort($records, function ($a, $b) {
+            return $a['compound_no'] <=> $b['compound_no'];
+        });
 
         if ($filter_period_month == "01") {
             $month_name = "JANUARY";
