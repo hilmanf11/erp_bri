@@ -1,3 +1,28 @@
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    #p {
+      display: flex;
+      flex-direction: column;
+      /* height: calc(100vh - 200px); */
+      height: 100vh;
+      overflow: hidden !important;
+    }
+    #p #printout {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      overflow: hidden !important;
+    }
+</style>
+
 <div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
     <div class="easyui-accordion" style="width:100%; height: 100%;">
         <div title="CONDITIONS" style="padding: 20px;">
