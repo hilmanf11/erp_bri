@@ -22,7 +22,7 @@
                 </div>
             </div>
             <div style="width: 50%; float: left;">
-                <div class="fitem">
+                <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Sales Order No</span>
                     <input style="width:60%;" id="filter_sales_order_no" class="easyui-combobox">
                 </div>
@@ -39,6 +39,15 @@
                     <select style="width:60%;" id="filter_display" class="easyui-combobox" panelHeight="auto">
                         <option value="RECAP">RECAP</option>
                         <option value="DETAIL">DETAIL</option>
+                    </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status</span>
+                    <select style="width:60%;" id="filter_status" panelHeight="auto" class="easyui-combobox">
+                        <option value="">Choose All</option>
+                        <option value="OPEN">OPEN</option>
+                        <option value="CLOSE">CLOSE</option>
+                        <option value="OVER">OVER</option>
                     </select>
                 </div>
             </div>
@@ -59,19 +68,21 @@
         var filter_so_date_to = $("#filter_so_date_to").datebox("getValue");
         var filter_customer_name = $("#filter_customer_name").combobox("getValue");
         var filter_customer_order_no = $("#filter_customer_order_no").combobox("getValue");
-        var filter_sales_order_no = $("#filter_sales_order_no").combobox("getValue");
+        // var filter_sales_order_no = $("#filter_sales_order_no").combobox("getValue");
         var filter_item_fg = $("#filter_item_fg").combobox("getValue");
         var filter_division = $("#filter_division").combobox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
+        var filter_status = $("#filter_status").combobox("getValue");
 
         var url = "?filter_so_date_from=" + window.btoa(filter_so_date_from) +
             "&filter_so_date_to=" + window.btoa(filter_so_date_to) +
             "&filter_customer_name=" + window.btoa(filter_customer_name) +
             "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
-            "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            // "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
             "&filter_division=" + window.btoa(filter_division) +
-            "&filter_display=" + window.btoa(filter_display);
+            "&filter_display=" + window.btoa(filter_display) +
+            "&filter_status=" + window.btoa(filter_status);
 
         if (filter_so_date_from == "" && filter_so_date_to == "") {
             toastr.warning("Please Select Trans Date");
@@ -86,19 +97,21 @@
         var filter_so_date_to = $("#filter_so_date_to").datebox("getValue");
         var filter_customer_name = $("#filter_customer_name").combobox("getValue");
         var filter_customer_order_no = $("#filter_customer_order_no").combobox("getValue");
-        var filter_sales_order_no = $("#filter_sales_order_no").combobox("getValue");
+        // var filter_sales_order_no = $("#filter_sales_order_no").combobox("getValue");
         var filter_item_fg = $("#filter_item_fg").combobox("getValue");
         var filter_division = $("#filter_division").combobox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
+        var filter_status = $("#filter_status").combobox("getValue");
 
         var url = "?filter_so_date_from=" + window.btoa(filter_so_date_from) +
             "&filter_so_date_to=" + window.btoa(filter_so_date_to) +
             "&filter_customer_name=" + window.btoa(filter_customer_name) +
             "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
-            "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            // "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
             "&filter_division=" + window.btoa(filter_division) +
-            "&filter_display=" + window.btoa(filter_display);
+            "&filter_display=" + window.btoa(filter_display) +
+            "&filter_status=" + window.btoa(filter_status);
 
         if (filter_so_date_from == "" && filter_so_date_to == "") {
             toastr.warning("Please Select Trans Date");
@@ -144,23 +157,23 @@
                     }],
                 });
 
-                $('#filter_sales_order_no').combobox({
-                    url: '<?php echo base_url('sales/report_outstanding_so/readCustomerOrder?customer_id='); ?>' + cus.id + "&filter_so_date_from=" + window.btoa(filter_so_date_from) + "&filter_so_date_to=" + window.btoa(filter_so_date_to),
-                    valueField: 'sales_order_no',
-                    textField: 'sales_order_no',
-                    prompt: "Select Sales Order No",
-                    icons: [{
-                        iconCls: 'icon-clear',
-                        handler: function(e) {
-                            $(e.data.target).combobox('clear').combobox('textbox').focus();
-                        }
-                    }],
-                    onSelect: function(so) {
+                // $('#filter_sales_order_no').combobox({
+                //     url: '<?php echo base_url('sales/report_outstanding_so/readCustomerOrder?customer_id='); ?>' + cus.id + "&filter_so_date_from=" + window.btoa(filter_so_date_from) + "&filter_so_date_to=" + window.btoa(filter_so_date_to),
+                //     valueField: 'sales_order_no',
+                //     textField: 'sales_order_no',
+                //     prompt: "Select Sales Order No",
+                //     icons: [{
+                //         iconCls: 'icon-clear',
+                //         handler: function(e) {
+                //             $(e.data.target).combobox('clear').combobox('textbox').focus();
+                //         }
+                //     }],
+                //     onSelect: function(so) {
                         $('#filter_item_fg').combogrid({
                             url: '<?php echo base_url('sales/report_outstanding_so/readItems?customer_id='); ?>' + cus.id +
                                 "&filter_so_date_from=" + window.btoa(filter_so_date_from) +
-                                "&filter_so_date_to=" + window.btoa(filter_so_date_to) +
-                                "&filter_sales_order_no=" + window.btoa(so.sales_order_no),
+                                "&filter_so_date_to=" + window.btoa(filter_so_date_to),
+                                // "&filter_sales_order_no=" + window.btoa(so.sales_order_no),
                             panelWidth: 400,
                             idField: 'id',
                             textField: 'number',
@@ -185,8 +198,8 @@
                                 }]
                             ],
                         });
-                    }
-                });
+                //     }
+                // });
             }
         });
 

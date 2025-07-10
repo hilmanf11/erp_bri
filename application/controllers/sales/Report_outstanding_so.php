@@ -48,15 +48,14 @@ class Report_outstanding_so extends CI_Controller
     {
         $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));
         $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
-        $filter_sales_order_no = base64_decode($this->input->get("filter_sales_order_no"));
+        // $filter_sales_order_no = base64_decode($this->input->get("filter_sales_order_no"));
         $customer_id = $this->input->get("customer_id");
 
         $customer_orders = $this->crud->query("SELECT b.id, b.number, b.name
             FROM sales_orders a
             JOIN item_fg b ON a.item_fg_id = b.id
             WHERE a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'
-            AND a.customer_id = '$customer_id' AND a.sales_order_no = '$filter_sales_order_no'
-            GROUP BY a.item_fg_id");
+            AND a.customer_id = '$customer_id' GROUP BY a.item_fg_id");
         echo json_encode($customer_orders);
     }
 
@@ -76,6 +75,7 @@ class Report_outstanding_so extends CI_Controller
         $filter_item_fg = base64_decode($this->input->get("filter_item_fg"));
         $filter_division = base64_decode($this->input->get("filter_division"));
         $filter_display = base64_decode($this->input->get("filter_display"));
+        $filter_status = base64_decode($this->input->get("filter_status"));
 
         $customer = $this->crud->read("customers", [], ["id" => $filter_customer_name]);
         $item_fg = $this->crud->read("item_fg", [], ["id" => $filter_item_fg]);
@@ -130,19 +130,17 @@ class Report_outstanding_so extends CI_Controller
                         <td style="width:10px;">:</td>
                         <td style="width:200px;">' . $filter_customer_order_no . '</td>
                     </tr>
-                    <tr>
-                        <th style="width:100px; text-align:left;">Sales Order No</th>
-                        <td style="width:10px;">:</td>
-                        <td style="width:200px;">' . $filter_sales_order_no . '</td>
-                    </tr>
                 </table>
                 <br>';
 
         if ($filter_display == "RECAP") {
-            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, SUM(a.qty) as qty_order, SUM(a.delivery) as qty_delivery, SUM(a.outstanding) as qty_outstanding, b.name as customer_name');
+            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, SUM(a.qty) as qty_order, SUM(a.delivery) as qty_delivery, SUM(a.outstanding) as qty_outstanding, b.name as customer_name, a.closing_reason, a.type_closing');
             $this->db->from('sales_orders a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
+            $this->db->order_by('a.customer_order_no', 'ASC');
+            $this->db->order_by('b.name', 'ASC');
+            $this->db->order_by('a.sales_order_date', 'ASC');
 
             // Filter by customer name
             if (!empty($filter_customer_name)) {
@@ -155,9 +153,9 @@ class Report_outstanding_so extends CI_Controller
             }
 
             // Filter by sales_order_no
-            if (!empty($filter_sales_order_no)) {
-                $this->db->like('a.sales_order_no', $filter_sales_order_no);
-            }
+            // if (!empty($filter_sales_order_no)) {
+            //     $this->db->like('a.sales_order_no', $filter_sales_order_no);
+            // }
 
             // Filter by customer_order_no
             if (!empty($filter_customer_order_no)) {
@@ -167,6 +165,24 @@ class Report_outstanding_so extends CI_Controller
             $this->db->group_by('a.sales_order_no');
             $this->db->order_by('a.status', 'ASC');
             $records = $this->db->get()->result_array();
+
+            if (!empty($filter_status)) {
+                $records = array_filter($records, function ($data) use ($filter_status) {
+                    $calculated_status = '';
+
+                    if (($data['qty_order'] - $data['qty_delivery']) > 0) {
+                        $calculated_status = 'OPEN';
+                    } else if ($data['qty_outstanding'] != 0 && ($data['closing_reason'] != '' || $data['type_closing'] != '')) {
+                        $calculated_status = 'CLOSE';
+                    } else if ($data['qty_outstanding'] < 0) {
+                        $calculated_status = 'OVER';
+                    } else {
+                        $calculated_status = 'CLOSE';
+                    }
+
+                    return strtoupper($filter_status) === $calculated_status;
+                });
+            }
 
             $html .= '<table id="customers" border="1">
                         <tr>
@@ -193,6 +209,8 @@ class Report_outstanding_so extends CI_Controller
 
                 if (($data['qty_order'] - $data['qty_delivery']) > 0) {
                     $status = "<b style='color:green;'>OPEN</b>";
+                } else if($data['qty_outstanding'] != 0 && ($data['closing_reason'] != '' || $data['type_closing'] != '') ) {
+                    $status = "<b style='color:red;'>CLOSE</b>";
                 } else if ($data['qty_outstanding'] < 0) {
                     $status = "<b style='color:orange;'>OVER</b>";
                 } else {
@@ -221,11 +239,14 @@ class Report_outstanding_so extends CI_Controller
                         <th>' . $status . '</th>
                     </tr>';
         } else {
-            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, a.qty, a.delivery, a.outstanding, b.name as customer_name, c.number as item_fg_number, c.name as item_fg_name');
+            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, a.qty, a.delivery, a.outstanding, b.name as customer_name, c.number as item_fg_number, c.name as item_fg_name, a.closing_reason, a.type_closing');
             $this->db->from('sales_orders a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
             $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
+            $this->db->order_by('a.customer_order_no', 'ASC');
+            $this->db->order_by('b.name', 'ASC');
+            $this->db->order_by('a.sales_order_date', 'ASC');
 
             // Filter by customer name
             if (!empty($filter_customer_name)) {
@@ -238,9 +259,9 @@ class Report_outstanding_so extends CI_Controller
             }
 
             // Filter by sales_order_no
-            if (!empty($filter_sales_order_no)) {
-                $this->db->like('a.sales_order_no', $filter_sales_order_no);
-            }
+            // if (!empty($filter_sales_order_no)) {
+            //     $this->db->like('a.sales_order_no', $filter_sales_order_no);
+            // }
 
             // Filter by customer_order_no
             if (!empty($filter_customer_order_no)) {
@@ -249,6 +270,24 @@ class Report_outstanding_so extends CI_Controller
 
             $this->db->order_by('a.status', 'ASC');
             $records = $this->db->get()->result_array();
+
+            if (!empty($filter_status)) {
+                $records = array_filter($records, function ($data) use ($filter_status) {
+                    $calculated_status = '';
+
+                    if (($data['qty'] - $data['delivery']) > 0) {
+                        $calculated_status = 'OPEN';
+                    } else if ($data['outstanding'] != 0 && ($data['closing_reason'] != '' || $data['type_closing'] != '')) {
+                        $calculated_status = 'CLOSE';
+                    } else if ($data['outstanding'] < 0) {
+                        $calculated_status = 'OVER';
+                    } else {
+                        $calculated_status = 'CLOSE';
+                    }
+
+                    return strtoupper($filter_status) === $calculated_status;
+                });
+            }
 
             $html .= '<table id="customers" border="1">
                         <tr>
