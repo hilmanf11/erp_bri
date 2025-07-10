@@ -1,3 +1,31 @@
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar {
+        display: none;
+    }
+    #p {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #p #printout {
+      flex: 1;
+      width: 100%;
+      height: 100% !important;
+      overflow: hidden;
+    }
+</style>
+
 <table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar"></table>
 <div id="toolbar" style="padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
@@ -35,7 +63,7 @@
     </fieldset>
     <?= $button ?>
 </div>
-<div class="easyui-panel" title="Print Preview" style="width:100%;padding:10px;">
+<div id="p" class="easyui-panel" title="Print Preview" style="width:100%;padding:10px;">
     <iframe id="printout" src="" style="width: 100%; height:500px; border: 0;"></iframe>
 </div>
 

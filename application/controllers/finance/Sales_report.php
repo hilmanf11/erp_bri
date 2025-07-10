@@ -160,7 +160,7 @@ class Sales_report extends CI_Controller
                     if ($exchange) {
                         $exchange_rate = $exchange->middle;
                     } else {
-                        $exchange_rate = 0;
+                        $exchange_rate = 1; // Default exchange rate if not found
                     }
                 } else {
                     $exchange_rate = 1;
@@ -180,11 +180,11 @@ class Sales_report extends CI_Controller
                                 <td>' . $record->sales_order_no . '</td>
                                 <td>' . $record->customer_order_no . '</td>
                                 <td>' . $record->uom . '</td>
-                                <td style="text-align:right">' . number_format($record->qty, 2, ',', '.') . '</td>
+                                <td style="text-align:right">' . number_format($record->qty, 0, ',', '.') . '</td>
                                 <td>' . $record->currency . '</td>
                                 <td style="text-align:right">' . number_format($record->price, 2, ',', '.') . '</td>
                                 <td style="text-align:right">' . number_format($amount, 2, ',', '.') . '</td>
-                                <td style="text-align:right">' . $exchange_rate . '</td>
+                                <td style="text-align:right">' . number_format($exchange_rate, 2, ',', '.') . '</td>
                                 <td style="text-align:right">' . number_format($amountIDR, 2, ',', '.') . '</td>
                             </tr>';
                 $no++;
@@ -297,7 +297,7 @@ class Sales_report extends CI_Controller
                     if ($exchange) {
                         $exchange_rate = $exchange->middle;
                     } else {
-                        $exchange_rate = 0;
+                        $exchange_rate = 1;
                     }
                 } else {
                     $exchange_rate = 1;
@@ -331,7 +331,7 @@ class Sales_report extends CI_Controller
                 <td style="text-align:right"><b>' . number_format($totalCompound, 2, ',', '.') . '</b></td>
                 <td style="text-align:right"><b>' . number_format($totalRubber, 2, ',', '.') . '</b></td>
                 <td style="text-align:right"><b>' . number_format($totalTube, 2, ',', '.') . '</b></td>
-                <td style="text-align:right">' . number_format($totalAmountIDR, 2, ',', '.') . '</td>
+                <td style="text-align:right"><b>' . number_format($totalAmountIDR, 2, ',', '.') . '</b></td>
             </tr>';
 
             $html .= '</table></body></html>';
