@@ -60,12 +60,16 @@ class Report_outstanding_sales_fg extends CI_Controller
         echo json_encode($customer_orders);
     }
 
+    private function format_number($number, $precision = 2) {
+        return number_format($number, $precision, ',', '.');
+    }
+
     public function print($option = "")
     {
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=report_outstanding_so_$format.xls");
+            header("Content-Disposition: attachment; filename=report_outstanding_sales_$format.xls");
         }
 
         $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));
@@ -218,7 +222,7 @@ class Report_outstanding_sales_fg extends CI_Controller
                     $html .= '<tr>
                         <td>'.$no.'</td>
                         <td>'.$customer.'</td>
-                        <td>'.number_format($total_idr, 2).'</td>
+                        <td>'.$this->format_number($total_idr, 2).'</td>
                     </tr>';
                     $no++;
                 }
@@ -226,7 +230,7 @@ class Report_outstanding_sales_fg extends CI_Controller
 
                 $html .= '<tr>
                     <th colspan="2" style="text-align:right;">TOTAL</th>
-                    <th style="mso-number-format:\@;">'. number_format($total_all_idr). '</th>
+                    <th style="mso-number-format:\@;">'. $this->format_number($total_all_idr). '</th>
                 </tr>';
 
             }else{
@@ -306,7 +310,7 @@ class Report_outstanding_sales_fg extends CI_Controller
                     $html .= '<tr>
                         <td>'.$no.'</td>
                         <td>'.$customer.'</td>
-                        <td>'.number_format($total_idr, 2).'</td>
+                        <td>'.$this->format_number($total_idr, 2).'</td>
                     </tr>';
                     $no++;
                 }
@@ -314,7 +318,7 @@ class Report_outstanding_sales_fg extends CI_Controller
 
                 $html .= '<tr>
                     <th colspan="2" style="text-align:right;">TOTAL</th>
-                    <th style="mso-number-format:\@;">'. number_format($total_all_idr). '</th>
+                    <th style="mso-number-format:\@;">'. $this->format_number($total_all_idr). '</th>
                 </tr>';
             }
 
@@ -367,7 +371,7 @@ class Report_outstanding_sales_fg extends CI_Controller
                                 <th>Product No</th>
                                 <th>Product Name</th>
                                 <th>UoM</th>
-                                <th>Delivery Qty</th>
+                                <th>Qty DS</th>
                                 <th>Qty DN</th>
                                 <th>Outstanding</th>
                                 <th>Currency</th>
@@ -393,7 +397,7 @@ class Report_outstanding_sales_fg extends CI_Controller
                         $precision = 2;
                         $rate = 1;
                     }else{
-                        $precision = 4;
+                        $precision = 2;
                         $this->db->where('currency_from', 'USD');
                         $this->db->where('start_date <=', $data['trans_date']);
                         $this->db->where('end_date >=', $data['trans_date']);
@@ -417,23 +421,23 @@ class Report_outstanding_sales_fg extends CI_Controller
                                 <td>' . $data['item_fg_number'] . '</td>
                                 <td>' . $data['item_fg_name'] . '</td>
                                 <td>' . $data['item_fg_uom'] . '</td>
-                                <td align="center">' . $data['qty'] . '</td>
-                                <td align="center">' . $data['qty_dn'] . '</td>
-                                <td align="center">' . $data['outstanding'] . '</td>
+                                <td align="center">' . $this->format_number($data['qty'], 0) . '</td>
+                                <td align="center">' . $this->format_number($data['qty_dn'], 0) . '</td>
+                                <td align="center">' . $this->format_number($data['outstanding'], 0) . '</td>
                                 <td>' . $data['currency'] . '</td>
-                                <td>' . number_format($data['price'],$precision) . '</td>
-                                <td>' . number_format($data['price'] * $data['outstanding'],$precision) . '</td>
-                                <td align="right">' . $rate . '</td>
-                                <td>' . number_format((($data['price'] * $data['outstanding']) * $rate) ,$precision) . '</td>
+                                <td>' . $this->format_number($data['price'],$precision) . '</td>
+                                <td>' . $this->format_number($data['price'] * $data['outstanding'],$precision) . '</td>
+                                <td style="mso-number-format:\@;" align="right">' . $this->format_number($rate) . '</td>
+                                <td>' . $this->format_number((($data['price'] * $data['outstanding']) * $rate)) . '</td>
                             </tr>';
                     $no++;
                 }
 
                     $html .= '<tr>
                         <th colspan="13" style="text-align:right;">TOTAL</th>
-                        <th style="mso-number-format:\@;">'. number_format($qty_amount). '</th>
+                        <th style="mso-number-format:\@;">'. $this->format_number($qty_amount). '</th>
                         <th style="mso-number-format:\@;"></th>
-                        <th style="mso-number-format:\@;">'. number_format($qty_amount_idr). '</th>
+                        <th style="mso-number-format:\@;">'. $this->format_number($qty_amount_idr). '</th>
                     </tr>';
             }else{
                 $this->db->select('a.sales_order_no, 
@@ -525,7 +529,7 @@ class Report_outstanding_sales_fg extends CI_Controller
                         $precision = 2;
                         $rate = 1;
                     }else{
-                        $precision = 4;
+                        $precision = 2;
                         $this->db->where('currency_from', 'USD');
                         $this->db->where('start_date <=', $data['sales_order_date']);
                         $this->db->where('end_date >=', $data['sales_order_date']);
@@ -549,24 +553,24 @@ class Report_outstanding_sales_fg extends CI_Controller
                                 <td>' . $data['sales_order_date'] . '</td>
                                 <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
                                 <td>' . $data['item_fg_name'] . '</td>
-                                <td style="mso-number-format:\@;">' . number_format($data['qty']) . '</td>
-                                <td style="mso-number-format:\@;">' . number_format($data['delivery']) . '</td>
-                                <td style="mso-number-format:\@;">' . number_format($undelivery) . '</td>
-                                <td style="mso-number-format:\@;">' . number_format($outstanding) . '</td>
+                                <td style="mso-number-format:\@;">' . $this->format_number($data['qty'], 0) . '</td>
+                                <td style="mso-number-format:\@;">' . $this->format_number($data['delivery'], 0) . '</td>
+                                <td style="mso-number-format:\@;">' . $this->format_number($undelivery, 0) . '</td>
+                                <td style="mso-number-format:\@;">' . $this->format_number($outstanding, 0) . '</td>
                                 <td>' . $data['currency'] . '</td>
-                                <td>' . number_format($data['price'],$precision) . '</td>
-                                <td>' . number_format($outstanding * $data['price'],$precision) . '</td>
-                                <td align="right">' . $rate . '</td>
-                                <td>' . number_format((($outstanding * $data['price']) * $rate) ,$precision) . '</td>
+                                <td>' . $this->format_number($data['price'], $precision) . '</td>
+                                <td>' . $this->format_number($outstanding * $data['price'], $precision) . '</td>
+                                <td style="mso-number-format:\@;" align="right">' . $this->format_number($rate) . '</td>
+                                <td>' . $this->format_number((($outstanding * $data['price']) * $rate)) . '</td>
                             </tr>';
                     $no++;
                 }
 
                 $html .= '<tr>
                             <th colspan="13" style="text-align:right;">TOTAL</th>
-                            <th style="mso-number-format:\@;">'. number_format($qty_amount). '</th>
+                            <th style="mso-number-format:\@;">'. $this->format_number($qty_amount, 2). '</th>
                             <th style="mso-number-format:\@;"></th>
-                            <th style="mso-number-format:\@;">'. number_format($qty_amount_idr). '</th>
+                            <th style="mso-number-format:\@;">'. $this->format_number($qty_amount_idr, 2). '</th>
                         </tr>';
             }
         }
