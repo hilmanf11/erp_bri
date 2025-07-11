@@ -48,14 +48,14 @@ class Report_outstanding_sales_fg extends CI_Controller
     {
         $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));
         $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
-        $filter_sales_order_no = base64_decode($this->input->get("filter_sales_order_no"));
+        // $filter_sales_order_no = base64_decode($this->input->get("filter_sales_order_no"));
         $customer_id = $this->input->get("customer_id");
 
         $customer_orders = $this->crud->query("SELECT b.id, b.number, b.name
             FROM sales_orders a
             JOIN item_fg b ON a.item_fg_id = b.id
             WHERE a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'
-            AND a.customer_id = '$customer_id' AND a.sales_order_no = '$filter_sales_order_no'
+            AND a.customer_id = '$customer_id'
             GROUP BY a.item_fg_id");
         echo json_encode($customer_orders);
     }
@@ -130,11 +130,6 @@ class Report_outstanding_sales_fg extends CI_Controller
                         <td style="width:200px;">' . $filter_customer_order_no . '</td>
                     </tr>
                     <tr>
-                        <th style="width:100px; text-align:left;">Sales Order No</th>
-                        <td style="width:10px;">:</td>
-                        <td style="width:200px;">' . $filter_sales_order_no . '</td>
-                    </tr>
-                    <tr>
                         <th style="width:100px; text-align:left;">Product No</th>
                         <td style="width:10px;">:</td>
                         <td style="width:200px;">' . $filter_item_fg . '</td>
@@ -172,7 +167,7 @@ class Report_outstanding_sales_fg extends CI_Controller
                 $this->db->having('SUM(a.qty) > qty_dn');
                 $this->db->like('a.customer_id', $filter_customer_name);
                 $this->db->like('a.item_fg_id', $filter_item_fg);
-                $this->db->like('a.sales_order_no', $filter_sales_order_no);
+                // $this->db->like('a.sales_order_no', $filter_sales_order_no);
                 $this->db->like('c.division', $filter_division);
                 $this->db->order_by('a.sales_order_no', 'ASC');
                 $this->db->group_by('a.customer_id');
@@ -258,7 +253,7 @@ class Report_outstanding_sales_fg extends CI_Controller
                 $this->db->like('a.customer_id', $filter_customer_name);
                 $this->db->like('a.item_fg_id', $filter_item_fg);
                 $this->db->like('a.customer_order_no', $filter_customer_order_no);
-                $this->db->like('a.sales_order_no', $filter_sales_order_no);
+                // $this->db->like('a.sales_order_no', $filter_sales_order_no);
                 $this->db->like('a.division', $filter_division);
                 $this->db->order_by('b.name', 'ASC');
                 $this->db->order_by('a.sales_order_no', 'ASC');
@@ -353,9 +348,10 @@ class Report_outstanding_sales_fg extends CI_Controller
                 $this->db->having('SUM(a.qty) > qty_dn');
                 $this->db->like('a.customer_id', $filter_customer_name);
                 $this->db->like('a.item_fg_id', $filter_item_fg);
-                $this->db->like('a.sales_order_no', $filter_sales_order_no);
+                // $this->db->like('a.sales_order_no', $filter_sales_order_no);
                 $this->db->like('c.division', $filter_division);
-                $this->db->order_by('a.sales_order_no', 'ASC');
+                $this->db->order_by('c.customer_order_no', 'ASC');
+                $this->db->order_by('a.item_fg_id', 'ASC');
                 $this->db->group_by('a.customer_id');
                 $this->db->group_by('a.item_fg_id');
                 $this->db->group_by('a.sales_order_no');
@@ -365,25 +361,29 @@ class Report_outstanding_sales_fg extends CI_Controller
                             <tr>
                                 <th width="20">No</th>
                                 <th>Customer Name</th>
-                                <th>Sales Order No.</th>
                                 <th>Customer Order No.</th>
                                 <th>Product ID</th>
                                 <th>Product No</th>
                                 <th>Product Name</th>
-                                <th>UoM</th>
+                                <th>Qty SO</th>
                                 <th>Qty DS</th>
                                 <th>Qty DN</th>
                                 <th>Outstanding</th>
+                                <th>UoM</th>
                                 <th>Currency</th>
                                 <th>Price</th>
                                 <th>Amount</th>
-                                <th>Exchange Rate</th>
+                                <th width="60">Exchange Rate</th>
                                 <th>Amount (IDR)</th>
                             </tr>';
 
                 $no = 1;
                 $qty_amount = 0;
                 $qty_amount_idr = 0;
+                $qty_so = 0;
+                $qty_ds = 0;
+                $qty_dn = 0;
+                $qty_os = 0;
                 
                 foreach ($records as $data) {
 
@@ -411,19 +411,23 @@ class Report_outstanding_sales_fg extends CI_Controller
 
                     $qty_amount += $data['price'] * $data['outstanding'];
                     $qty_amount_idr += (($data['price'] * $data['outstanding']) * $rate);
+                    $qty_so += $data['qty_so'];
+                    $qty_ds += $data['qty'];
+                    $qty_dn += $data['qty_dn'];
+                    $qty_os += $data['outstanding'];
 
                     $html .= '<tr>
                                 <td>' . $no . '</td>
                                 <td>' . $data['customer_name'] . '</td>
-                                <td>' . $data['sales_order_no'] . '</td>
                                 <td align="center">' . $data['customer_order_no'] . '</td>
                                 <td>' . $data['item_fg_id'] . '</td>
                                 <td>' . $data['item_fg_number'] . '</td>
                                 <td>' . $data['item_fg_name'] . '</td>
-                                <td>' . $data['item_fg_uom'] . '</td>
+                                <td align="center">' . $this->format_number($data['qty_so'], 0) . '</td>
                                 <td align="center">' . $this->format_number($data['qty'], 0) . '</td>
                                 <td align="center">' . $this->format_number($data['qty_dn'], 0) . '</td>
                                 <td align="center">' . $this->format_number($data['outstanding'], 0) . '</td>
+                                <td>' . $data['item_fg_uom'] . '</td>
                                 <td>' . $data['currency'] . '</td>
                                 <td>' . $this->format_number($data['price'],$precision) . '</td>
                                 <td>' . $this->format_number($data['price'] * $data['outstanding'],$precision) . '</td>
@@ -434,7 +438,14 @@ class Report_outstanding_sales_fg extends CI_Controller
                 }
 
                     $html .= '<tr>
-                        <th colspan="13" style="text-align:right;">TOTAL</th>
+                        <th colspan="6" style="text-align:right;">TOTAL</th>
+                        <th style="mso-number-format:\@; text-align:center;">'. $this->format_number($qty_so, 0). '</th>
+                        <th style="mso-number-format:\@; text-align:center;">'. $this->format_number($qty_ds, 0). '</th>
+                        <th style="mso-number-format:\@; text-align:center;">'. $this->format_number($qty_dn, 0). '</th>
+                        <th style="mso-number-format:\@; text-align:center;">'. $this->format_number($qty_os, 0). '</th>
+                        <th style="mso-number-format:\@;"></th>
+                        <th style="mso-number-format:\@;"></th>
+                        <th style="mso-number-format:\@;"></th>
                         <th style="mso-number-format:\@;">'. $this->format_number($qty_amount). '</th>
                         <th style="mso-number-format:\@;"></th>
                         <th style="mso-number-format:\@;">'. $this->format_number($qty_amount_idr). '</th>
@@ -478,7 +489,7 @@ class Report_outstanding_sales_fg extends CI_Controller
                 $this->db->like('a.customer_id', $filter_customer_name);
                 $this->db->like('a.item_fg_id', $filter_item_fg);
                 $this->db->like('a.customer_order_no', $filter_customer_order_no);
-                $this->db->like('a.sales_order_no', $filter_sales_order_no);
+                // $this->db->like('a.sales_order_no', $filter_sales_order_no);
                 $this->db->like('a.division', $filter_division);
                 $this->db->order_by('b.name', 'ASC');
                 $this->db->order_by('a.sales_order_no', 'ASC');
@@ -498,7 +509,7 @@ class Report_outstanding_sales_fg extends CI_Controller
                                 <th>Product Name</th>
                                 <th>Qty SO</th>
                                 <th>Qty DN</th>
-                                <th>Undelivery Qty</th>
+                                <th>Closing Qty</th>
                                 <th>Outstanding SO</th>
                                 <th>Currency</th>
                                 <th>Price</th>

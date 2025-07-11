@@ -280,8 +280,18 @@ class Delivery_orders extends CI_Controller
         
         // Format part of the sequence
         $prefix = $customer_no . '/' . $current_month . '/' . $current_year;
-        $query = $this->db->query("SELECT count(id) as kode,CAST(SUBSTRING_INDEX(delivery_order_no, '/', 1) AS UNSIGNED) AS first FROM delivery_orders WHERE customer_id='".$customer_id."' and YEAR(delivery_date) = '".$date_year."' group by delivery_order_no order by created_date DESC");
-        
+        // $query = $this->db->query("SELECT count(id) as kode,CAST(SUBSTRING_INDEX(delivery_order_no, '/', 1) AS UNSIGNED) AS first FROM delivery_orders WHERE customer_id='".$customer_id."' and YEAR(delivery_date) = '".$date_year."' group by delivery_order_no order by created_date DESC");
+
+        $query = $this->db->query("
+            SELECT 
+                CAST(SUBSTRING_INDEX(delivery_order_no, '/', 1) AS UNSIGNED) AS first
+            FROM delivery_orders 
+            WHERE customer_id = '".$customer_id."'
+            AND YEAR(delivery_date) = '".$date_year."'
+            ORDER BY first DESC 
+            LIMIT 1
+        ");
+
         if ($query->num_rows() > 0) {
             // Sequence exists for this year, get the latest sequence number
             $row = $query->row();//$query->num_rows();//$query->row();
