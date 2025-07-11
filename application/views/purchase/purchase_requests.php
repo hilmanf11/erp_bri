@@ -83,7 +83,7 @@
                     <span style="width:35%; display:inline-block;">Request Date</span>
                     <input style="width:60%;" name="request_date" id="request_date" value="<?= date("Y-m-d") ?>" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
-                <div class="fitem">
+                <div class="fitem f-expected-date">
                     <span style="width:35%; display:inline-block;">Expected Date</span>
                     <input style="width:60%;" name="expected_date" id="expected_date" value="<?= date("Y-m-d") ?>" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
@@ -144,6 +144,9 @@
         $('#item_category_id').combobox('clear');
         $('#item_family_id').combobox('clear');
         $('#plant').combobox('clear');
+
+        $('.f-expected-date').show();
+        $('#frm_insert').data('mode', 'normal');
         url_save = '<?= base_url('purchase/purchase_requests/create') ?>';
     }
 
@@ -156,6 +159,9 @@
         $('#item_category_id').combobox('clear');
         $('#item_family_id').combobox('clear');
         $('#plant').combobox('clear');
+
+        $('.f-expected-date').hide();
+        $('#frm_insert').data('mode', 'additional');
         url_save = '<?= base_url('purchase/purchase_requests/create_additional') ?>';
 
         $("#item_category_id").combobox({
@@ -503,6 +509,19 @@
                         }
                     }
                 }, {
+                    field: 'expected_date',
+                    width: 120,
+                    halign: 'center',
+                    title: "Expected Date",
+                    editor: {
+                        type: 'datebox',
+                        options: { 
+                            required: true,
+                            formatter: myformatter,
+                            parser: myparser
+                        }
+                    }
+                }, {
                     field: 'remarks',
                     width: 200,
                     halign: 'center',
@@ -522,8 +541,31 @@
                 }
                 lastIndex = rowIndex;
             },
+            // onBeginEdit: function(rowIndex, row) {
+            //     var editors = $('#dg2').datagrid('getEditors', rowIndex);
+            // },
             onBeginEdit: function(rowIndex, row) {
-                var editors = $('#dg2').datagrid('getEditors', rowIndex);
+                var edExpected = $('#dg2').datagrid('getEditor', {
+                    index: rowIndex,
+                    field: 'expected_date'
+                });
+
+                if (edExpected) {
+                    var isClearing = false;
+                    $(edExpected.target).datebox({
+                        onChange: function(newVal, oldVal) {
+                            if (isClearing) return;
+
+                            var requestDate = $("#request_date").datebox('getValue');
+                            if (newVal && newVal < requestDate) {
+                                isClearing = true;
+                                $(this).datebox('clear');
+                                toastr.warning("Request Date > Expected Date");
+                                setTimeout(() => isClearing = false, 200); // reset flag setelah clear selesai
+                            }
+                        }
+                    });                    
+                }
             }
         });
     }
@@ -578,6 +620,7 @@
                     $("#item_category_id").combobox('disable');
                     $("#request_date").combobox('disable');
                     $("#expected_date").combobox('disable');
+                    $('.f-expected-date').show();
 
 
                     url_save = '<?= base_url('purchase/purchase_requests/update') ?>';
@@ -781,12 +824,16 @@
                     var expected_date = $("#expected_date").datebox('getValue');
                     var plant = $("#plant").datebox('getValue');
 
+                    let mode = $('#frm_insert').data('mode') || 'normal';
+
                     $('#dg2').datagrid('acceptChanges');
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
                     endEditing();
 
                     for (let i = 0; i < totalrows; i++) {
+                        let expected_date_mode = (mode === 'additional') ? rows[i].expected_date : expected_date;
+                        console.log('EXP : ', expected_date_mode);
                         if (rows[i].item_rm_id) {
                             $.ajax({
                                 type: "post",
@@ -798,7 +845,7 @@
                                     request_date: request_date,
                                     request_name: request_name,
                                     qty: rows[i].qty,
-                                    expected_date: expected_date,
+                                    expected_date: expected_date_mode,
                                     remarks: rows[i].remarks,
                                     division: plant
                                 },
