@@ -38,7 +38,7 @@ class Standard_price_fg extends CI_Controller
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $send = $this->crud->query("SELECT a.*, b.name as item_family_name 
         FROM item_fg a
-        JOIN item_familys b ON a.item_family_id = b.id
+        JOIN item_familys b ON a.item_family_number = b.number
         WHERE a.division_id like '$division' and (a.number like '%$post%' or a.number_customer like '%$post%' or a.name like '%$post%')");
         echo json_encode($send);
     }

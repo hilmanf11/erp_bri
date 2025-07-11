@@ -138,8 +138,11 @@
 <iframe id="printout" src="<?= base_url('master/standard_price_rm/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
+    let isEditMode = false;
+
     //ADD DATA
     function add() {
+        isEditMode = false; 
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
         url_save = '<?= base_url('master/standard_price_rm/create') ?>';
@@ -446,6 +449,7 @@
     function update() {
         var row = $('#dg').treegrid('getSelected');
         if (row) {
+            isEditMode = true; 
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
 
@@ -811,16 +815,17 @@
         textField: 'name',
         prompt: 'Choose Division',
         onSelect: function(val) {
-            var start_date = $('#start_date').datebox('getValue');
-            var end_date = $('#end_date').datebox('getValue');
-            autonumber(val.number, start_date, end_date);
-            setTimeout(function() {
-                var document_number = $("#document_number").textbox('getValue');
+            if (!isEditMode) {
+                var start_date = $('#start_date').datebox('getValue');
+                var end_date = $('#end_date').datebox('getValue');
+                autonumber(val.number, start_date, end_date);
 
-                $('#dg2').datagrid('loadData', []);
-                addTable(val.number, '<?= base_url('master/standard_price_rm/datatableUpdates?document_number=') ?>' + window.btoa(document_number));
-            }, 500);
-
+                setTimeout(function() {
+                    var document_number = $("#document_number").textbox('getValue');
+                    $('#dg2').datagrid('loadData', []);
+                    addTable(val.number, '<?= base_url('master/standard_price_rm/datatableUpdates?document_number=') ?>' + window.btoa(document_number));
+                }, 500);
+            }
         }
     });
 
