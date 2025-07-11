@@ -191,18 +191,18 @@ class Forecast_compound_used extends CI_Controller
         $this->db->select("
             b.number as compound_no,
             a.item_fg_id,
-            SUM(a.month_1) as month_1,
-            SUM(a.month_2) as month_2,
-            SUM(a.month_3) as month_3,
-            SUM(a.month_4) as month_4,
-            SUM(a.month_5) as month_5,
-            SUM(a.month_6) as month_6,
-            SUM(a.month_7) as month_7,
-            SUM(a.month_8) as month_8,
-            SUM(a.month_9) as month_9,
-            SUM(a.month_10) as month_10,
-            SUM(a.month_11) as month_11,
-            SUM(a.month_12) as month_12
+            SUM(a.month_1) * 1000 as month_1,
+            SUM(a.month_2) * 1000 as month_2,
+            SUM(a.month_3) * 1000 as month_3,
+            SUM(a.month_4) * 1000 as month_4,
+            SUM(a.month_5) * 1000 as month_5,
+            SUM(a.month_6) * 1000 as month_6,
+            SUM(a.month_7) * 1000 as month_7,
+            SUM(a.month_8) * 1000 as month_8,
+            SUM(a.month_9) * 1000 as month_9,
+            SUM(a.month_10) * 1000 as month_10,
+            SUM(a.month_11) * 1000 as month_11,
+            SUM(a.month_12) * 1000 as month_12
         ");
         $this->db->from('forecasts a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');

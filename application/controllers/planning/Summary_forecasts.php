@@ -153,6 +153,7 @@ class Summary_forecasts extends CI_Controller
                 )
                 ELSE NULL
             END as compound_no,
+            b.uom as uom,
             b.item_family_number as item_prodfam,
             SUM(a.month_1) as month_1,
             SUM(a.month_2) as month_2,
@@ -260,8 +261,9 @@ class Summary_forecasts extends CI_Controller
             <tr>
                 <th width="20">No</th>
                 <th>Product No.</th>
-                <th>Product Name</th>
+                <th width="280">Product Name</th>
                 <th>Compound No</th>
+                <th style="text-align: center;">UOM</th>
                 <th style="text-align: center;">' . $dates[0]['name'] . '</th>
                 <th style="text-align: center;">' . $dates[1]['name'] . '</th>
                 <th style="text-align: center;">' . $dates[2]['name'] . '</th>
@@ -320,6 +322,7 @@ class Summary_forecasts extends CI_Controller
                         <td style="mso-number-format:\'\\@\';">' . $data['item_fg_number'] . '</td>
                         <td style="mso-number-format:\'\\@\';">' . $data['item_fg_name'] . '</td>
                         <td style="mso-number-format:\'\\@\';">' . $compound_no . '</td>
+                        <td style="text-align: center;"> '. $data['uom'] .'</td>
                         <td style="text-align: right;">' . number_format($data['month_1'], 0, ',', '.') . '</td>
                         <td style="text-align: right;">' . number_format($data['month_2'], 0, ',', '.') . '</td>
                         <td style="text-align: right;">' . number_format($data['month_3'], 0, ',', '.') . '</td>
@@ -335,7 +338,7 @@ class Summary_forecasts extends CI_Controller
                 $no++;
             }
             $html .= '<tr>
-                            <th colspan="4">Grand Total</th>
+                            <th colspan="5">Grand Total</th>
                             <th style="text-align: right;">' . number_format($gt_1, 0, ',', '.') . '</th>
                             <th style="text-align: right;">' . number_format($gt_2, 0, ',', '.') . '</th>
                             <th style="text-align: right;">' . number_format($gt_3, 0, ',', '.') . '</th>
@@ -402,6 +405,7 @@ class Summary_forecasts extends CI_Controller
                 <th>Product No.</th>
                 <th>Product Name</th>
                 <th>Compound No</th>
+                <th style="text-align: center;">UOM</th>
                 <th style="text-align: center;">' . $dates[0]['name'] . '</th>
                 <th style="text-align: center;">' . $dates[1]['name'] . '</th>
                 <th style="text-align: center;">' . $dates[2]['name'] . '</th>
@@ -460,6 +464,7 @@ class Summary_forecasts extends CI_Controller
                         <td style="mso-number-format:\'\\@\';">' . $data['item_fg_number'] . '</td>
                         <td style="mso-number-format:\'\\@\';">' . $data['item_fg_name'] . '</td>
                         <td style="mso-number-format:\'\\@\';">' . $compound_no . '</td>
+                        <td style="text-align: center;"> '. $data['uom'] .'</td>
                         <td style="text-align: right;">' . number_format($data['month_1'], 0, ',', '.') . '</td>
                         <td style="text-align: right;">' . number_format($data['month_2'], 0, ',', '.') . '</td>
                         <td style="text-align: right;">' . number_format($data['month_3'], 0, ',', '.') . '</td>
@@ -475,7 +480,7 @@ class Summary_forecasts extends CI_Controller
                 $no++;
             }
             $html .= '<tr>
-                        <th colspan="4">Grand Total</th>
+                        <th colspan="5">Grand Total</th>
                         <th style="text-align: right;">' . number_format($gt_1, 0, ',', '.') . '</th>
                         <th style="text-align: right;">' . number_format($gt_2, 0, ',', '.') . '</th>
                         <th style="text-align: right;">' . number_format($gt_3, 0, ',', '.') . '</th>
