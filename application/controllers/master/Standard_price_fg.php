@@ -36,7 +36,7 @@ class Standard_price_fg extends CI_Controller
     public function readItems($division)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT a.*, b.name as item_family_name 
+        $send = $this->crud->query("SELECT a.*, b.name as item_family_name, b.id as item_family_id
         FROM item_fg a
         JOIN item_familys b ON a.item_family_number = b.number
         WHERE a.division_id like '$division' and (a.number like '%$post%' or a.number_customer like '%$post%' or a.name like '%$post%')");
@@ -154,9 +154,10 @@ class Standard_price_fg extends CI_Controller
             $number = base64_decode($this->input->get('number'));
             $filter_item_fg_id = base64_decode($this->input->get('filter_item_fg_id'));
 
-            $this->db->select('a.*, b.number as division, "Finished Good" as category');
+            $this->db->select('a.*, b.number as division, c.name as item_family_name');
             $this->db->from('standard_price_fg a');
             $this->db->join('divisions b', 'a.division_id = b.id');
+            $this->db->join('item_familys c', 'a.item_family_id = c.id');
             $this->db->where('a.number', $number);
             $this->db->group_by('a.id');
             $this->db->order_by('a.id', 'ASC');
@@ -235,32 +236,39 @@ class Standard_price_fg extends CI_Controller
        echo $send;
    }
 
-     //UPLOAD DATA
-     public function upload()
-     {
-         error_reporting(0);
-         require_once 'assets/vendors/excel_reader2.php';
-         $target = basename($_FILES['file_upload']['name']);
-         move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
-         chmod($_FILES['file_upload']['name'], 0777);
-         $file = $_FILES['file_upload']['name'];
-         $data = new Spreadsheet_Excel_Reader($file, false);
-         $total_row = $data->rowcount($sheet_index = 0);
-         for ($i = 3; $i <= $total_row; $i++) {
-             $datas[] = array(
-                 'number' => $data->val($i, 2),
-                 'start_date' => $data->val($i, 3),
-                 'end_date' => $data->val($i, 4),
-                 'item_fg_id' => $data->val($i, 5),
-                 'price' => $data->val($i, 6),
-                 'currency' => $data->val($i, 7),
-                 'remarks' => $data->val($i, 8),
-             );
-         }
-         $datas['total'] = count($datas);
-         echo json_encode($datas);
-         unlink($_FILES['file_upload']['name']);
-     }
+    //UPLOAD DATA
+    public function upload()
+    {
+        error_reporting(0);
+        require_once 'assets/vendors/excel_reader2.php';
+
+        $target = basename($_FILES['file_upload']['name']);
+        move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
+        chmod($target, 0777);
+
+        $data = new Spreadsheet_Excel_Reader($target, false);
+        $total_row = $data->rowcount($sheet_index = 0);
+        $datas = [];
+
+        for ($i = 3; $i <= $total_row; $i++) {
+            $datas[] = array(
+                'number' => $data->val($i, 2),
+                'start_date' => $data->val($i, 3),
+                'end_date' => $data->val($i, 4),
+                'item_fg_id' => $data->val($i, 5),
+                'price' => $data->val($i, 6),
+                'currency' => $data->val($i, 7),
+                'remarks' => $data->val($i, 8),
+            );
+        }
+
+        echo json_encode([
+            "total" => count($datas),
+            "data" => $datas
+        ]);
+
+        unlink($target);
+    }
 
   //UPLOAD CLEAR CACHE
   public function uploadclearFailed()
@@ -292,65 +300,161 @@ class Standard_price_fg extends CI_Controller
       header("Content-Type: text/plain");
       @readfile($file);
   }
-   //UPLOAD CREATE DATA
-   public function uploadcreate()
-   {
-       if ($this->input->post()) {
-           $data = $this->input->post('data');
-           //Cek Process Number
-           $item_fg_id = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
-           $item_family = $this->crud->read('item_familys', [], ["id" => $item_fg_id->item_family_id]);
-           $standard_price_fg = $this->crud->read('standard_price_fg', [], ["item_fg_id" => $data['item_fg_id']]);
 
-           if (empty($item_fg_id->id)) {
-               echo json_encode(array("title" => "Not Found", "message" => " Item id " . $data['item_fg_id'] . " is Not Found", "theme" => "error"));
-           }else if (!empty($standard_price_fg->item_fg_id)) {
-               $send  = $this->db->update('standard_price_fg',["price" => $data['price'],"start_date" => $data['start_date'],"end_date" => $data['end_date'],"remarks" => $data['remarks']], ["number" => $data['number'], "item_fg_id" => $data['item_fg_id'], "start_date" => $data['start_date'], "end_date" => $data['end_date']]);
-               
-               $dataFinal = array(
-                   //field
-                   "number" => $data['number'],
-                   "start_date" => $data['start_date'],
-                   "end_date" => $data['end_date'],
-                   "item_fg_id" => $data['item_fg_id'],
-                   "item_fg_number" => $item_fg_id->number,
-                   "item_fg_name" => $item_fg_id->name,
-                   "uom" => $item_fg_id->uom,
-                   "division_id" => $item_fg_id->division_id,
-                   "category" => "Finished Good",
-                   "item_family_id" => $item_fg_id->item_family_id,
-                   "item_family_name" => $item_family->name,
-                   "currency" => $data['currency'],
-                   "price" => $data['price'],
-                   "remarks" => $data['remarks'],
-               );
+    //UPLOAD CREATE DATA
+    public function uploadcreate()
+    {
+        if ($this->input->post()) {
+            $data_list = $this->input->post('data');
+            
+            $total_expected = count($data_list);
+            $processed_count = 0;
 
-               $send2 = $this->crud->createNotLog('standard_price_fg_histories', $dataFinal);
-               echo json_encode(array("title" => "Update", "message" => " Product No " . $item_fg_id->number . " Data Updated", "theme" => "success"));
-           } else {
-               $dataFinal = array(
-                   //field
-                   "number" => $data['number'],
-                   "start_date" => $data['start_date'],
-                   "end_date" => $data['end_date'],
-                   "item_fg_id" => $data['item_fg_id'],
-                   "item_fg_number" => $item_fg_id->number,
-                   "item_fg_name" => $item_fg_id->name,
-                   "uom" => $item_fg_id->uom,
-                   "division_id" => $item_fg_id->division_id,
-                   "category" => "Finished Good",
-                   "item_family_id" => $item_fg_id->item_family_id,
-                   "item_family_name" => $item_family->name,
-                   "currency" => $data['currency'],
-                   "price" => $data['price'],
-                   "remarks" => $data['remarks'],
-               );
-               $send   = $this->crud->create('standard_price_fg', $dataFinal);
-               $send2 = $this->crud->create('standard_price_fg_histories', $dataFinal);
-               echo $send;
-           }
-       }
-   }
+            $this->db->trans_begin();
+            $results = [];
+            $generated_number = null;
+
+            foreach ($data_list as $index => $data) {
+                $processed_count++;
+
+                if (
+                        empty($data['item_fg_id']) ||
+                        empty($data['price']) ||
+                        empty($data['currency']) ||
+                        empty($data['start_date']) ||
+                        empty($data['end_date']) ||
+                        !is_numeric($data['price']) ||
+                        !strtotime($data['start_date']) ||
+                        !strtotime($data['end_date']) ||
+                        strtotime($data['start_date']) > strtotime($data['end_date'])
+                    ) {
+                        $results[] = [
+                            "status" => "failed",
+                            "item" => "Line " . ($index + 1),
+                            "message" => "Invalid or missing data"
+                        ];
+                        $this->db->trans_rollback();
+                        break;
+                }
+
+                $item_fg_id = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
+                if (empty($item_fg_id)) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Item ID " . $data['item_fg_id'] . " not found"
+                    ];
+                    $this->db->trans_rollback();
+                    break;
+                }
+
+                $item_family = $this->crud->read('item_familys', [], ["number" => $item_fg_id->item_family_number]);
+                $standard_price_fg = $this->crud->read('standard_price_fg', [], ["item_fg_id" => $data['item_fg_id']]);
+
+                // Siapkan nomor final
+                $final_number = $data['number'];
+
+                if (empty($data['number']) && empty($standard_price_fg)) {
+                    if ($generated_number === null) {
+                        $yearShort = date("y", strtotime($data['start_date']));
+                        $prefix = "SP-FG" . $yearShort;
+
+                        $this->db->select('MAX(`number`) as kode');
+                        $this->db->from('standard_price_fg');
+                        $this->db->like('number', $prefix);
+                        $result = $this->db->get()->row();
+
+                        $lastNumber = ($result->kode == NULL) ? 1 : ((int)substr($result->kode, -2) + 1);
+                        $generated_number = $prefix . sprintf("%02d", $lastNumber);
+                    }
+                    $final_number = $generated_number;
+                }
+
+                $dataFinal = array(
+                    "number" => $final_number,
+                    "start_date" => $data['start_date'],
+                    "end_date" => $data['end_date'],
+                    "item_fg_id" => $data['item_fg_id'],
+                    "item_fg_number" => $item_fg_id->number,
+                    "item_fg_name" => $item_fg_id->name,
+                    "uom" => $item_fg_id->uom,
+                    "division_id" => $item_fg_id->division_id,
+                    "item_family_id" => $item_family->id ?? null,
+                    "item_family_name" => $item_family->name ?? null,
+                    "currency" => $data['currency'],
+                    "price" => $data['price'],
+                    "remarks" => $data['remarks'],
+                );
+
+                try {
+                    if (!empty($standard_price_fg->item_fg_id)) {
+                        // Update
+                        $this->db->update('standard_price_fg', [
+                            "price" => $data['price'],
+                            "start_date" => $data['start_date'],
+                            "end_date" => $data['end_date'],
+                            "remarks" => $data['remarks']
+                        ], [
+                            "number" => $data['number'],
+                            "item_fg_id" => $data['item_fg_id'],
+                            "start_date" => $data['start_date'],
+                            "end_date" => $data['end_date']
+                        ]);
+                        // History
+                        $this->crud->createNotLog('standard_price_fg_histories', $dataFinal);
+
+                        $status = "update";
+                    } else {
+                        // Insert
+                        $this->crud->create('standard_price_fg', $dataFinal);
+                        $this->crud->create('standard_price_fg_histories', $dataFinal);
+
+                        $status = "insert";
+                    }
+
+                    $res_item = ($status === "insert" ? "Create" : "Update");
+                    $res_msg  = ($status === "insert" ? "Data Saved Successfully" : "Product No $item_fg_id->number Data Updated");
+
+                    $results[] = [
+                        "status" => "success",
+                        "item" => $res_item,
+                        "message" => $res_msg
+                    ];
+                } catch (Exception $e) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => $item_fg_id->name,
+                        "message" => $e->getMessage()
+                    ];
+                    $this->db->trans_rollback();
+                    break;
+                }
+            }
+
+            if (count(array_filter($results, fn($r) => $r['status'] === 'failed')) > 0) {
+                echo json_encode([
+                    "theme" => "error",
+                    "title" => "Upload Failed",
+                    "message" => "Data failed to save",
+                    "results" => $results,
+                    "total_expected" => $total_expected,
+                    "processed_count" => $processed_count,
+                    "stopped_at" => $index + 1
+                ]);
+            } else {
+                $this->db->trans_commit();
+                echo json_encode([
+                    "theme" => "success",
+                    "title" => "Upload Successfully",
+                    "message" => "Data uploaded successfully",
+                    "results" => $results,
+                    "total_expected" => $total_expected,
+                    "processed_count" => $processed_count,
+                    "stopped_at" => $index + 1
+                ]);
+            }
+        }
+    }
 
     //PRINT & EXCEL DATA
     public function print($option = "")
@@ -427,6 +531,67 @@ class Standard_price_fg extends CI_Controller
                     <td>' . $data['currency'] . '</td>
                     <td>' . $data['price'] . '</td>
                     <td>' . $data['remarks'] . '</td>';
+            $no++;
+        }
+        $html .= '</table></body></html>';
+        echo $html;
+    }
+
+    // DOWNLOAD UPDATE EXCEL DATA
+    public function print_excel($option = "", $encoded_number)
+    {
+        $number = base64_decode($encoded_number);
+
+        if ($option == "excel") {
+            $format   = date("Ymd");
+            $filename = $number . '_standard_price_fg_' . $format . '.xls';
+
+            header("Content-type: application/vnd-ms-excel");
+            header("Content-Disposition: attachment; filename=$filename");
+        }
+
+        $this->db->select('a.*');
+        $this->db->from('standard_price_fg a');
+        $this->db->where('a.deleted', 0);
+        $this->db->where('a.number', $number);
+        $this->db->order_by('a.created_date', 'desc');
+        $records = $this->db->get()->result_array();
+        $html = '<html>
+                    <head>
+                        <meta charset="UTF-8">
+                    </head>
+                    <style>
+                        body {
+                            font-family: "Arial";
+                        }
+                    </style>
+                    
+                    <body>
+        <h3 style="text-align: center; margin: 0; padding: 0;">TEMPLATE UPLOAD UPDATE STANDARD PRICE FG</h3>
+        <table id="customers" border="1">
+            <tr>
+                <th>No</th>
+                <th width="150" style="color: red;">DOCUMENT NO</th>
+                <th width="200" style="color: red;">START DATE</th>
+                <th width="200" style="color: red;">ENDING DATE</th>
+                <th width="200">PRODUCT ID</th>
+                <th width="150" style="color: red;">PRICE</th>
+                <th width="100" style="color: red;">CURRENCY</th>
+                <th width="200">REMARKS</th>
+            </tr>';
+        $no = 1;
+        foreach ($records as $data) {
+
+            $html .= '<tr>
+                    <td>' . $no . '</td>
+                    <td style="mso-number-format:\@;">' . $data['number'] . '</td>
+                    <td style="mso-number-format:\@;">' . $data['start_date'] . '</td>
+                    <td style="mso-number-format:\@;">' . $data['end_date'] . '</td>
+                    <td style="mso-number-format:\@;">' . $data['item_fg_id'] . '</td>
+                    <td style="mso-number-format:\@;">' . number_format($data['price'], 0, '', '') . '</td>
+                    <td style="mso-number-format:\@;">' . $data['currency'] . '</td>
+                    <td style="mso-number-format:\@;">' . $data['remarks'] . '</td>
+                    </tr>';
             $no++;
         }
         $html .= '</table></body></html>';
