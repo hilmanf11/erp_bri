@@ -30,6 +30,21 @@ class Inventory_fg extends CI_Controller
         }
     }
 
+    private function format_number($number, $precision = 2) {
+        return number_format($number, $precision, ',', '.');
+    }
+
+    public function reads_product_family()
+    {
+        $this->db->select('*');
+        $this->db->from('item_familys');
+        $this->db->where('item_category_id', 'C01');
+        $this->db->order_by('name', 'ASC');
+
+        $data = $this->db->get()->result();
+        echo json_encode($data);
+    }    
+
     public function getData()
     {
         $filter_from = $this->input->post('filter_from');
@@ -189,7 +204,8 @@ class Inventory_fg extends CI_Controller
         $filter_items = $this->input->get('filter_items');
         $filter_display = $this->input->get("filter_display");
         $filter_division = $this->input->get("filter_division");
-        $filter_type = $this->input->get("filter_type");
+        // $filter_type = $this->input->get("filter_type");
+        $filter_product_family = $this->input->get("filter_product_family");
 
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
@@ -227,6 +243,13 @@ class Inventory_fg extends CI_Controller
         // WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'
         // GROUP BY e.item_fg_id";
 
+        // Step 1: Hitung qty_in dari fg_scan_in_label
+        $query_qty_in_fg_scan_in = "SELECT a.item_fg_id, IFNULL(SUM(a.qty), 0) as fg_scan_in
+        FROM fg_scan_in_label a
+        WHERE a.deleted = 0
+        AND a.scan_date BETWEEN DATE('$filter_from') AND DATE('$filter_to')
+        GROUP BY a.item_fg_id";
+
         // Step 2: Hitung qty_in tanpa checksheet
         // $query_qty_in_no_checksheet = "SELECT i.item_fg_id, SUM(i.qty) as qty_in_no_checksheet
         // FROM scan_item_receipts_fg i
@@ -234,24 +257,61 @@ class Inventory_fg extends CI_Controller
         // AND i.packing_date BETWEEN '$filter_from' AND '$filter_to'
         // GROUP BY i.item_fg_id";
 
+        // Step 2: Hitung qty_in dari os_fg
+        $query_qty_os_fg = "SELECT a.item_fg_id, IFNULL(SUM(a.qty), 0) as qty_os_fg
+        FROM os_fg a
+        WHERE a.deleted = 0
+        AND a.trans_date BETWEEN DATE('$filter_from') AND DATE('$filter_to')
+        GROUP BY a.item_fg_id";
+
         // Step 3: Hitung initial `i` dari transaction_fg (kind IN)
-        $query_transaction_fg_in = "SELECT a.item_fg_id, SUM(a.qty) as initial_in
+        // $query_transaction_fg_in = "SELECT a.item_fg_id, SUM(a.qty) as initial_in
+        // FROM transaction_fg a
+        // WHERE a.transaction_kind = 'IN'
+        // AND a.request_date BETWEEN '$filter_from' AND '$filter_to'
+        // GROUP BY a.item_fg_id";
+
+        // Step 3: Hitung initial `i` dari transaction_fg (kind IN)
+        $query_transaction_fg_in = "SELECT a.item_fg_id, IFNULL(SUM(a.qty), 0) as initial_in
         FROM transaction_fg a
-        WHERE a.transaction_kind = 'IN'
-        AND a.request_date BETWEEN '$filter_from' AND '$filter_to'
+        WHERE a.deleted = 0
+        AND a.request_date BETWEEN DATE('$filter_from') AND DATE('$filter_to')
+        AND LEFT(a.transaction_type, 2) = 'RE'
         GROUP BY a.item_fg_id";
 
         // Step 4: Hitung qty_out dari transaction_fg
-        $query_qty_out = "SELECT a.item_fg_id, SUM(a.qty) as qty_out
+        // $query_qty_out = "SELECT a.item_fg_id, SUM(a.qty) as qty_out
+        // FROM transaction_fg a
+        // WHERE a.transaction_kind = 'OUT'
+        // AND a.request_date BETWEEN '$filter_from' AND '$filter_to'
+        // GROUP BY a.item_fg_id";
+
+        // Step 4: Hitung qty_out dari transaction_fg
+        $query_qty_out = "SELECT a.item_fg_id, IFNULL(SUM(a.qty), 0) as qty_out
         FROM transaction_fg a
-        WHERE a.transaction_kind = 'OUT'
-        AND a.request_date BETWEEN '$filter_from' AND '$filter_to'
+        WHERE a.deleted = 0
+        AND a.request_date BETWEEN DATE('$filter_from') AND ('$filter_to')
+        AND LEFT(a.transaction_type, 2) = 'IS'
         GROUP BY a.item_fg_id";
 
         // Step 5: Hitung initial `g` (delivery_notes)
-        $query_delivery_notes = "SELECT item_fg_id, SUM(qty) as initial_out_g
-        FROM delivery_notes
-        WHERE delivery_note_date BETWEEN '$filter_from' AND '$filter_to'
+        $query_delivery_notes = "SELECT dn.item_fg_id, SUM(dn.qty) as initial_out_g
+        FROM delivery_notes dn
+        JOIN (
+            SELECT 
+                delivery_order_no, 
+                item_fg_id, 
+                customer_order_no,
+                SUM(qty) AS total_shipping_qty
+            FROM shipping_orders
+            WHERE deleted = 0
+            GROUP BY delivery_order_no, item_fg_id, customer_order_no
+        ) s ON dn.delivery_order_no = s.delivery_order_no
+            AND dn.item_fg_id = s.item_fg_id
+            AND dn.customer_order_no = s.customer_order_no
+            AND dn.qty = s.total_shipping_qty
+        WHERE dn.deleted = 0
+        AND DATE(dn.delivery_note_date) BETWEEN DATE('$filter_from') AND DATE('$filter_to')
         GROUP BY item_fg_id";
 
         // Step 6: Hitung initial `h` (scan_repair_of_goods)
@@ -276,6 +336,13 @@ class Inventory_fg extends CI_Controller
         // WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') < '$filter_from'
         // GROUP BY e.item_fg_id";
 
+        // Step 1: Hitung qty_in dari fg_scan_in_label
+        $query_qty_in_fg_scan_in2 = "SELECT a.item_fg_id, SUM(a.qty) as fg_scan_in
+        FROM fg_scan_in_label a
+        WHERE a.deleted = 0
+        AND a.scan_date < DATE('$filter_from')
+        GROUP BY a.item_fg_id";
+
         // Step 2: Hitung qty_in tanpa checksheet
         // $query_qty_in_no_checksheet2 = "SELECT i.item_fg_id, SUM(i.qty) as qty_in_no_checksheet
         // FROM scan_item_receipts_fg i
@@ -283,25 +350,48 @@ class Inventory_fg extends CI_Controller
         // AND i.packing_date < '$filter_from'
         // GROUP BY i.item_fg_id";
 
+        // Step 2: Hitung qty_in dari os_fg
+        $query_qty_os_fg2 = "SELECT a.item_fg_id, SUM(a.qty) as qty_os_fg
+        FROM os_fg a
+        WHERE a.deleted = 0
+        AND a.trans_date < DATE('$filter_from')
+        GROUP BY a.item_fg_id";
+
         // Step 3: Hitung initial `i` dari transaction_fg (kind IN)
         $query_transaction_fg_in2 = "SELECT a.item_fg_id, SUM(a.qty) as initial_in
         FROM transaction_fg a
-        WHERE a.transaction_kind = 'IN'
-        AND a.request_date < '$filter_from'
+        WHERE a.deleted = 0
+        AND a.request_date < DATE('$filter_from')
+        AND LEFT(a.transaction_type, 2) = 'RE'
         GROUP BY a.item_fg_id";
 
         // Step 4: Hitung qty_out dari transaction_fg
         $query_qty_out2 = "SELECT a.item_fg_id, SUM(a.qty) as qty_out
         FROM transaction_fg a
-        WHERE a.transaction_kind = 'OUT'
-        AND a.request_date < '$filter_from'
+        WHERE a.deleted = 0
+        AND a.request_date < DATE('$filter_from')
+        AND LEFT(a.transaction_type, 2) = 'IS'
         GROUP BY a.item_fg_id";
 
         // Step 5: Hitung initial `g` (delivery_notes)
-        $query_delivery_notes2 = "SELECT item_fg_id, SUM(qty) as initial_out_g
-        FROM delivery_notes
-        WHERE delivery_note_date < '$filter_from'
-        GROUP BY item_fg_id";
+        $query_delivery_notes2 = "SELECT dn.item_fg_id, SUM(dn.qty) as initial_out_g
+        FROM delivery_notes dn
+        JOIN (
+            SELECT 
+                delivery_order_no, 
+                item_fg_id, 
+                customer_order_no,
+                SUM(qty) AS total_shipping_qty
+            FROM shipping_orders
+            WHERE deleted = 0
+            GROUP BY delivery_order_no, item_fg_id, customer_order_no
+        ) s ON dn.delivery_order_no = s.delivery_order_no
+            AND dn.item_fg_id = s.item_fg_id
+            AND dn.customer_order_no = s.customer_order_no
+            AND dn.qty = s.total_shipping_qty
+        WHERE dn.deleted = 0
+        AND dn.delivery_note_date < DATE('$filter_from')
+        GROUP BY dn.item_fg_id";
 
         // Step 6: Hitung initial `h` (scan_repair_of_goods)
         // $query_scan_repair_of_goods2 = "SELECT e.item_fg_id, SUM(f.qty) as initial_out_h
@@ -325,20 +415,36 @@ class Inventory_fg extends CI_Controller
             a.uom,
             a.type,
             xy.number as division,
-            COALESCE(aa.price,0) as price,
-            COALESCE(aa.currency,'-') as currency,
-            COALESCE(x.begin_stock,0) AS begin_stock,
-            COALESCE(qi.initial_in, 0) AS qty_in,
-            
-            COALESCE(qo.qty_out, 0) + COALESCE(qg.initial_out_g, 0) AS qty_out,
-            
-            (COALESCE(qi.initial_in, 0) - 
-            (COALESCE(qo.qty_out, 0) + COALESCE(qg.initial_out_g, 0))) AS end_stock
+            f.name as product_family,
+            COALESCE(aa.price, 0) as price,
+            COALESCE(aa.currency, '-') as currency,
+            COALESCE(x.begin_stock, 0) AS begin_stock,
+            (
+                COALESCE(qc.fg_scan_in, 0) + 
+                COALESCE(qnc.qty_os_fg, 0) + 
+                COALESCE(qi.initial_in, 0)
+            ) AS qty_in,
+            (
+                COALESCE(qo.qty_out, 0) + 
+                COALESCE(qg.initial_out_g, 0)
+            ) AS qty_out,
+            (
+                (
+                    COALESCE(qc.fg_scan_in, 0) + 
+                    COALESCE(qnc.qty_os_fg, 0) + 
+                    COALESCE(qi.initial_in, 0)
+                ) - 
+                (
+                    COALESCE(qo.qty_out, 0) + 
+                    COALESCE(qg.initial_out_g, 0)
+                )
+            ) AS end_stock
         FROM item_fg a
         LEFT JOIN divisions xy on a.division_id = xy.id
+        LEFT JOIN item_familys f ON a.item_family_number = f.number
         LEFT JOIN (SELECT item_fg_id, currency, price from standard_price_fg where '$filter_from' >= `start_date` and '$filter_to' <= `end_date`) aa on a.id = aa.item_fg_id
-        -- LEFT JOIN (query_qty_in_checksheet) qc ON a.id = qc.item_fg_id
-        -- LEFT JOIN (query_qty_in_no_checksheet) qnc ON a.id = qnc.item_fg_id
+        LEFT JOIN ($query_qty_in_fg_scan_in) qc ON a.id = qc.item_fg_id
+        LEFT JOIN ($query_qty_os_fg) qnc ON a.id = qnc.item_fg_id
         LEFT JOIN ($query_transaction_fg_in) qi ON a.id = qi.item_fg_id
         LEFT JOIN ($query_qty_out) qo ON a.id = qo.item_fg_id
         LEFT JOIN ($query_delivery_notes) qg ON a.id = qg.item_fg_id
@@ -346,23 +452,30 @@ class Inventory_fg extends CI_Controller
         -- LEFT JOIN (query_qty_in_wip_receipt) qw ON a.id = qw.item_fg_id
 
         LEFT JOIN ( SELECT a.id,
-            (COALESCE(qi.initial_in, 0) - 
-            (COALESCE(qo.qty_out, 0) + COALESCE(qg.initial_out_g, 0))) AS begin_stock
+            (
+                COALESCE(qc.fg_scan_in, 0) + 
+                COALESCE(qi.initial_in, 0) + 
+                COALESCE(qnc.qty_os_fg, 0) - 
+                (
+                    COALESCE(qo.qty_out, 0) + 
+                    COALESCE(qg.initial_out_g, 0)
+                )
+            ) AS begin_stock
             FROM item_fg a
-            -- LEFT JOIN (query_qty_in_checksheet2) qc ON a.id = qc.item_fg_id
-            -- LEFT JOIN (query_qty_in_no_checksheet2) qnc ON a.id = qnc.item_fg_id
+            LEFT JOIN ($query_qty_in_fg_scan_in2) qc ON a.id = qc.item_fg_id
+            LEFT JOIN ($query_qty_os_fg2) qnc ON a.id = qnc.item_fg_id
             LEFT JOIN ($query_transaction_fg_in2) qi ON a.id = qi.item_fg_id
+
             LEFT JOIN ($query_qty_out2) qo ON a.id = qo.item_fg_id
             LEFT JOIN ($query_delivery_notes2) qg ON a.id = qg.item_fg_id
+
             -- LEFT JOIN (query_scan_repair_of_goods2) qh ON a.id = qh.item_fg_id
             -- LEFT JOIN (query_qty_in_wip_receipt2) qw ON a.id = qw.item_fg_id
+            
             GROUP BY a.id) x ON a.id = x.id
-        WHERE a.id LIKE '%$filter_items%' AND a.division_id LIKE '%$filter_division%' AND a.type LIKE '%$filter_type%'
+        WHERE a.id LIKE '%$filter_items%' AND a.division_id LIKE '%$filter_division%' AND a.item_family_number LIKE '%$filter_product_family%' AND a.status = 0
         ORDER BY a.number
         ";
-
-        // echo $query_main;
-        // die();
 
         $records = $this->crud->query($query_main);
 
@@ -396,7 +509,7 @@ class Inventory_fg extends CI_Controller
                     <th rowspan="2" colspan="3">Product No</th>
                     <th rowspan="2">Product Name</th>
                     <th rowspan="2">Uom</th>
-                    <th rowspan="2">Division</th>
+                    <th rowspan="2">Plant</th>
                     <th rowspan="2">Product Family</th>
                     <th rowspan="2">Type</th>
                     <th rowspan="2">Currency</th>
@@ -469,27 +582,27 @@ class Inventory_fg extends CI_Controller
                             <td style="mso-number-format:\@;">' . $record->name . '</td>
                             <td>' . $record->uom . '</td>
                             <td>' . $record->division . '</td>
-                            <td>FINISH GOOD</td>
+                            <td>'. $record->product_family .'</td>
                             <td>' . $record->type . '</td>
                             <td style="text-align:center;">' . $record->currency . '</td>
-                            <td style="text-align:right;">' . number_format($record->price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($rate, 2) . '</td>
+                            <td style="text-align:right;">' . $this->format_number($record->price, 2) . '</td>
+                            <td style="text-align:right;">' . $this->format_number($rate, 2) . '</td>
 
-                            <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
-                            <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->begin_stock, 2) . '</td>
+                            <td style="text-align:right;">' . $this->format_number(@$record->begin_stock, 0) . '</td>
+                            <td style="text-align:right;">' . $this->format_number($record->price * $rate, 2) . '</td>
+                            <td style="text-align:right;">' . $this->format_number(($record->price * $rate) * $record->begin_stock, 2) . '</td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
-                            <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->qty_in, 2) . '</td>
+                            <td style="text-align:right;">' . $this->format_number($record->qty_in, 0) . '</td>
+                            <td style="text-align:right;">' . $this->format_number($record->price * $rate, 2) . '</td>
+                            <td style="text-align:right;">' . $this->format_number(($record->price * $rate) * $record->qty_in, 2) . '</td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
-                            <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . $this->format_number($record->qty_out, 0) . '</td>
+                            <td style="text-align:right;">' . $this->format_number($record->price * $rate, 2) . '</td>
+                            <td style="text-align:right;">' . $this->format_number(($record->price * $rate) * $record->qty_out, 2) . '</td>
 
-                            <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
-                            <td style="text-align:right;">' . number_format((@($record->price * $rate) * $record->qty_in) + (($record->price * $rate) * $record->begin_stock) - (($record->price * $rate) * $record->qty_out), 2) . '</td>
+                            <td style="text-align:right;">' . $this->format_number((@$record->begin_stock + $record->qty_in) - $record->qty_out, 0) . '</td>
+                            <td style="text-align:right;">' . $this->format_number($record->price * $rate, 2) . '</td>
+                            <td style="text-align:right;">' . $this->format_number((@($record->price * $rate) * $record->qty_in) + (($record->price * $rate) * $record->begin_stock) - (($record->price * $rate) * $record->qty_out), 2) . '</td>
                         
                         </tr>';
 
@@ -701,24 +814,81 @@ class Inventory_fg extends CI_Controller
                 //         AND DATE_FORMAT(a.trans_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
 
 
+                $fg_scan_in_labels = $this->crud->query("SELECT 
+                        t.name as trans_type,
+                        u.name as username,
+                        f.scan_date as trans_date,
+                        f.serial_label as ref_no,
+                        f.qty as qty_in,
+                        lp.compound_lot
+                    FROM fg_scan_in_label f
+                    JOIN users u ON f.created_by = u.username
+                    JOIN transaction_type t ON f.transaction_type = t.type
+                    LEFT JOIN label_packing_detail lpd ON f.serial_label = lpd.serial_label
+                    LEFT JOIN label_packing lp ON lpd.serial_no = lp.serial_no
+                    WHERE f.item_fg_id = '$item_fg_id' 
+                    AND DATE(f.scan_date) BETWEEN '$filter_from' AND '$filter_to'
+                    AND f.deleted = 0
+                ");
+
+                $os_fgs = $this->crud->query("SELECT 
+                    o.*, 
+                    u.name as username, 
+                    t.name as transaction_type
+                    FROM os_fg o
+                    JOIN users u ON o.created_by = u.username
+                    JOIN transaction_type t ON o.transaction_type = t.type
+                    WHERE o.item_fg_id = '$item_fg_id' 
+                    AND DATE(o.trans_date) BETWEEN '$filter_from' AND '$filter_to'
+                    AND o.deleted = 0
+                ");
 
                 $delivery_notes = $this->crud->query("SELECT a.*, d.name AS username
                     FROM delivery_notes a
                     JOIN users d ON a.created_by = d.username
-                    WHERE a.item_fg_id = '$item_fg_id'
-                    AND a.delivery_note_date BETWEEN '$filter_from' AND '$filter_to'");
 
-                $transactions = $this->crud->query("SELECT
-                    a.request_date,
-                    a.transaction_type,
-                    a.transaction_kind,
-                    a.request_no,
-                    a.qty,
-                    b.name AS username
-                    FROM transaction_fg a
-                    JOIN users b ON a.created_by = b.username
+                    -- Shipping summary join 
+                    JOIN (
+                        SELECT 
+                            delivery_order_no, 
+                            item_fg_id, 
+                            customer_order_no,
+                            SUM(qty) AS total_shipping_qty
+                        FROM shipping_orders
+                        WHERE deleted = 0
+                        GROUP BY delivery_order_no, item_fg_id, customer_order_no
+                    ) so ON a.delivery_order_no = so.delivery_order_no
+                        AND a.item_fg_id = so.item_fg_id
+                        AND a.customer_order_no = so.customer_order_no
+                        AND a.qty = so.total_shipping_qty
                     WHERE a.item_fg_id = '$item_fg_id'
-                    AND a.request_date BETWEEN '$filter_from' AND '$filter_to'");
+                    AND a.delivery_note_date BETWEEN '$filter_from' AND '$filter_to'
+                    ");
+
+                // $transactions = $this->crud->query("SELECT
+                //     a.request_date,
+                //     a.transaction_type,
+                //     a.transaction_kind,
+                //     a.request_no,
+                //     a.qty,
+                //     b.name AS username
+                //     FROM transaction_fg a
+                //     JOIN users b ON a.created_by = b.username
+                //     WHERE a.item_fg_id = '$item_fg_id'
+                //     AND a.request_date BETWEEN '$filter_from' AND '$filter_to'");
+
+                $transactions_fg = $this->crud->query("SELECT 
+                        tf.*,
+                        u.name as username,
+                        t.name as trans_type
+                    FROM transaction_fg tf
+                    JOIN users u ON tf.created_by = u.username
+                    JOIN transaction_type t ON tf.transaction_type = t.type
+                    WHERE tf.item_fg_id = '$item_fg_id'
+                    AND DATE(tf.request_date) BETWEEN '$filter_from' AND '$filter_to'
+                    AND tf.deleted = 0
+                    AND (LEFT(tf.transaction_type, 2) = 'RE' OR LEFT(tf.transaction_type, 2) = 'IS')
+                ");
 
                 // $scan_repair_of_goods = $this->crud->query("SELECT f.wo_no, 
                 //     f.document_no, 
@@ -734,6 +904,42 @@ class Inventory_fg extends CI_Controller
 
                 // Proses data berdasarkan tanggal
                 $all_data = [];
+
+                foreach ($fg_scan_in_labels as $fg_scan_in_label) {
+                    $all_data[] = [
+                        'type' => $fg_scan_in_label->trans_type,
+                        'username' => $fg_scan_in_label->username,
+                        'date' => $fg_scan_in_label->trans_date,
+                        'wo_no' => $fg_scan_in_label->compound_lot ?: '-',
+                        'label' => $fg_scan_in_label->ref_no ?: '-',
+                        'qty_in' => $fg_scan_in_label->qty_in,
+                        'qty_out' => 0,
+                    ];
+                }
+
+                foreach ($os_fgs as $os_fg) {
+                    $all_data[] = [
+                        'type' => $os_fg->transaction_type,
+                        'username' => $os_fg->username,
+                        'date' => $os_fg->trans_date,
+                        'wo_no' => '-',
+                        'label' => '-',
+                        'qty_in' => $os_fg->qty,
+                        'qty_out' => 0,
+                    ];
+                }
+
+                foreach ($transactions_fg as $transaction) {
+                    $all_data[] = [
+                        'type' => $transaction->trans_type,
+                        'username' => $transaction->username,
+                        'date' => $transaction->request_date,
+                        'wo_no' => '-',
+                        'label' => $transaction->request_no,
+                        'qty_in'  => strpos($transaction->transaction_type, 'RE') === 0 ? $transaction->qty : 0,
+                        'qty_out' => strpos($transaction->transaction_type, 'IS') === 0 ? $transaction->qty : 0,
+                    ];
+                }
 
                 // Gabungkan data receipts
                 // foreach ($receipts as $receipt) {
@@ -786,17 +992,17 @@ class Inventory_fg extends CI_Controller
                 }
 
                 // Gabungkan data transactions
-                foreach ($transactions as $transaction) {
-                    $all_data[] = [
-                        'type' => $transaction->transaction_type,
-                        'username' => $transaction->username,
-                        'date' => $transaction->request_date,
-                        'wo_no' => '-',
-                        'label' => $transaction->request_no,
-                        'qty_in' => $transaction->transaction_kind == 'IN' ? $transaction->qty : 0,
-                        'qty_out' => $transaction->transaction_kind == 'OUT' ? $transaction->qty : 0,
-                    ];
-                }
+                // foreach ($transactions as $transaction) {
+                //     $all_data[] = [
+                //         'type' => $transaction->transaction_type,
+                //         'username' => $transaction->username,
+                //         'date' => $transaction->request_date,
+                //         'wo_no' => '-',
+                //         'label' => $transaction->request_no,
+                //         'qty_in' => $transaction->transaction_kind == 'IN' ? $transaction->qty : 0,
+                //         'qty_out' => $transaction->transaction_kind == 'OUT' ? $transaction->qty : 0,
+                //     ];
+                // }
 
                 // foreach ($scan_repair_of_goods as $scan_repair_of_good) {
                 //     $all_data[] = [
@@ -829,23 +1035,23 @@ class Inventory_fg extends CI_Controller
                                     <td>' . $data['wo_no'] . '</td>
                                     <td colspan="3">' . $data['label'] . '</td>
                                     <td style="text-align:center;">' . $currency . '</td>
-                                    <td style="text-align:right;">' . number_format($price, 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($rate, 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
-                                    <td style="text-align:right;">' . number_format(($rate * $price) * $begin, 2) . '</td>
+                                    <td style="text-align:right;">' . $this->format_number($price, 2) . '</td>
+                                    <td style="text-align:right;">' . $this->format_number($rate, 2) . '</td>
+                                    <td style="text-align:right;">' . $this->format_number($begin, 0) . '</td>
+                                    <td style="text-align:right;">' . $this->format_number($rate * $price, 2) . '</td>
+                                    <td style="text-align:right;">' . $this->format_number(($rate * $price) * $begin, 2) . '</td>
 
-                                    <td style="text-align:right;">' . number_format($data['qty_in'], 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
-                                    <td style="text-align:right;">' . number_format(($rate * $price) * $data['qty_in'], 2) . '</td>
+                                    <td style="text-align:right;">' . $this->format_number($data['qty_in'], 0) . '</td>
+                                    <td style="text-align:right;">' . $this->format_number($rate * $price, 2) . '</td>
+                                    <td style="text-align:right;">' . $this->format_number(($rate * $price) * $data['qty_in'], 2) . '</td>
 
-                                    <td style="text-align:right;">' . number_format($data['qty_out'], 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
-                                    <td style="text-align:right;">' . number_format(($rate * $price) * $data['qty_out'], 2) . '</td>
+                                    <td style="text-align:right;">' . $this->format_number($data['qty_out'], 0) . '</td>
+                                    <td style="text-align:right;">' . $this->format_number($rate * $price, 2) . '</td>
+                                    <td style="text-align:right;">' . $this->format_number(($rate * $price) * $data['qty_out'], 2) . '</td>
 
-                                    <td style="text-align:right;">' . number_format($balance, 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
-                                    <td style="text-align:right;">' . number_format(($rate * $price) * $balance, 2) . '</td>
+                                    <td style="text-align:right;">' . $this->format_number($balance, 0) . '</td>
+                                    <td style="text-align:right;">' . $this->format_number($rate * $price, 2) . '</td>
+                                    <td style="text-align:right;">' . $this->format_number(($rate * $price) * $balance, 2) . '</td>
                                 </tr>';
 
                     $begin = $balance;
@@ -857,18 +1063,18 @@ class Inventory_fg extends CI_Controller
 
         $html .= '<tr>
                     <td colspan="12" style="text-align:right;"><b>GRAND TOTAL</b></td>
-                    <td style="text-align:right;"><b>' . number_format($totalBeginStock, 2) . '</b></td>
+                    <td style="text-align:right;"><b>' . $this->format_number($totalBeginStock, 0) . '</b></td>
                     <td style="text-align:right;"></td>
-                    <td style="text-align:right;"><b>' . number_format($totalBeginAmount, 2) . '</b></td>
-                    <td style="text-align:right;"><b>' . number_format($totalIn, 2) . '</b></td>
+                    <td style="text-align:right;"><b>' . $this->format_number($totalBeginAmount, 2) . '</b></td>
+                    <td style="text-align:right;"><b>' . $this->format_number($totalIn, 0) . '</b></td>
                     <td style="text-align:right;"></td>
-                    <td style="text-align:right;"><b>' . number_format($totalAmountIn, 2) . '</b></td>
-                    <td style="text-align:right;"><b>' . number_format($totalOut, 2) . '</b></td>
+                    <td style="text-align:right;"><b>' . $this->format_number($totalAmountIn, 2) . '</b></td>
+                    <td style="text-align:right;"><b>' . $this->format_number($totalOut, 0) . '</b></td>
                     <td style="text-align:right;"></td>
-                    <td style="text-align:right;"><b>' . number_format($totalAmountOut, 2) . '</b></td>
-                    <td style="text-align:right;"><b>' . number_format($totalEndingStock, 2) . '</b></td>
+                    <td style="text-align:right;"><b>' . $this->format_number($totalAmountOut, 2) . '</b></td>
+                    <td style="text-align:right;"><b>' . $this->format_number($totalEndingStock, 0) . '</b></td>
                     <td style="text-align:right;"></td>
-                    <td style="text-align:right;"><b>' . number_format($totalAmountEndingStock, 2) . '</b></td>
+                    <td style="text-align:right;"><b>' . $this->format_number($totalAmountEndingStock, 2) . '</b></td>
                 </tr>';
         $html .= '</table></body></html>';
         echo $html;

@@ -1,3 +1,31 @@
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar {
+        display: none;
+    }
+    #p {
+      display: flex;
+      flex-direction: column;
+      height: 87vh;
+      overflow: hidden !important;
+    }
+    #p #printout {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      overflow: hidden !important;
+    }
+</style>
+
 <table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar"></table>
 <div id="toolbar" style="height: 200px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
@@ -5,32 +33,24 @@
         <legend><b>Form Filter Data</b></legend>
         <div style="width: 50%; float:left;">
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Receipt Date</span>
-                <input style="width:28%;" id="filter_from" class="easyui-datebox" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser, editable:false"> To
-                <input style="width:28%;" id="filter_to" class="easyui-datebox" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Division</span>
+                <span style="width:35%; display:inline-block;">Plant</span>
                 <input style="width:60%;" id="filter_division" class="easyui-combobox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;"></span>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                <span style="width:35%; display:inline-block;">Receipt Date</span>
+                <input style="width:26.6%;" id="filter_from" class="easyui-datebox" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
+                <span style="width:6%; display:inline-block; text-align:center;">to</span>
+                <input style="width:26.62%;" id="filter_to" class="easyui-datebox" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
             </div>
-        </div>
-        <div style="width: 49%; float:left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
                 <input style="width:60%;" id="filter_items" class="easyui-combogrid">
             </div>
+        </div>
+        <div style="width: 49%; float:left;">
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Type</span>
-                <select style="width:60%;" name="filter_type" id="filter_type" class="easyui-combobox" panelHeight="auto">
-                    <option value="">Choose All</option>
-                    <option value="FG">FG</option>
-                    <option value="RM">RM</option>
-                    <option value="SA">SUB ASSY</option>
-                </select>
+                <span style="width:35%; display:inline-block;">Product Family</span>
+                <input style="width:60%;" id="filter_product_family" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Report Display</span>
@@ -38,6 +58,10 @@
                     <option value="RECAP">RECAP</option>
                     <option value="DETAIL">DETAIL</option>
                 </select>
+            </div>
+            <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
+                <span style="width:35%; display:inline-block;"></span>
+                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
             </div>
         </div>
     </fieldset>
@@ -58,7 +82,7 @@
     </div>
 </div>
 
-<div class="easyui-panel" title="Print Preview" style="width:100%;padding:10px;">
+<div id="p" class="easyui-panel" title="Print Preview" style="width:100%;padding:10px;">
     <iframe id="printout" src="" style="width: 100%; height:530px; border: 0;"></iframe>
 </div>
 
@@ -185,14 +209,15 @@
         var filter_items = $("#filter_items").combogrid('getValue');
         var filter_display = $("#filter_display").combobox('getValue');
         var filter_division = $("#filter_division").combobox('getValue');
-        var filter_type = $("#filter_type").combobox('getValue');
+        // var filter_type = $("#filter_type").combobox('getValue');
+        var filter_product_family = $("#filter_product_family").combogrid('getValue');
 
         var yearFrom = filter_from.substring(0, 4);
         var yearTo = filter_to.substring(0, 4);
         if (yearFrom !== yearTo) {
             toastr.warning("Please select the same year for Receipt Date", "Information");
         } else {
-            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division + "&filter_type=" + filter_type;
+            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division + "&filter_product_family=" + filter_product_family;
             $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
             $("#printout").attr('src', '<?= base_url('finance/inventory_fg/print') ?>' + url);
         }
@@ -204,14 +229,15 @@
         var filter_items = $("#filter_items").combogrid('getValue');
         var filter_display = $("#filter_display").combobox('getValue');
         var filter_division = $("#filter_division").combobox('getValue');
-        var filter_type = $("#filter_type").combobox('getValue');
+        // var filter_type = $("#filter_type").combobox('getValue');
+        var filter_product_family = $("#filter_product_family").combogrid('getValue');
 
         var yearFrom = filter_from.substring(0, 4);
         var yearTo = filter_to.substring(0, 4);
         if (yearFrom !== yearTo) {
             toastr.warning("Please select the same year for Receipt Date", "Information");
         } else {
-            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division + "&filter_type=" + filter_type;
+            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division + "&filter_product_family=" + filter_product_family;
             window.location.assign('<?= base_url('finance/inventory_fg/print/excel') ?>' + url);
         }
     }
@@ -245,14 +271,37 @@
                 }, ]
             ]
         });
+
+        $('#filter_product_family').combogrid({
+            url: '<?= base_url('finance/inventory_fg/reads_product_family') ?>',
+            panelWidth: 420,
+            idField: 'number',
+            textField: 'name',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Select Product Family",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+
+                }
+
+            }],
+            columns: [[
+                {field: 'number', title: 'Code', width: 100},
+                {field: 'name', title: 'Product Family', width: 200}
+            ]]
+
+        });        
     });
 
     $('#filter_division').combobox({
         url: '<?= base_url('master/divisions/reads'); ?>',
         valueField: 'id',
-        textField: 'number',
+        textField: 'name',
         panelHeight: 'panelHeight',
-        prompt: 'Choose Division',
+        prompt: 'Choose Plant',
     });
 
     //Format Datepicker
