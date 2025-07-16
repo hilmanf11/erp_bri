@@ -72,7 +72,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1010px; height: 70%; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1200px; height: 70%; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:50%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -169,6 +169,8 @@
                                     ]
                                 ],
                                 onSelect: function (index, row) {
+                                    console.log("Selected Row:", row);
+
                                     var dg = $('#dg2');
                                     var rowIndex = dg.datagrid('getRowIndex', dg.datagrid('getSelected'));
 
@@ -183,6 +185,9 @@
 
                                     var edSpecification = dg.datagrid('getEditor', { index: rowIndex, field: 'specification' });
                                     $(edSpecification.target).textbox('setValue', row.specification);
+
+                                    var edEndStock = dg.datagrid('getEditor', { index: rowIndex, field: 'end_stock' });
+                                    $(edEndStock.target).textbox('setValue', row.end_stock);
 
                                     var edQtyPacking = dg.datagrid('getEditor', { index: rowIndex, field: 'qty_packing' });
                                     $(edQtyPacking.target).numberbox('setValue', row.box_sub);
@@ -206,10 +211,20 @@
                     },
                     {
                         field: 'specification',
-                        width: 250,
+                        width: 200,
                         halign: 'center',
                         title: "Material",
                         editor: {
+                            type: 'textbox',
+                            options: { readonly: true }
+                        }
+                    },
+                    {
+                        field: 'end_stock',
+                        width: 100,
+                        halign: 'center',
+                        title: "Stock",
+                        editor: { 
                             type: 'textbox',
                             options: { readonly: true }
                         }
@@ -227,6 +242,22 @@
                                     var rowIndex = dg.datagrid('getRowIndex', dg.datagrid('getSelected'));
                                     var qtyPackingEditor = dg.datagrid('getEditor', { index: rowIndex, field: 'qty_packing' });
                                     var qtyLabelPackingEditor = dg.datagrid('getEditor', { index: rowIndex, field: 'qty_label_packing' });
+
+
+                                    var endStockEditor = dg.datagrid('getEditor', { index: rowIndex, field: 'end_stock' });
+
+                                    var qtyWip = parseFloat(newVal) || 0;
+                                    var endStock = parseFloat($(endStockEditor.target).textbox('getValue')) || 0;
+
+                                    if (qtyWip > endStock) {
+                                        toastr.error("Qty WIP must not be greater than End Stock!");
+                                        $(this).numberbox('setValue', '');
+                                        if (qtyLabelPackingEditor) {
+                                            $(qtyLabelPackingEditor.target).numberbox('setValue', 0);
+                                        }
+                                        return;
+                                    }
+
 
                                     if (qtyPackingEditor && qtyLabelPackingEditor) {
                                         var qtyPacking = parseFloat($(qtyPackingEditor.target).numberbox('getValue')) || 0;

@@ -46,10 +46,92 @@ class New_barcode_fg extends CI_Controller
         echo "LP-" . $datenow . "-" . $autoID;
     }
     
+    // public function readitemsFG()
+    // {
+    //     $post = isset($_POST['q']) ? $_POST['q'] : "";
+    //     $send = $this->crud->query("SELECT id, number as item_number, name as item_name, box_sub, specification FROM item_fg WHERE item_family_number IN ('RP','CD','TB') AND (number like '%$post%' or name like '%$post%')");
+    //     echo json_encode($send);
+    // }
+
     public function readitemsFG()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT id, number as item_number, name as item_name, box_sub, specification FROM item_fg WHERE item_family_number IN ('RP','CD','TB') AND (number like '%$post%' or name like '%$post%')");
+
+        // Step 1: Hitung qty_in dari fg_scan_in_label
+        $query_qty_in_fg_scan_in = "SELECT a.item_fg_id, IFNULL(SUM(a.qty), 0) as fg_scan_in
+        FROM fg_scan_in_label a
+        WHERE a.deleted = 0
+        GROUP BY a.item_fg_id";
+
+        // Step 2: Hitung qty_in dari os_fg
+        $query_qty_os_fg = "SELECT a.item_fg_id, IFNULL(SUM(a.qty), 0) as qty_os_fg
+        FROM os_fg a
+        WHERE a.deleted = 0
+        GROUP BY a.item_fg_id";
+
+        // Step 3: Hitung initial `i` dari transaction_fg (kind IN)
+        $query_transaction_fg_in = "SELECT a.item_fg_id, IFNULL(SUM(a.qty), 0) as initial_in
+        FROM transaction_fg a
+        WHERE a.deleted = 0
+        AND LEFT(a.transaction_type, 2) = 'RE'
+        GROUP BY a.item_fg_id";
+
+        // Step 4: Hitung qty_out dari transaction_fg
+        $query_qty_out = "SELECT a.item_fg_id, IFNULL(SUM(a.qty), 0) as qty_out
+        FROM transaction_fg a
+        WHERE a.deleted = 0
+        AND LEFT(a.transaction_type, 2) = 'IS'
+        GROUP BY a.item_fg_id";
+
+        // Step 5: Hitung initial `g` (delivery_notes)
+        $query_delivery_notes = "SELECT dn.item_fg_id, SUM(dn.qty) as initial_out_g
+        FROM delivery_notes dn
+        JOIN (
+            SELECT 
+                delivery_order_no, 
+                item_fg_id, 
+                customer_order_no,
+                SUM(qty) AS total_shipping_qty
+            FROM shipping_orders
+            WHERE deleted = 0
+            GROUP BY delivery_order_no, item_fg_id, customer_order_no
+        ) s ON dn.delivery_order_no = s.delivery_order_no
+            AND dn.item_fg_id = s.item_fg_id
+            AND dn.customer_order_no = s.customer_order_no
+            AND dn.qty = s.total_shipping_qty
+        WHERE dn.deleted = 0
+        GROUP BY item_fg_id";
+
+
+        $query = "
+            SELECT 
+                a.id, 
+                a.number AS item_number, 
+                a.name AS item_name, 
+                a.box_sub, 
+                a.specification,
+                (
+                    (
+                        COALESCE(qc.fg_scan_in, 0) + 
+                        COALESCE(qnc.qty_os_fg, 0) + 
+                        COALESCE(qi.initial_in, 0)
+                    ) - 
+                    (
+                        COALESCE(qo.qty_out, 0) + 
+                        COALESCE(qg.initial_out_g, 0)
+                    )
+                ) AS end_stock
+            FROM item_fg a
+            LEFT JOIN ($query_qty_in_fg_scan_in) qc ON a.id = qc.item_fg_id
+            LEFT JOIN ($query_qty_os_fg) qnc ON a.id = qnc.item_fg_id
+            LEFT JOIN ($query_transaction_fg_in) qi ON a.id = qi.item_fg_id
+            LEFT JOIN ($query_qty_out) qo ON a.id = qo.item_fg_id
+            LEFT JOIN ($query_delivery_notes) qg ON a.id = qg.item_fg_id
+            WHERE a.item_family_number IN ('RP','CD','TB') 
+                AND (a.number LIKE '%$post%' OR a.name LIKE '%$post%')
+        ";
+
+        $send = $this->crud->query($query);
         echo json_encode($send);
     }
 
