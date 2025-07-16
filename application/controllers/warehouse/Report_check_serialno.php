@@ -103,7 +103,7 @@ class Report_check_serialno extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=sales_orders_$format.xls");
+            header("Content-Disposition: attachment; filename=purchase_order_$format.xls");
         }
         $filter_from = base64_decode($this->input->get("filter_from"));
         $filter_to = base64_decode($this->input->get("filter_to"));

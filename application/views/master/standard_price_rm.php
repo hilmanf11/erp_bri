@@ -6,7 +6,7 @@
             <th rowspan="2" data-options="field:'document_number',width:150,align:'left'">Document No.</th>
             <th rowspan="2" data-options="field:'start_date',width:120,halign:'center'">Start Date</th>
             <th rowspan="2" data-options="field:'end_date',width:120,halign:'center'">Ending Date</th>
-            <th rowspan="2" data-options="field:'division_name',width:120,halign:'center'">Division</th>
+            <th rowspan="2" data-options="field:'division_name',width:120,halign:'center'">Plant</th>
             <th colspan="3" data-options="field:'',width:100,halign:'center'"> Approved</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -45,7 +45,7 @@
             </div>
             <div style="float:left; width:48%">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Division</span>
+                    <span style="width:35%; display:inline-block;">Plant</span>
                     <input style="width:60%;" id="filter_division" class="easyui-combobox">
                 </div>
                 <div class="fitem">
@@ -70,7 +70,7 @@
             <legend><b>Form Data</b></legend>
             <div style="float: left; width:50%;">
                 <div class="fitem">
-                    <span style="width:30%; display:inline-block;">Division</span>
+                    <span style="width:30%; display:inline-block;">Plant</span>
                     <input style="width:60%;" id="division" name="division" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
@@ -402,7 +402,7 @@
                 $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
             }
         } else {
-            toastr.error("Please Choose Division first");
+            toastr.error("Please Choose Plant first");
         }
     }
 
@@ -743,7 +743,7 @@
         url: '<?= base_url('master/divisions/reads'); ?>',
         valueField: 'number',
         textField: 'name',
-        prompt: 'Choose Division',
+        prompt: 'Choose Plant',
         onSelect: function(val) {
             $('#filter_item_rm_id').combogrid({
                 url: '<?= base_url('master/standard_price_rm/readItemByDivision/'); ?>' + val.number,
@@ -813,7 +813,7 @@
         url: '<?= base_url('master/divisions/reads'); ?>',
         valueField: 'number',
         textField: 'name',
-        prompt: 'Choose Division',
+        prompt: 'Choose Plant',
         onSelect: function(val) {
             if (!isEditMode) {
                 var start_date = $('#start_date').datebox('getValue');

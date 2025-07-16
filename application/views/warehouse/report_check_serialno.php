@@ -125,7 +125,7 @@
         if (filter_from == "" || filter_to == "" || (filter_supplier == "" && filter_serial_no == "")) {
             toastr.warning("Please select Trans Date & Supplier!");
         } else {
-            window.location.assign('<?= base_url('warehouse/report_check_serialno/print') ?>' + url);
+            window.location.assign('<?= base_url('warehouse/report_check_serialno/print/excel') ?>' + url);
         }
     }
 
