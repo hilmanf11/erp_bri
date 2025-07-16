@@ -1,3 +1,32 @@
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar {
+        display: none;
+    }
+    #p {
+      display: flex;
+      flex-direction: column;
+      /* height: calc(100vh - 200px); */
+      height: 81.3vh;
+      overflow: hidden !important;
+    }
+    #p #printout {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      overflow: hidden !important;
+    }
+</style>
+
 <table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar"></table>
 
 <div id="toolbar" style="padding:10px;">
@@ -77,6 +106,8 @@
 
                 <span style="width:35%; display:inline-block;"></span>
 
+                <a href="javascript:;" class="easyui-linkbutton" onclick="filter_detail_transaction()"><i class="fa fa-search"></i> Detail Transaction</a>
+
                 <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
 
             </div>
@@ -86,9 +117,10 @@
 
     <?= $button ?>
 
+    <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="excel_detail_transaction()"><i class="fa fa-file"></i> Export Detail Transaction</a>
 </div>
 
-<div class="easyui-panel" title="Print Preview" style="width:100%;padding:10px;">
+<div id="p" class="easyui-panel" title="Print Preview" style="width:100%;padding:10px;">
 
     <iframe id="printout" src="" style="width: 100%; height:500px; border: 0;"></iframe>
 
@@ -141,7 +173,20 @@
 
     }
 
+    function filter_detail_transaction() {
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_items = $("#filter_items").combogrid('getValue');
+        var filter_product_family = $("#filter_product_family").combogrid('getValue');
+        var filter_qty_in = $("#filter_qty_in").combobox('getValue');
+        var filter_qty_out = $("#filter_qty_out").combobox('getValue');
+        var filter_plant = $("#filter_plant").combobox('getValue');
 
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_product_family=" + filter_product_family + "&filter_qty_in=" + filter_qty_in + "&filter_qty_out=" + filter_qty_out + "&filter_plant=" + filter_plant;
+
+        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+        $("#printout").attr('src', '<?= base_url('warehouse/report_history_transactions_fg/detail_transaction') ?>' + url);
+    }
 
     function excel() {
 
@@ -168,6 +213,20 @@
 
         window.location.assign('<?= base_url('warehouse/report_history_transactions_fg/print/excel') ?>' + url);
 
+    }
+
+    function excel_detail_transaction() {
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_items = $("#filter_items").combogrid('getValue');
+        var filter_product_family = $("#filter_product_family").combogrid('getValue');
+        var filter_qty_in = $("#filter_qty_in").combobox('getValue');
+        var filter_qty_out = $("#filter_qty_out").combobox('getValue');
+        var filter_plant = $("#filter_plant").combobox('getValue');
+
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_product_family=" + filter_product_family + "&filter_qty_in=" + filter_qty_in + "&filter_qty_out=" + filter_qty_out + "&filter_plant=" + filter_plant;
+        
+        window.location.assign('<?= base_url('warehouse/report_history_transactions_fg/detail_transaction/excel') ?>' + url);
     }
 
     $(function() {
