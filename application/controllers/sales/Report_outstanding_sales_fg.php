@@ -361,14 +361,14 @@ class Report_outstanding_sales_fg extends CI_Controller
                             <tr>
                                 <th width="20">No</th>
                                 <th>Customer Name</th>
-                                <th>Customer Order No.</th>
+                                <th style="text-align: center;">Customer Order No.</th>
                                 <th>Product ID</th>
                                 <th>Product No</th>
                                 <th>Product Name</th>
-                                <th>Qty SO</th>
-                                <th>Qty DS</th>
-                                <th>Qty DN</th>
-                                <th>Outstanding</th>
+                                <th style="text-align: center;">Qty SO</th>
+                                <th style="text-align: center;">Qty DS</th>
+                                <th style="text-align: center;">Qty DN</th>
+                                <th style="text-align: center;">Outstanding</th>
                                 <th>UoM</th>
                                 <th>Currency</th>
                                 <th>Price</th>

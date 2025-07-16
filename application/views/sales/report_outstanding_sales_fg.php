@@ -55,7 +55,7 @@
             </div>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Division</span>
+                    <span style="width:35%; display:inline-block;">Plant</span>
                     <input style="width:60%;" name="filter_division" id="filter_division" class="easyui-combobox">
                 </div>
                 <div class="fitem">
@@ -265,9 +265,9 @@
         $('#filter_division').combobox({
             url: '<?= base_url('master/divisions/reads'); ?>',
             valueField: 'number',
-            textField: 'number',
+            textField: 'name',
             panelHeight: 'panelHeight',
-            prompt: 'Select Division',
+            prompt: 'Choose Plant',
             icons: [{
                 iconCls: 'icon-clear',
                 handler: function(e) {
