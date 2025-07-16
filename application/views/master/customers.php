@@ -27,6 +27,7 @@
             <th rowspan="2" data-options="field:'npwp',width:150,halign:'center'">NPWP</th>
             <th rowspan="2" data-options="field:'account_number',width:150,halign:'center'">Account Number</th>
             <th rowspan="2" data-options="field:'account_name',width:150,halign:'center'">Account Name</th>
+            <th rowspan="2" data-options="field:'status_cust_no',width:150,align:'center', styler:cellStylerCustNo, formatter:cellFormatterCustNo,sortable:true">Status Customer No</th>
             <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -89,6 +90,13 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Payment Term (Day)</span>
                     <input style="width:60%;" name="payment_term" id="payment_term" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status Customer No</span>
+                    <select style="width:60%;" name="status_cust_no" id="status_cust_no" required="" panelHeight="auto" class="easyui-combobox">
+                        <option value="1">Active</option>
+                        <option value="0">Not Active</option>
+                    </select>
                 </div>
             </div>
             <div style="float:left; width:50%;">
@@ -270,6 +278,7 @@
 
         $('#type').combobox('setValue', 'LOCAL');
         $('#status').combobox('setValue', '0');
+        $('#status_cust_no').combobox('setValue', '0');
         $('#taxes').numberbox('setValue', '11');
 
         $.ajax({
@@ -504,6 +513,23 @@
             }]
         });
     });
+
+    //CELLSTYLE STATUS
+    function cellStylerCustNo(value, row, index) {
+        if (value == 1) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+    //FORMATTER STATUS
+    function cellFormatterCustNo(value) {
+        if (value == 1) {
+            return 'Active';
+        } else {
+            return 'Not Active';
+        }
+    };
 
     //CELLSTYLE STATUS
     function cellStyler(value, row, index) {

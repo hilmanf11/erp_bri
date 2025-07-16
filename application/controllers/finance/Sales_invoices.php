@@ -1252,6 +1252,7 @@ class Sales_invoices extends CI_Controller
                 g.incoterm,
                 g.delivery_order_no,
                 g.trans_type,
+                d.status_cust_no,
                 COALESCE(f.bank_name, "") as bank_name,
                 "PT. BANSHU RUBBER INDONESIA" as account_name,
                 COALESCE(f.bank_account, 0) as bank_account');
@@ -1271,6 +1272,22 @@ class Sales_invoices extends CI_Controller
             // $this->db->order_by('a.trans_date', 'DESC');
             $this->db->limit(20, ($i * 20));
             $records = $this->db->get()->result_array();
+
+            // $customer_order_nos = array_column($records, 'customer_order_no');
+            // $customer_order_nos = array_filter(array_unique($customer_order_nos));
+            // $cust_order_no = implode(', ', $customer_order_nos);
+
+            $customer_order_nos = [];
+
+            foreach ($records as $row) {
+                if ($row['status_cust_no'] == 1 && !empty($row['customer_order_no'])) {
+                    $customer_order_nos[] = $row['customer_order_no'];
+                }
+            }
+
+            $customer_order_nos = array_unique($customer_order_nos);
+            $cust_order_no = implode(', ', $customer_order_nos);
+
 
             // var_dump($records);
             // die;
@@ -1293,35 +1310,13 @@ class Sales_invoices extends CI_Controller
 
             $html .= '  <table style="width:100%;">
                             <tr>
-                                <th width="10"><img src="' . $config->favicon . '" width="60" /></th>
+                                <th width="1"><img src="' . $config->favicon . '" width="60" /></th>
                                 <td width="250" style="padding:10px;">
                                     <b style="font-size:14px;">' . $config->name . '</b><br>
                                     <span style="font-size:10px;">' . $config->address . '</span><br>
                                 </td>
-                                <th width="100" style="text-align:right;">
-                                    <table style="width:100%; font-size:10px; font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";">
-                                        <tr>
-                                            <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $sales_invoice->number . '.png') . '" width="60"/></td>
-                                            <td width="60">Doc No</td>
-                                            <td width="5">:</td>
-                                            <td width="100">' . $config_iso->doc_sales_invoice . '</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Form</td>
-                                            <td>:</td>
-                                            <td>' . $config_iso->form_sales_invoice . '</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Print Date</td>
-                                            <td>:</td>
-                                            <td>' . date("Y-m-d H:i") . '</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Print By</td>
-                                            <td>:</td>
-                                            <td>' . $this->session->name . '</td>
-                                        </tr>
-                                    </table>
+                                <th width="1" style="text-align:right;">
+                                    <img src="' . base_url('assets/image/qrcode/' . $sales_invoice->number . '.png') . '" width="70"/>
                                 </th>
                             </tr>
                         </table>
@@ -1346,16 +1341,6 @@ class Sales_invoices extends CI_Controller
                                             <td style="vertical-align:top;">Bill To</td>
                                             <td style="vertical-align:top;">:</td>
                                             <td><b>' . $records[0]['address_billing' . $address_no] . '</b></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Attention</td>
-                                            <td>:</td>
-                                            <td><b>' . $address_no . '</b></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Telp</td>
-                                            <td>:</td>
-                                            <td><b>' . $records[0]['telp' . $address_no] . '</b></td>
                                         </tr>
                                     </table>
                                 </div>
@@ -1382,18 +1367,32 @@ class Sales_invoices extends CI_Controller
                                             <td><b>' . date("d F Y", strtotime($sales_invoice->due_date)) . '</b></td>
                                         </tr>
                                     </table>
-                                </div>
-                                <table id="customers">
-                                    <tr>
-                                        <th width="20">No</th>
-                                        <th>Product No</th>
-                                        <th>Product Name</th>
-                                        <th width="60">UoM</th>
-                                        <th width="60">Qty</th>
-                                        <th width="60">Currency</th>
-                                        <th width="60">Price</th>
-                                        <th width="60">Total</th>
-                                    </tr>';
+                                </div>';
+
+            if (!empty($cust_order_no)) {
+                $html .= '
+                <table style="width:100%; font-size:12px; margin-bottom:10px; font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI";">
+                    <tr>
+                        <td width="150">Cust Order No</td>
+                        <td>:</td>
+                        <td><b>' . $cust_order_no . '</b></td>
+                    </tr>
+                </table>';
+            }
+
+            $html .= '
+                <table id="customers">
+                    <tr>
+                        <th width="20">No</th>
+                        <th>Product No</th>
+                        <th>Product Name</th>
+                        <th width="60">UoM</th>
+                        <th width="60">Qty</th>
+                        <th width="60">Currency</th>
+                        <th width="60">Price</th>
+                        <th width="60">Total</th>
+                    </tr>';
+
             $sub_total = 0;
             $vat_total = 0;
             $dpp_total = 0;
