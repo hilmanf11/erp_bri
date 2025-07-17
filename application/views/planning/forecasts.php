@@ -35,13 +35,13 @@
 </table>
 
 <!-- TOOLBAR DATAGRID -->
-<div id="toolbar" style="height: 230px; padding: 10px;">
+<div id="toolbar" style="height: 195px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
         <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
             <div style="float: left; width: 50%;">
-                <div class="fitem">
+                <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Issued Date</span>
                     <input style="width:26.5%;" id="filter_issued_date_from" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser" class="easyui-datebox">
                     <span style="width:6.35%; display:inline-block; text-align:center;">to</span>
@@ -64,6 +64,10 @@
                         <option value="5">5</option>
                     </select>
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Customer</span>
+                    <input style="width:60.4%;" id="filter_customer_id" class="easyui-combogrid">
+                </div>
             </div>
             <div style="float: left; width: 50%;">
                 <div class="fitem">
@@ -71,14 +75,10 @@
                     <input style="width:60%;" id="filter_plant" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Customer</span>
-                    <input style="width:60%;" id="filter_customer_id" class="easyui-combogrid">
-                </div>
-                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Family</span>
-                    <input style="width:60.4%;" id="filter_product_family" class="easyui-combogrid">
+                    <input style="width:60%;" id="filter_product_family" class="easyui-combogrid">
                 </div>
-                <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
+                <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.3%;">
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()">
                         <i class="fa fa-search"></i> Filter Data
                     </a>
@@ -568,7 +568,7 @@
 
     //FILTER DATA
     function filter() {
-        var filter_issued_date_from = $("#filter_issued_date_from").datebox('getValue');
+        // var filter_issued_date_from = $("#filter_issued_date_from").datebox('getValue');
         var filter_issued_date_to = $("#filter_issued_date_to").datebox('getValue');
         var filter_period_month = $("#filter_period_month").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
@@ -577,8 +577,8 @@
         var filter_product_family = $("#filter_product_family").combogrid('getValue');
         var filter_plant = $("#filter_plant").combobox('getValue');
 
-        var url = "?filter_issued_date_from=" + window.btoa(filter_issued_date_from) +
-            "&filter_issued_date_to=" + window.btoa(filter_issued_date_to) +
+        // var url = "?filter_issued_date_from=" + window.btoa(filter_issued_date_from) +
+        var url = "?filter_issued_date_to=" + window.btoa(filter_issued_date_to) +
             "&filter_period_month=" + window.btoa(filter_period_month) +
             "&filter_period_year=" + window.btoa(filter_period_year) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
@@ -601,7 +601,7 @@
 
     //PRINT EXCEL
     function excel() {
-        var filter_issued_date_from = $("#filter_issued_date_from").datebox('getValue');
+        // var filter_issued_date_from = $("#filter_issued_date_from").datebox('getValue');
         var filter_issued_date_to = $("#filter_issued_date_to").datebox('getValue');
         var filter_period_month = $("#filter_period_month").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
@@ -610,8 +610,8 @@
         var filter_product_family = $("#filter_product_family").combogrid('getValue');
         var filter_plant = $("#filter_plant").combobox('getValue');
 
-        var url = "?filter_issued_date_from=" + window.btoa(filter_issued_date_from) +
-            "&filter_issued_date_to=" + window.btoa(filter_issued_date_to) +
+        // var url = "?filter_issued_date_from=" + window.btoa(filter_issued_date_from) +
+        var url = "?filter_issued_date_to=" + window.btoa(filter_issued_date_to) +
             "&filter_period_month=" + window.btoa(filter_period_month) +
             "&filter_period_year=" + window.btoa(filter_period_year) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
