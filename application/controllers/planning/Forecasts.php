@@ -170,7 +170,7 @@ class Forecasts extends CI_Controller
     {
         if ($this->input->post()) {
             $get = $this->input->get();
-            $filter_issued_date_from = @base64_decode($get['filter_issued_date_from']);
+            // $filter_issued_date_from = @base64_decode($get['filter_issued_date_from']);
             $filter_issued_date_to = @base64_decode($get['filter_issued_date_to']);
             $filter_period_month = @base64_decode($get['filter_period_month']);
             $filter_period_year = @base64_decode($get['filter_period_year']);
@@ -191,10 +191,10 @@ class Forecasts extends CI_Controller
             $this->db->from('forecasts a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
-            if ($filter_issued_date_from != "" && $filter_issued_date_to != "") {
-                $this->db->where('a.issued_date >=', $filter_issued_date_from);
-                $this->db->where('a.issued_date <=', $filter_issued_date_to);
-            }
+            // if ($filter_issued_date_from != "" && $filter_issued_date_to != "") {
+            //     $this->db->where('a.issued_date >=', $filter_issued_date_from);
+            //     $this->db->where('a.issued_date <=', $filter_issued_date_to);
+            // }
             $this->db->where('a.p_month', $filter_period_month);
             $this->db->where('a.p_year', $filter_period_year);
             if ($filter_customer_id != "") {

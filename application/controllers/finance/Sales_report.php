@@ -267,19 +267,49 @@ class Sales_report extends CI_Controller
                         </tr>
                     </table>
                 </div>
-                <table id="customers" border="1" style="font-size: 11px;">
-                    <tr>
-                        <th rowspan="2" width="20">No</th>
-                        <th rowspan="2" width="400">Customer Name</th>
-                        <th colspan="3">Segment</th>
-                        <th rowspan="2" width="200">Amount (IDR)</th>
-                    </tr>
-                    <tr>
-                        <th width="200">Compound</th>
-                        <th width="200">Rubber Part</th>
-                        <th width="200">Tube</th>
-                    </tr>';
+                ';
 
+            if($filter_division == "RP") {
+                $html .='
+                    <table id="customers" border="1" style="font-size: 11px;">
+                        <tr>
+                            <th rowspan="2" width="20">No</th>
+                            <th rowspan="2" width="400">Customer Name</th>
+                            <th colspan="2">Segment</th>
+                            <th rowspan="2" width="200">Amount (IDR)</th>
+                        </tr>
+                        <tr>
+                            <th width="200">Compound</th>
+                            <th width="200">Rubber Part</th>
+                        </tr>';
+            } else if($filter_division == "EXT"){
+                $html .='
+                    <table id="customers" border="1" style="font-size: 11px;">
+                        <tr>
+                            <th rowspan="2" width="20">No</th>
+                            <th rowspan="2" width="400">Customer Name</th>
+                            <th>Segment</th>
+                            <th rowspan="2" width="200">Amount (IDR)</th>
+                        </tr>
+                        <tr>
+                            <th width="200">Tube</th>
+                        </tr>';
+            } else {
+                $html .='
+                    <table id="customers" border="1" style="font-size: 11px;">
+                        <tr>
+                            <th rowspan="2" width="20">No</th>
+                            <th rowspan="2" width="400">Customer Name</th>
+                            <th colspan="3">Segment</th>
+                            <th rowspan="2" width="200">Amount (IDR)</th>
+                        </tr>
+                        <tr>
+                            <th width="200">Compound</th>
+                            <th width="200">Rubber Part</th>
+                            <th width="200">Tube</th>
+                        </tr>';
+            }
+            
             $no = 1;
             // $totalAmount = 0;
             $totalAmountIDR = 0;
@@ -310,14 +340,33 @@ class Sales_report extends CI_Controller
                 
                 $amountIDR = ($record->amount * $exchange_rate);
 
-                $html .= '  <tr>
-                                <td style="text-align:center">' . $no . '</td>
-                                <td>' . $record->customer_name . '</td>
-                                <td style="text-align:right">' . number_format($compound, 2, ',', '.') . '</td>
-                                <td style="text-align:right">' . number_format($rubber, 2, ',', '.') . '</td>
-                                <td style="text-align:right">' . number_format($tube, 2, ',', '.') . '</td>
-                                <td style="text-align:right">' . number_format($amountIDR, 2, ',', '.') . '</td>
-                            </tr>';
+
+                if($filter_division == "RP") {
+                    $html .= '  <tr>
+                                    <td style="text-align:center">' . $no . '</td>
+                                    <td>' . $record->customer_name . '</td>
+                                    <td style="text-align:right">' . number_format($compound, 0, '.', '.') . '</td>
+                                    <td style="text-align:right">' . number_format($rubber, 0, '.', '.') . '</td>
+                                    <td style="text-align:right">' . number_format($amountIDR, 2, ',', '.') . '</td>
+                                </tr>';
+                } else if($filter_division == "EXT"){
+                    $html .= '  <tr>
+                                    <td style="text-align:center">' . $no . '</td>
+                                    <td>' . $record->customer_name . '</td>
+                                    <td style="text-align:right">' . number_format($tube, 0, '.', '.') . '</td>
+                                    <td style="text-align:right">' . number_format($amountIDR, 2, ',', '.') . '</td>
+                                </tr>';
+                } else {
+                    $html .= '  <tr>
+                                    <td style="text-align:center">' . $no . '</td>
+                                    <td>' . $record->customer_name . '</td>
+                                    <td style="text-align:right">' . number_format($compound, 0, '.', '.') . '</td>
+                                    <td style="text-align:right">' . number_format($rubber, 0, '.', '.') . '</td>
+                                    <td style="text-align:right">' . number_format($tube, 0, '.', '.') . '</td>
+                                    <td style="text-align:right">' . number_format($amountIDR, 2, ',', '.') . '</td>
+                                </tr>';
+                }
+
                 $no++;
                 $totalAmountIDR += $amountIDR;
 
@@ -326,14 +375,29 @@ class Sales_report extends CI_Controller
                 $totalTube += $tube;
             }
 
-            $html .= '<tr>
-                <td colspan="2" style="text-align:right;"><b>GRAND TOTAL</b></td>
-                <td style="text-align:right"><b>' . number_format($totalCompound, 2, ',', '.') . '</b></td>
-                <td style="text-align:right"><b>' . number_format($totalRubber, 2, ',', '.') . '</b></td>
-                <td style="text-align:right"><b>' . number_format($totalTube, 2, ',', '.') . '</b></td>
-                <td style="text-align:right"><b>' . number_format($totalAmountIDR, 2, ',', '.') . '</b></td>
-            </tr>';
 
+            if($filter_division == "RP") {
+                $html .= '<tr>
+                    <td colspan="2" style="text-align:right;"><b>GRAND TOTAL</b></td>
+                    <td style="text-align:right"><b>' . number_format($totalCompound, 0, '.', '.') . '</b></td>
+                    <td style="text-align:right"><b>' . number_format($totalRubber, 0, '.', '.') . '</b></td>
+                    <td style="text-align:right"><b>' . number_format($totalAmountIDR, 2, ',', '.') . '</b></td>
+                </tr>';
+            } else if($filter_division == "EXT"){
+                $html .= '<tr>
+                    <td colspan="2" style="text-align:right;"><b>GRAND TOTAL</b></td>
+                    <td style="text-align:right"><b>' . number_format($totalTube, 0, '.', '.') . '</b></td>
+                    <td style="text-align:right"><b>' . number_format($totalAmountIDR, 2, ',', '.') . '</b></td>
+                </tr>';
+            }else{
+                $html .= '<tr>
+                    <td colspan="2" style="text-align:right;"><b>GRAND TOTAL</b></td>
+                    <td style="text-align:right"><b>' . number_format($totalCompound, 0, '.', '.') . '</b></td>
+                    <td style="text-align:right"><b>' . number_format($totalRubber, 0, '.', '.') . '</b></td>
+                    <td style="text-align:right"><b>' . number_format($totalTube, 0, '.', '.') . '</b></td>
+                    <td style="text-align:right"><b>' . number_format($totalAmountIDR, 2, ',', '.') . '</b></td>
+                </tr>';
+            }
             $html .= '</table></body></html>';
             echo $html;
         }
