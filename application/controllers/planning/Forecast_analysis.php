@@ -80,6 +80,252 @@ class Forecast_analysis extends CI_Controller
         echo json_encode($dates);
     }
 
+    // public function printv1($option = "")
+    // {
+    //     if ($option == "excel") {
+    //         $format  = date("Ymd");
+    //         header("Content-type: application/vnd-ms-excel");
+    //         header("Content-Disposition: attachment; filename=forecast_analysis_$format.xls");
+    //     }
+
+    //     $filter_period_year = base64_decode($this->input->get("filter_period_year"));
+    //     $filter_period_month = base64_decode($this->input->get("filter_period_month_from"));
+    //     $filter_customer_name = $this->input->get("filter_customer_name");
+    //     $filter_item_fg = $this->input->get("filter_item_fg");
+    //     $filter_product_family = base64_decode($this->input->get("filter_product_family"));
+
+    //     $p_date_start = date("Y-m-d", strtotime($filter_period_year . "-" . $filter_period_month . "-01"));
+    //     $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
+    //     while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+    //         $dates[] = array(
+    //             "name" => date("M-y", strtotime($p_date_start))
+    //         );
+
+    //         $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+    //     }
+
+    //     $selected_month_int = (int)$filter_period_month;
+
+    //     $columns = [];
+    //     for ($i = 0; $i < 3; $i++) {
+    //         $month_index = ($selected_month_int + $i - 1) % 12 + 1;
+    //         $columns[] = $month_index;
+    //     }
+
+    //     //Config
+    //     $this->db->select('*');
+    //     $this->db->from('config');
+    //     $config = $this->db->get()->row();
+
+    //     $this->db->select('
+    //         a.month_1 as qty_month_1, 
+    //         a.month_2 as qty_month_2, 
+    //         a.month_3 as qty_month_3, 
+    //             SUM(a.month_1 * (CASE WHEN d.price IS NULL THEN 0 ELSE d.price END)) as amount_month_1, 
+    //             SUM(a.month_2 * (CASE WHEN d.price IS NULL THEN 0 ELSE d.price END)) as amount_month_2, 
+    //             SUM(a.month_3 * (CASE WHEN d.price IS NULL THEN 0 ELSE d.price END)) as amount_month_3, 
+    //         b.number as item_fg_number, 
+    //         b.name as item_fg_name, 
+    //         c.name as customer_name, 
+    //             (CASE WHEN a.month_1 > a.month_2 THEN 0 ELSE 1 END) as bg_month_2, 
+    //             (CASE WHEN a.month_1 > a.month_3 THEN 0 ELSE 1 END) as bg_month_3
+    //     ');
+
+    //     $this->db->from('forecasts a');
+    //     $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
+    //     $this->db->join('customers c', 'a.customer_id = c.id', 'left');
+    //     $this->db->join('customer_items d', 'a.customer_id = d.customer_id and a.item_fg_id = d.item_fg_id', 'left');
+    //     $this->db->where('a.deleted', 0);
+    //     $this->db->where('a.p_month', $filter_period_month);
+    //     $this->db->where('a.p_year', $filter_period_year);
+    //     if ($filter_customer_name != '') {
+    //         $this->db->where('a.customer_id', $filter_customer_name);
+    //     }
+    //     if ($filter_item_fg != '') {
+    //         $this->db->where('a.item_fg_id', $filter_item_fg);
+    //     }
+    //     if ($filter_product_family != "") {
+    //         $this->db->where('b.item_family_number', $filter_product_family);
+    //     }
+    //     $this->db->group_by('a.customer_id');
+    //     $this->db->group_by('a.item_fg_id');
+    //     $this->db->group_by('a.p_month');
+    //     $this->db->group_by('a.p_year');
+    //     $this->db->order_by('c.name', 'ASC');
+    //     $records = $this->db->get()->result_array();
+    //     $customer_name = 'ALL';
+    //     $part_name = 'ALL';
+    //     if ($filter_customer_name != '') {
+    //         $customer = $this->crud->read('customers', [], ["id" => $filter_customer_name]);
+    //         if (!empty($customer->name)) {
+    //             $customer_name = $customer->name;
+    //         }
+    //     }
+    //     if ($filter_item_fg != '') {
+    //         $part_name = $filter_item_fg;
+    //     }
+    //     $long_months = array('01' => 'JANUARY', '02' => 'FEBRUARY', '03' => 'MARCH', '04' => 'APRIL', '05' => 'MAY', '06' => 'JUNE', '07' => 'JULY', '08' => 'AUGUST', '09' => 'SEPTEMBER', '10' => 'OCTOBER', '11' => 'NOVEMBER', '12' => 'DECEMBER');
+    //     $months = array('1' => 'Jan', '2' => 'Feb', '3' => 'Mar', '4' => 'Apr', '5' => 'May', '6' => 'Jun', '7' => 'Jul', '8' => 'Aug', '9' => 'Sep', '10' => 'Oct', '11' => 'Nov', '12' => 'Dec');
+
+    //     $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#forecast_analysis {border-collapse: collapse;width: 100%;font-size: 12px;}#forecast_analysis td, #forecast_analysis th {border: 1px solid #ddd;padding: 2px;}#forecast_analysis tr:nth-child(even){background-color: #f2f2f2;}#forecast_analysis tr:hover {background-color: #ddd;}#forecast_analysis th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+    //         <center>
+    //             <div style="float: left; font-size: 12px; text-align: left;">
+    //                 <table style="width: 100%;">
+    //                     <tr>
+    //                         <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+    //                             <img src="' . $config->favicon . '" width="30">
+    //                         </td>
+    //                         <td style="font-size: 14px; text-align: left; margin:2px;">
+    //                             <b>' . $config->name . '</b><br>
+    //                         </td>
+    //                     </tr>
+    //                 </table>
+    //             </div>
+    //             <div style="float: right; font-size: 12px; text-align: right;">
+    //                 Print Date ' . date("d M Y H:m:s") . ' <br>
+    //                 Print By ' . $this->session->username . '  
+    //             </div>
+    //             <br><br>
+    //             <div style="float: centet; font-size: 16px; text-align: center;">
+    //                 <h3>FORECAST ANALYSIS</h3>
+    //             </div>
+    //             <div style="float: left; font-size: 12px; text-align: left;">
+    //                 <table style="width: 100%;">
+    //                     <tr>
+    //                         <td style="font-size: 14px; text-align: left; margin:2px;">
+    //                             <small>PERIOD</small><br>
+    //                             <small>CUSTOMER NAME</small><br>
+    //                             <small>PRODUCT NO.</small>
+    //                         </td>
+    //                         <td style="font-size: 14px; text-align: left; margin:2px;">
+    //                             <small>: </small><br>
+    //                             <small>: </small><br>
+    //                             <small>: </small>
+    //                         </td>
+    //                         <td style="font-size: 14px; text-align: left; margin:2px;">
+    //                             <small><b>' . $long_months[$filter_period_month] . '</b>  <b>' . $filter_period_year . '</b></small><br>
+    //                             <small><b>' . $customer_name . '</b></small><br>
+    //                             <small><b>' . $part_name . '</b></small>
+    //                         </td>
+    //                     </tr>
+    //                 </table>
+    //             </div>
+    //         </center>
+    //         <br><br>
+    //         <table id="forecast_analysis" border="1">
+    //         <tr>
+    //             <th rowspan="2" width="20">No</th>
+    //             <th rowspan="2" style="text-align:center;">Customer</th>
+    //             <th rowspan="2" style="text-align:center;">Part No.</th>
+    //             <th rowspan="2" style="text-align:center;">Part Name</th>
+    //             <th colspan="3" style="text-align:center;">QTY</th>
+    //             <th colspan="3" style="text-align:center;">AMOUNT</th>
+    //         </tr>
+    //         <tr>
+    //             <th style="text-align:center;">' . $months[$columns[0]] . '</th>
+    //             <th style="text-align:center;">' . $months[$columns[1]] . '</th>
+    //             <th style="text-align:center;">' . $months[$columns[2]] . '</th>
+    //             <th style="text-align:center;">' . $months[$columns[0]] . '</th>
+    //             <th style="text-align:center;">' . $months[$columns[1]] . '</th>
+    //             <th style="text-align:center;">' . $months[$columns[2]] . '</th>
+    //         </tr>';
+
+    //     $no = 1;
+    //     $current_customer = '';
+    //     $total_qty_1 = 0;
+    //     $total_qty_2 = 0;
+    //     $total_qty_3 = 0;
+    //     $total_amount_1 = 0;
+    //     $total_amount_2 = 0;
+    //     $total_amount_3 = 0;
+
+    //     $grand_total_qty_1 = 0;
+    //     $grand_total_qty_2 = 0;
+    //     $grand_total_qty_3 = 0;
+    //     $grand_total_amount_1 = 0;
+    //     $grand_total_amount_2 = 0;
+    //     $grand_total_amount_3 = 0;
+
+    //     foreach ($records as $data) {
+
+    //         if ($current_customer !== $data['customer_name']) {
+    //             if ($current_customer !== '') {
+    //                 $html .= "<tr style='background-color:#FFFF00;'>
+    //                             <td style='text-align:center; font-weight:bold;' colspan='4'>Total</td>
+    //                             <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_1)}</td>
+    //                             <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_2)}</td>
+    //                             <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_3)}</td>
+    //                             <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($total_amount_1)}</td>
+    //                             <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($total_amount_2)}</td>
+    //                             <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($total_amount_3)}</td>
+    //                           </tr>";
+    //             }
+    //             // Reset for the new group
+    //             $current_customer = $data['customer_name'];
+    //             $total_qty_1 = 0;
+    //             $total_qty_2 = 0;
+    //             $total_qty_3 = 0;
+    //             $total_amount_1 = 0;
+    //             $total_amount_2 = 0;
+    //             $total_amount_3 = 0;
+    //         }
+
+    //         $backgroundColor2 = $data['bg_month_2'] == 0 ? '#F4B084' : 'transparent';
+    //         $backgroundColor3 = $data['bg_month_3'] == 0 ? '#F4B084' : 'transparent';
+
+    //         $html .= '<tr>
+    //                     <td>' . $no . '</td>
+    //                     <td>' . $data['customer_name'] . '</td>
+    //                     <td>' . $data['item_fg_number'] . '</td>
+    //                     <td>' . $data['item_fg_name'] . '</td>
+    //                     <td style="text-align:right;">' . $this->format_number($data['qty_month_1']) . '</td>
+    //                     <td style="text-align:right;background-color:' . $backgroundColor2 . ';">' . $this->format_number($data['qty_month_2']) . '</td>
+    //                     <td style="text-align:right;background-color:' . $backgroundColor3 . ';">' . $this->format_number($data['qty_month_3']) . '</td>
+    //                     <td style="text-align:right;">Rp.' . $this->format_number($data['amount_month_1']) . '</td>
+    //                     <td style="text-align:right;">Rp.' . $this->format_number($data['amount_month_2']) . '</td>
+    //                     <td style="text-align:right;">Rp.' . $this->format_number($data['amount_month_3']) . '</td>
+    //                     </tr>';
+    //         $no++;
+    //         $total_qty_1 += $data['qty_month_1'];
+    //         $total_qty_2 += $data['qty_month_2'];
+    //         $total_qty_3 += $data['qty_month_3'];
+    //         $total_amount_1 += $data['amount_month_1'];
+    //         $total_amount_2 += $data['amount_month_2'];
+    //         $total_amount_3 += $data['amount_month_3'];
+
+    //         $grand_total_qty_1 += $data['qty_month_1'];
+    //         $grand_total_qty_2 += $data['qty_month_2'];
+    //         $grand_total_qty_3 += $data['qty_month_3'];
+    //         $grand_total_amount_1 += $data['amount_month_1'];
+    //         $grand_total_amount_2 += $data['amount_month_2'];
+    //         $grand_total_amount_3 += $data['amount_month_3'];
+    //     }
+    //     if ($current_customer !== '') {
+    //         $html .= "<tr style='background-color:#FFFF00;'>
+    //                     <td style='text-align:center; font-weight:bold;' colspan='4'>Total</td>
+    //                     <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_1)}</td>
+    //                     <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_2)}</td>
+    //                     <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_3)}</td>
+    //                     <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($total_amount_1)}</td>
+    //                     <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($total_amount_2)}</td>
+    //                     <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($total_amount_3)}</td>
+    //                     </tr>";
+    //     }
+           
+    //     $html .= "<tr style='background-color:#C6EFCE;'>
+    //                 <td style='text-align:center; font-weight:bold;' colspan='4'>Grand Total</td>
+    //                 <td style='text-align:right; font-weight:bold;'>{$this->format_number($grand_total_qty_1)}</td>
+    //                 <td style='text-align:right; font-weight:bold;'>{$this->format_number($grand_total_qty_2)}</td>
+    //                 <td style='text-align:right; font-weight:bold;'>{$this->format_number($grand_total_qty_3)}</td>
+    //                 <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($grand_total_amount_1)}</td>
+    //                 <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($grand_total_amount_2)}</td>
+    //                 <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($grand_total_amount_3)}</td>
+    //             </tr>";
+
+    //     $html .= '</table></body></html>';
+    //     echo $html;
+    // }
+
     public function print($option = "")
     {
         if ($option == "excel") {
@@ -89,27 +335,26 @@ class Forecast_analysis extends CI_Controller
         }
 
         $filter_period_year = base64_decode($this->input->get("filter_period_year"));
-        $filter_period_month = base64_decode($this->input->get("filter_period_month"));
+        $filter_month_from = base64_decode($this->input->get("filter_period_month_from"));
+        $filter_month_to = base64_decode($this->input->get("filter_period_month_to"));
         $filter_customer_name = $this->input->get("filter_customer_name");
         $filter_item_fg = $this->input->get("filter_item_fg");
         $filter_product_family = base64_decode($this->input->get("filter_product_family"));
 
-        $p_date_start = date("Y-m-d", strtotime($filter_period_year . "-" . $filter_period_month . "-01"));
-        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
-        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
-            $dates[] = array(
-                "name" => date("M-y", strtotime($p_date_start))
-            );
-
-            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
-        }
-
-        $selected_month_int = (int)$filter_period_month;
-
+        $is_same_month = ($filter_month_from == $filter_month_to);
+        
         $columns = [];
-        for ($i = 0; $i < 3; $i++) {
-            $month_index = ($selected_month_int + $i - 1) % 12 + 1;
-            $columns[] = $month_index;
+        $string_columns = [];
+        if ($is_same_month) {
+            for ($i = 0; $i < 3; $i++) {
+                $month_index = ((int)$filter_month_from + $i - 1) % 12 + 1;
+                $columns[] = $month_index;
+            }
+        } else {
+            for ($m = (int)$filter_month_from; $m <= (int)$filter_month_to; $m++) {
+                $columns[] = $m;
+                $string_columns[] = str_pad($m, 2, '0', STR_PAD_LEFT);
+            }
         }
 
         //Config
@@ -117,14 +362,48 @@ class Forecast_analysis extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.month_1 as qty_month_1, a.month_2 as qty_month_2, a.month_3 as qty_month_3, SUM(a.month_1 * (CASE WHEN d.price IS NULL THEN 0 ELSE d.price END)) as amount_month_1, SUM(a.month_2 * (CASE WHEN d.price IS NULL THEN 0 ELSE d.price END)) as amount_month_2, SUM(a.month_3 * (CASE WHEN d.price IS NULL THEN 0 ELSE d.price END)) as amount_month_3, b.number as item_fg_number, b.name as item_fg_name, c.name as customer_name, (CASE WHEN a.month_1 > a.month_2 THEN 0 ELSE 1 END) as bg_month_2, (CASE WHEN a.month_1 > a.month_3 THEN 0 ELSE 1 END) as bg_month_3');
+        $this->db->select('
+            b.number as item_fg_number, 
+            b.name as item_fg_name, 
+            c.name as customer_name
+        ');
+
+        if ($is_same_month) {
+            $this->db->select('
+                a.month_1 as qty_month_1, 
+                a.month_2 as qty_month_2, 
+                a.month_3 as qty_month_3, 
+                SUM(a.month_1 * IFNULL(d.price, 0)) as amount_month_1, 
+                SUM(a.month_2 * IFNULL(d.price, 0)) as amount_month_2, 
+                SUM(a.month_3 * IFNULL(d.price, 0)) as amount_month_3, 
+                (CASE WHEN a.month_1 > a.month_2 THEN 0 ELSE 1 END) as bg_month_2, 
+                (CASE WHEN a.month_1 > a.month_3 THEN 0 ELSE 1 END) as bg_month_3
+            ');
+        } else {
+            $i = 0;
+            foreach ($string_columns as $month) {
+                $i++;
+                $this->db->select("
+                    SUM(IF(a.p_month = '$month', a.month_1, 0)) as qty_month_$i,
+                    SUM(IF(a.p_month = '$month', a.month_1 * IFNULL(d.price, 0), 0)) as amount_month_$i
+                ");
+            }
+        }
+
         $this->db->from('forecasts a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
         $this->db->join('customers c', 'a.customer_id = c.id', 'left');
         $this->db->join('customer_items d', 'a.customer_id = d.customer_id and a.item_fg_id = d.item_fg_id', 'left');
         $this->db->where('a.deleted', 0);
-        $this->db->where('a.p_month', $filter_period_month);
         $this->db->where('a.p_year', $filter_period_year);
+
+        if ($is_same_month) {
+            $this->db->where('a.p_month', $filter_month_from);
+        } else {
+            $this->db->where("a.p_month >=", $filter_month_from);
+            $this->db->where("a.p_month <=", $filter_month_to);
+        }
+
         if ($filter_customer_name != '') {
             $this->db->where('a.customer_id', $filter_customer_name);
         }
@@ -140,6 +419,7 @@ class Forecast_analysis extends CI_Controller
         $this->db->group_by('a.p_year');
         $this->db->order_by('c.name', 'ASC');
         $records = $this->db->get()->result_array();
+
         $customer_name = 'ALL';
         $part_name = 'ALL';
         if ($filter_customer_name != '') {
@@ -151,10 +431,22 @@ class Forecast_analysis extends CI_Controller
         if ($filter_item_fg != '') {
             $part_name = $filter_item_fg;
         }
+
         $long_months = array('01' => 'JANUARY', '02' => 'FEBRUARY', '03' => 'MARCH', '04' => 'APRIL', '05' => 'MAY', '06' => 'JUNE', '07' => 'JULY', '08' => 'AUGUST', '09' => 'SEPTEMBER', '10' => 'OCTOBER', '11' => 'NOVEMBER', '12' => 'DECEMBER');
+
         $months = array('1' => 'Jan', '2' => 'Feb', '3' => 'Mar', '4' => 'Apr', '5' => 'May', '6' => 'Jun', '7' => 'Jul', '8' => 'Aug', '9' => 'Sep', '10' => 'Oct', '11' => 'Nov', '12' => 'Dec');
 
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#forecast_analysis {border-collapse: collapse;width: 100%;font-size: 12px;}#forecast_analysis td, #forecast_analysis th {border: 1px solid #ddd;padding: 2px;}#forecast_analysis tr:nth-child(even){background-color: #f2f2f2;}#forecast_analysis tr:hover {background-color: #ddd;}#forecast_analysis th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        $count_column = count($columns);
+        $body_style = ($count_column > 5) ? 'style="width: max-content;"' : 'style="width: 99.5%;"';
+
+        $period_column = $long_months[$filter_month_from];
+
+        if(!$is_same_month) {
+            $period_column = "$long_months[$filter_month_from] - $long_months[$filter_month_to]";
+        }
+
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#forecast_analysis {border-collapse: collapse;width: 100%;font-size: 12px;}#forecast_analysis td, #forecast_analysis th {border: 1px solid #ddd;padding: 2px;}#forecast_analysis tr:nth-child(even){background-color: #f2f2f2;}#forecast_analysis tr:hover {background-color: #ddd;}#forecast_analysis th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style>
+            <body '. $body_style .'>
             <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
                     <table style="width: 100%;">
@@ -173,7 +465,7 @@ class Forecast_analysis extends CI_Controller
                     Print By ' . $this->session->username . '  
                 </div>
                 <br><br>
-                <div style="float: centet; font-size: 16px; text-align: center;">
+                <div style="float: center; font-size: 16px; text-align: center;">
                     <h3>FORECAST ANALYSIS</h3>
                 </div>
                 <div style="float: left; font-size: 12px; text-align: left;">
@@ -190,7 +482,7 @@ class Forecast_analysis extends CI_Controller
                                 <small>: </small>
                             </td>
                             <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small><b>' . $long_months[$filter_period_month] . '</b>  <b>' . $filter_period_year . '</b></small><br>
+                                <small><b>' . $period_column . '</b>  <b>' . $filter_period_year . '</b></small><br>
                                 <small><b>' . $customer_name . '</b></small><br>
                                 <small><b>' . $part_name . '</b></small>
                             </td>
@@ -198,118 +490,111 @@ class Forecast_analysis extends CI_Controller
                     </table>
                 </div>
             </center>
-            <br><br>
+            <br><br>    
+            <div style="width: 100%; overflow-x: auto;"> 
             <table id="forecast_analysis" border="1">
             <tr>
                 <th rowspan="2" width="20">No</th>
-                <th rowspan="2" style="text-align:center;">Customer</th>
+                <th rowspan="2" style="text-align:center;" width="300";>Customer</th>
                 <th rowspan="2" style="text-align:center;">Part No.</th>
-                <th rowspan="2" style="text-align:center;">Part Name</th>
-                <th colspan="3" style="text-align:center;">QTY</th>
-                <th colspan="3" style="text-align:center;">AMOUNT</th>
-            </tr>
-            <tr>
-                <th style="text-align:center;">' . $months[$columns[0]] . '</th>
-                <th style="text-align:center;">' . $months[$columns[1]] . '</th>
-                <th style="text-align:center;">' . $months[$columns[2]] . '</th>
-                <th style="text-align:center;">' . $months[$columns[0]] . '</th>
-                <th style="text-align:center;">' . $months[$columns[1]] . '</th>
-                <th style="text-align:center;">' . $months[$columns[2]] . '</th>
-            </tr>';
+                <th rowspan="2" style="text-align:center;" width="250">Part Name</th>
+                <th colspan="' . count($columns) . '" style="text-align:center;">QTY</th>
+                <th colspan="' . count($columns) . '" style="text-align:center;">AMOUNT</th>
+            </tr><tr>';
 
-        $no = 1;
-        $current_customer = '';
-        $total_qty_1 = 0;
-        $total_qty_2 = 0;
-        $total_qty_3 = 0;
-        $total_amount_1 = 0;
-        $total_amount_2 = 0;
-        $total_amount_3 = 0;
+            foreach ($columns as $m) {
+                $html .= '<th>' . $months[$m] . '</th>';
+            }
+            foreach ($columns as $m) {
+                $html .= '<th>' . $months[$m] . '</th>';
+            }
+            $html .= '</tr>';
 
-        $grand_total_qty_1 = 0;
-        $grand_total_qty_2 = 0;
-        $grand_total_qty_3 = 0;
-        $grand_total_amount_1 = 0;
-        $grand_total_amount_2 = 0;
-        $grand_total_amount_3 = 0;
+            $no = 1;
+            $current_customer = '';
+            $total_qty = array_fill(0, count($columns), 0);
+            $total_amount = array_fill(0, count($columns), 0);
+            $grand_total_qty = array_fill(0, count($columns), 0);
+            $grand_total_amount = array_fill(0, count($columns), 0);
 
-        foreach ($records as $data) {
+            // Loop data record hasil query
+            foreach ($records as $data) {
+                if ($current_customer !== $data['customer_name']) {
+                    if ($current_customer !== '') {
+                        // Cetak subtotal
+                        $html .= '<tr style="background-color:#FFFF00;"><td colspan="4" style="text-align:center;font-weight:bold;">Total</td>';
+                        foreach ($total_qty as $qty) {
+                            $html .= '<td style="text-align:right;font-weight:bold;">' . $this->format_number($qty) . '</td>';
+                        }
+                        foreach ($total_amount as $amt) {
+                            $html .= '<td style="text-align:right;font-weight:bold;">Rp.' . $this->format_number($amt) . '</td>';
+                        }
+                        $html .= '</tr>';
+                    }
 
-            if ($current_customer !== $data['customer_name']) {
-                if ($current_customer !== '') {
-                    $html .= "<tr style='background-color:#FFFF00;'>
-                                <td style='text-align:center; font-weight:bold;' colspan='4'>Total</td>
-                                <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_1)}</td>
-                                <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_2)}</td>
-                                <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_3)}</td>
-                                <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($total_amount_1)}</td>
-                                <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($total_amount_2)}</td>
-                                <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($total_amount_3)}</td>
-                              </tr>";
+                    // Reset untuk customer berikutnya
+                    $current_customer = $data['customer_name'];
+                    $total_qty = array_fill(0, count($columns), 0);
+                    $total_amount = array_fill(0, count($columns), 0);
                 }
-                // Reset for the new group
-                $current_customer = $data['customer_name'];
-                $total_qty_1 = 0;
-                $total_qty_2 = 0;
-                $total_qty_3 = 0;
-                $total_amount_1 = 0;
-                $total_amount_2 = 0;
-                $total_amount_3 = 0;
+
+                $html .= '<tr>';
+                $html .= '<td>' . $no++ . '</td>';
+                $html .= '<td>' . $data['customer_name'] . '</td>';
+                $html .= '<td>' . $data['item_fg_number'] . '</td>';
+                $html .= '<td>' . $data['item_fg_name'] . '</td>';
+
+                // Cetak forecast tiap bulan (qty)
+                $qty_month_1 = $data['qty_month_1'] ?? 0;
+                foreach ($columns as $i => $month) {
+                    $qty = $data['qty_month_' . ($i + 1)] ?? 0;
+
+                    $backgroundColor = 'transparent';
+                    if ($i > 0 && $qty < $qty_month_1) {
+                        $backgroundColor = '#F4B084';
+                    }
+
+                    $html .= '<td style="text-align:right;background-color:' . $backgroundColor . ';">' . $this->format_number($qty) . '</td>';
+
+                    $total_qty[$i] += $qty;
+                    $grand_total_qty[$i] += $qty;
+                }
+
+                // Cetak forecast tiap bulan (amount)
+                foreach ($columns as $i => $month) {
+                    $amount = $data['amount_month_' . ($i + 1)] ?? 0;
+                    $html .= '<td style="text-align:right;">Rp.' . $this->format_number($amount) . '</td>';
+                    $total_amount[$i] += $amount;
+                    $grand_total_amount[$i] += $amount;
+                }
+
+                $html .= '</tr>';
             }
 
-            $backgroundColor2 = $data['bg_month_2'] == 0 ? '#F4B084' : 'transparent';
-            $backgroundColor3 = $data['bg_month_3'] == 0 ? '#F4B084' : 'transparent';
+            // Cetak subtotal customer terakhir
+            if ($current_customer !== '') {
+                $html .= '<tr style="background-color:#FFFF00;"><td colspan="4" style="text-align:center;font-weight:bold;">Total</td>';
+                foreach ($total_qty as $qty) {
+                    $html .= '<td style="text-align:right;font-weight:bold;min-width: 62px;">' . $this->format_number($qty) . '</td>';
+                }
+                foreach ($total_amount as $amt) {
+                    $html .= '<td style="text-align:right;font-weight:bold;min-width: 62px;">Rp.' . $this->format_number($amt) . '</td>';
+                }
+                $html .= '</tr>';
+            }
 
-            $html .= '<tr>
-                        <td>' . $no . '</td>
-                        <td>' . $data['customer_name'] . '</td>
-                        <td>' . $data['item_fg_number'] . '</td>
-                        <td>' . $data['item_fg_name'] . '</td>
-                        <td style="text-align:right;">' . $this->format_number($data['qty_month_1']) . '</td>
-                        <td style="text-align:right;background-color:' . $backgroundColor2 . ';">' . $this->format_number($data['qty_month_2']) . '</td>
-                        <td style="text-align:right;background-color:' . $backgroundColor3 . ';">' . $this->format_number($data['qty_month_3']) . '</td>
-                        <td style="text-align:right;">Rp.' . $this->format_number($data['amount_month_1']) . '</td>
-                        <td style="text-align:right;">Rp.' . $this->format_number($data['amount_month_2']) . '</td>
-                        <td style="text-align:right;">Rp.' . $this->format_number($data['amount_month_3']) . '</td>
-                        </tr>';
-            $no++;
-            $total_qty_1 += $data['qty_month_1'];
-            $total_qty_2 += $data['qty_month_2'];
-            $total_qty_3 += $data['qty_month_3'];
-            $total_amount_1 += $data['amount_month_1'];
-            $total_amount_2 += $data['amount_month_2'];
-            $total_amount_3 += $data['amount_month_3'];
+            // Grand total
+            $html .= '<tr style="background-color:#C6EFCE;"><td colspan="4" style="text-align:center;font-weight:bold;">Grand Total</td>';
+            foreach ($grand_total_qty as $qty) {
+                $html .= '<td style="text-align:right;font-weight:bold;padding-left: 8px;">' . $this->format_number($qty) . '</td>';
+            }
+            foreach ($grand_total_amount as $amt) {
+                $html .= '<td style="text-align:right;font-weight:bold;padding-left: 8px;">Rp.' . $this->format_number($amt) . '</td>';
+            }
+            $html .= '</tr>';
 
-            $grand_total_qty_1 += $data['qty_month_1'];
-            $grand_total_qty_2 += $data['qty_month_2'];
-            $grand_total_qty_3 += $data['qty_month_3'];
-            $grand_total_amount_1 += $data['amount_month_1'];
-            $grand_total_amount_2 += $data['amount_month_2'];
-            $grand_total_amount_3 += $data['amount_month_3'];
+            // Akhiri tabel dan dokumen
+            $html .= '</table></div></body></html>';
+            echo $html;
         }
-        if ($current_customer !== '') {
-            $html .= "<tr style='background-color:#FFFF00;'>
-                        <td style='text-align:center; font-weight:bold;' colspan='4'>Total</td>
-                        <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_1)}</td>
-                        <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_2)}</td>
-                        <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_3)}</td>
-                        <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($total_amount_1)}</td>
-                        <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($total_amount_2)}</td>
-                        <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($total_amount_3)}</td>
-                        </tr>";
-        }
-           
-        $html .= "<tr style='background-color:#C6EFCE;'>
-                    <td style='text-align:center; font-weight:bold;' colspan='4'>Grand Total</td>
-                    <td style='text-align:right; font-weight:bold;'>{$this->format_number($grand_total_qty_1)}</td>
-                    <td style='text-align:right; font-weight:bold;'>{$this->format_number($grand_total_qty_2)}</td>
-                    <td style='text-align:right; font-weight:bold;'>{$this->format_number($grand_total_qty_3)}</td>
-                    <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($grand_total_amount_1)}</td>
-                    <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($grand_total_amount_2)}</td>
-                    <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($grand_total_amount_3)}</td>
-                </tr>";
-
-        $html .= '</table></body></html>';
-        echo $html;
-    }
 }
