@@ -116,7 +116,7 @@ class Summary_forecast_vs_sales extends CI_Controller
         AND f.p_month LIKE '%$filter_month' 
         AND f.p_year LIKE '%$filter_year'
 
-        ORDER BY a.id";
+        ORDER BY b.name ASC, a.number ASC";
 
         $records = $this->crud->query($query_main);
 

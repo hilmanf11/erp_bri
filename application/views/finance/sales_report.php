@@ -15,7 +15,7 @@
     #p {
       display: flex;
       flex-direction: column;
-      height: 90vh;
+      height: 87vh;
       overflow: hidden;
     }
     #p #printout {

@@ -213,7 +213,10 @@ class Forecasts extends CI_Controller
             $this->db->group_by('a.p_month');
             $this->db->group_by('a.p_year');
             $this->db->group_by('a.revision');
-            $this->db->order_by('a.created_date', 'DESC');
+            // $this->db->order_by('a.created_date', 'DESC');
+            $this->db->order_by('a.revision', 'DESC');
+            $this->db->order_by('a.issued_date', 'ASC');
+            $this->db->order_by('b.name', 'ASC');
 
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
