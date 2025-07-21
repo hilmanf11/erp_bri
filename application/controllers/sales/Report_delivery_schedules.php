@@ -122,7 +122,7 @@ class Report_delivery_schedules extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=report_outstanding_so_$format.xls");
+            header("Content-Disposition: attachment; filename=report_delivery_schedule$format.xls");
         }
 
         $filter_type  = base64_decode($this->input->get('filter_type'));
@@ -231,6 +231,9 @@ class Report_delivery_schedules extends CI_Controller
             $this->db->group_by('a.item_fg_id');
             $this->db->group_by('a.sales_order_no');
 
+            // $this->db->order_by('a.trans_date', 'ASC');
+            $this->db->order_by('b.name', 'ASC');
+
             // $this->db->order_by('a.sales_order_no', 'ASC');
 
             $records = $this->db->get()->result_array();
@@ -306,10 +309,22 @@ class Report_delivery_schedules extends CI_Controller
                 $filter_so_date_to = date('Y-m-t', strtotime($dates['max_date']));                
             }
 
-            $this->db->select('a.sales_order_no, a.trans_date, a.qty, a.customer_id, b.number as customer_number, b.name as customer_name, c.customer_order_no, d.id as item_fg_id, d.name as item_fg_name, d.number as item_fg_number, d.uom as item_fg_uom');
+            $this->db->select('
+                a.sales_order_no, 
+                a.trans_date, 
+                a.qty, 
+                a.customer_id, 
+                b.number as customer_number, 
+                b.name as customer_name, 
+                c.customer_order_no, 
+                d.id as item_fg_id, 
+                d.name as item_fg_name, 
+                d.number as item_fg_number, 
+                d.uom as item_fg_uom
+            ');
             $this->db->from('sales_order_deliveries a');
             $this->db->join('customers b', 'a.customer_id = b.id');
-            $this->db->join('sales_orders c', 'a.customer_id = c.customer_id and a.sales_order_no = c.sales_order_no');
+            $this->db->join('sales_orders c', 'a.customer_id = c.customer_id and a.sales_order_no = c.sales_order_no and a.customer_order_no = c.customer_order_no');
             $this->db->join('item_fg d', 'a.item_fg_id = d.id');
 
             if($filter_type != "WITHOUT_SCHEDULE") {
@@ -328,8 +343,11 @@ class Report_delivery_schedules extends CI_Controller
                 $this->db->where('c.customer_order_no', $filter_customer_order_no);
             }
             //$this->db->like('a.sales_order_no', $filter_sales_order_no);
-           $this->db->group_by('a.item_fg_id');
-            $this->db->order_by('a.trans_date', 'ASC');
+            //    $this->db->group_by('a.item_fg_id');
+            $this->db->group_by('a.customer_id, a.item_fg_id');
+            // $this->db->order_by('a.trans_date', 'ASC');
+            $this->db->order_by('b.name', 'ASC');
+            // $this->db->order_by('d.name', 'ASC');
             $records = $this->db->get()->result_array();
 
             $p_date_start = date("Y-m-d", strtotime($filter_so_date_from));
@@ -347,6 +365,7 @@ class Report_delivery_schedules extends CI_Controller
             $html .= '<table id="customers" border="1">
                 <tr>
                     <th rowspan="3" width="20">No</th>
+                    <th rowspan="3">Customer</th>
                     <th rowspan="3">Product ID</th>
                     <th rowspan="3">Product No</th>
                     <th rowspan="3">Product Name</th>
@@ -354,36 +373,23 @@ class Report_delivery_schedules extends CI_Controller
                     <th rowspan="3">Desc</th>
                 </tr><tr>';
 
-            // Convert strings to DateTime objects
             $start = new DateTime($filter_so_date_from);
             $end = new DateTime($filter_so_date_to);
 
-            // Array to store the results
             $month_days = [];
 
-            // Loop through each month between start and end date
             while ($start <= $end) {
-                // Get the year and month
                 $month = $start->format('M Y'); // e.g., 2024-11
                 $year = $start->format('Y');   // e.g., 2024
                 $month_num = $start->format('m'); // e.g., 11 for November
 
-                // Get the last day of the current month
-                $last_day_of_month = $start->format('Y-m-t'); // 'Y-m-t' gives the last day of the month
-
-                // Create a DateTime object for the last day of the current month
+                $last_day_of_month = $start->format('Y-m-t');
                 $last_day = new DateTime($last_day_of_month);
+                $days_in_month = $last_day->format('d');
 
-                // Get the total number of days in the current month
-                $days_in_month = $last_day->format('d'); // Get the 'day' part of the date, which will be the total number of days
-
-                // Store the result
                 $month_days[$month] = $days_in_month;
-
-                // Move to the first day of the next month
                 $start->modify('first day of next month');
             }
-            // Print the result
             foreach ($month_days as $month => $days) {
                 //echo "Month: $month - Total days: $days\n";
                 $html .= '<th align="center" colspan="'.$days.'">'.$month .'</th>';
@@ -407,6 +413,7 @@ class Report_delivery_schedules extends CI_Controller
                 $balance_qty=0;
                 $html .= '<tr>
                             <td rowspan="4">' . $no . '</td>
+                            <td rowspan="4">' . $data['customer_name'] . '</td>
                             <td rowspan="4">' . $data['item_fg_id'] . '</td>
                             <td rowspan="4">' . $data['item_fg_number'] . '</td>
                             <td rowspan="4">' . $data['item_fg_name'] . '</td>
@@ -417,30 +424,30 @@ class Report_delivery_schedules extends CI_Controller
                     while (strtotime($p_date_start) <= strtotime($p_date_to)) {
                         $trans_date = date("Y-m-d", strtotime($p_date_start));
 
-                $this->db->select('qty as qty_del');
-                $this->db->from('sales_order_deliveries a');
-                //$this->db->join('delivery_reports b', 'b.sales_order_no = a.sales_order_no and b.item_fg_id = a.item_fg_id and b.customer_id = a.customer_id','left');
-                $this->db->where('a.trans_date', $trans_date);
-                $this->db->where('a.customer_id', $data['customer_id']);
-                //$this->db->where('sales_order_no', $data['sales_order_no']);
-                $this->db->where('a.customer_order_no', $data['customer_order_no']);
-                $this->db->where('a.item_fg_id', $data['item_fg_id']);
-                //$this->db->where('a.customer_order_no', $data['customer_order_no']);
-                //$this->db->group_by('sales_order_no, item_fg_id, customer_id, trans_date');
-                $this->db->order_by('a.customer_id', 'ASC');
-                //$delivery = $this->db->get()->result_array();
-                $delivery = $this->db->get()->row_array(); // gets the first row only
+                        $this->db->select('SUM(qty) as qty_del');
+                        $this->db->from('sales_order_deliveries a');
+                        //$this->db->join('delivery_reports b', 'b.sales_order_no = a.sales_order_no and b.item_fg_id = a.item_fg_id and b.customer_id = a.customer_id','left');
+                        $this->db->where('a.trans_date', $trans_date);
+                        $this->db->where('a.customer_id', $data['customer_id']);
+                        //$this->db->where('sales_order_no', $data['sales_order_no']);
+                        // $this->db->where('a.customer_order_no', $data['customer_order_no']);
+                        $this->db->where('a.item_fg_id', $data['item_fg_id']);
+                        //$this->db->where('a.customer_order_no', $data['customer_order_no']);
+                        //$this->db->group_by('sales_order_no, item_fg_id, customer_id, trans_date');
+                        // $this->db->order_by('a.customer_id', 'ASC');
+                        //$delivery = $this->db->get()->result_array();
+                        $delivery = $this->db->get()->row_array(); // gets the first row only
 
-                if ($delivery) {
-                    $plan_delivery_qty = $delivery['qty_del'];
-                    if(@$plan_delivery_qty > 0){
-                        $html .='<td style="background-color: #00ff00; color:black; font-weight:bold;">'.@$plan_delivery_qty.'</td>';
-                    }else{
-                        $html.='<td>0</td>';
-                    }
-                } else {
-                    $html.='<td>0</td>';
-                }
+                        if ($delivery) {
+                            $plan_delivery_qty = $delivery['qty_del'];
+                            if(@$plan_delivery_qty > 0){
+                                $html .='<td style="background-color: #00ff00; color:black; font-weight:bold;">'.@$plan_delivery_qty.'</td>';
+                            }else{
+                                $html.='<td>0</td>';
+                            }
+                        } else {
+                            $html.='<td>0</td>';
+                        }
 
                         //$delivery = $this->crud->read('sales_order_deliveries', [], ["trans_date" => $trans_date,"item_fg_id" => $data['item_fg_id']]);
 
@@ -458,26 +465,27 @@ class Report_delivery_schedules extends CI_Controller
                     while (strtotime($p_date_start) <= strtotime($p_date_to)) {
                         $trans_date = date("Y-m-d", strtotime($p_date_start));
 
-                        $this->db->select('qty as qty_del');
+                        $this->db->select('SUM(qty) as qty_del');
                         $this->db->from('delivery_notes');
                         //$this->db->join('sales_orders a', 'd.sales_order_no = a.sales_order_no and d.item_fg_id = a.item_fg_id and d.customer_id = a.customer_id','left');
                         $this->db->where('delivery_note_date', $trans_date);
                         $this->db->where('customer_id', $data['customer_id']);
                         //$this->db->where('sales_order_no', $data['sales_order_no']);
-                        $this->db->where('customer_order_no', $data['customer_order_no']);
+                        // $this->db->where('customer_order_no', $data['customer_order_no']);
                         $this->db->where('item_fg_id', $data['item_fg_id']);
                         //$this->db->group_by('sales_order_no, item_fg_id, customer_id, delivery_report_date');
-                        $this->db->order_by('customer_id', 'ASC');
-                        //$delivery = $this->db->get()->result_array();
-                        $delivery = $this->db->get()->result_array(); // get all rows
+                        // $this->db->order_by('customer_id', 'ASC');
+                        $delivery = $this->db->get()->row_array(); // gets the first row only
+                        // $delivery = $this->db->get()->result_array(); // get all rows
 
-                        $actual_delivery_qty = 0;
-                        foreach ($delivery as $del) {
-                            $actual_delivery_qty += $del['qty_del'];
-                        }
+                        // $actual_delivery_qty = 0;
+                        // foreach ($delivery as $del) {
+                        //     $actual_delivery_qty += $del['qty_del'];
+                        // }
 
                         if ($delivery) {
                             //$balance_qty = @$actual_delivery_qty - @$plan_delivery_qty;
+                            $actual_delivery_qty = $delivery['qty_del'];
                             if(@$actual_delivery_qty > 0){
                                 $html .='<td style="background-color: yellow; color:black; font-weight:bold;">'.@$actual_delivery_qty.'</td>';
                             }else{
@@ -497,30 +505,31 @@ class Report_delivery_schedules extends CI_Controller
                     <td>Balance</td>';
                     while (strtotime($p_date_start) <= strtotime($p_date_to)) {
                         $trans_date = date("Y-m-d", strtotime($p_date_start));
-                        $this->db->select('qty as qty_del');
+                        $this->db->select('SUM(qty) as qty_del');
                         $this->db->from('delivery_notes');
                         $this->db->where('delivery_note_date', $trans_date);
                         $this->db->where('customer_id', $data['customer_id']);
-                        $this->db->where('customer_order_no', $data['customer_order_no']);
+                        // $this->db->where('customer_order_no', $data['customer_order_no']);
                         $this->db->where('item_fg_id', $data['item_fg_id']);
-                        $this->db->order_by('customer_id', 'ASC');
-                        $actual = $this->db->get()->result_array();
+                        // $this->db->order_by('customer_id', 'ASC');
+                        // $actual = $this->db->get()->result_array();
+                        $actual = $this->db->get()->row_array();
 
-                        $this->db->select('qty as qty_del');
+                        $this->db->select('SUM(qty) as qty_del');
                         $this->db->from('sales_order_deliveries a');
                         $this->db->where('a.trans_date', $trans_date);
                         $this->db->where('a.customer_id', $data['customer_id']);
-                        $this->db->where('a.customer_order_no', $data['customer_order_no']);
+                        // $this->db->where('a.customer_order_no', $data['customer_order_no']);
                         $this->db->where('a.item_fg_id', $data['item_fg_id']);
-                        $this->db->order_by('a.customer_id', 'ASC');
+                        // $this->db->order_by('a.customer_id', 'ASC');
                         $plan = $this->db->get()->row_array();
 
-                        $actual_delivery_qty = 0;
-                        foreach ($actual as $del) {
-                            $actual_delivery_qty += $del['qty_del'];
-                        }                    
+                        // $actual_delivery_qty = 0;
+                        // foreach ($actual as $del) {
+                        //     $actual_delivery_qty += $del['qty_del'];
+                        // }                    
 
-                        $valActual = !empty($actual) ? $actual_delivery_qty : 0;
+                        $valActual = !empty($actual) ? $actual['qty_del'] : 0;
                         $valPlan = !empty($plan) ? $plan['qty_del'] : 0;
 
                         $balance_qty = intval($valActual) - intval($valPlan) ;

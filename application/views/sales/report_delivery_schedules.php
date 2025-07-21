@@ -1,3 +1,31 @@
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar {
+        display: none;
+    }
+    #p {
+      display: flex;
+      flex-direction: column;
+      height: 84vh;
+      overflow: hidden !important;
+    }
+    #p #printout {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      overflow: hidden !important;
+    }
+</style>
+
 <div id="f" class="easyui-panel" style="width:99.5%; background: #F4F4F4;">
     <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;">
         <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; margin-left: 10px; border-radius:4px;">
