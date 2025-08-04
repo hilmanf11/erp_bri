@@ -155,28 +155,15 @@
                             $(e.data.target).combobox('clear').combobox('textbox').focus();
                         }
                     }],
-                });
-
-                // $('#filter_sales_order_no').combobox({
-                //     url: '<?php echo base_url('sales/report_outstanding_so/readCustomerOrder?customer_id='); ?>' + cus.id + "&filter_so_date_from=" + window.btoa(filter_so_date_from) + "&filter_so_date_to=" + window.btoa(filter_so_date_to),
-                //     valueField: 'sales_order_no',
-                //     textField: 'sales_order_no',
-                //     prompt: "Select Sales Order No",
-                //     icons: [{
-                //         iconCls: 'icon-clear',
-                //         handler: function(e) {
-                //             $(e.data.target).combobox('clear').combobox('textbox').focus();
-                //         }
-                //     }],
-                //     onSelect: function(so) {
+                    onSelect: function(cus_order_no) {
                         $('#filter_item_fg').combogrid({
-                            url: '<?php echo base_url('sales/report_outstanding_so/readItems?customer_id='); ?>' + cus.id +
+                            url: '<?php echo base_url('sales/report_outstanding_so/readItems?customer_order_no='); ?>' + cus_order_no.customer_order_no +
                                 "&filter_so_date_from=" + window.btoa(filter_so_date_from) +
                                 "&filter_so_date_to=" + window.btoa(filter_so_date_to),
-                                // "&filter_sales_order_no=" + window.btoa(so.sales_order_no),
                             panelWidth: 400,
                             idField: 'id',
                             textField: 'number',
+                            valueField: 'number',
                             mode: 'remote',
                             fitColumns: true,
                             prompt: "Select Product No",
@@ -198,37 +185,40 @@
                                 }]
                             ],
                         });
-                //     }
-                // });
+
+                    }
+                });
+                
             }
         });
 
-        $('#filter_item_fg').combogrid({
-            url: '<?= base_url("master/item_fg/reads") ?>',
-            panelWidth: 400,
-            idField: 'id',
-            textField: 'number',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Select Product No",
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-                }
-            }],
-            columns: [
-                [{
-                    field: 'number',
-                    title: 'Product No',
-                    width: 200
-                }, {
-                    field: 'name',
-                    title: 'Product Name',
-                    width: 200
-                }]
-            ],
-        });
+        // $('#filter_item_fg').combogrid({
+        //     url: '<?= base_url("master/item_fg/reads") ?>',
+        //     panelWidth: 400,
+        //     idField: 'id',
+        //     textField: 'number',
+        //     valueField: 'number',
+        //     mode: 'remote',
+        //     fitColumns: true,
+        //     prompt: "Select Product No",
+        //     icons: [{
+        //         iconCls: 'icon-clear',
+        //         handler: function(e) {
+        //             $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+        //         }
+        //     }],
+        //     columns: [
+        //         [{
+        //             field: 'number',
+        //             title: 'Product No',
+        //             width: 200
+        //         }, {
+        //             field: 'name',
+        //             title: 'Product Name',
+        //             width: 200
+        //         }]
+        //     ],
+        // });
 
         $('#filter_division').combobox({
             url: '<?= base_url('master/divisions/reads'); ?>',

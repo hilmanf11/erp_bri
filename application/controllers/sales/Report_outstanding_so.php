@@ -48,15 +48,33 @@ class Report_outstanding_so extends CI_Controller
     {
         $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));
         $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
-        // $filter_sales_order_no = base64_decode($this->input->get("filter_sales_order_no"));
-        $customer_id = $this->input->get("customer_id");
+        $customer_order_no = $this->input->get("customer_order_no");
+        // $customer_id = $this->input->get("customer_id");
 
-        $customer_orders = $this->crud->query("SELECT b.id, b.number, b.name
-            FROM sales_orders a
-            JOIN item_fg b ON a.item_fg_id = b.id
-            WHERE a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'
-            AND a.customer_id = '$customer_id' GROUP BY a.item_fg_id");
-        echo json_encode($customer_orders);
+        // $customer_orders = $this->crud->query("SELECT b.id, b.number, b.name
+        //     FROM sales_orders a
+        //     JOIN item_fg b ON a.item_fg_id = b.id
+        //     WHERE a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'
+        //     AND a.customer_order_no = '$customer_order_no' GROUP BY a.item_fg_id");
+        // echo json_encode($customer_orders);
+
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        
+        $this->db->select('b.id, b.number, b.name');
+        $this->db->from('sales_orders a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->where('a.sales_order_date >=', $filter_so_date_from);
+        $this->db->where('a.sales_order_date <=', $filter_so_date_to);
+        $this->db->where('a.customer_order_no', $customer_order_no);
+        if ($post != "") {
+            $this->db->like('b.number', $post);
+            $this->db->or_like('b.name', $post);
+        }
+        $this->db->group_by('b.number');
+        $this->db->order_by('b.number', 'asc');
+        $records = $this->db->get()->result_array();
+        
+        echo json_encode($records);
     }
 
     public function print($option = "")
@@ -170,10 +188,10 @@ class Report_outstanding_so extends CI_Controller
                 $records = array_filter($records, function ($data) use ($filter_status) {
                     $calculated_status = '';
 
-                    if (($data['qty_order'] - $data['qty_delivery']) > 0) {
-                        $calculated_status = 'OPEN';
-                    } else if ($data['qty_outstanding'] != 0 && ($data['closing_reason'] != '' || $data['type_closing'] != '')) {
+                    if ($data['qty_outstanding'] != 0 && ($data['closing_reason'] != '' || $data['type_closing'] != '')) {
                         $calculated_status = 'CLOSE';
+                    } else if (($data['qty_order'] - $data['qty_delivery']) > 0) {
+                        $calculated_status = 'OPEN';
                     } else if ($data['qty_outstanding'] < 0) {
                         $calculated_status = 'OVER';
                     } else {
@@ -187,9 +205,9 @@ class Report_outstanding_so extends CI_Controller
             $html .= '<table id="customers" border="1">
                         <tr>
                             <th width="20">No</th>
+                            <th>SO Date</th>
                             <th>Sales Order No.</th>
                             <th>Customer Order No.</th>
-                            <th>SO Date</th>
                             <th>Customer Name</th>
                             <th>Qty Order</th>
                             <th>Qty Delivery</th>
@@ -207,10 +225,10 @@ class Report_outstanding_so extends CI_Controller
                 $qty_delivery += $data['qty_delivery'];
                 $qty_outstanding += $data['qty_outstanding'];
 
-                if (($data['qty_order'] - $data['qty_delivery']) > 0) {
-                    $status = "<b style='color:green;'>OPEN</b>";
-                } else if($data['qty_outstanding'] != 0 && ($data['closing_reason'] != '' || $data['type_closing'] != '') ) {
+                if($data['qty_outstanding'] !== 0 && ($data['closing_reason'] != '' || $data['type_closing'] != '') ) {
                     $status = "<b style='color:red;'>CLOSE</b>";
+                } else if (($data['qty_order'] - $data['qty_delivery']) > 0) {
+                    $status = "<b style='color:green;'>OPEN</b>";
                 } else if ($data['qty_outstanding'] < 0) {
                     $status = "<b style='color:orange;'>OVER</b>";
                 } else {
@@ -219,9 +237,9 @@ class Report_outstanding_so extends CI_Controller
 
                 $html .= '<tr>
                             <td>' . $no . '</td>
+                            <td>' . $data['sales_order_date'] . '</td>
                             <td style="mso-number-format:\@">' . $data['sales_order_no'] . '</td>
                             <td style="mso-number-format:\@">' . $data['customer_order_no'] . '</td>
-                            <td>' . $data['sales_order_date'] . '</td>
                             <td>' . $data['customer_name'] . '</td>
                             <td style="text-align:right;">' . number_format($data['qty_order'], 0, '.', '.') . '</td>
                             <td style="text-align:right;">' . number_format($data['qty_delivery'], 0, '.', '.') . '</td>
@@ -275,10 +293,10 @@ class Report_outstanding_so extends CI_Controller
                 $records = array_filter($records, function ($data) use ($filter_status) {
                     $calculated_status = '';
 
-                    if (($data['qty'] - $data['delivery']) > 0) {
-                        $calculated_status = 'OPEN';
-                    } else if ($data['outstanding'] != 0 && ($data['closing_reason'] != '' || $data['type_closing'] != '')) {
+                    if ($data['outstanding'] != 0 && ($data['closing_reason'] != '' || $data['type_closing'] != '')) {
                         $calculated_status = 'CLOSE';
+                    } else if (($data['qty'] - $data['delivery']) > 0) {
+                        $calculated_status = 'OPEN';
                     } else if ($data['outstanding'] < 0) {
                         $calculated_status = 'OVER';
                     } else {
@@ -292,11 +310,11 @@ class Report_outstanding_so extends CI_Controller
             $html .= '<table id="customers" border="1">
                         <tr>
                             <th width="20">No</th>
+                            <th>SO Date</th>
                             <th>Product No</th>
                             <th>Product Name</th>
                             <th>Sales Order No</th>
                             <th>Customer Order No</th>
-                            <th>SO Date</th>
                             <th>Customer Name</th>
                             <th>Qty Order</th>
                             <th>Qty Delivery</th>
@@ -314,11 +332,11 @@ class Report_outstanding_so extends CI_Controller
 
                 $html .= '<tr>
                             <td>' . $no . '</td>
+                            <td>' . $data['sales_order_date'] . '</td>
                             <td style="mso-number-format:\@">' . $data['item_fg_number'] . '</td>
                             <td style="mso-number-format:\@">' . $data['item_fg_name'] . '</td>
                             <td style="mso-number-format:\@">' . $data['sales_order_no'] . '</td>
                             <td style="mso-number-format:\@">' . $data['customer_order_no'] . '</td>
-                            <td>' . $data['sales_order_date'] . '</td>
                             <td style="mso-number-format:\@">' . $data['customer_name'] . '</td>
                             <td style="text-align:right;">' . number_format($data['qty'], 0, '.', '.') . '</td>
                             <td style="text-align:right;">' . number_format($data['delivery'], 0, '.', '.') . '</td>
