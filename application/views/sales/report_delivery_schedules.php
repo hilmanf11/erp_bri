@@ -1,34 +1,7 @@
-<style>
-    html, body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        overflow-y: auto;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-    html::-webkit-scrollbar,
-    body::-webkit-scrollbar {
-        display: none;
-    }
-    #p {
-      display: flex;
-      flex-direction: column;
-      height: 84vh;
-      overflow: hidden !important;
-    }
-    #p #printout {
-      flex: 1;
-      width: 100%;
-      height: 100%;
-      border: 0;
-      overflow: hidden !important;
-    }
-</style>
+<div id="f" class="easyui-accordion" style="width:100%;">
 
-<div id="f" class="easyui-panel" style="width:99.5%; background: #F4F4F4;">
-    <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;">
-        <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; margin-left: 10px; border-radius:4px;">
+    <div title="Click this to hide the filter" data-options="selected:true" style="padding:10px; background:#F4F4F4;">
+        <fieldset style="width: 99%; border:2px solid #d0d0d0; margin-bottom: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
@@ -53,14 +26,6 @@
                     <span style="width:35%; display:inline-block;">Customer Order No</span>
                     <input style="width:60%;" id="filter_customer_order_no" class="easyui-combobox">
                 </div>
-                <!-- <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product No</span>
-                    <input style="width:60%;" id="filter_item_fg" class="easyui-combobox">
-                </div> -->
-                <!-- <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Sales Order No</span>
-                    <input style="width:60%;" id="filter_sales_order_no" class="easyui-combobox">
-                </div> -->
             </div>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
@@ -78,23 +43,46 @@
                         <option value="DETAIL">DETAIL</option>
                     </select>
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status</span>
+                    <select style="width:60%;" id="filter_status" panelHeight="auto" class="easyui-combobox">
+                        <option value="">Choose All</option>
+                        <option value="OPEN">OPEN</option>
+                        <option value="CLOSE">CLOSE</option>
+                        <option value="ON GOING">ON GOING</option>
+                    </select>
+                </div>
                 <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
                     <span style="width:35%; display:inline-block;"></span>
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                 </div>
             </div>
         </fieldset>
-    </div>
-    <div style="margin-left: 10px; margin-bottom:5px;">
+
         <?= $button ?>
     </div>
+
 </div>
 
-<div id="p" class="easyui-panel" title="Print Preview" style="width:100%;">
+<div id="p" class="easyui-panel" title="Print Preview" style="width:100%;" data-options="fit:true">
     <iframe id="printout" src="" style="width: 100%; height: 450px; border: 0;"></iframe>
 </div>
 
 <script>
+    $(function () {
+        function updatePrintoutHeight() {
+            if ($('.accordion-header-selected').length > 0) {
+                $('#printout').css('height', '450px');
+            } else {
+                $('#printout').css('height', '95%');
+            }
+        }
+
+        updatePrintoutHeight();
+        setInterval(updatePrintoutHeight, 200);
+        // console.log("Accordion detected:", $(".accordion-header-selected").length);
+    });
+    
     function filter() {
         var filter_type = $("#filter_type").combobox('getValue');
         var filter_so_date_from = $("#filter_so_date_from").datebox("getValue");
@@ -105,6 +93,7 @@
         var filter_item_fg = $("#filter_item_fg").combobox("getValue");
         var filter_item_fg_name = $("#filter_item_fg_name").textbox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
+        var filter_status = $("#filter_status").combobox("getValue");
 
         var url = "?filter_type=" + window.btoa(filter_type) + 
             "&filter_so_date_from=" + window.btoa(filter_so_date_from) +
@@ -114,7 +103,8 @@
             //"&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
             "&filter_item_fg_name=" + window.btoa(filter_item_fg_name) +
-            "&filter_display=" + window.btoa(filter_display);
+            "&filter_display=" + window.btoa(filter_display) +
+            "&filter_status=" + window.btoa(filter_status);
 
         // if(filter_type == "") {
         //     if (filter_so_date_from == "" && filter_so_date_to == "") {
@@ -162,6 +152,7 @@
         var filter_item_fg = $("#filter_item_fg").combobox("getValue");
         var filter_item_fg_name = $("#filter_item_fg_name").textbox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
+        var filter_status = $("#filter_status").combobox("getValue");
 
         var url = "?filter_type=" + window.btoa(filter_type) +
             "&filter_so_date_from=" + window.btoa(filter_so_date_from) +
@@ -171,7 +162,8 @@
            // "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
             "&filter_item_fg_name=" + window.btoa(filter_item_fg_name) +
-            "&filter_display=" + window.btoa(filter_display);
+            "&filter_display=" + window.btoa(filter_display) +
+            "&filter_status=" + window.btoa(filter_status);
 
         // if (filter_so_date_from == "" && filter_so_date_to == "") {
         //     toastr.warning("Please Select Trans Date");
@@ -313,6 +305,7 @@
             panelWidth: 400,
             idField: 'id',
             textField: 'number',
+            valueField: 'number',
             mode: 'remote',
             fitColumns: true,
             prompt: "Select Product No",
@@ -361,4 +354,5 @@
             return new Date();
         }
     }
+
 </script>
