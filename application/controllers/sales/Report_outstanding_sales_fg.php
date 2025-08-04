@@ -76,7 +76,7 @@ class Report_outstanding_sales_fg extends CI_Controller
         $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
         $filter_customer_name = base64_decode($this->input->get("filter_customer_name"));
         $filter_customer_order_no = base64_decode($this->input->get("filter_customer_order_no"));
-        $filter_sales_order_no = base64_decode($this->input->get("filter_sales_order_no"));
+        // $filter_sales_order_no = base64_decode($this->input->get("filter_sales_order_no"));
         $filter_item_fg = base64_decode($this->input->get("filter_item_fg"));
         $filter_division = base64_decode($this->input->get("filter_division"));
         $filter_display = base64_decode($this->input->get("filter_display"));
@@ -348,6 +348,7 @@ class Report_outstanding_sales_fg extends CI_Controller
                 $this->db->having('SUM(a.qty) > qty_dn');
                 $this->db->like('a.customer_id', $filter_customer_name);
                 $this->db->like('a.item_fg_id', $filter_item_fg);
+                $this->db->like('a.customer_order_no', $filter_customer_order_no);
                 // $this->db->like('a.sales_order_no', $filter_sales_order_no);
                 $this->db->like('c.division', $filter_division);
                 $this->db->order_by('c.customer_order_no', 'ASC');

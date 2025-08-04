@@ -183,55 +183,18 @@
                             $(e.data.target).combobox('clear').combobox('textbox').focus();
                         }
                     }],
+                    columns: [
+                        [{
+                            field: 'number',
+                            title: 'Product No',
+                            width: 200
+                        }, {
+                            field: 'name',
+                            title: 'Product Name',
+                            width: 200
+                        }]
+                    ],
                 });
-
-                // $('#filter_sales_order_no').combobox({
-                //     url: '<?php echo base_url('sales/report_outstanding_sales_fg/readCustomerOrder?customer_id='); ?>' + cus.id + "&filter_so_date_from=" + window.btoa(filter_so_date_from) + "&filter_so_date_to=" + window.btoa(filter_so_date_to),
-                //     valueField: 'sales_order_no',
-                //     textField: 'sales_order_no',
-                //     prompt: "Select Sales Order No",
-                //     icons: [{
-                //         iconCls: 'icon-clear',
-                //         handler: function(e) {
-                //             $(e.data.target).combobox('clear').combobox('textbox').focus();
-                //         }
-                //     }],
-                //     onSelect: function(so) {
-                        $('#filter_item_fg').combogrid({
-                            url: '<?php echo base_url('sales/report_outstanding_sales_fg/readItems?customer_id='); ?>' + cus.id +
-                                "&filter_so_date_from=" + window.btoa(filter_so_date_from) +
-                                "&filter_so_date_to=" + window.btoa(filter_so_date_to),
-                                // "&filter_sales_order_no=" + window.btoa(so.sales_order_no),
-                            panelWidth: 400,
-                            idField: 'id',
-                            textField: 'number',
-                            mode: 'remote',
-                            fitColumns: true,
-                            prompt: "Select Product No",
-                            icons: [{
-                                iconCls: 'icon-clear',
-                                handler: function(e) {
-                                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-                                }
-                            }],
-                            columns: [
-                                [{
-                                    field: 'number',
-                                    title: 'Product No',
-                                    width: 200
-                                }, {
-                                    field: 'name',
-                                    title: 'Product Name',
-                                    width: 200
-                                }]
-                            ],
-                            onSelect: function(value, row) {
-                                $('#filter_division').textbox('setValue', row.name);
-                            }
-
-                        });
-                //     }
-                // });
             }
         });
 
