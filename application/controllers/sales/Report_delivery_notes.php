@@ -913,7 +913,7 @@ class Report_delivery_notes extends CI_Controller
 
 
         $html .= '<tr>
-            <td colspan="8" style="text-align:right;"><b>GRAND TOTAL</b></td>
+            <td colspan="9" style="text-align:right;"><b>GRAND TOTAL</b></td>
             <td style="text-align:right;">' . number_format($totalQtyDel, 0, '.', '.') . '</td>
             <td></td>
             <td></td>

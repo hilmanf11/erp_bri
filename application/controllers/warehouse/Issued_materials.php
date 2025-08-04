@@ -538,6 +538,8 @@ class Issued_materials extends CI_Controller
                 $this->create_wip_balance($request_no, $item_rm_id, $resultSup->qty_act, $resultSI->mpq);
                 
                 $this->crud->update('wip_balances',["request_no" => $request_no,"item_rm_id" => $eq_item_rm_id],['balance'=> 0]);
+
+                $this->crud->update('purchase_order_labels', ["label_no" => $post['label_no'], "status" => 1], ['status_out'=> 1]);
             }
 
             $post = [
@@ -623,6 +625,8 @@ class Issued_materials extends CI_Controller
                             }
                         }
 
+                        $this->crud->update('purchase_order_labels', ["label_no" => $post['label_no'], "status" => 1], ['status_out'=> 1]);
+
                         // Valid -> simpan
                         $this->crud->create('issued_material_details', $post);
                         $this->update_wip_balances($request_no, $item_rm_id, $post['qty'], $eq_item_rm_id);
@@ -645,9 +649,11 @@ class Issued_materials extends CI_Controller
                         WHERE a.item_rm_id = '$purchase_order_receipts->item_rm_id' and a.receipt_date < '$purchase_order_receipts->receipt_date' AND c.status = 0 AND d.label_no is null
                         ORDER BY receipt_date ASC");
 
-                        if (count($checkItems) <= 0) {
+                        if (count($checkItems) <= 0) {                            
                             $send = $this->crud->create('issued_material_details', $post);
                             $update = $this->crud->update('barcode_divides', ["label_divided" => $post['label_no']], ["status" => 1]);
+
+                            $this->crud->update('purchase_order_labels', ["label_no" => $post['label_no'], "status" => 1], ['status_out'=> 1]);
                             // Update wip_balances table
                             $this->update_wip_balances($request_no, $item_rm_id, $post['qty'], $eq_item_rm_id);
                             echo $send;
@@ -678,7 +684,10 @@ class Issued_materials extends CI_Controller
                                 'label_no' => $label_no,
                                 'qty' => $post['qty']
                             ];
+                            
                             $this->crud->create('issued_material_details', $issued_detail_data);
+                            
+                            $this->crud->update('purchase_order_labels', ["label_no" => $post['label_no'], "status" => 1], ['status_out'=> 1]);
 
                             // Update status di new_barcode
                             $this->crud->update('new_barcode', ["label_no" => $post['label_no']], ["status" => 1]);
