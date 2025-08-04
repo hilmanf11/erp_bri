@@ -216,7 +216,7 @@
                 <div style="width: 100%; float: left;">
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">SUB TOTAL</b>
-                        <input style="width:60%; text-align:right;" id="total_sub" name="total_sub" readonly class="easyui-numberbox" data-options="groupSeparator:','">
+                        <input style="width:60%; text-align:right;" id="total_sub" name="total_sub" readonly class="easyui-numberbox" data-options="groupSeparator:',', precision:2">
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">TAX (11%)</b>
@@ -229,7 +229,7 @@
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">GRAND TOTAL</b>
-                        <input style="width:60%; text-align:right;" id="total_grand" name="total_grand" readonly required class="easyui-numberbox" data-options="groupSeparator:','">
+                        <input style="width:60%; text-align:right;" id="total_grand" name="total_grand" readonly required class="easyui-numberbox" data-options="groupSeparator:',', precision:2">
                     </div>
                 </div>
             </fieldset>
@@ -599,7 +599,7 @@
                                 var delivery = $(ed4.target).numberbox('getValue');
                                 var price = $(ed2.target).numberbox('getValue');
 
-                                var total = (parseInt(qty) * parseInt(price));
+                                var total = (parseInt(qty) * parseFloat(price));
                                 var outstanding = (parseInt(qty) - parseInt(delivery));
 
                                 $(ed3.target).numberbox('setValue', outstanding);
