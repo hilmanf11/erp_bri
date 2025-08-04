@@ -111,7 +111,7 @@ class Customer_items extends CI_Controller
             if (!empty($filter_item_fg_id)) {
                 $this->db->where('a.item_fg_id', $filter_item_fg_id);
             }
-            $this->db->order_by('b.id', 'ASC');
+            $this->db->order_by('a.id', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10

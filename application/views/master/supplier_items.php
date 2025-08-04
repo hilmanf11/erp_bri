@@ -129,6 +129,7 @@
 <script>
     //ADD DATA
     function add() {
+        $('#toolbar2').show();
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
         url_save = '<?= base_url('master/supplier_items/create') ?>';
@@ -427,8 +428,11 @@
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
             $("#item_rm_id").combogrid('disable');
+            setTimeout(() => {
+                $('#toolbar2').hide();
+            }, 100);
 
-            addTable('<?= base_url('master/supplier_items/datatableUpdates?supplier_id=') ?>' + window.btoa(row.supplier_id));
+            addTable('<?= base_url('master/supplier_items/datatableUpdates?supplier_id=') ?>' + window.btoa(row.supplier_id) +'&part_no='+ window.btoa(row.item_rm_number));
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }

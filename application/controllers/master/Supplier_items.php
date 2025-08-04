@@ -132,7 +132,7 @@ class Supplier_items extends CI_Controller
             if (!empty($filter_item_rm_id)) {
                 $this->db->where('a.item_rm_id', $filter_item_rm_id);
             }
-            $this->db->order_by('b.id', 'ASC');
+            $this->db->order_by('a.id', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -179,6 +179,7 @@ class Supplier_items extends CI_Controller
     {
         if ($this->input->get()) {
             $supplier_id = base64_decode($this->input->get('supplier_id'));
+            $part_no = base64_decode($this->input->get('part_no'));
 
             $this->db->select('a.*, b.number as item_rm_number, b.name as item_rm_name, b.item_family_id as item_rm_family, c.currency as supplier_currency, d.name as item_family_name');
             $this->db->from('supplier_items a');
@@ -186,6 +187,7 @@ class Supplier_items extends CI_Controller
             $this->db->join('suppliers c', 'a.supplier_id = c.id');
             $this->db->join('item_familys d', 'b.item_family_id = d.id');
             $this->db->where('a.supplier_id', $supplier_id);
+            $this->db->where('b.number', $part_no);
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
 

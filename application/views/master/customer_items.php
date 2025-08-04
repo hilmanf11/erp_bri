@@ -158,6 +158,7 @@
 <script>
     //ADD DATA
     function add() {
+        $('#toolbar2').show();
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
         url_save = '<?= base_url('master/customer_items/create') ?>';
@@ -727,7 +728,9 @@
         if (rows.length > 0) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', rows[0]); // Memuat data row pertama ke form
-
+            setTimeout(() => {
+                $('#toolbar2').hide();
+            }, 100);
             rows.forEach(function(row) {
                 // Dapatkan nilai customer_id dan item_fg_id dari setiap row yang dipilih
                 var customer_id = window.btoa(row.customer_id);
