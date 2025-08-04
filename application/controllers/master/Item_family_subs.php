@@ -31,25 +31,16 @@ class Item_family_subs extends CI_Controller
     public function reads($item_family_id)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_family_subs', ["number" => $post], ["item_family_id" => $item_family_id]);
+        $send = $this->crud->reads('item_family_subs', ["number" => $post],["item_family_id" => $item_family_id]);
         echo json_encode($send);
     }
-
-    public function readsByNumber($item_family_number)
-    {
-        $familys = $this->crud->read('item_familys', [], ["number" => $item_family_number]);
-        $send = $this->crud->reads('item_family_subs', [], ["item_family_id" => $familys->id]);
-        // print_r($this->db->last_query());
-        echo json_encode($send);
-    }
-
     public function reads_number()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $send = $this->crud->query("SELECT number FROM item_family_subs GROUP BY number ASC");
         echo json_encode($send);
     }
-
+    
     //GET DATATABLES
     public function datatables()
     {
@@ -70,16 +61,17 @@ class Item_family_subs extends CI_Controller
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if ($filter->field == "item_category_name") {
+                    if($filter->field == "item_category_name"){
                         $this->db->like("b.name", $filter->value);
-                    } elseif ($filter->field == "item_family_name") {
+                    }elseif($filter->field == "item_family_name"){
                         $this->db->like("c.name", $filter->value);
-                    } else {
-                        $this->db->like("a." . $filter->field, $filter->value);
+                    }else{
+                        $this->db->like("a.".$filter->field, $filter->value);
                     }
                 }
             }
-            $this->db->order_by('a.id', 'ASC');
+            $this->db->order_by('c.name', 'ASC');
+            $this->db->order_by('a.name', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -93,12 +85,11 @@ class Item_family_subs extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid()
-    {
+    public function autoid(){
         $sql = $this->db->query("SELECT max(id) as kode FROM item_family_subs");
         $row = $sql->row();
-        $kode = substr($row->kode, 2);
-        $autoid = "PS" . sprintf("%03s", $kode + 1);
+        $kode = substr($row->kode,2);
+        $autoid ="PS". sprintf("%03s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA
