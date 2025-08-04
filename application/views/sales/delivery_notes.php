@@ -79,6 +79,7 @@
                         <option value="">Choose All</option>
                         <option value="0">ON SCHEDULE</option>
                         <option value="1">DELAY</option>
+                        <option value="2">EARLY</option>
                     </select>
                 </div>
                 <div class="fitem">

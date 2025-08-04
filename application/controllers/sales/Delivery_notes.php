@@ -266,11 +266,14 @@ class Delivery_notes extends CI_Controller
 
             $delivery_notes = $this->crud->read("delivery_notes", [], ["delivery_order_no" => $post['delivery_order_no'], "item_fg_id" => $post['item_fg_id'], "sales_order_no" => $post['sales_order_no']]);
 
+            $user = $this->crud->read("users", [], ["username" => $this->session->username]);
+            $table_approval = (preg_match('/\bExtruder\b/i', $user->position))?'delivery_notes_2':'delivery_notes';
+
             if (@$delivery_notes->delivery_order_no != "") {
                 $send = $this->crud->update('delivery_notes', ["delivery_order_no" => $post['delivery_order_no'], "item_fg_id" => $post['item_fg_id'], "sales_order_no" => $post['sales_order_no']], $post);
             } else {
-                $send = $this->crud->create('delivery_notes', $post);
-
+                // $send = $this->crud->create('delivery_notes', $post);
+                $send = $this->crud->createPO('delivery_notes',$table_approval, $post);
                 //Ubah Status Sales Order Delivery
                 // $this->crud->update("sales_order_deliveries", ["item_fg_id" => $post['item_fg_id'], "sales_order_no" => $post['sales_order_no'], "trans_date" => $post['delivery_date']], ["status" => 1]);
             }
@@ -297,7 +300,23 @@ class Delivery_notes extends CI_Controller
 
         // Tambahkan query untuk mendapatkan data delivery_notes dan approval settings
         $delivery_notes = $this->crud->read('delivery_notes', [], ["delivery_order_no" => $delivery_order_no]);
-        $approval_settings = $this->crud->read('approvals', [], ["table_name" => "delivery_notes"]);
+        $user = $this->crud->read('users', [], ["username" => $delivery_notes->created_by]);
+        $table_approval = (preg_match('/\bExtruder\b/i', $user->position)) ? 'delivery_notes_2' : 'delivery_notes';
+        // $approval_settings = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
+        $approval=$this->db->query("SELECT *, CASE 
+            WHEN user_approval_1 = '$delivery_notes->approved_by' THEN '1'
+            WHEN user_approval_2 = '$delivery_notes->approved_by' THEN '2'
+            ELSE '0' END AS approved_by FROM approvals WHERE table_name = '$table_approval'");
+            $sqlApproval = $approval->row();
+            $user1=null;
+            $user2=null;
+        if(intval($sqlApproval->approved_by)==2){
+            $user1=$sqlApproval->user_approval_1;
+            $user2=$sqlApproval->user_approval_2;
+        }
+        if(intval($sqlApproval->approved_by)==1){
+            $user1=$sqlApproval->user_approval_1;
+        }
         // Inisialisasi variabel approval
         $approval_1 = null;
         $approval_2 = null;
@@ -307,16 +326,16 @@ class Delivery_notes extends CI_Controller
         $once = ($date_only >= '2025-05-15')? true : false;
         
         if($once==false){
+            if($user2!=null){
             // Cek status approval kedua
-            if ($delivery_notes->approved >= 2) {
-                $approval_2 = $this->crud->read('users', [], ["username" => $delivery_notes->approved_by]);
-               // $approval_2 = $this->crud->read('users', [], ["username" => $approval_settings->user_approval_2]);
+                $approval_2 = $this->crud->read('users', [], ["username" => $user2]);
             }
         }
+        if($user1!=null){
             // Cek status approval pertama
-            if ($delivery_notes->approved >= 1) {
-                $approval_1 = $this->crud->read('users', [], ["username" => $approval_settings->user_approval_1]);
-            }
+            $approval_1 = $this->crud->read('users', [], ["username" => $user1]);
+        }
+
 
         $config = $this->db->get('config')->row();
         $config_iso = $this->db->get('config_iso')->row();
@@ -464,7 +483,8 @@ class Delivery_notes extends CI_Controller
                             'a.delivery_order_no = f.delivery_order_no AND a.item_fg_id = f.item_fg_id', 
                             'left');
             $this->db->join('users h', 'e.created_by = h.username');
-            $this->db->join('customer_address i', 'd.customer_address_id = i.id');
+            $this->db->join('customer_address i', 'c.id = i.customer_id');
+            // $this->db->join('customer_address i', 'd.customer_address_id = i.id');
             $this->db->where('a.delivery_order_no', $delivery_order_no);
             $this->db->order_by('b.number', 'asc');
             // $this->db->limit($rows_per_page, ($i * $rows_per_page));
@@ -580,7 +600,7 @@ class Delivery_notes extends CI_Controller
         $html .= '
                                             <td>';
                                             // First Approval
-                                            if ($delivery_notes->approved >= 1 && $approval_settings->user_approval_1) {
+                                            if($user1!=null){
                                                 $html .= '<img src="' . base_url('assets/image/qrcode/' . $approval_1->name . '.png') . '" style="width:35pt"/>';
                                             }
         $html .= '</td>
@@ -595,11 +615,8 @@ class Delivery_notes extends CI_Controller
         $html .= '
                                             <td style="text-align:center;">';
                                             // Tampilkan nama First Approval
-                                            if ($approval_settings->user_approval_1) {
-                                                $html .= $approval_1->name;
-                                            } else if ($approval_settings->user_approval_1) {
-                                                $first_approval_user = $this->crud->read('users', [], ["username" => $approval_settings->user_approval_1]);
-                                                $html .= $first_approval_user ? $first_approval_user->name : '';
+                                            if($user1!=null){
+                                                 $html .= $approval_1->name;
                                             }
         $html .= '</td>
                                             <td style="text-align:center;">' . @$records[0]['created_by_name'] . '</td>
@@ -635,13 +652,13 @@ class Delivery_notes extends CI_Controller
                                         <td style="border:none"></td>
                                         <td></td><td>';
                                             // Second Approval
-                                            if ($delivery_notes->approved >= 2) {
+                                            if($user2!=null){
                                                 $html .= '<img src="' . base_url('assets/image/qrcode/' . $approval_2->name . '.png') . '" style="width:35pt"/>';
                                             }
         $html .= '</td>
                                             <td>';
                                             // First Approval
-                                            if ($delivery_notes->approved >= 1 && $approval_settings->user_approval_1) {
+                                            if($user1!=null){
                                                 $html .= '<img src="' . base_url('assets/image/qrcode/' . $approval_1->name . '.png') . '" style="width:35pt"/>';
                                             }
         $html .= '</td>
@@ -655,20 +672,14 @@ class Delivery_notes extends CI_Controller
                                             <td style="text-align:center;"></td>
                                             <td style="text-align:center;">';
                                             // Tampilkan nama Second Approval
-                                            //if ($delivery_notes->approved >= 2 && $delivery_notes->approved_to == "") {
+                                            if($user2!=null){
                                                 $html .= $approval_2->name;
-                                           // } else if ($approval_settings->user_approval_2) {
-                                          //      $second_approval_user = $this->crud->read('users', [], ["username" => $delivery_notes->approved_by]);
-                                           //     $html .= $second_approval_user ? $second_approval_user->name : '';
-                                           // }
+                                            }
         $html .= '</td>
                                             <td style="text-align:center;">';
                                             // Tampilkan nama First Approval
-                                            if ($delivery_notes->user_approval_1) {
+                                            if($user1!=null){
                                                 $html .= $approval_1->name;
-                                            } else if ($approval_settings->user_approval_1) {
-                                                $first_approval_user = $this->crud->read('users', [], ["username" => $approval_settings->user_approval_1]);
-                                                $html .= $first_approval_user ? $first_approval_user->name : '';
                                             }
         $html .= '</td>
                                             <td style="text-align:center;">' . @$records[0]['created_by_name'] . '</td>
@@ -837,6 +848,7 @@ class Delivery_notes extends CI_Controller
                         <th style="width: 250px;">Customer Name</th>
                         <th style="width: 120px;">Delivery Note No</th>
                         <th style="width: 120px;">Customer Order No</th>
+                        <th style="width: 100px;">Product ID</th>
                         <th style="width: 100px;">Product No</th>
                         <th style="width: 150px;">Product Name</th>
                         <th style="width: 80px;">Qty Delivery</th>
@@ -847,10 +859,11 @@ class Delivery_notes extends CI_Controller
         foreach ($records as $row) {
             $html .= '<tr>
                         <td class="text-center">'.$no.'</td>
-                        <td class="no-wrap">'.date('d-m-Y', strtotime($row['actual_delivery_order_date'])).'</td>
+                        <td class="no-wrap">'.date('Y-m-d', strtotime($row['actual_delivery_order_date'])).'</td>
                         <td class="no-wrap">'.$row['customer_name'].'</td>
                         <td class="no-wrap">'.$row['delivery_note_no'].'</td>
-                        <td class="no-wrap">'.$row['customer_order_no'].'</td>
+                        <td class="no-wrap" style="mso-number-format:&quot;@&quot;">'.$row['customer_order_no'].'</td>
+                        <td class="no-wrap">'.$row['item_fg_id'].'</td>
                         <td class="no-wrap" style="mso-number-format:&quot;@&quot;">'.$row['item_fg_number'].'</td>
                         <td class="no-wrap">'.$row['item_fg_name'].'</td>
                         <td style="text-align: right;">'.number_format($row['qty'],0,".",".").'</td>
