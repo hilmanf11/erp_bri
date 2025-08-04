@@ -49,12 +49,12 @@
                     <span style="width:35%; display:inline-block;">Delivery Note No</span>
                     <input style="width:60%;" id="filter_delivery_note_no" class="easyui-combobox">
                 </div>
-            </div>
-            <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Customer Order No</span>
                     <input style="width:60%;" id="filter_customer_order_no" class="easyui-combobox">
                 </div>
+            </div>
+            <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Family</span>
                     <input style="width:60%;" id="filter_product_family" class="easyui-combogrid">
@@ -72,14 +72,14 @@
                         <option value="2">EARLY</option>
                     </select>
                 </div>
-                <!-- <div class="fitem">
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status Invoice</span>
                     <select style="width:60%;" id="filter_status" panelHeight="auto" class="easyui-combobox">
                         <option value="">Choose All</option>
                         <option value="0">OPEN</option>
                         <option value="1">CLOSE</option>
                     </select>
-                </div> -->
+                </div>
                 <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
                     <span style="width:35%; display:inline-block;"></span>
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
@@ -105,7 +105,7 @@
         var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
         var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
         var filter_status_delivery = $("#filter_status_delivery").combobox('getValue');
-        // var filter_status = $("#filter_status").combobox('getValue');
+        var filter_status = $("#filter_status").combobox('getValue');
         var filter_product_family = $("#filter_product_family").combogrid('getValue');
         var filter_plant = $("#filter_plant").combobox('getValue');
 
@@ -116,7 +116,7 @@
             "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
             "&filter_status_delivery=" + window.btoa(filter_status_delivery) +
-            // "&filter_status=" + window.btoa(filter_status) +
+            "&filter_status=" + window.btoa(filter_status) +
             "&filter_product_family=" + window.btoa(filter_product_family) +
             "&filter_plant=" + window.btoa(filter_plant);
 
@@ -138,7 +138,7 @@
         var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
         var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
         var filter_status_delivery = $("#filter_status_delivery").combobox('getValue');
-        // var filter_status = $("#filter_status").combobox('getValue');
+        var filter_status = $("#filter_status").combobox('getValue');
         var filter_product_family = $("#filter_product_family").combogrid('getValue');
         var filter_plant = $("#filter_plant").combobox('getValue');
 
@@ -150,7 +150,7 @@
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
             "&filter_status_delivery=" + window.btoa(filter_status_delivery) +
             "&filter_product_family=" + window.btoa(filter_product_family) +
-            // "&filter_status=" + window.btoa(filter_status) +
+            "&filter_status=" + window.btoa(filter_status) +
             "&filter_plant=" + window.btoa(filter_plant);
 
         window.location.assign('<?= base_url('sales/report_delivery_notes/print/excel') ?>' + url);
