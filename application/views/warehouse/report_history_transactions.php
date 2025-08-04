@@ -1,3 +1,31 @@
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar {
+        display: none;
+    }
+    #p {
+      display: flex;
+      flex-direction: column;
+      height: 75.6vh;
+      overflow: hidden !important;
+    }
+    #p #printout {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      overflow: hidden !important;
+    }
+</style>
+
 <table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar"></table>
 <div id="toolbar" style="padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
@@ -21,10 +49,6 @@
             <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No</span>
                     <input style="width:60%;" id="filter_items" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;"></span>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
             </div>
         </div>
         <div style="width: 49%; float:left;">
@@ -60,13 +84,22 @@
                     <option value="NONZERO">>0</option>
                 </select>
             </div>
+            <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
+                <span style="width:35%; display:inline-block;"></span>
+
+                <a href="javascript:;" class="easyui-linkbutton" onclick="filter_detail_transaction()"><i class="fa fa-search"></i> Detail Transaction</a>
+
+                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+            </div>
         </div>
 
     </fieldset>
     <?= $button ?>
+
+    <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="excel_detail_transaction()"><i class="fa fa-file"></i> Export Detail Transaction</a>
 </div>
 
-<div class="easyui-panel" title="Print Preview" style="width:100%;padding:10px;">
+<div id="p" class="easyui-panel" title="Print Preview" style="width:100%;padding:10px;">
     <iframe id="printout" src="" style="width: 100%; height:500px; border: 0;"></iframe>
 </div>
 
@@ -102,6 +135,21 @@
         $("#printout").attr('src', '<?= base_url('warehouse/report_history_transactions/print') ?>' + url);
     }
 
+    function filter_detail_transaction() {
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_items = $("#filter_items").combogrid('getValue');
+        var filter_product_family = $("#filter_item_family").combogrid('getValue');
+        var filter_qty_in = $("#filter_qty_in").combobox('getValue');
+        var filter_qty_out = $("#filter_qty_out").combobox('getValue');
+        var filter_plant = $("#filter_plant").combobox('getValue');
+        var filter_display = $("#filter_display").combobox('getValue');
+
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_product_family=" + filter_product_family + "&filter_qty_in=" + filter_qty_in + "&filter_qty_out=" + filter_qty_out + "&filter_plant=" + filter_plant + "&filter_display=" + filter_display;
+
+        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+        $("#printout").attr('src', '<?= base_url('warehouse/report_history_transactions/detail_transaction') ?>' + url);
+    }
 
     function excel() {
         var filter_from = $("#filter_from").datebox('getValue');
@@ -126,6 +174,21 @@
         setTimeout(function () {
             $("#loadingOverlay").hide();
         }, 3000); // Sesuaikan waktu jika perlu
+    }
+
+    function excel_detail_transaction() {
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_items = $("#filter_items").combogrid('getValue');
+        var filter_product_family = $("#filter_item_family").combogrid('getValue');
+        var filter_qty_in = $("#filter_qty_in").combobox('getValue');
+        var filter_qty_out = $("#filter_qty_out").combobox('getValue');
+        var filter_plant = $("#filter_plant").combobox('getValue');
+        var filter_display = $("#filter_display").combobox('getValue');
+
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_product_family=" + filter_product_family + "&filter_qty_in=" + filter_qty_in + "&filter_qty_out=" + filter_qty_out + "&filter_plant=" + filter_plant + "&filter_display=" + filter_display;
+        
+        window.location.assign('<?= base_url('warehouse/report_history_transactions/detail_transaction/excel') ?>' + url);
     }
 
     $(function() {
