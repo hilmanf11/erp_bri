@@ -63,7 +63,7 @@ class Sales_order_deliveries extends CI_Controller
     public function readDeliveryLists() {
         if ($this->input->post()) {
             $post   = $this->input->post();
-            $this->db->select('a.item_fg_id, a.sales_order_no, a.order_type, b.number as item_number, b.name as item_name, a.qty, c.trans_date, c.qty as qty_delivery');
+            $this->db->select('a.item_fg_id, a.sales_order_no, a.order_type, b.number as item_number, b.name as item_name, a.qty, c.trans_date, c.qty as qty_delivery, c.status as status_delivery');
             $this->db->from('sales_orders a');
             $this->db->join('item_fg b','a.item_fg_id = b.id',"left");
             $this->db->join('sales_order_deliveries c','a.sales_order_no = c.sales_order_no and a.customer_order_no = c.customer_order_no and a.item_fg_id = c.item_fg_id',"left");
@@ -245,56 +245,195 @@ class Sales_order_deliveries extends CI_Controller
     //         show_error("Cannot Process your request");
     //     }
     // }
+
+    // public function create_schedulev1()
+    // {
+    //     if ($this->input->post()) {
+    //         $post   = $this->input->post();
+    //         $sales_order_no =  $post['sales_order_no'];
+    //         $item_fg_id =  $post['item_fg_id'];
+    //         $data = $post['data'];
+    //         if ($data == '[]') {
+    //             echo json_encode(array("title" => "Failed", "message" => "Data is empty", "theme" => "success"));
+    //         }else{
+    //             if (!empty($data)) {
+    //                 $decoded_data = json_decode($data);
+    //                 // Loop through each date
+    //                 $results = [];
+    //                 foreach ($decoded_data as $trans_date) {
+    //                     // Query to fetch data based on each trans_date
+    //                     $sales_order_deliveries = $this->crud->read("sales_order_deliveries",[],["sales_order_no" => $sales_order_no, "item_fg_id" => $item_fg_id,"trans_date" => $trans_date->date]);
+    //                     $sales_order_deliveries_total = $this->crud->query("SELECT SUM(qty) as total FROM sales_order_deliveries WHERE sales_order_no='$sales_order_no' and item_fg_id = '$item_fg_id' GROUP BY sales_order_no, item_fg_id");
+    //                     $total = empty($sales_order_deliveries_total[0]->total)?0:$sales_order_deliveries_total[0]->total;
+    //                     if ($trans_date->value!=="") {
+    //                         if ($post['qty_so'] >= (@$total + $trans_date->value)) {
+    //                             $data = array(
+    //                                 "customer_id" => $post['customer_id'],
+    //                                 "item_fg_id" => $item_fg_id,
+    //                                 "sales_order_no" => $sales_order_no,
+    //                                 "customer_order_no" => $post['customer_order_no'],
+    //                                 "trans_date" => $trans_date->date,
+    //                                 "qty" => $trans_date->value,
+    //                             );
+    //                             if (empty($sales_order_deliveries->trans_date)) {
+    //                                 $send = $this->crud->create('sales_order_deliveries', $data);
+    //                                 $results[] = $send;
+    //                             } else {
+    //                                 $send = $this->crud->update('sales_order_deliveries', ["id"=>$sales_order_deliveries->id,"sales_order_no" => $sales_order_deliveries->sales_order_no, "customer_id" => $sales_order_deliveries->customer_id, "item_fg_id" => $sales_order_deliveries->item_fg_id], $data);
+    //                                 $results[] = $send;
+    //                             }
+    //                         } else {
+    //                             $results[] =json_encode(array("title" => "Failed", "message" => "Qty is greater than the Sales Order", "theme" => "error"));
+    //                         }
+    //                     }else{
+    //                         $results[] =json_encode(array("title" => "Failed", "message" => "Qty is empty", "theme" => "error"));
+    //                     }
+    //                 }
+    //                 echo json_encode(array("title" => "Good Job", "message" => json_encode($results), "theme" => "success")); 
+    //             }
+    //         }
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+
     public function create_schedule()
     {
-        if ($this->input->post()) {
-            $post   = $this->input->post();
-            $sales_order_no =  $post['sales_order_no'];
-            $item_fg_id =  $post['item_fg_id'];
-            $data = $post['data'];
-            if ($data == '[]') {
-                echo json_encode(array("title" => "Failed", "message" => "Data is empty", "theme" => "success"));
-            }else{
-                if (!empty($data)) {
-                    $decoded_data = json_decode($data);
-                    // Loop through each date
-                    $results = [];
-                    foreach ($decoded_data as $trans_date) {
-                        // Query to fetch data based on each trans_date
-                        $sales_order_deliveries = $this->crud->read("sales_order_deliveries",[],["sales_order_no" => $sales_order_no, "item_fg_id" => $item_fg_id,"trans_date" => $trans_date->date]);
-                        $sales_order_deliveries_total = $this->crud->query("SELECT SUM(qty) as total FROM sales_order_deliveries WHERE sales_order_no='$sales_order_no' and item_fg_id = '$item_fg_id' GROUP BY sales_order_no, item_fg_id");
-                        $total = empty($sales_order_deliveries_total[0]->total)?0:$sales_order_deliveries_total[0]->total;
-                        if ($trans_date->value!=="") {
-                            if ($post['qty_so'] >= (@$total + $trans_date->value)) {
-                                $data = array(
-                                    "customer_id" => $post['customer_id'],
-                                    "item_fg_id" => $item_fg_id,
-                                    "sales_order_no" => $sales_order_no,
-                                    "customer_order_no" => $post['customer_order_no'],
-                                    "trans_date" => $trans_date->date,
-                                    "qty" => $trans_date->value,
-                                );
-                                if (empty($sales_order_deliveries->trans_date)) {
-                                    $send = $this->crud->create('sales_order_deliveries', $data);
-                                    $results[] = $send;
-                                } else {
-                                    $send = $this->crud->update('sales_order_deliveries', ["id"=>$sales_order_deliveries->id,"sales_order_no" => $sales_order_deliveries->sales_order_no, "customer_id" => $sales_order_deliveries->customer_id, "item_fg_id" => $sales_order_deliveries->item_fg_id], $data);
-                                    $results[] = $send;
-                                }
-                            } else {
-                                $results[] =json_encode(array("title" => "Failed", "message" => "Qty is greater than the Sales Order", "theme" => "error"));
-                            }
-                        }else{
-                            $results[] =json_encode(array("title" => "Failed", "message" => "Qty is empty", "theme" => "error"));
-                        }
-                    }
-                    echo json_encode(array("title" => "Good Job", "message" => json_encode($results), "theme" => "success")); 
-                }
-            }
-        } else {
-            show_error("Cannot Process your request");
+        if (!$this->input->post()) {
+            show_error("Cannot process your request");
         }
+
+        $post = $this->input->post();
+
+        $customer_id = $post['customer_id'];
+        $customer_order_no = $post['customer_order_no'];
+        $details = json_decode($post['details']);
+
+        if (empty($details)) {
+            echo json_encode([
+                "title" => "Failed",
+                "message" => "No data provided",
+                "theme" => "error"
+            ]);
+            return;
+        }
+
+        $this->db->trans_begin(); // Mulai transaksi manual
+        $errors = [];
+        $success = [];
+
+        foreach ($details as $detail) {
+            $item_fg_id = $detail->item_fg_id;
+            $sales_order_no = $detail->sales_order_no;
+            $qty_so = $detail->qty_so;
+            $schedule_list = $detail->data;
+
+            $item_fg = $this->crud->read("item_fg", [], [
+                "id" => $item_fg_id
+            ]);
+
+            foreach ($schedule_list as $schedule) {
+                $item_number = $item_fg_id;
+                $trans_date = $schedule->date;
+                $qty = $schedule->value;
+
+                if($item_fg) {
+                    $item_number = $item_fg->number;
+                }else{
+                    $item_number = $item_fg_id;
+                }
+
+                if ($qty === "" || $qty === null) {
+                    $errors[] = "Qty is empty for item $item_number on $trans_date.";
+                    break 2; // keluar dari kedua loop
+                }
+
+                $existing = $this->crud->read("sales_order_deliveries", [], [
+                    "sales_order_no" => $sales_order_no,
+                    "item_fg_id" => $item_fg_id,
+                    "trans_date" => $trans_date
+                ]);
+
+                $total_result = $this->crud->query("
+                    SELECT SUM(qty) as total 
+                    FROM sales_order_deliveries 
+                    WHERE sales_order_no = '$sales_order_no' AND item_fg_id = '$item_fg_id'
+                    GROUP BY sales_order_no, item_fg_id
+                ");
+
+                $total_existing = isset($total_result[0]->total) ? (float)$total_result[0]->total : 0;
+                $existing_qty = isset($existing->qty) ? (float)$existing->qty : 0;
+                $total_adjusted = $total_existing - $existing_qty;
+
+                if (($total_adjusted + $qty) > $qty_so) {
+                    $errors[] = "Qty exceeds SO limit for product $item_number on $trans_date.";
+                    break 2;
+                }
+
+                $dataInsert = [
+                    "customer_id"        => $customer_id,
+                    "customer_order_no"  => $customer_order_no,
+                    "item_fg_id"         => $item_fg_id,
+                    "sales_order_no"     => $sales_order_no,
+                    "trans_date"         => $trans_date,
+                    "qty"                => $qty
+                ];
+
+                if (empty($existing->id)) {
+                    $this->crud->create("sales_order_deliveries", $dataInsert);
+                } else {
+
+                    $checkStatus = $this->crud->read("sales_order_deliveries", [], [
+                        "sales_order_no" => $sales_order_no,
+                        "item_fg_id" => $item_fg_id,
+                        "trans_date" => $trans_date,
+                        "status" => 1,
+                    ]);
+                    
+                    if ($checkStatus && $qty !== @$checkStatus->qty) {    
+                        if($item_fg) {
+                            $item_fg_id = $item_fg->number;
+                        }
+
+                        $errors[] = "Status Closed for product $item_number on $trans_date with a quantity of $checkStatus->qty";
+                        break 2; // keluar dari kedua loop
+                    }
+
+                    $this->crud->update("sales_order_deliveries", ["id" => $existing->id], $dataInsert);
+                }
+
+                $success[] = "Saved item $item_fg_id for $trans_date.";
+            }
+        }
+
+        if (!empty($errors)) {
+            $this->db->trans_rollback();
+            echo json_encode([
+                "title" => "Failed",
+                "message" => implode("\n", array_unique($errors)),
+                "theme" => "error",
+            ]);
+            return;
+        }
+
+        if ($this->db->trans_status() === FALSE) {
+            $this->db->trans_rollback();
+            echo json_encode([
+                "title" => "Failed",
+                "message" => "Database error occurred",
+                "theme" => "error"
+            ]);
+            return;
+        }
+
+        $this->db->trans_commit();
+        echo json_encode([
+            "title" => "Success",
+            "message" => "All schedules saved successfully",
+            "theme" => "success",
+        ]);
     }
+
     public function create()
     {
         if ($this->input->post()) {
@@ -396,94 +535,289 @@ class Sales_order_deliveries extends CI_Controller
         $datas = [];
         for ($i = 4; $i <= $totalRows; $i++) {
             $datas[] = array(
-                'sales_order_no' => $sheet->getCell('B' . $i)->getValue(),
+                'customer_order_no' => $sheet->getCell('B' . $i)->getValue(),
                 'customer_id' => $sheet->getCell('C' . $i)->getValue(),
                 'item_fg_id' => $sheet->getCell('D' . $i)->getValue(),
                 'trans_date' => $sheet->getCell('E' . $i)->getValue(),
                 'qty' => $sheet->getCell('F' . $i)->getValue(),
             );
         }
-    
-        $datas['total'] = count($datas);
-        echo json_encode($datas);
+
+        echo json_encode([
+            "total" => count($datas),
+            "data" => $datas
+        ]);
         unlink($target);
     }
 
     public function uploadclearFailed()
     {
-        @unlink('failed/tmp_delivery_schedules.txt');
+        @unlink('failed/create_delivery_schedule/tmp_upload_delivery_schedules.xls');
     }
 
-    public function uploadcreateFailed()
-    {
-        if ($this->input->post()) {
-            $message = $this->input->post('message');
-            $textFailed = fopen('failed/tmp_delivery_schedules.txt', 'a');
-            fwrite($textFailed, $message . "\n");
-            fclose($textFailed);
-        }
-    }
+    // public function uploadcreateFailed()
+    // {
+    //     if ($this->input->post()) {
+    //         $message = $this->input->post('message');
+    //         $textFailed = fopen('failed/tmp_delivery_schedules.txt', 'a');
+    //         fwrite($textFailed, $message . "\n");
+    //         fclose($textFailed);
+    //     }
+    // }
 
     //UPLOAD DOWNLOAD FAILED
+    // public function uploadDownloadFailed()
+    // {
+    //     $file = "failed/tmp_delivery_schedules.txt";
+    //     header('Content-Description: File Failed');
+    //     header('Content-Disposition: attachment; filename=' . basename($file));
+    //     header('Expires: 0');
+    //     header('Cache-Control: must-revalidate');
+    //     header('Pragma: public');
+    //     header('Content-Length: ' . @filesize($file));
+    //     header("Content-Type: text/plain");
+    //     @readfile($file);
+    // }
+
     public function uploadDownloadFailed()
     {
-        $file = "failed/tmp_delivery_schedules.txt";
-        header('Content-Description: File Failed');
-        header('Content-Disposition: attachment; filename=' . basename($file));
-        header('Expires: 0');
-        header('Cache-Control: must-revalidate');
-        header('Pragma: public');
-        header('Content-Length: ' . @filesize($file));
-        header("Content-Type: text/plain");
-        @readfile($file);
+        $file = "failed/create_delivery_schedule/tmp_upload_delivery_schedules.xls";
+
+        if (!file_exists($file)) {
+            echo "No failed data to download";
+            return;
+        }
+
+        $filename = "upload_failed_delivery_schedule_" . date("Ymd_s") . ".xls";
+
+        header("Content-Description: File Upload Failed");
+        header("Content-type: application/vnd.ms-excel");
+        header("Content-Disposition: attachment; filename={$filename}");
+        header("Pragma: no-cache");
+        header("Expires: 0");
+
+        readfile($file);
     }
 
     //UPLOAD CREATE DATA
     public function uploadcreate()
     {
         if ($this->input->post()) {
-            $data = $this->input->post('data');
-            $item_fg = $this->crud->read('item_fg', [], ["number" => $data['item_fg_id']]);
-            $customerid = $this->crud->read('customers', [], ["number" => $data['customer_id']]);
-            if (empty($item_fg->id)) {
-                echo json_encode(array("title" => "Not found", "message" => " Product No. " . $data['item_fg_id'] . " is Not Found!", "theme" => "error"));
-                return;
-            }
-            if (empty($customerid->id)) {
-                echo json_encode(array("title" => "Not found", "message" => " Customer No. " . $data['customer_id'] . " is Not Found!", "theme" => "error"));
-                return;
-            }
+            $data_list = $this->input->post('data');
 
-            $custorderno = $this->crud->read('sales_orders', [], [
-                "customer_order_no" => $data['sales_order_no'],
-                "item_fg_id" => $item_fg->id,
-            ]);
-            
-            if (empty($custorderno->id)) {
-                echo json_encode(array("title" => "Not found", "message" => " Customer Order No. " . $data['sales_order_no'] . " and Product No. " . $data['item_fg_id'] . " is Not Found!", "theme" => "error"));
-                return;
-            }
-            $data['customer_order_no'] = $data['sales_order_no'];
-            $data['sales_order_no'] = $custorderno->sales_order_no;
-            $data['customer_id'] = $customerid->id;
-            $data['item_fg_id'] = $item_fg->id;
-            $sales_orders = $this->crud->read("sales_orders", [], ["sales_order_no" => $data['sales_order_no'], "item_fg_id" => $data['item_fg_id']]);
-            $sales_order_deliveries = $this->crud->read("sales_order_deliveries", [], ["sales_order_no" => $data['sales_order_no'], "item_fg_id" => $data['item_fg_id'], "trans_date" => $data['trans_date']]);
-            $sales_order_deliveries_total = $this->crud->query("SELECT SUM(qty) as total FROM sales_order_deliveries WHERE sales_order_no='$custorderno->sales_order_no' and item_fg_id = '$custorderno->item_fg_id' GROUP BY sales_order_no, item_fg_id");
+            $total_expected = count($data_list);
+            $processed_count = 0;
 
+            $this->db->trans_begin();
+            $results = [];
 
-            $qty_so = $sales_orders->qty;
-            if ($qty_so >= (@$sales_order_deliveries_total[0]->total + $data['qty'])) {
-                if (!empty($sales_order_deliveries->trans_date)) {
-                    echo json_encode(array("title" => "Failed", "message" => "Delivery Date Has Been Created Please Choose Another Date", "theme" => "error"));
-                } else {
-                    $send = $this->crud->create('sales_order_deliveries', $data);
-                    echo $send;
+            foreach ($data_list as $index => $data) {
+                $processed_count++;
+
+                if (
+                        empty($data['item_fg_id']) ||
+                        empty($data['customer_order_no']) ||
+                        empty($data['customer_id']) ||
+                        empty($data['item_fg_id']) ||
+                        empty($data['trans_date']) ||
+                        empty($data['qty']) ||
+                        !strtotime($data['trans_date']) ||
+                        !is_numeric($data['qty'])
+                    ) {
+                        $results[] = [
+                            "status" => "failed",
+                            "item" => "Line " . ($index + 1),
+                            "message" => "Invalid or missing data"
+                        ];
+                        continue;
                 }
-            } else {
-                echo json_encode(array("title" => "Failed", "message" => "Qty is greater than the Sales Order", "theme" => "error"));
-                return;
+
+                $item_fg = $this->crud->read('item_fg', [], ["number" => $data['item_fg_id']]);
+                if (empty($item_fg->id)) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Product No. " . $data['item_fg_id'] . " is Not Found!"
+                    ];
+                    continue;
+                }
+
+                $customerid = $this->crud->read('customers', [], ["number" => $data['customer_id']]);
+                if (empty($customerid->id)) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Customer No. " . $data['customer_id'] . " is Not Found!"
+                    ];
+                    continue;
+                }
+
+                $custorderno = $this->crud->read('sales_orders', [], [
+                    "customer_order_no" => $data['customer_order_no'],
+                    "item_fg_id" => $item_fg->id,
+                ]);
+                if (empty($custorderno->id)) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Customer Order No. " . $data['customer_order_no'] . " and Product No. " . $data['item_fg_id'] . " is Not Found!"
+                    ];
+                    continue;
+                }
+
+                $data['sales_order_no'] = $custorderno->sales_order_no;
+                $data['customer_id'] = $customerid->id;
+                $data['item_fg_id'] = $item_fg->id;
+    
+                $sales_orders = $this->crud->read("sales_orders", [], ["sales_order_no" => $data['sales_order_no'], "item_fg_id" => $data['item_fg_id']]);
+                
+                $sales_order_deliveries = $this->crud->read("sales_order_deliveries", [], ["sales_order_no" => $data['sales_order_no'], "item_fg_id" => $data['item_fg_id'], "trans_date" => $data['trans_date']]);
+                
+                $sales_order_deliveries_total = $this->crud->query("SELECT SUM(qty) as total FROM sales_order_deliveries WHERE sales_order_no='$custorderno->sales_order_no' and item_fg_id = '$custorderno->item_fg_id' GROUP BY sales_order_no, item_fg_id");
+
+                $dataFinal = array(
+                    "sales_order_no" => $custorderno->sales_order_no,
+                    "customer_order_no" => $data['customer_order_no'],
+                    "customer_id" => $customerid->id,
+                    "item_fg_id" => $item_fg->id,
+                    "trans_date" => $data['trans_date'],
+                    "qty" => $data['qty'],
+                );
+
+                $qty_so = $sales_orders->qty;
+                if ($qty_so >= (@$sales_order_deliveries_total[0]->total + $data['qty'])) {
+                    if (!empty($sales_order_deliveries->trans_date)) {
+                        $results[] = [
+                            "status" => "failed",
+                            "item" => "Line " . ($index + 1),
+                            "message" => "Delivery Date Has Been Created Please Choose Another Date"
+                        ];
+                        continue;
+                        
+                    } else {
+                        try {
+                            $this->crud->create('sales_order_deliveries', $dataFinal);
+
+                            $res_item = "Create";
+                            $res_msg  = "Data Saved Successfully";
+
+                            $results[] = [
+                                "status" => "success",
+                                "item" => $res_item,
+                                "message" => $res_msg
+                            ];
+                        } catch (Exception $e) {
+                            $results[] = [
+                                "status" => "failed",
+                                "item" => $item_fg->name,
+                                "message" => $e->getMessage()
+                            ];
+                            continue;
+                        }
+
+                    }
+                } else {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Qty is greater than the Sales Order"
+                    ];
+                    continue;
+                }
+
             }
+
+            // if (count(array_filter($results, fn($r) => $r['status'] === 'failed')) > 0) {
+            //     echo json_encode([
+            //         "theme" => "error",
+            //         "title" => "Upload Failed",
+            //         "message" => "Data failed to save",
+            //         "results" => $results,
+            //         "total_expected" => $total_expected,
+            //         "processed_count" => $processed_count,
+            //         "stopped_at" => $index + 1
+            //     ]);
+            // } else {
+            //     $this->db->trans_commit();
+            //     echo json_encode([
+            //         "theme" => "success",
+            //         "title" => "Upload Successfully",
+            //         "message" => "Data uploaded successfully",
+            //         "results" => $results,
+            //         "total_expected" => $total_expected,
+            //         "processed_count" => $processed_count,
+            //         "stopped_at" => $index + 1
+            //     ]);
+            // }
+
+            $failed = array_filter($results, fn($r) => $r['status'] === 'failed');
+
+            if (count($failed) > 0) {
+                $filePath = 'failed/create_delivery_schedule/tmp_upload_delivery_schedules.xls';
+
+                $html = '
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body>
+                    <table border="1" cellspacing="0" cellpadding="5" style="border-collapse: collapse; font-family: Arial, sans-serif;">
+                        <thead style="background-color: #f2f2f2;">
+                            <tr>
+                                <th style="width: 40px; text-align: center;">No</th>
+                                <th style="width: 100px; text-align: left;">Line</th>
+                                <th style="width: 450px; text-align: left;">Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                ';
+
+                $no = 1;
+                foreach ($failed as $row) {
+                    $line = htmlspecialchars($row['item']);
+                    $msg  = htmlspecialchars($row['message']);
+                    $html .= "
+                        <tr>
+                            <td style='text-align: center;'>{$no}</td>
+                            <td style='text-align: left;'>{$line}</td>
+                            <td style='text-align: left;'>{$msg}</td>
+                        </tr>";
+                    $no++;
+                }
+
+                $html .= '
+                        </tbody>
+                    </table>
+                </body>
+                </html>';
+
+                file_put_contents($filePath, $html);
+
+                echo json_encode([
+                    "theme" => "error",
+                    "title" => "Upload Failed",
+                    "message" => "Data failed to save",
+                    "results" => $results,
+                    "total_expected" => $total_expected,
+                    "processed_count" => $processed_count,
+                    "stopped_at" => $index + 1
+                ]);
+            } else {
+                @unlink('failed/create_delivery_schedule/tmp_upload_delivery_schedules.xls');
+
+                $this->db->trans_commit();
+                echo json_encode([
+                    "theme" => "success",
+                    "title" => "Upload Successfully",
+                    "message" => "Data uploaded successfully",
+                    "results" => $results,
+                    "total_expected" => $total_expected,
+                    "processed_count" => $processed_count,
+                    "stopped_at" => $index + 1
+                ]);
+            }
+
+
         }
     }
 
@@ -614,7 +948,7 @@ class Sales_order_deliveries extends CI_Controller
         $templateSheet->getColumnDimension('F')->setWidth(25);
         $templateSheet->setCellValue('A1', 'TEMPLATE UPLOAD DELIVERY SCHEDULES');
         $templateSheet->setCellValue('A3', 'No');
-        $templateSheet->setCellValue('B3', 'SALES ORDER NO');
+        $templateSheet->setCellValue('B3', 'CUSTOMER ORDER NO');
         $templateSheet->setCellValue('C3', 'CUSTOMER CODE');
         $templateSheet->setCellValue('D3', 'PRODUCT NO');
         $templateSheet->setCellValue('E3', 'DELIVERY DATE');

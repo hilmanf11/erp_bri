@@ -1,3 +1,12 @@
+<style>
+    .swal2-container {
+        z-index: 9999 !important;
+    }
+    .swal2-popup {
+        z-index: 99999 !important;
+    }
+</style>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -100,7 +109,7 @@
         </fieldset>
     </form>
 </div>
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 100%; height: 100%; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 100%; height: 98%; padding:10px; top: 20px; left: 5px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
                 <div class="fitem">
@@ -191,25 +200,29 @@
     }
     function addDelivery() {
         $('#dlg_update').dialog('open');
+        $('#dlg_update').dialog('setTitle', 'Add New');
         var customer_id = $("#customer_id").textbox('getValue');
         var sales_order_no = $("#sales_order_no").textbox('getValue');
         var item_fg_id = $("#item_fg_id").textbox('getValue');
         var item_fg_number = $("#item_fg_number").textbox('getValue');
         var customer_order_no = $("#customer_order_no").textbox('getValue');
+        var qty = $("#qty").textbox('getValue');
         $("#customer_id").textbox('setValue', customer_id);
         $("#sales_order_no").textbox('setValue', sales_order_no);
         $("#item_fg_id").textbox('setValue', item_fg_id);
         $("#item_fg_number").textbox('setValue', item_fg_number);
         $("#customer_order_no").textbox('setValue', customer_order_no);
         $("#trans_date").datebox('setValue', '<?= date("Y-m-d") ?>');
+        $("#qty").textbox('setValue', '');
         url_save = '<?= base_url('sales/sales_order_deliveries/create') ?>';
     }
 
     function update() {
         url_save = '<?= base_url('sales/sales_order_deliveries/update') ?>';
+        $('#dlg_update').dialog('setTitle', 'Update');
         
         var rows = $('#dg2').datagrid('getSelections');
-        if (rows) {
+        if (rows.length > 0) {
             //if(rows[0].status!='CLOSE'){
                 $('#dlg_update').dialog('open');
                 $('#frm_update').form('load', rows);
@@ -246,6 +259,11 @@
             url: '<?= base_url("sales/sales_order_deliveries/datatables2/") ?>' + btoa(customer_id) + '/' + btoa(sales_order_no) + '/' + btoa(item_fg_id),
             singleSelect: true,
             onBeforeCheck: function(rowIndex, rowData) {
+                if (rowData.status === '1') {
+                    return false;
+                }
+            },
+            onBeforeSelect: function (index, rowData) {
                 if (rowData.status === '1') {
                     return false;
                 }
@@ -432,7 +450,6 @@
     function reload() {
         window.location.reload();
     }
-
     $(function() {
         //SETTING DATAGRID EASYUI
         filter();
@@ -444,92 +461,112 @@
                 text: 'Save',
                 iconCls: 'icon-ok',
                 handler: function() {
+
                     var customer_id = $("#customer").combobox('getValue');
                     var customer_order_no = $("#customer_order_no2").combobox('getValue');
                     var order_date = $("#order_date").datebox('getValue');
-                        var rows = $('#dg_request').datagrid('getRows');
-                        var totalrows = rows.length;
+                    var rows = $('#dg_request').datagrid('getRows');
+                    var totalrows = rows.length;
 
-                        var inEditMode = false;
-                        for (var i = 0; i < totalrows; i++) {
-                            if (rows[i].editing) {
-                                inEditMode = true;
-                                break;
-                            }
+                    var inEditMode = false;
+                    for (var i = 0; i < totalrows; i++) {
+                        if (rows[i].editing) {
+                            inEditMode = true;
+                            break;
                         }
+                    }
 
-                        if (inEditMode) {
-                            toastr.warning("Please save all edited rows before next Process!", "Information");
-                        } else {
-                            endEditing();
-                            if (totalrows > 0) {
-                                $.messager.confirm('Warning', 'Are you sure you want Process this Data?', function(r) {
-                                    if (r) {
-                                        // Menyimpan hasil dari setiap operasi dalam array
-                                        var results = [];
+                    if (inEditMode) {
+                        toastr.warning("Please save all edited rows before next Process!", "Information");
+                        return;
+                    }
 
-                                        for (var i = 0; i < totalrows; i++) {
-                                            var row = rows[i];
-                                            if (row.invoice_no == "") {
-                                                return toastr.warning('Please input Delivery Note No', 'Required');
-                                            }
+                    if (totalrows === 0) {
+                        toastr.warning("Please select one of the data in the table first!", "Information");
+                        return;
+                    }
 
-                                            var item_number = row.item_number;
-                                            var item_fg_id = row.item_fg_id;
-                                            var qty = row.qty;
-                                            var sales_order_no = row.sales_order_no;
-                                            let dateKeys = Object.keys(row).filter(key => /\d{4}-\d{2}-\d{2}/.test(key));
-                                            
-                                            
-                                            let resultVal=[];
-                                            if (dateKeys.length > 0) {
-                                                let result = dateKeys.map(key => ({
-                                                    date: key,
-                                                    value: row[key]
-                                                }));
-                                                resultVal = result.filter(obj => obj.value !== "");
-                                            }
+                    endEditing();
 
-                                            $.ajax({
-                                                type: "post",
-                                                url: url_save,
-                                                data: 'customer_id=' + customer_id +
-                                                    '&item_fg_id=' + item_fg_id +
-                                                    '&qty_so=' + qty +
-                                                    '&sales_order_no=' + sales_order_no +
-                                                    '&customer_order_no=' + customer_order_no +
-                                                    '&data=' + JSON.stringify(resultVal),
-                                                dataType: "json",
-                                                success: function(result) {
-                                                    results.push(result);
-                                                },
-                                                complete: function() {
-                                                    // Cek jika semua request telah selesai
-                                                    if (results.length === totalrows) {
-                                                        // Menampilkan satu Swal.fire untuk semua hasil
-                                                        Swal.fire({
-                                                            title: 'Data Saved Successfully',
-                                                            icon: 'success',
-                                                            confirmButtonText: 'Ok',
-                                                            allowOutsideClick: false
-                                                        }).then((result) => {
-                                                            if (result.isConfirmed) {
-                                                                window.location.reload();
-                                                            }
-                                                        });
-                                                    }
-                                                }
-                                            });
-                                        }
-                                        $('#dg2').datagrid('reload');
-                                        $('#dlg_delivery').dialog('close');
-                                        $('#dlg_insert').dialog('close');
+                    $.messager.confirm('Warning', 'Are you sure you want to process this data?', function(r) {
+                        if (r) {
+                            let dataToSend = [];
+
+                            for (let i = 0; i < totalrows; i++) {
+                                let row = rows[i];
+
+                                let dateKeys = Object.keys(row).filter(key => /\d{4}-\d{2}-\d{2}/.test(key));
+
+                                // let resultVal = dateKeys.map(key => ({
+                                //     date: key,
+                                //     value: row[key]
+                                // })).filter(obj => obj.value !== "");
+
+                                let resultVal = Object.keys(row)
+                                .filter(key => /^\d{4}-\d{2}-\d{2}$/.test(key))
+                                .map(key => ({
+                                    date: key,
+                                    value: row[key]
+                                }))
+                                .filter(obj => obj.value !== "" && obj.value !== null && obj.value !== undefined);
+
+                                // Tambahkan data baris jika ada value untuk tanggal
+                                if (resultVal.length > 0) {
+                                    dataToSend.push({
+                                        item_fg_id: row.item_fg_id,
+                                        sales_order_no: row.sales_order_no,
+                                        qty_so: row.qty,
+                                        data: resultVal
+                                    });
+                                }
+                            }
+
+                            if (dataToSend.length === 0) {
+                                toastr.warning("No valid schedule data to submit!", "Warning");
+                                return;
+                            }
+
+                            // Kirim hanya sekali
+                            $.ajax({
+                                type: "POST",
+                                url: url_save,
+                                data: {
+                                    customer_id: customer_id,
+                                    customer_order_no: customer_order_no,
+                                    details: JSON.stringify(dataToSend)
+                                },
+                                dataType: "json",
+                                success: function(result) {
+                                    if (result.theme === 'error') {
+                                        $('#dg_request').datagrid('clearSelections');
+                                        toastr.clear();
+                                        toastr.error(result.message, result.title || 'error');
+                                    } else {
+                                        $('#dg_request').datagrid('clearSelections');
+                                        Swal.fire({
+                                            title: result.title || 'Success',
+                                            text: result.message || '',
+                                            icon: result.theme || 'success',
+                                            confirmButtonText: 'OK'
+                                        }).then(() => {
+                                            $('#dg2').datagrid('reload');
+                                            $('#dlg_delivery').dialog('close');
+                                            $('#dlg_insert').dialog('close');
+                                            window.location.reload();
+                                        });
                                     }
-                                });
-                            } else {
-                                toastr.warning("Please select one of the data in the table first!", "Information");
-                            }
+                                },
+                                error: function(xhr) {
+                                    $('#dg_request').datagrid('clearSelections');
+                                    toastr.clear();
+                                    toastr.error('An error occurred while processing the data. Please try again');
+
+                                    $('#dg').datagrid('reload');
+                                    $('#dlg_insert').dialog('close');
+                                }
+                            });
                         }
+                    });
                 }
             }]
         });
@@ -565,284 +602,390 @@
         });
     });
 
-var editIndex = undefined;
+    let editIndex = undefined;
 
-function endEditing() {
-    if (editIndex == undefined) {
-        return true
-    }
-    if ($('#dg_request').datagrid('validateRow', editIndex)) {
-        $('#dg_request').datagrid('endEdit', editIndex);
-        editIndex = undefined;
-        return true;
-    } else {
-        return false;
-    }
-}
+    function onClickCell(index, field) {
+        var dg = $('#dg_request');
+        var row = dg.datagrid('getRows')[index];
 
-function onClickCell(index, field) {
-    if (editIndex != index) {
-        if (endEditing()) {
-            $('#dg_request').datagrid('selectRow', index).datagrid('beginEdit', index);
-            editIndex = index;
-        } else {
-            setTimeout(function() {
-                $('#dg_request').datagrid('selectRow', editIndex);
-            }, 0);
+        // Jika field terkunci, cegah edit
+        if (field.match(/^\d{4}-\d{2}-\d{2}$/) && row[`_lock_${field}`] == 1) {
+            toastr.info('This date is closed. Editing is disabled.', 'Locked');
+            return;
+        }
+
+        if (editIndex !== index) {
+            if (endEditing()) {
+                dg.datagrid('selectRow', index).datagrid('beginEdit', index);
+                editIndex = index;
+
+                // Setelah baris masuk edit, disable field yang dikunci
+                Object.keys(row).forEach(f => {
+                    if (f.match(/^\d{4}-\d{2}-\d{2}$/) && row[`_lock_${f}`] == 1) {
+                        let ed = dg.datagrid('getEditor', { index: index, field: f });
+                        if (ed && ed.target) {
+                            $(ed.target).numberbox('disable');
+                            // Tambahkan styling merah di mode edit
+                            $(ed.target).parent().css({
+                                'background-color': 'rgba(255, 151, 151, 1)',
+                                'font-weight': 'bold'
+                            });
+
+                            $(ed.target).css({
+                                'font-weight': 'bold',
+                                'color': '#000'
+                            });
+                        }
+                    }
+                });
+
+                // Fokus ke field yang diklik
+                let ed = dg.datagrid('getEditor', { index: index, field: field });
+                if (ed && ed.target) {
+                    $(ed.target).focus();
+                }
+            } else {
+                setTimeout(() => {
+                    dg.datagrid('selectRow', editIndex);
+                }, 0);
+            }
         }
     }
-}
-function getRowIndex(target) {
-    var tr = $(target).closest('tr.datagrid-row');
-    return parseInt(tr.attr('datagrid-row-index'));
-}
-function editrow(target) {
-    $('#dg_request').datagrid('selectRow', getRowIndex(target));
-    $('#dg_request').datagrid('beginEdit', getRowIndex(target));
-}
 
-function saverow(target) {
-    $('#dg_request').datagrid('endEdit', getRowIndex(target));
-}
+    // function endEditing() {
+    //     if (editIndex === undefined) return true;
+    //     if ($('#dg_request').datagrid('validateRow', editIndex)) {
+    //         $('#dg_request').datagrid('endEdit', editIndex);
+    //         editIndex = undefined;
+    //         return true;
+    //     }
+    //     return false;
+    // }
 
-function getDaysInMonth(year, month) {
-  // Adjust for 1-based month input (1 = January, 12 = December)
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const days = [];
-  
-  for (let day = 1; day <= daysInMonth; day++) {
-   // const formattedDay = String(day).padStart(2, '0');
-    days.push(String(day));
-  }
+    function endEditing() {
+        if (editIndex === undefined) return true;
+        if ($('#dg_request').datagrid('validateRow', editIndex)) {
+            // Reset styling merah sebelumnya
+            var editors = $('#dg_request').datagrid('getEditors', editIndex);
+            editors.forEach(ed => {
+                $(ed.target).parent().removeAttr('style');
+            });
 
-  return days;
-}
+            $('#dg_request').datagrid('endEdit', editIndex);
+            editIndex = undefined;
+            return true;
+        }
+        return false;
+    }
+
+
+    function getRowIndex(target) {
+        var tr = $(target).closest('tr.datagrid-row');
+        return parseInt(tr.attr('datagrid-row-index'));
+    }
+    function editrow(target) {
+        $('#dg_request').datagrid('selectRow', getRowIndex(target));
+        $('#dg_request').datagrid('beginEdit', getRowIndex(target));
+    }
+
+    function saverow(target) {
+        $('#dg_request').datagrid('endEdit', getRowIndex(target));
+    }
+
+    function getDaysInMonth(year, month) {
+        // Adjust for 1-based month input (1 = January, 12 = December)
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const days = [];
+        
+        for (let day = 1; day <= daysInMonth; day++) {
+        // const formattedDay = String(day).padStart(2, '0');
+            days.push(String(day));
+        }
+
+        return days;
+    }
 
     function preview() {
-    var customer = $("#customer").combobox('getValue');
-    var customer_order_no = $("#customer_order_no2").combobox('getValue');
-    var order_date = $("#order_date").datebox('getValue');
-    if (customer_order_no == "") {
-        toastr.warning('Please select Customer Order No', 'Required');
-    } else {
-        var lastIndex;
+        var customer = $("#customer").combobox('getValue');
+        var customer_order_no = $("#customer_order_no2").combobox('getValue');
+        var order_date = $("#order_date").datebox('getValue');
+        if (customer_order_no == "") {
+            toastr.warning('Please select Customer Order No', 'Required');
+        } else {
+            var lastIndex;
 
-        $.ajax({
-            type: "post",
-            url: "<?= base_url('sales/sales_order_deliveries/readDeliveryLists') ?>",
-            data: {
-                    customer: customer,
-                    customer_order_no: customer_order_no,
-                    },
-            dataType: "json",
-            success: function(result) {
-                let transformedData = [];
-                result.forEach(row => {
-            let groupName = row.item_number;
-            let date = row.trans_date;
-            let groupRow = transformedData.find(r => r.item_number === groupName);
+            $.ajax({
+                type: "post",
+                url: "<?= base_url('sales/sales_order_deliveries/readDeliveryLists') ?>",
+                data: {
+                        customer: customer,
+                        customer_order_no: customer_order_no,
+                        },
+                dataType: "json",
+                success: function(result) {
+                    let transformedData = [];
+            //         result.forEach(row => {
+            //     let groupName = row.item_number;
+            //     let date = row.trans_date;
+            //     let groupRow = transformedData.find(r => r.item_number === groupName);
 
-            // If group does not exist, create a new one
-            if (!groupRow) {
-                groupRow = {item_number: groupName, item_name: row.item_name, item_fg_id: row.item_fg_id,qty: row.qty, sales_order_no:row.sales_order_no};
-                transformedData.push(groupRow);
-            }
+            //     // If group does not exist, create a new one
+            //     if (!groupRow) {
+            //         groupRow = {item_number: groupName, item_name: row.item_name, item_fg_id: row.item_fg_id,qty: row.qty, sales_order_no:row.sales_order_no};
+            //         transformedData.push(groupRow);
+            //     }
 
-            // Add the row's value under the correct date column
-            //groupRow[date] = row.field2;  // Or any other value you'd like to display
-        });
-                let date = new Date(order_date);//console.log(result[0].order_type)
-                        let year = date.getFullYear();
-                        let month = String(date.getMonth() + 1).padStart(2, '0');
-                        //console.log(month)
-                        if(result[0].order_type==1){
-                            date.setMonth(date.getMonth() + 1);
-                            year = date.getFullYear();
-                            month = String(date.getMonth()+1).padStart(2, '0');
-                          //  console.log(month,"i")
+            //     // Add the row's value under the correct date column
+            //     //groupRow[date] = row.field2;  // Or any other value you'd like to display
+            // });
+
+                    result.forEach(row => {
+                        let groupName = row.item_number;
+                        let date = row.trans_date;
+                        let groupRow = transformedData.find(r => r.item_number === groupName);
+
+                        if (!groupRow) {
+                            groupRow = {
+                                item_number: groupName,
+                                item_name: row.item_name,
+                                item_fg_id: row.item_fg_id,
+                                qty: row.qty,
+                                sales_order_no: row.sales_order_no
+                            };
+                            transformedData.push(groupRow);
                         }
 
-                        const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-                        let monthIndex = result[0].order_type==1? date.getMonth()+1 : date.getMonth();
-                        let monthName = result[0].order_type==1?monthNames[monthIndex-1]:monthNames[monthIndex];
-                        let days = getDaysInMonth(year, month);
-                            let dayColumns = days.map(day => ({
-                                field: `${year}-${month}-${parseInt(day)<10?'0'+day:day}`,
-                                title: day,
+                        if (date) {
+                            // Masukkan nilai qty_delivery ke field tanggal
+                            groupRow[date] = row.qty_delivery;
+
+                            // Simpan juga statusnya untuk keperluan lock
+                            groupRow[`_lock_${date}`] = row.status_delivery;
+                        }
+                    });
+
+                    let date = new Date(order_date);//console.log(result[0].order_type)
+                            let year = date.getFullYear();
+                            let month = String(date.getMonth() + 1).padStart(2, '0');
+                            //console.log(month)
+                            if(result[0].order_type==1){
+                                date.setMonth(date.getMonth() + 1);
+                                year = date.getFullYear();
+                                month = String(date.getMonth()+1).padStart(2, '0');
+                            //  console.log(month,"i")
+                            }
+
+                            const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+                            let monthIndex = result[0].order_type==1? date.getMonth()+1 : date.getMonth();
+                            let monthName = result[0].order_type==1?monthNames[monthIndex-1]:monthNames[monthIndex];
+                            let days = getDaysInMonth(year, month);
+                                let dayColumns = days.map(day => ({
+                                    field: `${year}-${month}-${parseInt(day)<10?'0'+day:day}`,
+                                    title: day,
+                                    halign: 'center',
+                                    width: 80,
+                                    editor: {
+                                        type: 'numberbox',
+                                    }
+                                }));
+                    $('#dg_request').datagrid({
+                        singleSelect: true,
+                        data: transformedData,//result,
+                        columns: [
+                            [
+                            //     {
+                            //     field: 'action',
+                            //     width: 80,
+                            //     halign: 'center',
+                            //     title: "Action",
+                            //     formatter: buttonEdit
+                            // }, 
+                            {
+                                field: 'item_number',
+                                width: 150,
                                 halign: 'center',
-                                width: 80,
+                                rowspan: 2,
+                                title: "Product No",
                                 editor: {
-                                    type: 'numberbox',
-                                }
-                            }));
-                $('#dg_request').datagrid({
-                    singleSelect: true,
-                    data: transformedData,//result,
-                    columns: [
-                        [
-                        //     {
-                        //     field: 'action',
-                        //     width: 80,
-                        //     halign: 'center',
-                        //     title: "Action",
-                        //     formatter: buttonEdit
-                        // }, 
-                        {
-                            field: 'item_number',
-                            width: 150,
-                            halign: 'center',
-                            rowspan: 2,
-                            title: "Product No",
-                            editor: {
-                                type: 'combogrid',
-                                options: {
-                                    url: '<?= base_url('sales/sales_order_deliveries/readSelectedItem?customer_order_no=') ?>'+ customer_order_no,
-                                    required: true,
-                                    panelWidth: 320,
-                                    idField: 'item_number',
-                                    textField: 'item_number',
-                                    valueField: 'item_number',
-                                    mode: 'remote',
-                                    fitColumns: true,
-                                    prompt: 'Choose Product',
-                                    columns: [
-                                        [{
-                                            field: 'item_number',
-                                            title: 'Product No',
-                                            width: 150
-                                        }, {
-                                            field: 'item_name',
-                                            title: 'Product Name',
-                                            width: 150
-                                        }]
-                                    ],
-                                    onSelect: function(value, rows) {
-                                        var dg = $('#dg_request');
-                                        var row = dg.datagrid('getSelected');
-                                        var rowIndex = dg.datagrid('getRowIndex', row);
+                                    type: 'combogrid',
+                                    options: {
+                                        url: '<?= base_url('sales/sales_order_deliveries/readSelectedItem?customer_order_no=') ?>'+ customer_order_no,
+                                        required: true,
+                                        panelWidth: 320,
+                                        idField: 'item_number',
+                                        textField: 'item_number',
+                                        valueField: 'item_number',
+                                        mode: 'remote',
+                                        fitColumns: true,
+                                        prompt: 'Choose Product',
+                                        columns: [
+                                            [{
+                                                field: 'item_number',
+                                                title: 'Product No',
+                                                width: 150
+                                            }, {
+                                                field: 'item_name',
+                                                title: 'Product Name',
+                                                width: 150
+                                            }]
+                                        ],
+                                        onSelect: function(value, rows) {
+                                            var dg = $('#dg_request');
+                                            var row = dg.datagrid('getSelected');
+                                            var rowIndex = dg.datagrid('getRowIndex', row);
 
-                                        var ed2 = dg.datagrid('getEditor', {
-                                            index: rowIndex,
-                                            field: 'item_name'
-                                        });
-                                        var ed3 = dg.datagrid('getEditor', {
-                                            index: rowIndex,
-                                            field: 'qty'
-                                        });
-                                        var ed4 = dg.datagrid('getEditor', {
-                                            index: rowIndex,
-                                            field: 'sales_order_no'
-                                        });
-                                        var ed5 = dg.datagrid('getEditor', {
-                                            index: rowIndex,
-                                            field: 'item_fg_id'
-                                        });
+                                            var ed2 = dg.datagrid('getEditor', {
+                                                index: rowIndex,
+                                                field: 'item_name'
+                                            });
+                                            var ed3 = dg.datagrid('getEditor', {
+                                                index: rowIndex,
+                                                field: 'qty'
+                                            });
+                                            var ed4 = dg.datagrid('getEditor', {
+                                                index: rowIndex,
+                                                field: 'sales_order_no'
+                                            });
+                                            var ed5 = dg.datagrid('getEditor', {
+                                                index: rowIndex,
+                                                field: 'item_fg_id'
+                                            });
 
-                                        $(ed2.target).textbox('setValue', rows.item_name);
-                                        $(ed3.target).textbox('setValue', rows.qty);
-                                        $(ed4.target).textbox('setValue', rows.sales_order_no);
-                                        $(ed5.target).textbox('setValue', rows.item_fg_id);
+                                            $(ed2.target).textbox('setValue', rows.item_name);
+                                            $(ed3.target).textbox('setValue', rows.qty);
+                                            $(ed4.target).textbox('setValue', rows.sales_order_no);
+                                            $(ed5.target).textbox('setValue', rows.item_fg_id);
+                                        }
                                     }
                                 }
-                            }
-                        }, {
-                            field: 'item_name',
-                            width: 200,
-                            readonly: true,
-                            halign: 'center',
-                            rowspan: 2,
-                            title: "Product Name",
-                            editor: {
-                                type: 'textbox',
-                                options: {
-                                    readonly: true
+                            }, {
+                                field: 'item_name',
+                                width: 200,
+                                readonly: true,
+                                halign: 'center',
+                                rowspan: 2,
+                                title: "Product Name",
+                                editor: {
+                                    type: 'textbox',
+                                    options: {
+                                        readonly: true
+                                    }
                                 }
-                            }
-                        }, {
-                            field: 'item_fg_id',
-                            width: 200,
-                            hidden: true,
-                            halign: 'center',
-                            rowspan: 2,
-                            title: "Product ID",
-                            editor: {
-                                type: 'textbox',
-                                options: {
-                                    readonly: true
+                            }, {
+                                field: 'item_fg_id',
+                                width: 200,
+                                hidden: true,
+                                halign: 'center',
+                                rowspan: 2,
+                                title: "Product ID",
+                                editor: {
+                                    type: 'textbox',
+                                    options: {
+                                        readonly: true
+                                    }
                                 }
-                            }
-                        }, {
-                            field: 'qty',
-                            width: 100,
-                            readonly: true,
-                            halign: 'center',
-                            rowspan: 2,
-                            title: "Qty SO",
-                            editor: {
-                                type: 'numberbox',
-                                options: {
-                                    readonly: true
+                            }, {
+                                field: 'qty',
+                                width: 100,
+                                readonly: true,
+                                halign: 'center',
+                                rowspan: 2,
+                                title: "Qty SO",
+                                editor: {
+                                    type: 'numberbox',
+                                    options: {
+                                        readonly: true
+                                    }
                                 }
-                            }
-                        },{
-                            field: 'sales_order_no',
-                            width: 120,
-                            readonly: true,
-                            halign: 'center',
-                            rowspan: 2,
-                            title: "Sales Order No",
-                            editor: {
-                                type: 'textbox',
-                                options: {
-                                    readonly: true
+                            },{
+                                field: 'sales_order_no',
+                                width: 120,
+                                readonly: true,
+                                halign: 'center',
+                                rowspan: 2,
+                                title: "Sales Order No",
+                                editor: {
+                                    type: 'textbox',
+                                    options: {
+                                        readonly: true
+                                    }
                                 }
-                            }
-                        },{
-                            field: 'monthName',
-                            title: monthName,
-                            colspan: days.length,
-                            align: 'center'
+                            },{
+                                field: 'monthName',
+                                title: monthName,
+                                colspan: days.length,
+                                align: 'center'
+                            },
+                        ],
+                        [
+                            ...dayColumns
+                        ]
+                        ],
+                        onClickCell: onClickCell,
+                        groupField: 'item_number',
+                        onBeginEdit: function(rowIndex, row) {
+                            var editors = $('#dg_request').datagrid('getEditors', rowIndex);
                         },
-                    ],
-                    [
-                        ...dayColumns
-                    ]
-                    ],
-                    onClickCell: onClickCell,
-                    groupField: 'item_number',
-                    onBeginEdit: function(rowIndex, row) {
-                        var editors = $('#dg_request').datagrid('getEditors', rowIndex);
-                    },
-                    onLoadSuccess: function() {
-                        var rows = $('#dg_request').datagrid('getRows');
-                        endEditing();
-                        result.forEach(item => {
-                            if(item.trans_date!==null){
-                                    let rowIndex = $('#dg_request').datagrid('getRows').findIndex(row => row.item_number === item.item_number);
+                        onLoadSuccess: function() {
+                            var rows = $('#dg_request').datagrid('getRows');
+                            endEditing();
+
+                            result.forEach(item => {
+                                if (item.trans_date !== null) {
+                                    let rowIndex = rows.findIndex(row => row.item_number === item.item_number);
                                     
                                     if (rowIndex !== -1) {
-                                        try {
-                                            $('#dg_request').datagrid('updateRow', {
-                                                index: rowIndex, 
-                                                row: {
-                                                    [item.trans_date]: item.qty_delivery
-                                                }
-                                            });
-                                           
-                                        } catch (error) {
-                                            console.error("Error accessing editor for field:", item.trans_date, error);
-                                        }
+                                        let row = rows[rowIndex];
+
+                                        // Simpan qty_delivery ke field tanggal
+                                        row[item.trans_date] = item.qty_delivery;
+
+                                        // Simpan status delivery ke field khusus supaya bisa dicek di onClickCell
+                                        row[`_lock_${item.trans_date}`] = item.status_delivery;
+
+                                        $('#dg_request').datagrid('updateRow', {
+                                            index: rowIndex,
+                                            row: row
+                                        });
                                     } else {
                                         console.error("Invalid rowIndex:", rowIndex);
                                     }
                                 }
-                        });
-                    }
-                });
-            }
-        });
+                            });
+                        },
+
+                        // onLoadSuccess: function() {
+                        //     var rows = $('#dg_request').datagrid('getRows');
+                        //     endEditing();
+                        //     result.forEach(item => {
+                        //         if(item.trans_date!==null){
+                        //                 let rowIndex = $('#dg_request').datagrid('getRows').findIndex(row => row.item_number === item.item_number);
+                                        
+                        //                 if (rowIndex !== -1) {
+                        //                     try {
+                        //                         $('#dg_request').datagrid('updateRow', {
+                        //                             index: rowIndex, 
+                        //                             row: {
+                        //                                 [item.trans_date]: item.qty_delivery
+                        //                             }
+                        //                         });
+                                            
+                        //                     } catch (error) {
+                        //                         console.error("Error accessing editor for field:", item.trans_date, error);
+                        //                     }
+                        //                 } else {
+                        //                     console.error("Invalid rowIndex:", rowIndex);
+                        //                 }
+                        //             }
+                        //     });
+                        // }
+
+                    });
+
+                }
+            });
+        }
     }
-}
 
 
     $('#filter_customer_id').combobox({
@@ -1006,76 +1149,109 @@ function getDaysInMonth(year, month) {
     $('#dlg_upload').dialog({
         buttons: [{
             text: 'List Failed',
-            handler: function() {
+            handler: function () {
                 window.open('<?= base_url('sales/sales_order_deliveries/uploadDownloadFailed') ?>', '_blank');
             }
         }, {
             text: 'Upload',
             iconCls: 'icon-ok',
-            handler: function() {
+            handler: function () {
                 $('#frm_upload').form('submit', {
                     url: '<?= base_url('sales/sales_order_deliveries/upload') ?>',
-                    onSubmit: function() {
-                        if ($(this).form('validate') == false) {
-                            return $(this).form('validate');
-                        } else {
-                            $.messager.progress({
-                                title: 'Please Wait',
-                                msg: 'Importing Excel to Database'
-                            });
-                        }
-                    },
-                    success: function(result) {
-                        $.messager.progress('close');
-                        //Clear File
-                        $.ajax({
-                            url: "<?= base_url('sales/sales_order_deliveries/uploadclearFailed') ?>"
+                    onSubmit: function () {
+                        if (!$(this).form('validate')) return false;
+
+                        $.messager.progress({
+                            title: 'Please Wait',
+                            msg: 'Importing Excel to Database'
                         });
-                        var json = eval('(' + result + ')');
-                        requestData(json.total, json);
+                    },
+                    success: function (result) {
+                        $.messager.progress('close');
+                        // Clear File
+                        $.ajax({ 
+                            url: "<?= base_url('sales/sales_order_deliveries/uploadclearFailed') ?>" 
+                        });
 
-                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                            if (value < 100) {
-                                value = Math.floor((number / total) * 100);
-                                $('#p_upload').progressbar('setValue', value);
-                                $('#p_start').html(number);
-                                $('#p_finish').html(total);
+                        let res = JSON.parse(result);
+                        let dataList = res.data ?? [];
 
-                                $.ajax({
-                                    type: "POST",
-                                    async: true,
-                                    url: "<?= base_url('sales/sales_order_deliveries/uploadCreate') ?>",
-                                    data: {
-                                        "data": json[number - 1]
-                                    },
-                                    cache: false,
-                                    dataType: "json",
-                                    success: function(result) {
-                                        if (result.theme == "success") {
-                                            $('#p_success').html(success);
-                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                        } else {
-                                            $('#p_failed').html(failed);
-                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                            //Json Failed
-                                            $.ajax({
-                                                type: "POST",
-                                                async: true,
-                                                url: "<?= base_url('sales/sales_order_deliveries/uploadcreateFailed') ?>",
-                                                data: {
-                                                    data: json[number - 1],
-                                                    message: result.message
-                                                },
-                                                cache: false
-                                            });
-                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                        }
-                                        $("#p_remarks").append(title + "<br>");
-                                    }
-                                });
-                            }
+                        console.log(dataList);
+
+                        if (dataList.length === 0) {
+                            $.messager.alert("Upload Failed", "Data not found from Excel file", "error");
+                            return;
                         }
+
+                        // Reset UI
+                        $('#p_upload').progressbar('setValue', 0);
+                        $('#p_start').html(0);
+                        $('#p_finish').html(dataList.length);
+                        $('#p_success').html(0);
+                        $('#p_failed').html(0);
+                        $('#p_remarks').html('');
+
+                        let totalExpected = dataList.length;
+
+                        // Kirim semua data
+                        $.ajax({
+                            type: "POST",
+                            url: "<?= base_url('sales/sales_order_deliveries/uploadCreate') ?>",
+                            data: { data: dataList },
+                            dataType: "json",
+                            success: function (response) {
+                                // if (response.theme === 'error') {
+                                //     $.messager.alert(response.title ?? "Upload Failed", response.message ?? "Some data failed to save", "error");
+                                // }
+
+                                $('#p_upload').progressbar('setValue', 0);
+                                let successCount = 0;
+                                let failedCount = 0;
+                                let progressCount = 0;
+                                let total = response.total_expected ?? response.results.length;
+
+                                function updateProgress() {
+                                    let percent = Math.floor((progressCount / total) * 100);
+                                    $('#p_upload').progressbar('setValue', percent);
+                                    $('#p_start').html(progressCount);
+                                    $('#p_success').html(successCount);
+                                    $('#p_failed').html(failedCount);
+                                }
+
+                                if (response.results && response.results.length > 0) {
+                                    let delayPerItem = 50;
+                                    response.results.forEach(function (r, i) {
+                                        setTimeout(function () {
+                                            let color = r.status === "success" ? "green" : "red";
+
+                                            if (r.status === "success") successCount++;
+                                            else failedCount++;
+
+                                            $('#p_remarks').append(
+                                                `<b style="color: ${color};">${r.item}</b> | ${r.message}<br>`
+                                            );
+
+                                            progressCount++;
+                                            updateProgress();
+
+                                            // Jika sudah item terakhir
+                                            if (progressCount === total) {
+                                                if (response.theme === 'error') {
+                                                    $.messager.alert(response.title ?? "Upload Failed", response.message ?? "Some data failed to save", "error");
+                                                }
+                                            }
+
+                                        }, i * delayPerItem);
+                                    });
+                                }
+
+                                $('#dg').datagrid('reload');
+                            },
+
+                            error: function (xhr, status, error) {
+                                $.messager.alert("Upload Error", "An error occurred while saving the data", "error");
+                            }
+                        });
                     }
                 });
             }
