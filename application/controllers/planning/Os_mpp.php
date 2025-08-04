@@ -70,7 +70,7 @@ class Os_mpp extends CI_Controller
             $filter_period_month = @base64_decode($get['filter_period_month']);
             $filter_period_year = @base64_decode($get['filter_period_year']);
             $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
-            $filter_customer_id = @base64_decode($get['filter_customer_id']);
+            // $filter_customer_id = @base64_decode($get['filter_customer_id']);
             $filter_revision = @base64_decode($get['filter_revision']);
 
             $page = $this->input->post('page');
@@ -82,23 +82,23 @@ class Os_mpp extends CI_Controller
             $result = array();
 
             //Select Query
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.customer_id as customer_id_cus_item, d.name as customer_name');
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
             $this->db->from('os_mpp a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-            $this->db->join('customer_items c', 'a.item_fg_id = c.item_fg_id AND a.customer_id = c.customer_id');
-            $this->db->join('customers d', 'c.customer_id = d.id');
+            // $this->db->join('customer_items c', 'a.item_fg_id = c.item_fg_id AND a.customer_id = c.customer_id');
+            // $this->db->join('customers d', 'c.customer_id = d.id');
             $this->db->like('a.p_month', $filter_period_month);
             $this->db->like('a.p_year', $filter_period_year);
-            $this->db->like('a.customer_id', $filter_customer_id);
+            // $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->like('a.item_fg_id', $filter_item_fg_id);
             // $this->db->like('d.id', $filter_customer_id);
             $this->db->like('a.revision', $filter_revision);
             $this->db->group_by('a.p_month');
             $this->db->group_by('a.p_year');
             $this->db->group_by('a.revision');
-            $this->db->group_by('a.customer_id');
+            // $this->db->group_by('a.customer_id');
             $this->db->group_by('a.item_fg_id');
-            $this->db->order_by('a.created_date', 'DESC');
+            $this->db->order_by('a.item_fg_id', 'ASC');
 
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
@@ -172,9 +172,9 @@ class Os_mpp extends CI_Controller
                 'p_year' => $p_year,
                 'revision' => $revision,
                 'document_no' => $data->val($i, 2),
-                'customer_id' => $data->val($i, 3),
-                'item_fg_id' => $data->val($i, 4),
-                'qty' => $data->val($i, 5)
+                // 'customer_id' => $data->val($i, 3),
+                'item_fg_id' => $data->val($i, 3),
+                'qty' => $data->val($i, 4)
             );
         }
 
@@ -222,25 +222,25 @@ class Os_mpp extends CI_Controller
                 "number" => $data['item_fg_id'],
             ]);
 
-            $customer = $this->crud->read('customers', [], [
-                "number" => $data['customer_id'],
-            ]);
+            // $customer = $this->crud->read('customers', [], [
+            //     "number" => $data['customer_id'],
+            // ]);
 
             if (empty($item_fg->id)) {
                 echo json_encode(array("title" => "Not found", "message" => " Product No. " . $data['item_fg_id'] . " is Not Found!", "theme" => "error"));
                 return;
             }
 
-            if (empty($customer->id)) {
-                echo json_encode(array("title" => "Not found", "message" => " Customer No. " . $data['customer_id'] . " is Not Found!", "theme" => "error"));
-                return;
-            }
+            // if (empty($customer->id)) {
+            //     echo json_encode(array("title" => "Not found", "message" => " Customer No. " . $data['customer_id'] . " is Not Found!", "theme" => "error"));
+            //     return;
+            // }
 
             $data['item_fg_id'] = $item_fg->id;
-            $data['customer_id'] = $customer->id;
+            // $data['customer_id'] = $customer->id;
 
             $os_mpp = $this->crud->read('os_mpp', [], [
-                "customer_id" => $data['customer_id'],
+                // "customer_id" => $data['customer_id'],
                 "item_fg_id" => $data['item_fg_id'],
                 "p_month" => $data['p_month'],
                 "p_year" => $data['p_year'],
@@ -249,10 +249,7 @@ class Os_mpp extends CI_Controller
 
             if (!empty($os_mpp->item_fg_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $item_fg->number . " is Duplicate Data", "theme" => "error"));
-            } elseif (!empty($os_mpp->customer_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Customer " . $customer->number . " is Duplicate Data", "theme" => "error"));
-            }
-            else {
+            } else {
                 $send   = $this->crud->create('os_mpp', $data);
                 echo $send;
             }
