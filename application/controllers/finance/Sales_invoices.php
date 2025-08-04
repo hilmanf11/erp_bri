@@ -1428,6 +1428,10 @@ class Sales_invoices extends CI_Controller
                             $tax = "21 (5%)";
                             $tax_total = 0;
                             break;
+                        } elseif ($invoice->account_number == "170.230.00" && $invoice->credit == "0" && $invoice->debit == "0" ) {
+                            $tax = "23 (2%)";
+                            $tax_total = 0;
+                            break;
                         } elseif ($invoice->account_number == "170.110.00") {
                             $tax = "21 (5%)";
                             $tax_total = ($sub_total * (5/100));
@@ -1436,7 +1440,8 @@ class Sales_invoices extends CI_Controller
                             $tax = "23 (2%)";
                             $tax_total = ($sub_total * (2/100));
                             break;
-                        } else{
+                        } 
+                        else{
                             $tax = "";
                             $tax_total = 0;
                         }
