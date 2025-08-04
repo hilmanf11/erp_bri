@@ -939,6 +939,13 @@ class Purchase_order_receipts extends CI_Controller
     {
         $purchase_order_receipt_total = $this->crud->reads('purchase_order_receipts', [], ["receipt_no" => base64_decode($receipt_no)]);
         $po_receipt = $this->crud->read('purchase_order_receipts', [], ["receipt_no" => base64_decode($receipt_no)]);
+
+        $purchase_orders = $this->crud->read('purchase_orders', [], ["po_no" => $po_receipt->po_no], "", "revision", "desc");
+
+        $purchaseRequests = $this->crud->read('purchase_requests', [], ["request_no" => $purchase_orders->request_no]);
+        
+        $plant = ($purchaseRequests->division==="DIV01")?'RUBBER PART':'EXTRUDER';
+
         $config = $this->db->get('config')->row();
         $config_iso = $this->db->get('config_iso')->row();
         
@@ -1070,7 +1077,7 @@ class Purchase_order_receipts extends CI_Controller
                                         <center>
                                             <h3><u>GOOD RECEIVING NOTE</u></h3>
                                         </center>
-                                        <table style="width:50%; font-size:12px; margin-bottom:10px; float:left;">
+                                        <table style="width:40%; font-size:12px; margin-bottom:10px; float:left;">
                                             <tr>
                                                 <td width="100">Receipt No</td>
                                                 <td width="10">:</td>
@@ -1082,7 +1089,7 @@ class Purchase_order_receipts extends CI_Controller
                                                 <td><b>' . @$po_receipt->receipt_date . '</b></td>
                                             </tr>
                                         </table>
-                                        <table style="width:50%; font-size:12px; margin-bottom:10px; float:left;">
+                                        <table style="width:45%; font-size:12px; margin-bottom:10px; float:left;">
                                             <tr>
                                                 <td width="50">Supplier</td>
                                                 <td width="10">:</td>
@@ -1092,6 +1099,13 @@ class Purchase_order_receipts extends CI_Controller
                                                 <td width="50">Doc. No</td>
                                                 <td width="10">:</td>
                                                 <td><b>' . @$records[0]['bc_document'] . '</b></td>
+                                            </tr>
+                                        </table>
+                                        <table style="width:15%; font-size:12px; margin-bottom:10px; float:left;">
+                                            <tr>
+                                                <td width="40">Plant</td>
+                                                <td width="10">:</td>
+                                                <td><b>' . @$plant . '</b></td>
                                             </tr>
                                         </table>
     

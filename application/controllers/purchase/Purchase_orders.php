@@ -576,6 +576,7 @@ class Purchase_orders extends CI_Controller
         $signatures = $this->db->get('signatures')->row();
         $purchaseRequests = $this->crud->read('purchase_requests', [], ["request_no" => $purchase_orders->request_no]);
         $table_approval = ($purchaseRequests->division==="DIV01")?'purchase_orders':'purchase_orders_2';
+        $plant = ($purchaseRequests->division==="DIV01")?'RUBBER PART':'EXTRUDER';
         $approval=$this->db->query("SELECT *, CASE 
             WHEN user_approval_1 = '$purchase_orders->approved_by' THEN '1'
             WHEN user_approval_2 = '$purchase_orders->approved_by' THEN '2'
@@ -760,6 +761,7 @@ class Purchase_orders extends CI_Controller
                                                 <td style="text-align:right;" rowspan="7">
                                                     <div style="display:flex;flex-direction:column;">
                                                         <div style="text-align:left;align-self:flex-end;">
+                                                            <h4>Plant : '. @$plant .'</h4>
                                                             Page <span><b>' . $hal . '</b> of <b>' . $page . '</b></span><br><br>
                                                             PO Periode: <b>' . date("F Y", strtotime($purchase_orders->po_date)) . '</b><br>
                                                             Revision: <b>' . $purchase_orders->revision . '</b><br>
@@ -1038,6 +1040,7 @@ class Purchase_orders extends CI_Controller
         $signatures = $this->db->get('signatures')->row();
         $purchaseRequests = $this->crud->read('purchase_requests', [], ["request_no" => $purchase_orders->request_no]);
         $table_approval = ($purchaseRequests->division==="DIV01")?'purchase_orders':'purchase_orders_2';
+        $plant = ($purchaseRequests->division==="DIV01")?'RUBBER PART':'EXTRUDER';
         // $approval = $this->crud->read('approvals', [], ["table_name" => "purchase_orders"]);
         // $user_1 = $this->crud->read('users', [], ["username" => $approval->user_approval_1]);
         // $user_1 = $this->crud->read('users', [], ["username" => $approval->user_approval_1]);
@@ -1267,6 +1270,7 @@ class Purchase_orders extends CI_Controller
                                                 <td style="text-align:right;" rowspan="7">
                                                     <div style="display:flex;flex-direction:column;">
                                                         <div style="text-align:left;align-self:flex-end;">
+                                                            <h4>Plant : '. @$plant .'</h4>
                                                             Page <span><b>' . $hal . '</b> of <b>' . $page . '</b></span><br><br>
                                                             PO Periode: <b>' . date("F Y", strtotime($purchase_orders->po_date)) . '</b><br>
                                                             Revision: <b>' . $purchase_orders->revision . '</b><br>
