@@ -351,6 +351,141 @@ class Delivery_orders extends CI_Controller
 
         $filter_from = date('2025-01-01');
         $filter_to = date('Y-m-d');
+        $today = date('Y-m-d');
+
+
+        $query_qty_in_fg_scan_in = "SELECT a.item_fg_id, IFNULL(SUM(a.qty), 0) as fg_scan_in
+        FROM fg_scan_in_label a
+        WHERE a.deleted = 0
+        AND a.scan_date = '$today'
+        GROUP BY a.item_fg_id";
+
+        $query_qty_os_fg = "SELECT a.item_fg_id, IFNULL(SUM(a.qty), 0) as qty_os_fg
+        FROM os_fg a
+        WHERE a.deleted = 0
+        AND a.trans_date = '$today'
+        GROUP BY a.item_fg_id";
+
+        $query_transaction_fg_in = "SELECT a.item_fg_id, IFNULL(SUM(a.qty), 0) as initial_in
+        FROM transaction_fg a
+        WHERE a.deleted = 0
+        AND a.request_date = '$today'
+        AND LEFT(a.transaction_type, 2) = 'RE'
+        GROUP BY a.item_fg_id";
+
+        $query_qty_out = "SELECT a.item_fg_id, IFNULL(SUM(a.qty), 0) as qty_out
+        FROM transaction_fg a
+        WHERE a.deleted = 0
+        AND a.request_date = '$today'
+        AND LEFT(a.transaction_type, 2) = 'IS'
+        GROUP BY a.item_fg_id";
+
+        $query_delivery_notes = "SELECT dn.item_fg_id, SUM(dn.qty) as initial_out_g
+        FROM delivery_notes dn
+        JOIN (
+            SELECT 
+                delivery_order_no, 
+                item_fg_id, 
+                customer_order_no,
+                SUM(qty) AS total_shipping_qty
+            FROM shipping_orders
+            WHERE deleted = 0
+            GROUP BY delivery_order_no, item_fg_id, customer_order_no
+        ) s ON dn.delivery_order_no = s.delivery_order_no
+            AND dn.item_fg_id = s.item_fg_id
+            AND dn.customer_order_no = s.customer_order_no
+            AND dn.qty = s.total_shipping_qty
+        WHERE dn.deleted = 0
+        AND DATE(dn.delivery_note_date) = '$today'
+        GROUP BY item_fg_id";
+
+
+
+        $query_qty_in_fg_scan_in2 = "SELECT a.item_fg_id, SUM(a.qty) as fg_scan_in
+        FROM fg_scan_in_label a
+        WHERE a.deleted = 0
+        AND a.scan_date < '$today'
+        GROUP BY a.item_fg_id";
+
+        $query_qty_os_fg2 = "SELECT a.item_fg_id, SUM(a.qty) as qty_os_fg
+        FROM os_fg a
+        WHERE a.deleted = 0
+        AND a.trans_date < '$today'
+        GROUP BY a.item_fg_id";
+                    
+        $query_transaction_fg_in2 = "SELECT a.item_fg_id, SUM(a.qty) as initial_in
+        FROM transaction_fg a
+        WHERE a.deleted = 0
+        AND a.request_date < '$today'
+        AND LEFT(a.transaction_type, 2) = 'RE'
+        GROUP BY a.item_fg_id";
+
+        $query_qty_out2 = "SELECT a.item_fg_id, SUM(a.qty) as qty_out
+        FROM transaction_fg a
+        WHERE a.deleted = 0
+        AND a.request_date < '$today'
+        AND LEFT(a.transaction_type, 2) = 'IS'
+        GROUP BY a.item_fg_id";
+
+        $query_delivery_notes2 = "SELECT dn.item_fg_id, SUM(dn.qty) as initial_out_g
+        FROM delivery_notes dn
+        JOIN (
+            SELECT 
+                delivery_order_no, 
+                item_fg_id, 
+                customer_order_no,
+                SUM(qty) AS total_shipping_qty
+            FROM shipping_orders
+            WHERE deleted = 0
+            GROUP BY delivery_order_no, item_fg_id, customer_order_no
+        ) s ON dn.delivery_order_no = s.delivery_order_no
+            AND dn.item_fg_id = s.item_fg_id
+            AND dn.customer_order_no = s.customer_order_no
+            AND dn.qty = s.total_shipping_qty
+        WHERE dn.deleted = 0
+        AND dn.delivery_note_date < '$today'
+        GROUP BY dn.item_fg_id";
+
+
+        $subquery_end_stock = "
+            SELECT 
+                a.id as item_fg_id,
+                (
+                    COALESCE(x.begin_stock, 0) + 
+                    COALESCE(qc.fg_scan_in, 0) + 
+                    COALESCE(qnc.qty_os_fg, 0) + 
+                    COALESCE(qi.initial_in, 0) -
+                    (
+                        COALESCE(qo.qty_out, 0) + 
+                        COALESCE(qg.initial_out_g, 0)
+                    )
+                ) as end_stock
+            FROM item_fg a
+            LEFT JOIN (
+                SELECT a.id,
+                    (
+                        COALESCE(qc.fg_scan_in, 0) + 
+                        COALESCE(qi.initial_in, 0) + 
+                        COALESCE(qnc.qty_os_fg, 0) - 
+                        (
+                            COALESCE(qo.qty_out, 0) + 
+                            COALESCE(qg.initial_out_g, 0)
+                        )
+                    ) AS begin_stock
+                FROM item_fg a
+                LEFT JOIN ($query_qty_in_fg_scan_in2) qc ON a.id = qc.item_fg_id
+                LEFT JOIN ($query_qty_os_fg2) qnc ON a.id = qnc.item_fg_id
+                LEFT JOIN ($query_transaction_fg_in2) qi ON a.id = qi.item_fg_id
+                LEFT JOIN ($query_qty_out2) qo ON a.id = qo.item_fg_id
+                LEFT JOIN ($query_delivery_notes2) qg ON a.id = qg.item_fg_id
+                GROUP BY a.id
+            ) x ON a.id = x.id
+            LEFT JOIN ($query_qty_in_fg_scan_in) qc ON a.id = qc.item_fg_id
+            LEFT JOIN ($query_qty_os_fg) qnc ON a.id = qnc.item_fg_id
+            LEFT JOIN ($query_transaction_fg_in) qi ON a.id = qi.item_fg_id
+            LEFT JOIN ($query_qty_out) qo ON a.id = qo.item_fg_id
+            LEFT JOIN ($query_delivery_notes) qg ON a.id = qg.item_fg_id
+        ";
 
         if ($sales_order == "FG") {
             $this->db->select("
@@ -386,61 +521,8 @@ class Delivery_orders extends CI_Controller
                         ELSE COALESCE(a.qty, 0)
                     END
                 ) as qty_del,
-
-                (
-                    COALESCE((
-                        SELECT 
-                            (
-                                COALESCE(SUM(CASE 
-                                    WHEN f2.deleted = 0 AND DATE(f2.scan_date) < '$filter_from'
-                                    THEN f2.qty 
-                                    ELSE 0 
-                                END),0) + 
-                                COALESCE(SUM(CASE 
-                                    WHEN o2.deleted = 0 AND DATE(o2.trans_date) < '$filter_from'
-                                    THEN o2.qty
-                                    ELSE 0 
-                                END),0) +
-                                COALESCE(SUM(CASE 
-                                    WHEN tf2.deleted = 0 AND DATE(tf2.request_date) < '$filter_from' AND LEFT(tf2.transaction_type, 2) = 'RE'
-                                    THEN tf2.qty
-                                    ELSE 0
-                                END),0) - 
-                                COALESCE(SUM(CASE 
-                                    WHEN sh2.deleted = 0 AND DATE(sh2.created_date) < '$filter_from'
-                                    THEN sh2.qty
-                                    ELSE 0 
-                                END),0) -
-                                COALESCE(SUM(CASE 
-                                    WHEN tf3.deleted = 0 AND DATE(tf3.request_date) < '$filter_from' AND LEFT(tf3.transaction_type, 2) = 'IS'
-                                    THEN tf3.qty
-                                    ELSE 0
-                                END),0)
-                            )
-                        FROM fg_scan_in_label f2
-                        LEFT JOIN os_fg o2 ON f2.item_fg_id = o2.item_fg_id
-                        LEFT JOIN shipping_orders sh2 ON f2.item_fg_id = sh2.item_fg_id
-                        LEFT JOIN transaction_fg tf2 ON f2.item_fg_id = tf2.item_fg_id
-                        LEFT JOIN transaction_fg tf3 ON f2.item_fg_id = tf3.item_fg_id
-                        WHERE f2.item_fg_id = b.item_fg_id
-                    ), 0)
-
-                    +
-
-                    COALESCE((SELECT SUM(f.qty) FROM fg_scan_in_label f WHERE f.item_fg_id = b.item_fg_id AND f.deleted = 0 AND f.scan_date BETWEEN '$filter_from' AND '$filter_to'), 0) +
-                    COALESCE((SELECT SUM(o.qty) FROM os_fg o WHERE o.item_fg_id = b.item_fg_id AND o.deleted = 0 AND o.trans_date BETWEEN '$filter_from' AND '$filter_to'), 0) +
-                    COALESCE((SELECT SUM(tf.qty) FROM transaction_fg tf WHERE tf.item_fg_id = b.item_fg_id AND tf.deleted = 0 AND tf.request_date BETWEEN '$filter_from' AND '$filter_to' AND LEFT(tf.transaction_type, 2) = 'RE'), 0)
-
-                    -
-
-                    COALESCE((SELECT SUM(sh.qty) FROM shipping_orders sh WHERE sh.item_fg_id = b.item_fg_id AND sh.deleted = 0 AND DATE(sh.created_date) BETWEEN '$filter_from' AND '$filter_to'), 0) -
-                    COALESCE((SELECT SUM(tf.qty) FROM transaction_fg tf WHERE tf.item_fg_id = b.item_fg_id AND tf.deleted = 0 AND tf.request_date BETWEEN '$filter_from' AND '$filter_to' AND LEFT(tf.transaction_type, 2) = 'IS'), 0)
-
-                    - 
-
-                    COALESCE((SELECT SUM(do.qty_del) FROM delivery_orders do WHERE do.item_fg_id = b.item_fg_id AND status = '0'), 0)
-
-                ) as stock,
+                
+                es.end_stock as stock,
 
                 ((b.qty - COALESCE(SUM(c.qty_del), 0)) - COALESCE(a.qty, 0)) as stock_bal,
 
@@ -460,8 +542,11 @@ class Delivery_orders extends CI_Controller
                 ) AS partial
 
             ");
-
+            
             $this->db->from('sales_orders b');
+            
+            $this->db->join("($subquery_end_stock) es", "es.item_fg_id = b.item_fg_id", "left");
+            
             //$this->db->join('sales_order_deliveries a', 'a.customer_order_no = b.customer_order_no and a.trans_date = b.delivery_date');
             $this->db->join('sales_order_deliveries a', 'a.customer_order_no = b.customer_order_no and a.sales_order_no = b.sales_order_no and a.item_fg_id = b.item_fg_id and a.customer_id = b.customer_id');
 
