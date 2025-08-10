@@ -81,7 +81,7 @@ class Transaction_rm extends CI_Controller
 
     public function readType()
     {
-        $records = $this->crud->query("SELECT * FROM transaction_type WHERE type = 'IS-0001' or type = 'IS-0002' or type = 'IS-0003' or type = 'RE-0002' or type = 'RE-0003' and status = '0'");
+        $records = $this->crud->query("SELECT * FROM transaction_type WHERE type = 'IS-0001' or type = 'IS-0002' or type = 'IS-0003' or type = 'IS-0004' or type = 'RE-0001' or type = 'RE-0002' or type = 'RE-0003' and status = '0'");
         echo json_encode($records);
     }
 
@@ -147,9 +147,10 @@ class Transaction_rm extends CI_Controller
 
             if ($id === "0") {
                 //Select Query
-                $this->db->select('a.*, c.number as item_number, c.name as item_name, c.uom');
+                $this->db->select('a.*, c.number as item_number, c.name as item_name, c.uom, d.name as type');
                 $this->db->from('transaction_rm a');
                 $this->db->join('item_rm c', 'a.item_rm_id = c.id', 'left');
+                $this->db->join('transaction_type d', 'a.transaction_type = d.type', 'left');
                 $this->db->where('a.deleted', 0);
                 // $this->db->where('a.status', 0);
                 if ($filter_request_no != "") {
@@ -196,7 +197,8 @@ class Transaction_rm extends CI_Controller
                         "transaction_id" => $record['transaction_id'],
                         "remarks" => $record['remarks'],
                         "status" => $record['status'],
-                        "state" => "closed"
+                        "state" => "closed",
+                        "type" => $record['type']
                     );
                 }
                 $result['total'] = $totalRows;
@@ -204,9 +206,10 @@ class Transaction_rm extends CI_Controller
                 echo json_encode($result);
             } else {
                 //Select Query
-                $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom');
+                $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom, d.name as type');
                 $this->db->from('transaction_rm a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+                $this->db->join('transaction_type d', 'a.transaction_type = d.type', 'left');
                 $this->db->where('a.deleted', 0);
                 $this->db->where('a.request_no', $id);
                 $this->db->group_by('a.id');
@@ -243,7 +246,8 @@ class Transaction_rm extends CI_Controller
                         "created_by" => $record['created_by'],
                         "created_date" => $record['created_date'],
                         "updated_by" => $record['updated_by'],
-                        "updated_date" => $record['updated_date']
+                        "updated_date" => $record['updated_date'],
+                        "type" => $record['type']
                     );
                 }
                 $result = !empty($arr) ? $arr : [];

@@ -237,14 +237,6 @@
                                 var item_name = $(ed2.target).textbox('setValue', rows.name);
                                 var uom = $(ed3.target).textbox('setValue', rows.uom);
 
-                                // let usedLotNos = [];
-                                // let rowsDataGrid = dg.datagrid('getRows');
-                                // rowsDataGrid.forEach(function (row) {
-                                //     if (row.lot_no && row.item_rm_id) {
-                                //         usedLotNos.push(`${row.item_rm_id}|${row.lot_no}`);
-                                //     }
-                                // });
-
                                 $.ajax({
                                     type: "post",
                                     url: "<?= base_url('warehouse/report_history_transactions/readEndingStock') ?>",
@@ -307,10 +299,7 @@
                                 // $.ajax({
                                 //     type: "post",
                                 //     url: "<?= base_url('planning/supply_materials/readLotNoByItem') ?>",
-                                //     data: {
-                                //         item_rm_id: rows.id,
-                                //         used_lot_nos: usedLotNos,
-                                //     },
+                                //     data: "item_rm_id=" + rows.id,
                                 //     dataType: "json",
                                 //     success: function(response) {
                                 //         if (response && response.lot_no) {
@@ -347,7 +336,6 @@
                         }
                     }
                 }, 
-                
                 // {
                 //     field: 'lot_no',
                 //     width: 150,
@@ -360,7 +348,6 @@
                 //         }
                 //     }
                 // }, 
-                
                 {
                     field: 'mpq',
                     width: 100,
@@ -572,7 +559,7 @@
         var filter_kanban_date_from = $("#filter_kanban_date_from").datebox('getValue');
         var filter_kanban_date_to = $("#filter_kanban_date_to").datebox('getValue');
         url = "?filter_kanban_date_from=" + filter_kanban_date_from + "&filter_kanban_date_to=" + filter_kanban_date_to
-
+        
         addTable();
         $('#dg').treegrid({
             url: '<?= base_url('planning/supply_materials/datatables') ?>' + url,

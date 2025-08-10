@@ -113,7 +113,8 @@ class Report_check_serialno extends CI_Controller
         $filter_product_no = $this->input->get("filter_product_no");
         $filter_status_in = $this->input->get("filter_status_in");
         $filter_status_out = $this->input->get("filter_status_out");
-        $this->db->select('a.*, b.number as item_number, b.name as item_name, c.label_no, c.lot_no, c.status as status_label, c.qty, IF(d.id IS NULL, 0, 1) as status_out');
+        $this->db->select('a.*, b.number as item_number, b.name as item_name, c.label_no, c.lot_no, c.status as status_label, c.qty, IF(d.id IS NOT NULL OR c.status_out = 1, 1, 0) AS status_out');
+        //* Old code : IF(d.id IS NULL, 0, 1) as status_out
         $this->db->from('purchase_order_receipts a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('purchase_order_labels c', 'a.receipt_id = c.receipt_id');
@@ -129,9 +130,11 @@ class Report_check_serialno extends CI_Controller
         }
         if ($filter_status_out != "-") {
             if ($filter_status_out == 0) {
-                $this->db->where('d.id IS NULL');
+                // $this->db->where('d.id IS NULL');
+                $this->db->where('(d.id IS NULL AND c.status_out = 0)');
             } else {
-                $this->db->where('d.id IS NOT NULL');
+                // $this->db->where('d.id IS NOT NULL');
+                $this->db->where('(d.id IS NOT NULL OR c.status_out = 1)');
             }
         }
         $this->db->order_by('a.receipt_no', 'ASC');

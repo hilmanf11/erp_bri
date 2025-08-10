@@ -206,9 +206,8 @@ class Report_outstanding_so extends CI_Controller
                         <tr>
                             <th width="20">No</th>
                             <th>SO Date</th>
-                            <th>Sales Order No.</th>
-                            <th>Customer Order No.</th>
                             <th>Customer Name</th>
+                            <th>Customer Order No.</th>
                             <th>Qty Order</th>
                             <th>Qty Delivery</th>
                             <th>Outstanding</th>
@@ -238,9 +237,8 @@ class Report_outstanding_so extends CI_Controller
                 $html .= '<tr>
                             <td>' . $no . '</td>
                             <td>' . $data['sales_order_date'] . '</td>
-                            <td style="mso-number-format:\@">' . $data['sales_order_no'] . '</td>
-                            <td style="mso-number-format:\@">' . $data['customer_order_no'] . '</td>
                             <td>' . $data['customer_name'] . '</td>
+                            <td style="mso-number-format:\@">' . $data['customer_order_no'] . '</td>
                             <td style="text-align:right;">' . number_format($data['qty_order'], 0, '.', '.') . '</td>
                             <td style="text-align:right;">' . number_format($data['qty_delivery'], 0, '.', '.') . '</td>
                             <td style="text-align:right;">' . number_format($data['qty_outstanding'], 0, '.', '.') . '</td>
@@ -250,14 +248,14 @@ class Report_outstanding_so extends CI_Controller
             }
 
             $html .= '<tr>
-                        <th colspan="5" style="text-align:right;">TOTAL</th>
+                        <th colspan="4" style="text-align:right;">TOTAL</th>
                         <th style="text-align:right;">' . number_format($qty_order, 0, '.', '.') . '</th>
                         <th style="text-align:right;">' . number_format($qty_delivery, 0, '.', '.') . '</th>
                         <th style="text-align:right;">' . number_format($qty_outstanding, 0, '.', '.') . '</th>
                         <th>' . $status . '</th>
                     </tr>';
         } else {
-            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, a.qty, a.delivery, a.outstanding, b.name as customer_name, c.number as item_fg_number, c.name as item_fg_name, a.closing_reason, a.type_closing');
+            $this->db->select('a.sales_order_no, a.item_fg_id, a.sales_order_date, a.customer_order_no, a.qty, a.delivery, a.outstanding, b.name as customer_name, c.number as item_fg_number, c.name as item_fg_name, a.closing_reason, a.type_closing');
             $this->db->from('sales_orders a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
@@ -265,6 +263,7 @@ class Report_outstanding_so extends CI_Controller
             $this->db->order_by('a.customer_order_no', 'ASC');
             $this->db->order_by('b.name', 'ASC');
             $this->db->order_by('a.sales_order_date', 'ASC');
+            $this->db->order_by('c.name', 'ASC');
 
             // Filter by customer name
             if (!empty($filter_customer_name)) {
@@ -311,11 +310,10 @@ class Report_outstanding_so extends CI_Controller
                         <tr>
                             <th width="20">No</th>
                             <th>SO Date</th>
+                            <th>Customer Name</th>
+                            <th>Customer Order No</th>
                             <th>Product No</th>
                             <th>Product Name</th>
-                            <th>Sales Order No</th>
-                            <th>Customer Order No</th>
-                            <th>Customer Name</th>
                             <th>Qty Order</th>
                             <th>Qty Delivery</th>
                             <th>Outstanding</th>
@@ -333,11 +331,10 @@ class Report_outstanding_so extends CI_Controller
                 $html .= '<tr>
                             <td>' . $no . '</td>
                             <td>' . $data['sales_order_date'] . '</td>
+                            <td style="mso-number-format:\@">' . $data['customer_name'] . '</td>
+                            <td style="mso-number-format:\@">' . $data['customer_order_no'] . '</td>
                             <td style="mso-number-format:\@">' . $data['item_fg_number'] . '</td>
                             <td style="mso-number-format:\@">' . $data['item_fg_name'] . '</td>
-                            <td style="mso-number-format:\@">' . $data['sales_order_no'] . '</td>
-                            <td style="mso-number-format:\@">' . $data['customer_order_no'] . '</td>
-                            <td style="mso-number-format:\@">' . $data['customer_name'] . '</td>
                             <td style="text-align:right;">' . number_format($data['qty'], 0, '.', '.') . '</td>
                             <td style="text-align:right;">' . number_format($data['delivery'], 0, '.', '.') . '</td>
                             <td style="text-align:right;">' . number_format($data['outstanding'], 0, '.', '.') . '</td>
@@ -346,7 +343,7 @@ class Report_outstanding_so extends CI_Controller
             }
 
             $html .= '<tr>
-                        <th colspan="7" style="text-align:right;">TOTAL</th>
+                        <th colspan="6" style="text-align:right;">TOTAL</th>
                         <th style="text-align:right;">' . number_format($qty_order, 0, '.', '.') . '</th>
                         <th style="text-align:right;">' . number_format($qty_delivery, 0, '.', '.') . '</th>
                         <th style="text-align:right;">' . number_format($qty_outstanding, 0, '.', '.') . '</th>

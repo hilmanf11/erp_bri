@@ -247,6 +247,7 @@ class Sales_orders extends CI_Controller
                 continue;
             }
 
+            // Validasi duplikasi berdasarkan customer_order_no + item_fg_id dengan delivery_date berbeda
             $date_conflict_check = $this->crud->read("sales_orders", [], [
                 "customer_order_no" => $post['customer_order_no'],
                 "item_fg_id" => $post['item_fg_id'],
@@ -316,7 +317,10 @@ class Sales_orders extends CI_Controller
                         }
                     }
                 }
+
+
             } else {
+                // Cek apakah customer_order_no sudah pernah digunakan oleh data sebelumnya
                 $existing_customer_order = $this->crud->reads("sales_orders", [], [
                     "customer_order_no" => $post['customer_order_no']
                 ]);

@@ -21,9 +21,8 @@
             <th data-options="field:'ost_so',width:110,halign:'center',formatter:numberFormat">Outstanding SO</th>
             <th data-options="field:'so_m0',width:200,align:'center',formatter:numberFormat">SO M0</th>
             <th data-options="field:'total_so',width:100,halign:'center',formatter:numberFormat">Total SO</th>
-            <th data-options="field:'delivery_schedule',width:150,halign:'center',formatter:numberFormat">Delivery Schedule</th>
-            <th data-options="field:'delivery',width:120,halign:'center',formatter:numberFormat">Delivery Actual</th>
-            <th data-options="field:'balance',width:120,halign:'center',formatter:numberFormat">Balance</th>
+            <th data-options="field:'delivery',width:100,halign:'center',formatter:numberFormat">Delivery</th>
+            <th data-options="field:'balance',width:220,halign:'center',formatter:numberFormat">Balance</th>
             <th data-options="field:'forecast',width:100,halign:'center',formatter:numberFormat">Forecast</th>
             <th data-options="field:'bal_fc',width:100,halign:'center',formatter:formatPercentage,styler:stylePercentage">Bal Forecast</th>
             <th data-options="field:'total_sales',width:100,halign:'center',formatter:formatRupiah">Total Sales</th>
@@ -52,12 +51,12 @@
 
             <div style="float: left; width: 50%;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product No</span>
-                    <input style="width:60%;" id="filter_item_fg" class="easyui-combogrid">
-                </div>
-                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Family</span>
                     <input style="width:60%;" id="filter_product_family" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product No</span>
+                    <input style="width:60%;" id="filter_item_fg" class="easyui-combogrid">
                 </div>
                 <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
                     <span style="width:35%; display:inline-block;"></span>

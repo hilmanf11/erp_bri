@@ -701,7 +701,7 @@ class Report_delivery_notes extends CI_Controller
         $filter_customer_order_no = @base64_decode($get['filter_customer_order_no']);
         $filter_item_fg = @base64_decode($get['filter_item_fg']);
         $filter_status_delivery = @base64_decode($get['filter_status_delivery']);
-        // $filter_status = @base64_decode($get['filter_status']);
+        $filter_status = @base64_decode($get['filter_status']);
         $filter_product_family = @base64_decode($get['filter_product_family']);
         $filter_plant = @base64_decode($get['filter_plant']);
 
@@ -752,9 +752,9 @@ class Report_delivery_notes extends CI_Controller
         if ($filter_status_delivery != "") {
             $this->db->where('a.status_delivery', $filter_status_delivery);
         }
-        // if ($filter_status != "") {
-        //     $this->db->where('a.status', $filter_status);
-        // }
+        if ($filter_status != "") {
+            $this->db->where('a.status', $filter_status);
+        }
         if ($filter_product_family != "") {
             $this->db->where('f.item_family_number', $filter_product_family);
         }
@@ -867,6 +867,7 @@ class Report_delivery_notes extends CI_Controller
                         <th style="width: 80px; text-align: center;">Qty Delivery</th>
                         <th style="width: 50px; text-align: center;">UOM</th>
                         <th style="width: 80px; text-align: center;">Status Delivery</th>
+                        <th style="width: 80px; text-align: center;">Status Invoices</th>
                     </tr>';
         
         $no = 1;
@@ -883,6 +884,14 @@ class Report_delivery_notes extends CI_Controller
                 $color = '#FF9B17';
             }
 
+            if($row['status'] == 0){
+                $status = 'OPEN';
+                $colorS = 'green';
+            } else {
+                $status = 'CLOSE';
+                $colorS = 'red';
+            }
+
             $totalQtyDel += $row['qty'];
 
             $html .= '<tr>
@@ -897,13 +906,14 @@ class Report_delivery_notes extends CI_Controller
                         <td style="text-align: right;">'.number_format($row['qty'],0,".",".").'</td>
                         <td class="no-wrap">'.$row['uom'].'</td>
                         <td class="no-wrap" style="font-weight: bold; color: '.$color.'; text-align: center;">'.$status_delivery.'</td>
+                        <td class="no-wrap" style="font-weight: bold; color: '.$colorS.'; text-align: center;">'.$status.'</td>
                     </tr>';
             $no++;
         }
 
 
         $html .= '<tr>
-            <td colspan="8" style="text-align:right;"><b>GRAND TOTAL</b></td>
+            <td colspan="9" style="text-align:right;"><b>GRAND TOTAL</b></td>
             <td style="text-align:right;">' . number_format($totalQtyDel, 0, '.', '.') . '</td>
             <td></td>
             <td></td>

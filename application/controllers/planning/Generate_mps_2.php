@@ -99,6 +99,102 @@ class Generate_mps_2 extends CI_Controller
         echo json_encode($arr);
     }
 
+    public function cutOff($filter_month, $filter_year)
+    {
+        if (empty($filter_month) || empty($filter_year)) {
+            return false;
+        }
+
+        $generate_date = date('Y-m-d', strtotime("{$filter_year}-{$filter_month}-25 -1 month"));
+
+        while (true) {
+            $day_of_week = date('w', strtotime($generate_date));
+            $this->db->select('remarks');
+            $this->db->from('calendars');
+            $this->db->where('working_date', $generate_date);
+            $holiday = $this->db->get()->row();
+
+            $is_weekend = ($day_of_week == 0 || $day_of_week == 6);
+            $is_holiday = !empty($holiday) && !empty($holiday->remarks);
+
+            if (!$is_weekend && !$is_holiday) {
+                // Setelah dapat hari kerja, cari 1 hari kerja sebelumnya
+                $cutoff_date = $generate_date;
+                do {
+                    $cutoff_date = date('Y-m-d', strtotime($cutoff_date . ' -1 day'));
+                    $day_of_week = date('w', strtotime($cutoff_date));
+                    $this->db->select('remarks');
+                    $this->db->from('calendars');
+                    $this->db->where('working_date', $cutoff_date);
+                    $holiday = $this->db->get()->row();
+                } while ($day_of_week == 0 || $day_of_week == 6 || (!empty($holiday) && !empty($holiday->remarks)));
+
+                return $cutoff_date;
+            }
+
+            $generate_date = date('Y-m-d', strtotime($generate_date . ' -1 day'));
+        }
+
+    }
+
+    public function isGenerateDay($filter_month, $filter_year)
+    {
+        if (empty($filter_month) || empty($filter_year)) {
+            return false;
+        }
+
+        $generate_date = date('Y-m-d', strtotime("{$filter_year}-{$filter_month}-25 -1 month"));
+
+        while (true) {
+            $day_of_week = date('w', strtotime($generate_date));
+            $this->db->select('remarks');
+            $this->db->from('calendars');
+            $this->db->where('working_date', $generate_date);
+            $holiday = $this->db->get()->row();
+
+            $is_weekend = ($day_of_week == 0 || $day_of_week == 6);
+            $is_holiday = !empty($holiday) && !empty($holiday->remarks);
+
+            if (!$is_weekend && !$is_holiday) {
+                break;
+            }
+
+            $generate_date = date('Y-m-d', strtotime($generate_date . ' -1 day'));
+        }
+
+        $today = date('Y-m-d');
+        return true;
+        return $generate_date == $today;
+    }
+
+    public function isGenerateDate($filter_month, $filter_year)
+    {
+        if (empty($filter_month) || empty($filter_year)) {
+            return false;
+        }
+
+        $generate_date = date('Y-m-d', strtotime("{$filter_year}-{$filter_month}-25 -1 month"));
+
+        while (true) {
+            $day_of_week = date('w', strtotime($generate_date));
+            $this->db->select('remarks');
+            $this->db->from('calendars');
+            $this->db->where('working_date', $generate_date);
+            $holiday = $this->db->get()->row();
+
+            $is_weekend = ($day_of_week == 0 || $day_of_week == 6);
+            $is_holiday = !empty($holiday) && !empty($holiday->remarks);
+
+            if (!$is_weekend && !$is_holiday) {
+                break;
+            }
+
+            $generate_date = date('Y-m-d', strtotime($generate_date . ' -1 day'));
+        }
+
+        return $generate_date;
+    }
+
     // public function getData()
     // {
     //     if ($this->input->get()) {
@@ -331,8 +427,6 @@ class Generate_mps_2 extends CI_Controller
     //         show_error("Cannot Process your request");
     //     }
     // }
-    
-
 
     public function getData()
     {
@@ -340,51 +434,228 @@ class Generate_mps_2 extends CI_Controller
             //Filter Data
             $filter_month = base64_decode($this->input->get('filter_month'));
             $filter_year = base64_decode($this->input->get('filter_year'));
-            $filter_customer = base64_decode($this->input->get('filter_customer'));
+            // $filter_customer = base64_decode($this->input->get('filter_customer'));
             $filter_product_no = base64_decode($this->input->get('filter_product_no'));
             $filter_revision = base64_decode($this->input->get('filter_revision'));
 
+            //* get bulan sebelumnya
             $monthBack = date('F Y', strtotime('-1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
+            
+            //* get bulan dan tahun berikutnya sbg batas looping
             $varBackYear = date('Y', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
             $varBackMonth = date('m', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
-            $cutoff= "$filter_year-$filter_month-01";
+
+            //* digunakan untuk memfilter SO (Sales Order) sebelum dan sesudahnya
+            // $cutoff= "$filter_year-$filter_month-01";
+
+            $cutoff = $this->cutOff($filter_month, $filter_year);
+            $cutoff_to= "$filter_year-$filter_month-01";
+
+            $isGeneratedDate = $this->isGenerateDate($filter_month, $filter_year);
+
 
             //Configuration Planning
             $this->db->select('*');
             $this->db->from("config");
             $config = $this->db->get()->row();
 
+            $query_qty_in_fg_scan_in = "SELECT a.item_fg_id, IFNULL(SUM(a.qty), 0) as fg_scan_in
+            FROM fg_scan_in_label a
+            WHERE a.deleted = 0
+            AND a.scan_date = '$cutoff'
+            GROUP BY a.item_fg_id";
+
+            $query_qty_os_fg = "SELECT a.item_fg_id, IFNULL(SUM(a.qty), 0) as qty_os_fg
+            FROM os_fg a
+            WHERE a.deleted = 0
+            AND a.trans_date = '$cutoff'
+            GROUP BY a.item_fg_id";
+
+            $query_transaction_fg_in = "SELECT a.item_fg_id, IFNULL(SUM(a.qty), 0) as initial_in
+            FROM transaction_fg a
+            WHERE a.deleted = 0
+            AND a.request_date = '$cutoff'
+            AND LEFT(a.transaction_type, 2) = 'RE'
+            GROUP BY a.item_fg_id";
+
+            $query_qty_out = "SELECT a.item_fg_id, IFNULL(SUM(a.qty), 0) as qty_out
+            FROM transaction_fg a
+            WHERE a.deleted = 0
+            AND a.request_date = '$cutoff'
+            AND LEFT(a.transaction_type, 2) = 'IS'
+            GROUP BY a.item_fg_id";
+
+            $query_delivery_notes = "SELECT dn.item_fg_id, SUM(dn.qty) as initial_out_g
+            FROM delivery_notes dn
+            JOIN (
+                SELECT 
+                    delivery_order_no, 
+                    item_fg_id, 
+                    customer_order_no,
+                    SUM(qty) AS total_shipping_qty
+                FROM shipping_orders
+                WHERE deleted = 0
+                GROUP BY delivery_order_no, item_fg_id, customer_order_no
+            ) s ON dn.delivery_order_no = s.delivery_order_no
+                AND dn.item_fg_id = s.item_fg_id
+                AND dn.customer_order_no = s.customer_order_no
+                AND dn.qty = s.total_shipping_qty
+            WHERE dn.deleted = 0
+            AND DATE(dn.delivery_note_date) = '$cutoff'
+            GROUP BY item_fg_id";
+
+
+
+            $query_qty_in_fg_scan_in2 = "SELECT a.item_fg_id, SUM(a.qty) as fg_scan_in
+            FROM fg_scan_in_label a
+            WHERE a.deleted = 0
+            AND a.scan_date < '$cutoff'
+            GROUP BY a.item_fg_id";
+
+            $query_qty_os_fg2 = "SELECT a.item_fg_id, SUM(a.qty) as qty_os_fg
+            FROM os_fg a
+            WHERE a.deleted = 0
+            AND a.trans_date < '$cutoff'
+            GROUP BY a.item_fg_id";
+                        
+            $query_transaction_fg_in2 = "SELECT a.item_fg_id, SUM(a.qty) as initial_in
+            FROM transaction_fg a
+            WHERE a.deleted = 0
+            AND a.request_date < '$cutoff'
+            AND LEFT(a.transaction_type, 2) = 'RE'
+            GROUP BY a.item_fg_id";
+
+            $query_qty_out2 = "SELECT a.item_fg_id, SUM(a.qty) as qty_out
+            FROM transaction_fg a
+            WHERE a.deleted = 0
+            AND a.request_date < '$cutoff'
+            AND LEFT(a.transaction_type, 2) = 'IS'
+            GROUP BY a.item_fg_id";
+
+            $query_delivery_notes2 = "SELECT dn.item_fg_id, SUM(dn.qty) as initial_out_g
+            FROM delivery_notes dn
+            JOIN (
+                SELECT 
+                    delivery_order_no, 
+                    item_fg_id, 
+                    customer_order_no,
+                    SUM(qty) AS total_shipping_qty
+                FROM shipping_orders
+                WHERE deleted = 0
+                GROUP BY delivery_order_no, item_fg_id, customer_order_no
+            ) s ON dn.delivery_order_no = s.delivery_order_no
+                AND dn.item_fg_id = s.item_fg_id
+                AND dn.customer_order_no = s.customer_order_no
+                AND dn.qty = s.total_shipping_qty
+            WHERE dn.deleted = 0
+            AND dn.delivery_note_date < '$cutoff'
+            GROUP BY dn.item_fg_id";
+
+            $subquery_end_stock = "
+                SELECT 
+                    a.id as item_fg_id,
+                    (
+                        COALESCE(x.begin_stock, 0) + 
+                        COALESCE(qc.fg_scan_in, 0) + 
+                        COALESCE(qnc.qty_os_fg, 0) + 
+                        COALESCE(qi.initial_in, 0) -
+                        (
+                            COALESCE(qo.qty_out, 0) + 
+                            COALESCE(qg.initial_out_g, 0)
+                        )
+                    ) as fg
+                FROM item_fg a
+                LEFT JOIN (
+                    SELECT a.id,
+                        (
+                            COALESCE(qc.fg_scan_in, 0) + 
+                            COALESCE(qi.initial_in, 0) + 
+                            COALESCE(qnc.qty_os_fg, 0) - 
+                            (
+                                COALESCE(qo.qty_out, 0) + 
+                                COALESCE(qg.initial_out_g, 0)
+                            )
+                        ) AS begin_stock
+                    FROM item_fg a
+                    LEFT JOIN ($query_qty_in_fg_scan_in2) qc ON a.id = qc.item_fg_id
+                    LEFT JOIN ($query_qty_os_fg2) qnc ON a.id = qnc.item_fg_id
+                    LEFT JOIN ($query_transaction_fg_in2) qi ON a.id = qi.item_fg_id
+                    LEFT JOIN ($query_qty_out2) qo ON a.id = qo.item_fg_id
+                    LEFT JOIN ($query_delivery_notes2) qg ON a.id = qg.item_fg_id
+                    GROUP BY a.id
+                ) x ON a.id = x.id
+                LEFT JOIN ($query_qty_in_fg_scan_in) qc ON a.id = qc.item_fg_id
+                LEFT JOIN ($query_qty_os_fg) qnc ON a.id = qnc.item_fg_id
+                LEFT JOIN ($query_transaction_fg_in) qi ON a.id = qi.item_fg_id
+                LEFT JOIN ($query_qty_out) qo ON a.id = qo.item_fg_id
+                LEFT JOIN ($query_delivery_notes) qg ON a.id = qg.item_fg_id
+            ";
+
             //Select Query
-            $this->db->select('a.id, a.number, a.name, a.leadtime, b.customer_id,
-            COALESCE(c.pp, 0) as pp, 
-            COALESCE(c.p1, 0) as p1, 
-            COALESCE(c.p2, 0) as p2, 
-            COALESCE(c.p3, 0) as p3,
-            COALESCE(c.pp + c.p1 + c.p2 + c.p3, 0) as total_wip, 
-            COALESCE(d.qty, 0) as fg, 
-            COALESCE(e.qty, 0) as os_mpp, 
-            COALESCE(f.qty, 0) as os_so');
+            $this->db->select('
+                a.id, 
+                a.number, 
+                a.name, 
+                a.leadtime, 
+                COALESCE(c.pp, 0) as pp, 
+                COALESCE(c.p1, 0) as p1, 
+                COALESCE(c.p2, 0) as p2, 
+                COALESCE(c.p3, 0) as p3,
+                COALESCE(c.pp + c.p1 + c.p2 + c.p3, 0) as total_wip, 
+                COALESCE(d.fg, 0) as fg, 
+                COALESCE(e.qty, 0) as os_mpp, 
+                COALESCE(f.qty, 0) as os_so'
+            );
             $this->db->from('item_fg a');
-            $this->db->join('customer_items b', 'a.id = b.item_fg_id');
-            $this->db->join('stock_wip c', "a.id = c.item_fg_id and c.p_month = '" . $filter_month . "' and c.p_year = '" . $filter_year . "' and c.revision = '" . intval($filter_revision) . "'", "left");
-            $this->db->join('stock_fg d', "a.id = d.item_fg_id and d.p_month = '" . $filter_month . "' and d.p_year = '" . $filter_year . "' and d.revision = '" . intval($filter_revision) . "'", "left");
-            $this->db->join('os_mpp e', "a.id = e.item_fg_id and b.customer_id = e.customer_id and e.p_month = '" . $filter_month . "' and e.p_year = '" . $filter_year . "' and e.revision = '" . intval($filter_revision) . "'", "left");
-            $this->db->join('os_so f', "a.id = f.item_fg_id and b.customer_id = f.customer_id and f.p_month = '" . $filter_month . "' and f.p_year = '" . $filter_year . "' and f.revision = '" . intval($filter_revision) . "'", "left");
-            if ($filter_customer != "") {
-                $this->db->where('b.customer_id', $filter_customer);
-            }
+            // $this->db->join('customer_items b', 'a.id = b.item_fg_id');
+            $this->db->join('stock_wip c', "a.id = c.item_fg_id 
+                and c.p_month = '" . $filter_month . "' 
+                and c.p_year = '" . $filter_year . "' 
+                and c.revision = '" . intval($filter_revision) . "'", 
+                "left"
+            );
+
+            // $this->db->join('stock_fg d', "a.id = d.item_fg_id 
+            //     and d.p_month = '" . $filter_month . "' 
+            //     and d.p_year = '" . $filter_year . "' 
+            //     and d.revision = '" . intval($filter_revision) . "'", 
+            //     "left"
+            // );
+
+            $this->db->join("($subquery_end_stock) d", 'a.id = d.item_fg_id', 'left');
+
+
+            $this->db->join('os_mpp e', "a.id = e.item_fg_id 
+                and e.p_month = '" . $filter_month . "' 
+                and e.p_year = '" . $filter_year . "' 
+                and e.revision = '" . intval($filter_revision) . "'", 
+                "left"
+            );
+            $this->db->join('os_so f', "a.id = f.item_fg_id 
+                and f.p_month = '" . $filter_month . "' 
+                and f.p_year = '" . $filter_year . "' 
+                and f.revision = '" . intval($filter_revision) . "'", 
+                "left"
+            );
+            
+            // if ($filter_customer != "") {
+            //     $this->db->where('b.customer_id', $filter_customer);
+            // }
+
             if ($filter_product_no != "") {
                 $this->db->where('a.id', $filter_product_no);
             }
-            $this->db->group_by('b.customer_id');
-            $this->db->group_by('b.item_fg_id');
+
+            $this->db->where('a.deleted', 0);
+            $this->db->where('a.status', 0);
+            $this->db->group_by('a.id');
             $this->db->order_by('a.number', 'asc');
             $records = $this->db->get()->result_array();
 
             foreach ($records as $data) {
                 
                 $itmid = $data['id'];
-                $custid = $data['customer_id'];
+                // $custid = $data['customer_id'];
                 $fg = 0;
                 $i = 1;
                 $beginBalance = 0;
@@ -400,18 +671,6 @@ class Generate_mps_2 extends CI_Controller
                 $prodPlan = 0;
                 $arrMonth = array();
 
-                $monthStart = strtotime($filter_year . "-" . $filter_month . "-01");
-                $monthEnd =  strtotime(date('Y-m-d', strtotime('+5 month', strtotime($varBackYear . "-" . $varBackMonth . "-01"))));
-
-                $currentDate = new DateTime("$filter_year-$filter_month-01");
-                $previousMonths = [];
-                $forecastMonth1 = [];
-                
-                for ($m = 0; $m < 3; $m++) {
-                    $date = clone $currentDate;
-                    $date->modify("-$m month");
-                    $previousMonths[] = $date->format('Y-m');
-                }
                 // $os_so = $this->crud->read('os_so', [], ["customer_id" => $data['customer_id'],"item_fg_id" => $data['id'],"p_month" => $filter_month,"p_year" => $filter_year,"revision" => intval($filter_revision)]);
                 // $so_so_qty = 0;
                 // if(!empty($os_so)){
@@ -420,30 +679,161 @@ class Generate_mps_2 extends CI_Controller
                 if ($data['fg'] !== null) {
                     $fg = intval($data['fg']);
                 }
-                $os_so = $this->crud->query("SELECT sum(outstanding) as so FROM sales_orders WHERE delivery_date < '".$cutoff."' and customer_id = '".$custid."' and item_fg_id = '".$itmid."' and delivery = '0' group by item_fg_id");
+
+                $os_so = $this->crud->query("SELECT sum(outstanding) as so 
+                    FROM sales_orders 
+                    WHERE delivery_date >= '".$isGeneratedDate."'
+                    AND delivery_date < '".$cutoff_to."' 
+                    AND item_fg_id = '".$itmid."'
+                    AND closing_reason IS NULL
+                    AND type_closing IS NULL
+                    GROUP BY item_fg_id
+                ");
+
                 $so_so_qty = 0;
                 if(!empty($os_so)){
                     $so_so_qty = floatval($os_so[0]->so);
                 }
-                //$so = $this->crud->read('sales_orders', [], ["delivery_date >" => $cutoff, "customer_id" => $custid, "item_fg_id" => $itmid, "delivery"=>"0"]);
-                $so = $this->crud->query("SELECT sum(outstanding) as so FROM sales_orders WHERE delivery_date > '".$cutoff."' and customer_id = '".$custid."' and item_fg_id = '".$itmid."' and delivery = '0' group by item_fg_id");
+
+                $so = $this->crud->query("SELECT sum(qty) as so 
+                    FROM sales_orders 
+                    WHERE delivery_date >= '".$cutoff_to."'
+                    AND item_fg_id = '".$itmid."'
+                    GROUP BY item_fg_id
+                ");
+
                 if(!empty($so)){
                     $soOut = $so[0]->so;
                 }
+
                 $totalStock = (intval($data['total_wip']) + intval($data['fg']) + intval($data['os_mpp']));
 
+                // $currentDate = new DateTime("$filter_year-$filter_month-01");
+                // $previousMonths = [];
+                // $forecastMonth1 = [];
+                
+                // for ($m = 0; $m < 3; $m++) {
+                //     $date = clone $currentDate;
+                //     $date->modify("-$m month");
+                //     $previousMonths[] = $date->format('Y-m');
+                // }
 
-                foreach($previousMonths as $fcmonth){
-                    $queryMonth1=$this->db->query("SELECT p_year, p_month, month_1 FROM forecasts WHERE customer_id = '$custid' and item_fg_id='$itmid' and CONCAT(p_year, '-', p_month) = '$fcmonth'");
-                    $resultMonth = $queryMonth1->row();
-                    $forecastMonth1[] = empty($resultMonth) ? 0 : $resultMonth->month_1;
+                // foreach($previousMonths as $fcmonth){
+                //     $queryMonth1=$this->db->query("SELECT p_year, p_month, month_1 
+                //         FROM forecasts 
+                //         where item_fg_id='$itmid' 
+                //         and CONCAT(p_year, '-', p_month) = '$fcmonth'
+                //     ");
+
+                //     $resultMonth = $queryMonth1->row();
+                //     $forecastMonth1[] = empty($resultMonth) ? 0 : $resultMonth->month_1;
+                // }
+
+                // $product_class = $this->get_final_classification($forecastMonth1);
+                // $persentase = ($product_class === "FM")?20:6;
+
+                $currentDate = new DateTime("$filter_year-$filter_month-01");
+                $previousMonths = [];
+                $deliverySums = [];
+
+                // Ambil 3 bulan terakhir termasuk bulan sekarang
+                for ($m = 0; $m < 3; $m++) {
+                    $date = clone $currentDate;
+                    $date->modify("-$m month");
+                    $previousMonths[] = $date->format('Y-m');
                 }
-                $product_class = $this->get_final_classification($forecastMonth1);
-                $persentase = ($product_class === "FM")?10:6;
 
-                //Cek Forecasts
-                $max_rev = $this->db->select_max('revision')->where('customer_id', $custid)->where('item_fg_id', $itmid)->where('p_month', $filter_month)->where('p_year', $filter_year)->get('forecasts')->row()->revision;  
-                $forecast = $this->crud->read('forecasts', [], ["item_fg_id" => $itmid, "customer_id" => $custid, "p_month" => $filter_month, "p_year" => $filter_year, "revision" => intval($max_rev)]);
+                // Ambil total qty delivery dari tiap bulan
+                foreach ($previousMonths as $month) {
+                    $startDate = $month . '-01';
+                    $endDate = date('Y-m-t', strtotime($startDate)); // akhir bulan
+
+                    $query = $this->db->query("
+                        SELECT SUM(qty) as total_qty 
+                        FROM sales_order_deliveries 
+                        WHERE item_fg_id = '$itmid' 
+                        AND deleted = 0
+                        AND trans_date BETWEEN '$startDate' AND '$endDate'
+                    ");
+
+                    $row = $query->row();
+                    $deliverySums[] = empty($row->total_qty) ? 0 : (int)$row->total_qty;
+                }
+
+                // Hitung rata-rata dari total delivery qty selama 3 bulan
+                $avg_delivery = count($deliverySums) > 0 ? array_sum($deliverySums) / count($deliverySums) : 0;
+
+                // Kirim nilai rata-rata ke fungsi klasifikasi dalam array
+                $product_class = $this->get_final_classification([$avg_delivery]);
+
+                // Gunakan persentase sesuai klasifikasi
+                $persentase = ($product_class === "FM") ? 20 : 6;
+
+
+                // Cek Forecasts
+                // $max_rev = $this->db->select_max('revision')
+                // ->where('item_fg_id', $itmid)
+                // ->where('p_month', $filter_month)
+                // ->where('p_year', $filter_year)
+                // ->get('forecasts')
+                // ->row()->revision;
+
+                // $forecast = $this->crud->read('forecasts', [], [
+                //     "item_fg_id" => $itmid, 
+                //     "p_month" => $filter_month, 
+                //     "p_year" => $filter_year, 
+                //     "revision" => intval($max_rev)
+                // ]);
+
+                $this->db->from('forecasts');
+                $this->db->where([
+                    'item_fg_id' => $itmid,
+                    'p_month' => $filter_month,
+                    'p_year' => $filter_year
+                ]);
+                $allForecasts = $this->db->get()->result();
+
+                // Kelompokkan forecast per customer_id
+                $groupedForecasts = [];
+                foreach ($allForecasts as $f) {
+                    $custId = $f->customer_id;
+                    $rev = intval($f->revision);
+                    if (!isset($groupedForecasts[$custId]) || $rev > $groupedForecasts[$custId]->revision) {
+                        $groupedForecasts[$custId] = $f; // Simpan hanya revision tertinggi
+                    }
+                }
+
+                // Cek apakah semua forecast hanya revision = 0
+                $allZeroRevision = true;
+                foreach ($allForecasts as $f) {
+                    if (intval($f->revision) > 0) {
+                        $allZeroRevision = false;
+                        break;
+                    }
+                }
+
+                // Jika semua revisi = 0, maka ambil semua data
+                $finalForecasts = $allZeroRevision ? $allForecasts : array_values($groupedForecasts);
+
+                // Inisialisasi penjumlahan forecast per bulan
+                $sum_forecast = [
+                    'month_1' => 0,
+                    'month_2' => 0,
+                    'month_3' => 0,
+                    // 'month_4' => 0,
+                ];
+
+                // Proses penjumlahan
+                foreach ($finalForecasts as $f) {
+                    $sum_forecast['month_1'] += floatval($f->month_1);
+                    $sum_forecast['month_2'] += floatval($f->month_2);
+                    $sum_forecast['month_3'] += floatval($f->month_3);
+                    // $sum_forecast['month_4'] += floatval($f->month_4);
+                }
+
+                $monthStart = strtotime($filter_year . "-" . $filter_month . "-01");
+                $monthEnd =  strtotime(date('Y-m-d', strtotime('+2 month', strtotime($varBackYear . "-" . $varBackMonth . "-01"))));
+
                 while ($monthStart < $monthEnd) {
                     $monthName = date('F Y', $monthStart);
                     $monthName2 = date('Y-m-01', $monthStart);
@@ -496,80 +886,45 @@ class Generate_mps_2 extends CI_Controller
                         }
                     }
 
-                    //Bulan Pertama - Keenam
+                    //Bulan Pertama - Ketiga
                     if ($i == 1) {
                         $beginBalance = $totalStock - floatval($so_so_qty);
-                        $forecastData = @round($forecast->month_1);
+                        $forecastData = @round($sum_forecast['month_1']);
                         $deliveryRate = @round($forecastData / $hkw);
                         $ito = @round($beginBalance / $deliveryRate);
-                        $safetyStock = @round(((@$data['leadtime'] + $config->fg_ss) / $hkw2) * @round($forecast->month_2));
-                        $safetyStockWIP = (20 / 100) * @round($forecast->month_2);
-                        $safetyStockFG = ($persentase / 100) * @round($forecast->month_2);
+                        $safetyStock = @round(((@$data['leadtime'] + $config->fg_ss) / $hkw2) * @round($sum_forecast['month_2']));
+                        $safetyStockWIP = (10 / 100) * @round($sum_forecast['month_2']);
+                        $safetyStockFG = ($persentase / 100) * @round($sum_forecast['month_2']);
                         $need = (($forecastData+$safetyStockWIP+$safetyStockFG) - $beginBalance);
                         $prodPlan = ($need < 0) ? 0 : $need;
                         // $prodPlan = @round(($forecastData + $safetyStock) - $beginBalance);
                     } else if ($i == 2) {
-                        $forecastData = @round($forecast->month_2);
+                        $forecastData = @round($sum_forecast['month_2']);
                         $deliveryRate = @round($forecastData / $hkw);
-                        $safetyStock = @round(((@$data['leadtime'] + $config->fg_ss) / $hkw2) * @round($forecast->month_3));
-                        $safetyStockWIP = (20 / 100) * @round($forecast->month_3);
-                        $safetyStockFG = ($persentase / 100) * @round($forecast->month_3);
+                        $safetyStock = @round(((@$data['leadtime'] + $config->fg_ss) / $hkw2) * @round($sum_forecast['month_3']));
+                        $safetyStockWIP = (10 / 100) * @round($sum_forecast['month_3']);
+                        $safetyStockFG = ($persentase / 100) * @round($sum_forecast['month_3']);
                         $beginBalance = $safetyStockWIP + $safetyStockFG;
                         $ito = @round($beginBalance / $deliveryRate);
                         $need = (($forecastData+$safetyStockWIP+$safetyStockFG) - $beginBalance);
                         $prodPlan = ($need < 0) ? 0 : $need;
                         // $prodPlan = @round(($forecastData + $safetyStock) - $beginBalance);
                     } elseif ($i == 3) {
-                        $forecastData = @round($forecast->month_3);
+                        $forecastData = @round($sum_forecast['month_3']);
                         $deliveryRate = @round($forecastData / $hkw);
-                        $ito = @round($beginBalance / $deliveryRate);
-                        $safetyStock = @round(((@$data['leadtime'] + $config->fg_ss) / $hkw2) * @round($forecast->month_4));
-                        $safetyStockWIP = (20 / 100) * @round($forecast->month_4);
-                        $safetyStockFG = ($persentase / 100) * @round($forecast->month_4);
-                        $beginBalance = $safetyStockWIP + $safetyStockFG;
-                        $need = (($forecastData+$safetyStockWIP+$safetyStockFG) - $beginBalance);
-                        $prodPlan = ($need < 0) ? 0 : $need;
-                        // $prodPlan = @round(($forecastData + $safetyStock) - $beginBalance);
-                    } elseif ($i == 4) {
-                        $forecastData = @round($forecast->month_4);
-                        $deliveryRate = @round($forecastData / $hkw);
-                        $safetyStock = @round(((@$data['leadtime'] + $config->fg_ss) / $hkw2) * @round($forecast->month_5));
-                        $safetyStockWIP = (20 / 100) * @round($forecast->month_5);
-                        $safetyStockFG = ($persentase / 100) * @round($forecast->month_5);
+                        $safetyStock = @round(((@$data['leadtime'] + $config->fg_ss) / $hkw2) * @round($sum_forecast['month_3']));
+                        $safetyStockWIP = (10 / 100) * @round($sum_forecast['month_3']);
+                        $safetyStockFG = ($persentase / 100) * @round($sum_forecast['month_3']);
                         $beginBalance = $safetyStockWIP + $safetyStockFG;
                         $ito = @round($beginBalance / $deliveryRate);
                         $need = (($forecastData+$safetyStockWIP+$safetyStockFG) - $beginBalance);
                         $prodPlan = ($need < 0) ? 0 : $need;
-                        // $prodPlan = @round(($forecastData + $safetyStock) - $beginBalance);
-                    } elseif ($i == 5) {
-                        $forecastData = @round($forecast->month_5);
-                        $deliveryRate = @round($forecastData / $hkw);
-                        $safetyStock = @round(((@$data['leadtime'] + $config->fg_ss) / $hkw2) * @round($forecast->month_6));
-                        $safetyStockWIP = (20 / 100) * @round($forecast->month_6);
-                        $safetyStockFG = ($persentase / 100) * @round($forecast->month_6);
-                        $beginBalance = $safetyStockWIP + $safetyStockFG;
-                        $ito = @round($beginBalance / $deliveryRate);
-                        $need = (($forecastData+$safetyStockWIP+$safetyStockFG) - $beginBalance);
-                        $prodPlan = ($need < 0) ? 0 : $need;
-                        // $prodPlan = @round(($forecastData + $safetyStock) - $beginBalance);
-                    } elseif ($i == 6) {
-                        $forecastData = @round($forecast->month_6);
-                        $deliveryRate = @round($forecastData / $hkw);
-                        $safetyStock = @round(((@$data['leadtime'] + $config->fg_ss) / $hkw2) * @round($forecast->month_6));
-                        $safetyStockWIP = (20 / 100) * @round($forecast->month_6);
-                        $safetyStockFG = ($persentase / 100) * @round($forecast->month_6);
-                        $beginBalance = $safetyStockWIP + $safetyStockFG;
-                        $ito = @round($beginBalance / $deliveryRate);
-                        $need = (($forecastData+$safetyStockWIP+$safetyStockFG) - $beginBalance);
-                        $prodPlan = ($need < 0) ? 0 : $need;
-                        // $prodPlan = @round(($forecastData + $safetyStock) - $beginBalance);
                     }
 
                     $arrMonth[] = array(
                         "p_month" => $filter_month,
                         "p_year" => $filter_year,
                         "revision" => $filter_revision,
-                        "customer_id" => $custid,
                         "item_fg_id" => $itmid,
                         "ltpp_month" => strtoupper($monthName),
                         "ltpp_month2" => $monthName2,
@@ -589,22 +944,202 @@ class Generate_mps_2 extends CI_Controller
 
                     $monthStart = strtotime("+1 month", $monthStart);
                     $balance = (($prodPlan + $beginBalance) - $forecastData);
+                    // $balance = ($need - $forecastData);
                     $i++;
-
-                    // $beginBalance = $beginBalance;
-                    // $forecast = $forecastData;
-                    // $deliveryRate = $deliveryRate;
-                    // $ito = $ito;
-                    // $safetyStock = $safetyStock;
-                    // $prodPlan = $prodPlanFinal;
-                    // $balance = (($prodPlan + $beginBalance) - $forecast);
                 }
+
+
+                // * start skema perhitungan bulan terinjak
+
+                // $i = 1;
+                // $nextBeginBalance = 0;
+                // while ($monthStart < $monthEnd) {
+                //     $monthName = date('F Y', $monthStart);
+                //     $monthName2 = date('Y-m-01', $monthStart);
+
+                //     $forecastThisMonth = 0;
+
+                //     $this->db->from('forecasts');
+                //     $this->db->where('item_fg_id', $itmid);
+                //     $this->db->where("CONCAT(p_year, '-', LPAD(p_month, 2, '0'), '-01') =", $monthName2);
+                //     $forecastsThisMonth = $this->db->get()->result();
+
+                //     // Kelompokkan forecast by customer_id dengan revision tertinggi
+                //     $groupedForecasts = [];
+                //     foreach ($forecastsThisMonth as $f) {
+                //         $custId = $f->customer_id;
+                //         $rev = intval($f->revision);
+                //         if (!isset($groupedForecasts[$custId]) || $rev > $groupedForecasts[$custId]->revision) {
+                //             $groupedForecasts[$custId] = $f;
+                //         }
+                //     }
+
+                //     // Hitung total forecast bulan ini (ambil hanya month_1)
+                //     foreach ($groupedForecasts as $f) {
+                //         $forecastThisMonth += floatval($f->month_1);
+                //     }
+
+                //     $forecastNextMonth = 0;
+                //     $monthNameNext = date('Y-m-01', strtotime('+1 month', $monthStart));
+
+                //     $this->db->from('forecasts');
+                //     $this->db->where('item_fg_id', $itmid);
+                //     $this->db->where("CONCAT(p_year, '-', LPAD(p_month, 2, '0'), '-01') =", $monthNameNext);
+                //     $forecastsNextMonth = $this->db->get()->result();
+
+                //     $groupedNextForecasts = [];
+                //     foreach ($forecastsNextMonth as $f) {
+                //         $custId = $f->customer_id;
+                //         $rev = intval($f->revision);
+                //         if (!isset($groupedNextForecasts[$custId]) || $rev > $groupedNextForecasts[$custId]->revision) {
+                //             $groupedNextForecasts[$custId] = $f;
+                //         }
+                //     }
+
+                //     foreach ($groupedNextForecasts as $f) {
+                //         // gunakan month_1 untuk bulan depan
+                //         $forecastNextMonth += floatval($f->month_1);
+                //     }
+
+
+                //     // $monthsPlus = strtolower(date('F', strtotime('+1 month', $monthStart)));
+
+                //     $start = strtotime(date('Y-m-01', $monthStart));
+                //     $finish = strtotime(date('Y-m-t', $monthStart));
+
+                //     $start2 = strtotime(date('Y-m-01', strtotime('+1 month', $monthStart)));
+                //     $finish2 = strtotime(date('Y-m-t', strtotime('+1 month', $monthStart)));
+
+                //     //HKW 1
+                //     $hkw = 0;
+                //     for ($z = $start; $z <= $finish; $z += (60 * 60 * 24)) {
+                //         $working_date = date('Y-m-d', $z);
+
+                //         $this->db->select('remarks');
+                //         $this->db->from('calendars');
+                //         $this->db->where('working_date', $working_date);
+                //         $holiday = $this->db->get()->row();
+
+                //         if (date('w', $z) !== '0' && date('w', $z) !== '6') {
+                //             if (@$holiday->remarks != null or @$holiday->remarks != "") {
+                //                 $hkw += 0;
+                //             } else {
+                //                 $hkw += 1;
+                //             }
+                //         } else {
+                //             $hkw += 0;
+                //         }
+                //     }
+
+                //     //HKW 2
+                //     $hkw2 = 0;
+                //     for ($x = $start2; $x <= $finish2; $x += (60 * 60 * 24)) {
+                //         $working_date2 = date('Y-m-d', $x);
+
+                //         $this->db->select('remarks');
+                //         $this->db->from('calendars');
+                //         $this->db->where('working_date', $working_date2);
+                //         $holiday2 = $this->db->get()->row();
+
+                //         if (date('w', $x) !== '0') {
+                //             if (@$holiday2->remarks != null or @$holiday2->remarks != "") {
+                //                 $hkw2 += 0;
+                //             } else {
+                //                 $hkw2 += 1;
+                //             }
+                //         } else {
+                //             $hkw2 += 0;
+                //         }
+                //     }
+
+                //     if ($i == 1) {
+                //         // bulan pertama
+                //         $beginBalance = $totalStock - floatval($so_so_qty);
+                //     } else {
+                //         // bulan berikutnya pakai safety stock bulan sebelumnya
+                //         $beginBalance = $nextBeginBalance;
+                //     }
+
+                //     // $forecastData = @round($forecastThisMonth);
+                //     // $deliveryRate = @round($forecastData / $hkw);
+                //     // $ito = @round($deliveryRate > 0 ? $beginBalance / $deliveryRate : 0);
+                //     // $safetyStock = @round(((@$data['leadtime'] + $config->fg_ss) / $hkw2) * @round($forecastNextMonth));
+                //     // $safetyStockWIP = (10 / 100) * @round($forecastNextMonth);
+                //     // $safetyStockFG = ($persentase / 100) * @round($forecastNextMonth);
+
+                //     // $need = (($forecastData + $safetyStockWIP + $safetyStockFG) - $beginBalance);
+                //     // $prodPlan = ($need < 0) ? 0 : $need;
+
+                //     //Bulan Pertama - Ketiga
+                //     if ($i == 1) {
+                //         // $beginBalance = $totalStock - floatval($so_so_qty);
+                //         $forecastData = @round($forecastThisMonth);
+                //         $deliveryRate = @round($forecastData / $hkw);
+                //         $ito = @round($beginBalance / $deliveryRate);
+                //         $safetyStock = @round(((@$data['leadtime'] + $config->fg_ss) / $hkw2) * @round($forecastNextMonth));
+                //         $safetyStockWIP = (10 / 100) * @round($forecastNextMonth);
+                //         $safetyStockFG = ($persentase / 100) * @round($forecastNextMonth);
+                //         $need = (($forecastData+$safetyStockWIP+$safetyStockFG) - $beginBalance);
+                //         $prodPlan = ($need < 0) ? 0 : $need;
+                //         // $prodPlan = @round(($forecastData + $safetyStock) - $beginBalance);
+                //     } else if ($i == 2) {
+                //         $forecastData = @round($forecastThisMonth);
+                //         $deliveryRate = @round($forecastData / $hkw);
+                //         $safetyStock = @round(((@$data['leadtime'] + $config->fg_ss) / $hkw2) * @round($forecastNextMonth));
+                //         $safetyStockWIP = (10 / 100) * @round($forecastNextMonth);
+                //         $safetyStockFG = ($persentase / 100) * @round($forecastNextMonth);
+                //         // $beginBalance = $safetyStockWIP + $safetyStockFG;
+                //         $ito = @round($beginBalance / $deliveryRate);
+                //         $need = (($forecastData+$safetyStockWIP+$safetyStockFG) - $beginBalance);
+                //         $prodPlan = ($need < 0) ? 0 : $need;
+                //         // $prodPlan = @round(($forecastData + $safetyStock) - $beginBalance);
+                //     } elseif ($i == 3) {
+                //         $forecastData = @round($forecastThisMonth);
+                //         $deliveryRate = @round($forecastData / $hkw);
+                //         $safetyStock = @round(((@$data['leadtime'] + $config->fg_ss) / $hkw2) * @round($forecastThisMonth));
+                //         $safetyStockWIP = (10 / 100) * @round($forecastThisMonth);
+                //         $safetyStockFG = ($persentase / 100) * @round($forecastThisMonth);
+                //         // $beginBalance = $safetyStockWIP + $safetyStockFG;
+                //         $ito = @round($beginBalance / $deliveryRate);
+                //         $need = (($forecastData+$safetyStockWIP+$safetyStockFG) - $beginBalance);
+                //         $prodPlan = ($need < 0) ? 0 : $need;
+                //         // $prodPlan = @round(($forecastData + $safetyStock) - $beginBalance);
+                //     }
+
+                //     $arrMonth[] = array(
+                //         "p_month" => $filter_month,
+                //         "p_year" => $filter_year,
+                //         "revision" => $filter_revision,
+                //         "item_fg_id" => $itmid,
+                //         "ltpp_month" => strtoupper($monthName),
+                //         "ltpp_month2" => $monthName2,
+                //         "hkw" => $hkw2,
+                //         "begin_balance" => $beginBalance,
+                //         "ito" => $ito,
+                //         "so" => $soOut,
+                //         "forecast" => $forecastData,
+                //         "delivery_rate" => $deliveryRate,
+                //         "safety_stock" => $safetyStock,
+                //         "safety_stock_wip" => $safetyStockWIP,
+                //         "safety_stock_fg" => $safetyStockFG,
+                //         "need" => $need,
+                //         "prod_plan" => $prodPlan
+
+                //     );
+
+                //     $nextBeginBalance = $safetyStockWIP + $safetyStockFG;
+                //     $monthStart = strtotime("+1 month", $monthStart);
+                //     $balance = (($prodPlan + $beginBalance) - $forecastData);
+                //     // $balance = ($need - $forecastData);
+                //     $i++;
+                // }
+
+                // * end skema perhitungan bulan terinjak
 
                 $arr[] = array(
                     "p_month" => $filter_month,
                     "p_year" => $filter_year,
                     "revision" => $filter_revision,
-                    "customer_id" => $custid,
                     "item_fg_id" => $itmid,
                     "wip_month" => strtoupper($monthBack),
                     "pp" => $data['pp'],
@@ -670,24 +1205,27 @@ class Generate_mps_2 extends CI_Controller
         }
     }
 
+    // public function checkFg()
+    // {
+    //     $filter_month = base64_decode($this->input->get('filter_month'));
+    //     $filter_year = base64_decode($this->input->get('filter_year'));
+
+    //     $cutoff = Date();// harus tanggal 25 berdasarkan filter month dan year
+    //     $today = new Date();
+
+    //     if ($cutoff == $today) {
+    //         echo json_encode(array("theme" => "success"));
+    //     } else {
+    //         echo json_encode(array("theme" => "error"));
+    //     }
+    // }
+
     public function checkFg()
     {
         $filter_month = base64_decode($this->input->get('filter_month'));
         $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
 
-        //Select Query
-        $this->db->select('*');
-        $this->db->from('stock_fg');
-        //$this->db->where('approved_to', '');
-        if ($filter_month != "" or $filter_year != "") {
-            $this->db->where('p_month', $filter_month);
-            $this->db->where('p_year', $filter_year);
-        }
-        $this->db->where('revision', intval($filter_revision));
-        $records = $this->db->get()->result_array();
-
-        if (count($records) > 0) {
+        if ($this->isGenerateDay($filter_month, $filter_year)) {
             echo json_encode(array("theme" => "success"));
         } else {
             echo json_encode(array("theme" => "error"));
@@ -698,15 +1236,15 @@ class Generate_mps_2 extends CI_Controller
     {
         $filter_month = base64_decode($this->input->get('filter_month'));
         $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
+        // $filter_revision = base64_decode($this->input->get('filter_revision'));
 
         //Select Query
-        $cutoff= "$filter_year-$filter_month-01";
+        $period= "$filter_year-$filter_month-01";
         $this->db->select('*');
         $this->db->from('sales_orders');
         //$this->db->where('approved_to', '');
         if ($filter_month != "" && $filter_year != "") {
-            $this->db->where('delivery_date > ', $cutoff);
+            $this->db->where('delivery_date >= ', $period);
         }
         $this->db->where('delivery', '0');
         $records = $this->db->get()->result_array();
@@ -722,17 +1260,17 @@ class Generate_mps_2 extends CI_Controller
     {
         $filter_month = base64_decode($this->input->get('filter_month'));
         $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_revision = base64_decode($this->input->get('filter_revision'));
+        // $filter_revision = base64_decode($this->input->get('filter_revision'));
 
-        //Select Query
-        $cutoff= "$filter_year-$filter_month-01";
+        $cutOff = $this->cutOff($filter_month, $filter_year);
         $this->db->select('*');
         $this->db->from('sales_orders');
         //$this->db->where('approved_to', '');
         if ($filter_month != "" && $filter_year != "") {
-            $this->db->where('delivery_date < ', $cutoff);
+            $this->db->where('delivery_date >= ', $cutOff);
+            // $this->db->where('delivery_date < ', $cutoff);
         }
-        $this->db->where('delivery', '0');
+        $this->db->where('outstanding !=', '0');
         $records = $this->db->get()->result_array();
 
         if (count($records) > 0) {
@@ -766,6 +1304,32 @@ class Generate_mps_2 extends CI_Controller
         }
     }
 
+    // public function checkOstMpp()
+    // {
+    //     $filter_month = base64_decode($this->input->get('filter_month'));
+    //     $filter_year = base64_decode($this->input->get('filter_year'));
+
+    //     // Step 1: Cari revision terbesar
+    //     $this->db->select_max('revision');
+    //     $this->db->where('p_month', $filter_month);
+    //     $this->db->where('p_year', $filter_year);
+    //     $max_revision = $this->db->get('os_mpp')->row()->revision;
+
+    //     // Step 2: Ambil data os_mpp berdasarkan revision terbesar
+    //     $this->db->select('*');
+    //     $this->db->from('os_mpp');
+    //     $this->db->where('p_month', $filter_month);
+    //     $this->db->where('p_year', $filter_year);
+    //     $this->db->where('revision', $max_revision);
+    //     $records = $this->db->get()->result_array();
+
+    //     if (count($records) > 0) {
+    //         echo json_encode(array("theme" => "success"));
+    //     } else {
+    //         echo json_encode(array("theme" => "error"));
+    //     }
+    // }
+
     public function checkOstMpp()
     {
         $filter_month = base64_decode($this->input->get('filter_month'));
@@ -795,14 +1359,18 @@ class Generate_mps_2 extends CI_Controller
         $filter_month = base64_decode($this->input->get('filter_month'));
         $filter_year = base64_decode($this->input->get('filter_year'));
 
+        // Hitung bulan ke-1 setelah bulan yg dipilih
         $varBackYear = date('Y', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
         $varBackMonth = date('m', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
 
+        // Hitung rentang waktu dari bulan input -> +6 bulan ke depan
+        // Input January 2025 -> Juni 2025
         $monthStart = strtotime($filter_year . "-" . $filter_month . "-01");
         $monthEnd =  strtotime(date('Y-m-d', strtotime('+5 month', strtotime($varBackYear . "-" . $varBackMonth . "-01"))));
 
         $html = "";
         $no = 1;
+        // Hitung Hari Kerja (HKW)
         while ($monthStart < $monthEnd) {
             $monthName = date('m/Y', $monthStart);
             $start = strtotime(date('Y-m-01', $monthStart));
@@ -818,11 +1386,13 @@ class Generate_mps_2 extends CI_Controller
                 $this->db->where('working_date', $working_date);
                 $holiday = $this->db->get()->row();
 
+                // Abaikan Sabtu (w=6) dan Minggu (w=0)
                 if (date('w', $z) !== '0' && date('w', $z) !== '6') {
+                    // Hari Senin–Jumat
                     if (@$holiday->remarks != null or @$holiday->remarks != "") {
-                        $hkw += 0;
+                        $hkw += 0; // Libur nasional
                     } else {
-                        $hkw += 1;
+                        $hkw += 1; // Hari kerja
                     }
                 } else {
                     $hkw += 0;
@@ -859,7 +1429,7 @@ class Generate_mps_2 extends CI_Controller
                     "p_month" => $postDetail['p_month'],
                     "p_year" => $postDetail['p_year'],
                     "revision" => $postDetail['revision'],
-                    "customer_id" => $postDetail['customer_id'],
+                    // "customer_id" => $postDetail['customer_id'],
                     "item_fg_id" => $postDetail['item_fg_id'],
                     "ltpp_month" => $postDetail['ltpp_month'],
                     "ltpp_month2" => $postDetail['ltpp_month2'],
@@ -881,7 +1451,7 @@ class Generate_mps_2 extends CI_Controller
                         "p_month" => $postDetail['p_month'],
                         "p_year" => $postDetail['p_year'],
                         "revision" => $postDetail['revision'],
-                        "customer_id" => $postDetail['customer_id'],
+                        // "customer_id" => $postDetail['customer_id'],
                         "item_fg_id" => $postDetail['item_fg_id'],
                         "ltpp_month" => $postDetail['ltpp_month']
                     ], $postFinalDetail);
@@ -894,7 +1464,7 @@ class Generate_mps_2 extends CI_Controller
                 "p_month" => $post['p_month'],
                 "p_year" => $post['p_year'],
                 "revision" => intval($post['revision']),
-                "customer_id" => $post['customer_id'],
+                // "customer_id" => $post['customer_id'],
                 "item_fg_id" => $post['item_fg_id'],
                 "wip_month" => $post['wip_month']
             ]);
@@ -903,7 +1473,7 @@ class Generate_mps_2 extends CI_Controller
                 "p_month" => $post['p_month'],
                 "p_year" => $post['p_year'],
                 "revision" => $post['revision'],
-                "customer_id" => $post['customer_id'],
+                // "customer_id" => $post['customer_id'],
                 "item_fg_id" => $post['item_fg_id'],
                 "wip_month" => $post['wip_month'],
                 "pp" => $post['pp'],
@@ -923,7 +1493,7 @@ class Generate_mps_2 extends CI_Controller
                     "p_month" => $post['p_month'],
                     "p_year" => $post['p_year'],
                     "revision" => $post['revision'],
-                    "customer_id" => $post['customer_id'],
+                    // "customer_id" => $post['customer_id'],
                     "item_fg_id" => $post['item_fg_id'],
                     "wip_month" => $post['wip_month']
                 ], $postFinal);
@@ -1009,27 +1579,9 @@ class Generate_mps_2 extends CI_Controller
         //Filter Data
         $filter_month = base64_decode($this->input->get('filter_month'));
         $filter_year = base64_decode($this->input->get('filter_year'));
-        $filter_customer = base64_decode($this->input->get('filter_customer'));
+        // $filter_customer = base64_decode($this->input->get('filter_customer'));
         $filter_product_no = base64_decode($this->input->get('filter_product_no'));
         $filter_revision = base64_decode($this->input->get('filter_revision'));
-        //Select Customer
-        $this->db->select('a.*, b.name as customer_name');
-        $this->db->from('generate_mps a');
-        $this->db->join('customers b', 'a.customer_id = b.id','left');
-        if ($filter_month != "" or $filter_year != "") {
-            $this->db->where('a.p_month', ltrim($filter_month, '0'));
-            $this->db->where('a.p_year', $filter_year);
-        }
-        if ($filter_customer != "") {
-        $this->db->where('a.customer_id', $filter_customer);
-        }
-        if ($filter_product_no != "") {
-        $this->db->where('a.item_fg_id', $filter_product_no);
-        }
-        $this->db->where('a.revision', intval($filter_revision));
-        $this->db->group_by('a.customer_id');
-        $this->db->order_by('b.name', 'asc');
-        $customers = $this->db->get()->result_array();
 
         $header = "";
         $headerDetails = "";
@@ -1038,7 +1590,7 @@ class Generate_mps_2 extends CI_Controller
         $varBackMonth = date('m', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
 
         $monthStart = strtotime($filter_year . "-" . $filter_month . "-01");
-        $monthEnd =  strtotime(date('Y-m-d', strtotime('+5 month', strtotime($varBackYear . "-" . $varBackMonth . "-01"))));
+        $monthEnd =  strtotime(date('Y-m-d', strtotime('+2 month', strtotime($varBackYear . "-" . $varBackMonth . "-01"))));
         // $monthNameStart = date('F Y', $monthStart);
         $monthNameStart = date('F Y', strtotime('-1 month', $monthStart));
 
@@ -1050,27 +1602,106 @@ class Generate_mps_2 extends CI_Controller
             $header .= '<th style="text-align:center;" colspan="' . $colspan . '" width="50">' . strtoupper($monthName) . '</th>';
             if($no==1){
                 $headerDetails .= ' <th style="text-align:center;" rowspan="2">BALANCE <br> AWAL</th>
-                                        <th style="text-align:center;" rowspan="2">SO</th>
-                                        <th style="text-align:center;" rowspan="2">FC</th>
-                                        <th style="text-align:center;" rowspan="2">SAFETY STOCK <br> WIP</th>
-                                        <th style="text-align:center;" rowspan="2">SAFETY STOCK <br> FG</th>
-                                        <th style="text-align:center;" rowspan="2">NEED</th>
-                                        <th style="text-align:center;" rowspan="2">PROD <br> PLAN '.$no.'</th>';
+                <th style="text-align:center;" rowspan="2">SO</th>
+                <th style="text-align:center;" rowspan="2">FC</th>
+                <th style="text-align:center;" rowspan="2">SAFETY STOCK <br> WIP</th>
+                <th style="text-align:center;" rowspan="2">SAFETY STOCK <br> FG</th>
+                <th style="text-align:center;" rowspan="2">NEED</th>
+                <th style="text-align:center;" rowspan="2">PROD <br> PLAN '.$no.'</th>';
 
             }else{
-                
-            $headerDetails .= ' <th style="text-align:center;" rowspan="2">BALANCE <br> AWAL</th>
-            <th style="text-align:center;" rowspan="2">FC</th>
-            <th style="text-align:center;" rowspan="2">SAFETY STOCK <br> WIP</th>
-            <th style="text-align:center;" rowspan="2">SAFETY STOCK <br> FG</th>
-            <th style="text-align:center;" rowspan="2">NEED</th>
-            <th style="text-align:center;" rowspan="2">PROD <br> PLAN '.$no.'</th>';
+
+                $headerDetails .= ' <th style="text-align:center;" rowspan="2">BALANCE <br> AWAL</th>
+                <th style="text-align:center;" rowspan="2">FC</th>
+                <th style="text-align:center;" rowspan="2">SAFETY STOCK <br> WIP</th>
+                <th style="text-align:center;" rowspan="2">SAFETY STOCK <br> FG</th>
+                <th style="text-align:center;" rowspan="2">NEED</th>
+                <th style="text-align:center;" rowspan="2">PROD <br> PLAN '.$no.'</th>';
             }
+
             $no++;
             $monthStart = strtotime("+1 month", $monthStart);
         }
 
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 10px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        //Select Full
+        $this->db->select('a.*, 
+            COALESCE(a.pp + a.p1 + a.p2 + a.p3, 0) as total_wip, 
+            e.number as item_fg_number, 
+            e.name as item_fg_name
+        ');
+        $this->db->from('generate_mps a');
+        $this->db->join('generate_mps_details b', 'a.p_month = b.p_month 
+            and a.p_year = b.p_year 
+            and a.revision = b.revision 
+            and a.item_fg_id = b.item_fg_id','left'
+        );
+        // $this->db->join('customers c', 'a.customer_id = c.id','left');
+        // $this->db->join('customer_items d', 'a.customer_id = d.customer_id 
+        //     and a.item_fg_id = d.item_fg_id','left'
+        // );
+        $this->db->join('item_fg e', 'a.item_fg_id = e.id','left');
+        if ($filter_month != "" or $filter_year != "") {
+            $this->db->where('a.p_month', ltrim($filter_month, '0'));
+            $this->db->where('a.p_year', $filter_year);
+        }
+        // $this->db->where('a.customer_id', $customerid);
+        $this->db->where("
+            (
+                a.pp > 0 or a.p1 > 0 or 
+                a.p2 > 0 or a.p3 > 0 or 
+                a.fg > 0 or a.os_mpp > 0 or 
+                a.os_so > 0 or a.total_stock > 0 or 
+                a.balance > 0 or b.begin_balance > 0 or 
+                b.ito > 0 or b.forecast > 0 or 
+                b.delivery_rate > 0 or b.safety_stock > 0 or 
+                b.prod_plan > 0
+            )
+        ");
+
+        if ($filter_revision != "") {
+            $this->db->where('a.revision', intval($filter_revision));
+        }
+
+        if ($filter_product_no != "") {
+            $this->db->where('a.item_fg_id', $filter_product_no);
+        }
+
+        $this->db->group_by('a.item_fg_id');
+        $this->db->order_by('e.number', 'asc');
+        $records = $this->db->get()->result_array();
+
+        $html = '<html>
+                <head>
+                <title>Print Data</title>
+                </head>
+                <style>
+                    body {
+                        font-family: Arial, Helvetica, sans-serif;
+                    }
+                    #customers {
+                        border-collapse: collapse;
+                        width: 100%;
+                        font-size: 10px;
+                    }
+                    #customers td, 
+                    #customers th {
+                        border: 1px solid #ddd;
+                        padding: 2px;
+                    }
+                    #customers tr:nth-child(even){
+                        background-color: #f2f2f2;
+                    }
+                    #customers tr:hover {
+                        background-color: #ddd;
+                    }
+                    #customers th {
+                        padding-top: 2px;
+                        padding-bottom: 2px;
+                        text-align: left;
+                        color: black;
+                    }
+                </style>
+                <body>
         <div style="width:3500px;">
         <table style="width: 100%;">
             <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
@@ -1104,69 +1735,51 @@ class Generate_mps_2 extends CI_Controller
                 <th style="text-align:center;"  rowspan="2" width="50">STOCK WIP</th>
                 <th style="text-align:center;"  rowspan="2" width="50">FG</th>
                 <th style="text-align:center;"  rowspan="2" width="50">OS MPP</th>';
-            $html .= $headerDetails;
-            $html .= '</tr><tr>';
-            if(!empty($customers)){
+        $html .= $headerDetails;
+        $html .= '</tr><tr>';
 
-        foreach ($customers as $customer) {
-            // if ($customer['customer_name'] == "") {
-            //     $customer_name = "No Customer";
-            // } else {
-                $customer_name = $customer['customer_name'];
-                $customerid = $customer['customer_id'];
-                $html .= '<tr>
-                        <th colspan="47" style="text-align:left;"><b>' . $customer_name . '</b></th>
-                    </tr>';
-            // }
-
-            //Select Full
-            $this->db->select('a.*, COALESCE(a.pp + a.p1 + a.p2 + a.p3, 0) as total_wip, c.name as customer_name, e.number as item_fg_number, e.name as item_fg_name');
-            $this->db->from('generate_mps a');
-            $this->db->join('generate_mps_details b', 'a.p_month = b.p_month and a.p_year = b.p_year and a.revision = b.revision and a.item_fg_id = b.item_fg_id','left');
-            $this->db->join('customers c', 'a.customer_id = c.id','left');
-            $this->db->join('customer_items d', 'a.customer_id = d.customer_id and a.item_fg_id = d.item_fg_id','left');
-            $this->db->join('item_fg e', 'a.item_fg_id = e.id','left');
-            if ($filter_month != "" or $filter_year != "") {
-                $this->db->where('a.p_month', ltrim($filter_month, '0'));
-                $this->db->where('a.p_year', $filter_year);
-            }
-            $this->db->where('a.customer_id', $customerid);
-            $this->db->where("(a.pp > 0 or a.p1 > 0 or a.p2 > 0 or a.p3 > 0 or a.fg > 0 or a.os_mpp > 0 or a.os_so > 0 or a.total_stock > 0 or a.balance > 0 or b.begin_balance > 0 or b.ito > 0 or b.forecast > 0 or b.delivery_rate > 0 or b.safety_stock > 0 or b.prod_plan > 0)");
-            if ($filter_revision != "") {
-            $this->db->where('a.revision', intval($filter_revision));
-            }
-            if ($filter_product_no != "") {
-            $this->db->where('a.item_fg_id', $filter_product_no);
-            }
-            $this->db->group_by('a.item_fg_id');
-            $records = $this->db->get()->result_array();
+        if(!empty($records)){
 
             $no = 1;
-            $cutoff= "$filter_year-$filter_month-01";//$filter_year+'-'+$filter_month+'-01';
-            $prevPersentase = 6;
+            
+            // $cutoff = $this->cutOff($filter_month, $filter_year);
+            // $cutoff_to= "$filter_year-$filter_month-01";
+            // $isGeneratedDate = $this->isGenerateDate($filter_month, $filter_year);
+
             foreach ($records as $data) {
-                        
-                //baru
-       
-        $custid=$data['customer_id'];
-        $itmid=$data['item_fg_id'];
-        
-        
-        //$os_so = $this->crud->read('os_so', [], ["customer_id" => $data['customer_id'],"item_fg_id" => $data['item_fg_id'],"p_month" => $data['p_month'],"p_year" => $data['p_year'],"revision" => intval($data['revision'])]);
-        $os_so = $this->crud->query("SELECT sum(outstanding) as so FROM sales_orders WHERE delivery_date < '".$cutoff."' and customer_id = '".$data['customer_id']."' and item_fg_id = '".$data['item_fg_id']."' and delivery = '0' group by item_fg_id");
-        $so_so_qty = 0;
-        if(!empty($os_so)){
-            $so_so_qty = floatval($os_so[0]->so);
-        }
-        $so = $this->crud->query("SELECT sum(outstanding) as so FROM sales_orders WHERE delivery_date > '".$cutoff."' and customer_id = '".$data['customer_id']."' and item_fg_id = '".$data['item_fg_id']."' and delivery = '0' group by item_fg_id");
-        $soOut = 0;
-        if(!empty($so)){
-            $soOut = $so[0]->so;
-        }
-        $totalStock = (intval($data['total_wip']) + $data['fg'] + $data['os_mpp']);
-                $balanceAwal = (intval($totalStock) -  $so_so_qty);
-                
-        //baru
+
+                // $os_so = $this->crud->query("SELECT sum(outstanding) as so 
+                //     FROM sales_orders 
+                //     -- WHERE delivery_date BETWEEN '$cutoff' AND '$cutoff_to'
+                //     WHERE delivery_date >= '".$isGeneratedDate."'
+                //     AND delivery_date < '".$cutoff_to."' 
+                //     -- AND customer_id = '".$data['customer_id']."' 
+                //     AND item_fg_id = '".$data['item_fg_id']."' 
+                //     -- AND delivery = '0' 
+                //     GROUP BY item_fg_id
+                // ");
+
+                // $so_so_qty = 0;
+                // if(!empty($os_so)){
+                //     $so_so_qty = floatval($os_so[0]->so);
+                // }
+
+                // $so = $this->crud->query("SELECT sum(qty) as so 
+                //     FROM sales_orders 
+                //     WHERE delivery_date > '".$cutoff_to."' 
+                //     -- AND customer_id = '".$data['customer_id']."' 
+                //     AND item_fg_id = '".$data['item_fg_id']."' 
+                //     -- AND delivery = '0' 
+                //     GROUP BY item_fg_id
+                // ");
+
+                // $soOut = 0;
+                // if(!empty($so)){
+                //     $soOut = $so[0]->so;
+                // }
+
+                $totalStock = (intval($data['total_wip']) + $data['fg'] + $data['os_mpp']);
+
                 $html .= '  <tr>
                             <td style="text-align:center;">' . $no . '</td>
                             <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
@@ -1176,122 +1789,54 @@ class Generate_mps_2 extends CI_Controller
                             <td style="text-align:center;">' . $this->format_number($data['fg']) . '</td>
                             <td style="text-align:center;">' . $this->format_number($data['os_mpp']) . '</td>
                             <td style="text-align:center;">' . $this->format_number($totalStock) . '</td>
-                            <td style="text-align:center;">' . $this->format_number($so_so_qty) . '</td>';
+                            <td style="text-align:center;">' . $this->format_number($data['os_so']) . '</td>';
 
-                $this->db->select('a.*, b.qty');
-                $this->db->from('generate_mps_details a');
-                $this->db->join('stock_so b', 'a.p_month = b.p_month and a.p_year = b.p_year and a.revision = b.revision and a.item_fg_id = b.item_fg_id', 'left');
-                $this->db->where('a.p_month', $data['p_month']);
-                $this->db->where('a.p_year', $data['p_year']);
-                $this->db->where('a.revision', $data['revision']);
-                // $this->db->where('a.line_no', $data['line_no']);
-                // $this->db->where('a.product_no', $data['product_no']);
-                $this->db->where('a.deleted', 0);
-                $this->db->group_by('a.ltpp_month');
-                $this->db->order_by('a.id');
+                $this->db->select('
+                    MAX(forecast) as forecast,
+                    MAX(begin_balance) as begin_balance,
+                    MAX(so) as so,
+                    MAX(safety_stock_wip) as safety_stock_wip,
+                    MAX(safety_stock_fg) as safety_stock_fg,
+                    MAX(need) as need,
+                    MAX(prod_plan) as prod_plan,
+                ');
+                $this->db->from('generate_mps_details');
+                $this->db->where('p_month', $data['p_month']);
+                $this->db->where('p_year', $data['p_year']);
+                $this->db->where('revision', $data['revision']);
+                $this->db->where('item_fg_id', $data['item_fg_id']);
+                $this->db->where('deleted', 0);
+                $this->db->group_by('ltpp_month');
+                $this->db->order_by('id');
                 $details2 = $this->db->get()->result_array();
 
                 $nodetail = 1;
+
                 foreach ($details2 as $detail2) {
-                    //baru
-          
-        $max_rev = $this->db->select_max('revision')->where('customer_id', $data['customer_id'])->where('item_fg_id', $data['item_fg_id'])->where('p_month', $filter_month)->where('p_year', $filter_year)->get('forecasts')->row()->revision;           
-        $forecasts = $this->crud->read("forecasts", [], ["customer_id" => $data['customer_id'], "item_fg_id" => $data['item_fg_id'], "p_month" => $filter_month, "p_year" => $filter_year, "revision" => intval($max_rev)]);
-
-        $forecastValue = 0;
-        $fcNextMonth = 0;
-        $prevSSWIP = 0;
-        $prevSSFG = 0;
-        $persentase = ($data['item_class'] === "FM")?10:6;
-        if(!empty($forecasts)){
-            $forecastValue = $forecasts->month_1;
-            $fcNextMonth = $forecasts->month_2;
-            if($nodetail==2){
-                $forecastValue = $forecasts->month_2;
-                $fcNextMonth = $forecasts->month_3;
-                $prevSSWIP = (20 / 100) * $forecasts->month_2;
-                $prevSSFG = ($prevPersentase / 100) * $forecasts->month_2;
-            }
-            if($nodetail==3){
-                $forecastValue = $forecasts->month_3;
-                $fcNextMonth = $forecasts->month_4;
-                $prevSSWIP = (20 / 100) * $forecasts->month_3;
-                $prevSSFG = ($prevPersentase / 100) * $forecasts->month_3;
-            }
-            if($nodetail==4){
-                $forecastValue = $forecasts->month_4;
-                $fcNextMonth = $forecasts->month_5;
-                $prevSSWIP = (20 / 100) * $forecasts->month_4;
-                $prevSSFG = ($prevPersentase / 100) * $forecasts->month_4;
-            }
-            if($nodetail==5){
-                $forecastValue = $forecasts->month_5;
-                $fcNextMonth = $forecasts->month_6;
-                $prevSSWIP = (20 / 100) * $forecasts->month_5;
-                $prevSSFG = ($prevPersentase / 100) * $forecasts->month_5;
-            }
-            if($nodetail==6){
-                $forecastValue = $forecasts->month_6;
-                $fcNextMonth = $forecasts->month_7;
-                $prevSSWIP = (20 / 100) * $forecasts->month_6;
-                $prevSSFG = ($prevPersentase / 100) * $forecasts->month_6;
-            }
-
-        }
-        
-                    $safetyStockWIP = (20 / 100) * $fcNextMonth;
-                    $safetyStockFG = ($persentase / 100) * $fcNextMonth;
-                    
-                    if($nodetail>1){
-                        $balanceAwal = $prevSSWIP + $prevSSFG;
-                    }
-                    $need = (($forecastValue+$safetyStockWIP+$safetyStockFG) - $balanceAwal);
-                    $prodPlan = $need<0?0:$need;
-                    $prevPersentase = $persentase;
                     if($nodetail==1){
-                        $html .= '<td style="text-align:right;">' . $this->format_number($balanceAwal) . '</td>
-                                <td style="text-align:right;">' . $this->format_number($soOut) . '</td>
-                                <td style="text-align:right;">' . $this->format_number($forecastValue) . '</td>
-                                <td style="text-align:right;">' . $this->format_number($safetyStockWIP) . '</td>
-                                <td style="text-align:right;">' . $this->format_number($safetyStockFG) . '</td>
-                                <td style="text-align:right;">' . $this->format_number($need) . '</td>
-                                <td style="text-align:right;">' . $this->format_number($prodPlan) . '</td>';
+                        $html .= '<td style="text-align:right;">' . $this->format_number($detail2['begin_balance']) . '</td>
+                            <td style="text-align:center;">' . $this->format_number($detail2['so']) . '</td>
+                            <td style="text-align:right;">' . $this->format_number($detail2['forecast']) . '</td>
+                            <td style="text-align:right;">' . $this->format_number($detail2['safety_stock_wip']) . '</td>
+                            <td style="text-align:right;">' . $this->format_number($detail2['safety_stock_fg']) . '</td>
+                            <td style="text-align:right;">' . $this->format_number($detail2['need']) . '</td>
+                            <td style="text-align:right;">' . $this->format_number($detail2['prod_plan']) . '</td>';
 
                     }else{
-                        
-                    $html .= '<td style="text-align:right;">' . $this->format_number($balanceAwal) . '</td>
-                    <td style="text-align:right;">' . $this->format_number($forecastValue) . '</td>
-                    <td style="text-align:right;">' . $this->format_number($safetyStockWIP) . '</td>
-                    <td style="text-align:right;">' . $this->format_number($safetyStockFG) . '</td>
-                    <td style="text-align:right;">' . $this->format_number($need) . '</td>
-                    <td style="text-align:right;">' . $this->format_number($prodPlan) . '</td>';
+                        $html .= '<td style="text-align:right;">' . $this->format_number($detail2['begin_balance']) . '</td>
+                            <td style="text-align:right;">' . $this->format_number($detail2['forecast']) . '</td>
+                            <td style="text-align:right;">' . $this->format_number($detail2['safety_stock_wip']) . '</td>
+                            <td style="text-align:right;">' . $this->format_number($detail2['safety_stock_fg']) . '</td>
+                            <td style="text-align:right;">' . $this->format_number($detail2['need']) . '</td>
+                            <td style="text-align:right;">' . $this->format_number($detail2['prod_plan']) . '</td>';
                     }
 
-                    //baru
-                    // if($nodetail==1){
-                    //     $html .= '  <td style="text-align:center;">' . $detail2['begin_balance'] . '</td>
-                    //     <td style="text-align:center;">' . $detail2['so'] . '</td>
-                    //     <td style="text-align:center;">' . $detail2['forecast'] . '</td>
-                    //     <td style="text-align:center;">' . $detail2['safety_stock_wip'] . '</td>
-                    //     <td style="text-align:center;">' . $detail2['safety_stock_fg'] . '</td>
-                    //     <td style="text-align:center;">' . $detail2['need'] . '</td>
-                    //     <td style="text-align:center;">' . $detail2['prod_plan'] . '</td>';
-                    // }else{
-                    //     $html .= '  <td style="text-align:center;">' . $detail2['begin_balance'] . '</td>
-                    //     <td style="text-align:center;">' . $detail2['forecast'] . '</td>
-                    //     <td style="text-align:center;">' . $detail2['safety_stock_wip'] . '</td>
-                    //     <td style="text-align:center;">' . $detail2['safety_stock_fg'] . '</td>
-                    //     <td style="text-align:center;">' . $detail2['need'] . '</td>
-                    //     <td style="text-align:center;">' . $detail2['prod_plan'] . '</td>';
-                    // }
                     $nodetail++;
                 }
-                $html .= '<td style="text-align:center;">' . $this->format_number($data['balance']) . '</td>
-            </tr>';
+                $html .= '<td style="text-align:center;">' . $this->format_number($data['balance']) . '</td></tr>';
                 $no++;
             }
         }
-    }
 
         $html .= '</tr></table></div></body></html>';
         echo $html;
