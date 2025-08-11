@@ -542,25 +542,26 @@ class Forecasts extends CI_Controller
         $datas = [];
         for ($i = 4; $i <= $totalRows; $i++) {
             $datas[] = array(
-                'customer_id' => $sheet->getCell('B' . $i)->getValue(),
-                'item_fg_id' => $sheet->getCell('C' . $i)->getValue(),
-                'issued_date' => $sheet->getCell('D' . $i)->getValue(),
-                'p_month' => $sheet->getCell('E' . $i)->getValue(),
-                'p_year' => $sheet->getCell('F' . $i)->getValue(),
-                'revision' => $sheet->getCell('G' . $i)->getValue(),
-                'month_1' => $sheet->getCell('H' . $i)->getValue(),
-                'month_2' => $sheet->getCell('I' . $i)->getValue(),
-                'month_3' => $sheet->getCell('J' . $i)->getValue(),
-                'month_4' => $sheet->getCell('K' . $i)->getValue(),
-                'month_5' => $sheet->getCell('L' . $i)->getValue(),
-                'month_6' => $sheet->getCell('M' . $i)->getValue(),
-                'month_7' => $sheet->getCell('N' . $i)->getValue(),
-                'month_8' => $sheet->getCell('O' . $i)->getValue(),
-                'month_9' => $sheet->getCell('P' . $i)->getValue(),
-                'month_10' => $sheet->getCell('Q' . $i)->getValue(),
-                'month_11' => $sheet->getCell('R' . $i)->getValue(),
-                'month_12' => $sheet->getCell('S' . $i)->getValue(),
-                'remark' => $sheet->getCell('T' . $i)->getValue(),
+                'plant' => $sheet->getCell('B' . $i)->getValue(),
+                'customer_id' => $sheet->getCell('C' . $i)->getValue(),
+                'item_fg_id' => $sheet->getCell('D' . $i)->getValue(),
+                'issued_date' => $sheet->getCell('E' . $i)->getValue(),
+                'p_month' => $sheet->getCell('F' . $i)->getValue(),
+                'p_year' => $sheet->getCell('G' . $i)->getValue(),
+                'revision' => $sheet->getCell('H' . $i)->getValue(),
+                'month_1' => $sheet->getCell('I' . $i)->getValue(),
+                'month_2' => $sheet->getCell('J' . $i)->getValue(),
+                'month_3' => $sheet->getCell('K' . $i)->getValue(),
+                'month_4' => $sheet->getCell('L' . $i)->getValue(),
+                'month_5' => $sheet->getCell('M' . $i)->getValue(),
+                'month_6' => $sheet->getCell('N' . $i)->getValue(),
+                'month_7' => $sheet->getCell('O' . $i)->getValue(),
+                'month_8' => $sheet->getCell('P' . $i)->getValue(),
+                'month_9' => $sheet->getCell('Q' . $i)->getValue(),
+                'month_10' => $sheet->getCell('R' . $i)->getValue(),
+                'month_11' => $sheet->getCell('S' . $i)->getValue(),
+                'month_12' => $sheet->getCell('T' . $i)->getValue(),
+                'remark' => $sheet->getCell('U' . $i)->getValue(),
             );
         }
     
@@ -668,6 +669,7 @@ class Forecasts extends CI_Controller
                 } else {
                     $dataFinal = array(
                         //field
+                        "plant" => $data['plant'],
                         "customer_id" => $customer_exists->id,
                         "item_fg_id" => $item_fg_exists->id,
                         "document_no" => $autoid,
@@ -969,14 +971,14 @@ class Forecasts extends CI_Controller
     public function exportTemplate() {
         $spreadsheet = new Spreadsheet();
         $comments = [
-            'B2' => ['admin:','Isi dengan CODE dari Master Customer'],
-            'C2' => ['admin:','Isi dengan PRODUCT NO dari Master Item Finish Good'],
-            'D2' => ['admin:','format date =','yyyy-mm-dd'],
-            'E3' => ['admin:','format month = "mm"'],
-            'F3' => ['admin:','format year = "yyyy"'],
-            'G2' => ['admin:','Isi dengan angka','0, 1, 2, 3, 4, 5'],
-            'H2' => ['Tuliskan angkanya saja'],
-            'I2' => ['Tuliskan angkanya saja. Apabila kosong, kolom bisa dikosongkan saja'],
+            'B2' => ['admin:','Isi dengan PLANT dari PRODUCT yaitu RP atau EXT'],
+            'C2' => ['admin:','Isi dengan CODE dari Master Customer'],
+            'D2' => ['admin:','Isi dengan PRODUCT NO dari Master Item Finish Good'],
+            'E2' => ['admin:','format date =','yyyy-mm-dd'],
+            'F3' => ['admin:','format month = "mm"'],
+            'G3' => ['admin:','format year = "yyyy"'],
+            'H2' => ['admin:','Isi dengan angka','0, 1, 2, 3, 4, 5'],
+            'I2' => ['Tuliskan angkanya saja'],
             'J2' => ['Tuliskan angkanya saja. Apabila kosong, kolom bisa dikosongkan saja'],
             'K2' => ['Tuliskan angkanya saja. Apabila kosong, kolom bisa dikosongkan saja'],
             'L2' => ['Tuliskan angkanya saja. Apabila kosong, kolom bisa dikosongkan saja'],
@@ -986,12 +988,13 @@ class Forecasts extends CI_Controller
             'P2' => ['Tuliskan angkanya saja. Apabila kosong, kolom bisa dikosongkan saja'],
             'Q2' => ['Tuliskan angkanya saja. Apabila kosong, kolom bisa dikosongkan saja'],
             'R2' => ['Tuliskan angkanya saja. Apabila kosong, kolom bisa dikosongkan saja'],
-            'S2' => ['Tuliskan angkanya saja. Apabila kosong, kolom bisa dikosongkan saja']
+            'S2' => ['Tuliskan angkanya saja. Apabila kosong, kolom bisa dikosongkan saja'],
+            'T2' => ['Tuliskan angkanya saja. Apabila kosong, kolom bisa dikosongkan saja']
         ];
 
         $templateSheet = $spreadsheet->getActiveSheet();
         $templateSheet->setTitle('FORECAST');
-        $templateSheet->mergeCells('A1:T1');
+        $templateSheet->mergeCells('A1:U1');
         $templateSheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
         $templateSheet->getStyle('A1')->getFont()->setSize(16) ->setBold(true);
         $templateSheet->getColumnDimension('A')->setWidth(10);
@@ -1001,7 +1004,7 @@ class Forecasts extends CI_Controller
         $templateSheet->getColumnDimension('E')->setWidth(25);
         $templateSheet->getColumnDimension('F')->setWidth(25);
         $templateSheet->getColumnDimension('G')->setWidth(25);
-        $templateSheet->getColumnDimension('H')->setWidth(20);
+        $templateSheet->getColumnDimension('H')->setWidth(25);
         $templateSheet->getColumnDimension('I')->setWidth(20);
         $templateSheet->getColumnDimension('J')->setWidth(20);
         $templateSheet->getColumnDimension('K')->setWidth(20);
@@ -1014,34 +1017,36 @@ class Forecasts extends CI_Controller
         $templateSheet->getColumnDimension('R')->setWidth(20);
         $templateSheet->getColumnDimension('S')->setWidth(20);
         $templateSheet->getColumnDimension('T')->setWidth(20);
+        $templateSheet->getColumnDimension('U')->setWidth(20);
         $templateSheet->setCellValue('A1', 'TEMPLATE UPLOAD MASTER FORECAST');
         $templateSheet->setCellValue('A2', 'No');
-        $templateSheet->setCellValue('B2', 'CUSTOMER CODE');
-        $templateSheet->setCellValue('C2', 'PRODUCT NO');
-        $templateSheet->setCellValue('D2', 'ISSUED DATE');
-        $templateSheet->setCellValue('E2', 'PERIOD');
+        $templateSheet->setCellValue('B2', 'PLANT');
+        $templateSheet->setCellValue('C2', 'CUSTOMER CODE');
+        $templateSheet->setCellValue('D2', 'PRODUCT NO');
+        $templateSheet->setCellValue('E2', 'ISSUED DATE');
         $templateSheet->setCellValue('F2', 'PERIOD');
-        $templateSheet->setCellValue('G2', 'REVISION');
-        $templateSheet->setCellValue('H2', 'MONTH 1');
-        $templateSheet->setCellValue('I2', 'MONTH 2');
-        $templateSheet->setCellValue('J2', 'MONTH 3');
-        $templateSheet->setCellValue('K2', 'MONTH 4');
-        $templateSheet->setCellValue('L2', 'MONTH 5');
-        $templateSheet->setCellValue('M2', 'MONTH 6');
-        $templateSheet->setCellValue('N2', 'MONTH 7');
-        $templateSheet->setCellValue('O2', 'MONTH 8');
-        $templateSheet->setCellValue('P2', 'MONTH 9');
-        $templateSheet->setCellValue('Q2', 'MONTH 10');
-        $templateSheet->setCellValue('R2', 'MONTH 11');
-        $templateSheet->setCellValue('S2', 'MONTH 12');
-        $templateSheet->setCellValue('T2', 'REMARKS');
-        $templateSheet->setCellValue('E3', 'MONTH')->setCellValue('F3', 'YEAR');
+        $templateSheet->setCellValue('G2', 'PERIOD');
+        $templateSheet->setCellValue('H2', 'REVISION');
+        $templateSheet->setCellValue('I2', 'MONTH 1');
+        $templateSheet->setCellValue('J2', 'MONTH 2');
+        $templateSheet->setCellValue('K2', 'MONTH 3');
+        $templateSheet->setCellValue('L2', 'MONTH 4');
+        $templateSheet->setCellValue('M2', 'MONTH 5');
+        $templateSheet->setCellValue('N2', 'MONTH 6');
+        $templateSheet->setCellValue('O2', 'MONTH 7');
+        $templateSheet->setCellValue('P2', 'MONTH 8');
+        $templateSheet->setCellValue('Q2', 'MONTH 9');
+        $templateSheet->setCellValue('R2', 'MONTH 10');
+        $templateSheet->setCellValue('S2', 'MONTH 11');
+        $templateSheet->setCellValue('T2', 'MONTH 12');
+        $templateSheet->setCellValue('U2', 'REMARKS');
+        $templateSheet->setCellValue('F3', 'MONTH')->setCellValue('G3', 'YEAR');
         $templateSheet->mergeCells('A2:A3');
         $templateSheet->mergeCells('B2:B3');
         $templateSheet->mergeCells('C2:C3');
         $templateSheet->mergeCells('D2:D3');
-        $templateSheet->mergeCells('E2:F2');
-        $templateSheet->mergeCells('G2:G3');
+        $templateSheet->mergeCells('E2:E3');
+        $templateSheet->mergeCells('F2:G2');
         $templateSheet->mergeCells('H2:H3');
         $templateSheet->mergeCells('I2:I3');
         $templateSheet->mergeCells('J2:J3');
@@ -1055,14 +1060,15 @@ class Forecasts extends CI_Controller
         $templateSheet->mergeCells('R2:R3');
         $templateSheet->mergeCells('S2:S3');
         $templateSheet->mergeCells('T2:T3');
-        $templateSheet->getStyle('A2:T2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
-        $templateSheet->getStyle('A3:T3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        $templateSheet->mergeCells('U2:U3');
+        $templateSheet->getStyle('A2:U2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        $templateSheet->getStyle('A3:U3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
         $templateSheet->getStyle('A2')->getFont()->setBold(true);
-        $templateSheet->getStyle('B2:H2')->getFont()->setBold(true)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED);
-        $templateSheet->getStyle('E3:F3')->getFont()->setBold(true)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED);
-        $templateSheet->getStyle('I2:T2')->getFont()->setBold(true);
-        $templateSheet->getStyle('A2:T2')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-        $templateSheet->getStyle('A3:T3')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $templateSheet->getStyle('B2:I2')->getFont()->setBold(true)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED);
+        $templateSheet->getStyle('F3:G3')->getFont()->setBold(true)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED);
+        $templateSheet->getStyle('J2:U2')->getFont()->setBold(true);
+        $templateSheet->getStyle('A2:U2')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $templateSheet->getStyle('A3:U3')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
         foreach ($comments as $cell => $commentLines) {
             $richText = new RichText();
             foreach ($commentLines as $index => $line) {
@@ -1090,54 +1096,58 @@ class Forecasts extends CI_Controller
         $item_refSheet = $spreadsheet->createSheet(1);
         $item_refSheet->setTitle('REFERENCE');
 
-        $this->db->select('a.item_fg_customer as product_no_customer, a.item_fg_id as product_id, c.name as product_name,a.price, a.valid_to as valid_date, b.number as customer_code, b.name as customer_name, c.number as product_no');
+        $this->db->select('a.item_fg_customer as product_no_customer, a.item_fg_id as product_id, c.name as product_name,a.price, a.valid_to as valid_date, b.number as customer_code, b.name as customer_name, c.number as product_no, d.number as plant');
         // $this->db->select('a.item_fg_customer as product_no, a.item_fg_id as product_id, c.name as product_name,a.price, a.valid_date, b.number as customer_code, b.name as customer_name');
         $this->db->from('customer_items a');
         $this->db->join('customers b', 'a.customer_id = b.id', 'left');
         $this->db->join('item_fg c', 'a.item_fg_id = c.id', 'left');
+        $this->db->join('divisions d', 'c.division_id = d.id', 'left');
         $this->db->order_by('b.name','asc');
         $this->db->order_by('a.item_fg_id','asc');
         $item_ref = $this->db->get()->result_array();
         $item_refSheet->getColumnDimension('A')->setWidth(10);
         $item_refSheet->getColumnDimension('B')->setWidth(20);
-        $item_refSheet->getColumnDimension('C')->setWidth(25);
-        $item_refSheet->getColumnDimension('D')->setWidth(20);
+        $item_refSheet->getColumnDimension('C')->setWidth(20);
+        $item_refSheet->getColumnDimension('D')->setWidth(25);
         $item_refSheet->getColumnDimension('E')->setWidth(20);
-        $item_refSheet->getColumnDimension('F')->setWidth(25);
+        $item_refSheet->getColumnDimension('F')->setWidth(20);
         $item_refSheet->getColumnDimension('G')->setWidth(25);
-        $item_refSheet->getColumnDimension('H')->setWidth(20);
-        $item_refSheet->getColumnDimension('I')->setWidth(15);
+        $item_refSheet->getColumnDimension('H')->setWidth(25);
+        $item_refSheet->getColumnDimension('I')->setWidth(20);
+        $item_refSheet->getColumnDimension('J')->setWidth(15);
 
         $item_refSheet->setCellValue('A1', 'No');
-        $item_refSheet->setCellValue('B1', 'Customer Code');
-        $item_refSheet->setCellValue('C1', 'Customer Name');
-        $item_refSheet->setCellValue('D1', 'Product ID');
-        $item_refSheet->setCellValue('E1', 'Product No');
-        $item_refSheet->setCellValue('F1', 'Product No Customer');
-        $item_refSheet->setCellValue('G1', 'Product Name');
-        $item_refSheet->setCellValue('H1', 'Price');
-        $item_refSheet->setCellValue('I1', 'Valid Date');
-        $item_refSheet->getStyle('A1:I1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
-        $item_refSheet->getStyle('A1:I1')->getFont()->setBold(true);
-        $item_refSheet->getStyle('A1:I1')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $item_refSheet->setCellValue('B1', 'Plant');
+        $item_refSheet->setCellValue('C1', 'Customer Code');
+        $item_refSheet->setCellValue('D1', 'Customer Name');
+        $item_refSheet->setCellValue('E1', 'Product ID');
+        $item_refSheet->setCellValue('F1', 'Product No');
+        $item_refSheet->setCellValue('G1', 'Product No Customer');
+        $item_refSheet->setCellValue('H1', 'Product Name');
+        $item_refSheet->setCellValue('I1', 'Price');
+        $item_refSheet->setCellValue('J1', 'Valid Date');
+        $item_refSheet->getStyle('A1:J1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        $item_refSheet->getStyle('A1:J1')->getFont()->setBold(true);
+        $item_refSheet->getStyle('A1:J1')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
         $rowItem_ref = 2;
         $rowNumItem_ref = 1;
         foreach ($item_ref as $itemref) {
             $item_refSheet->setCellValue('A' . $rowItem_ref, $rowNumItem_ref);
-            $item_refSheet->setCellValue('B' . $rowItem_ref, $itemref['customer_code']);
-            $item_refSheet->setCellValue('C' . $rowItem_ref, $itemref['customer_name']);
-            $item_refSheet->setCellValue('D' . $rowItem_ref, $itemref['product_id']);
-            $item_refSheet->setCellValue('E' . $rowItem_ref, $itemref['product_no']);
-            $item_refSheet->setCellValue('F' . $rowItem_ref, $itemref['product_no_customer']);
-            $item_refSheet->setCellValue('G' . $rowItem_ref, $itemref['product_name']);
-            $item_refSheet->setCellValue('H' . $rowItem_ref, $itemref['price']);
-            $item_refSheet->setCellValue('I' . $rowItem_ref, $itemref['valid_date']);
-            $item_refSheet->getStyle('A' . $rowItem_ref . ':G' . $rowItem_ref)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-            $item_refSheet->getStyle('H' . $rowItem_ref)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT)->setVertical(Alignment::VERTICAL_CENTER);
-            $item_refSheet->getStyle('I' . $rowItem_ref)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
-            $item_refSheet->getStyle('A' . $rowItem_ref . ':I' . $rowItem_ref)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-            $item_refSheet->getStyle('A' . $rowItem_ref . ':I' . $rowItem_ref)->getNumberFormat()->setFormatCode('@');
+            $item_refSheet->setCellValue('B' . $rowItem_ref, $itemref['plant']);
+            $item_refSheet->setCellValue('C' . $rowItem_ref, $itemref['customer_code']);
+            $item_refSheet->setCellValue('D' . $rowItem_ref, $itemref['customer_name']);
+            $item_refSheet->setCellValue('E' . $rowItem_ref, $itemref['product_id']);
+            $item_refSheet->setCellValue('F' . $rowItem_ref, $itemref['product_no']);
+            $item_refSheet->setCellValue('G' . $rowItem_ref, $itemref['product_no_customer']);
+            $item_refSheet->setCellValue('H' . $rowItem_ref, $itemref['product_name']);
+            $item_refSheet->setCellValue('I' . $rowItem_ref, $itemref['price']);
+            $item_refSheet->setCellValue('J' . $rowItem_ref, $itemref['valid_date']);
+            $item_refSheet->getStyle('A' . $rowItem_ref . ':H' . $rowItem_ref)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+            $item_refSheet->getStyle('I' . $rowItem_ref)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT)->setVertical(Alignment::VERTICAL_CENTER);
+            $item_refSheet->getStyle('J' . $rowItem_ref)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+            $item_refSheet->getStyle('A' . $rowItem_ref . ':J' . $rowItem_ref)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+            $item_refSheet->getStyle('A' . $rowItem_ref . ':J' . $rowItem_ref)->getNumberFormat()->setFormatCode('@');
             $rowItem_ref++;
             $rowNumItem_ref++;
         }
@@ -1145,7 +1155,7 @@ class Forecasts extends CI_Controller
         $spreadsheet->setActiveSheetIndex(0); 
         
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename="tmp_forecasts.xls"');
+        header('Content-Disposition: attachment; filename="tmp_forecasts_.xls"');
         header('Cache-Control: max-age=0');
         $writer = new Xlsx($spreadsheet);
         $writer->save('php://output');
