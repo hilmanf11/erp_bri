@@ -841,29 +841,24 @@
             var arr_ap = ["210.110.00", "120.140.00", "220.120.00"];
 
             for (let z = 0; z < totalrows2; z++) {
-                // if (rows2[z].account_number == "1154105") {
-                //     var debit = disc_tax;
-                //     var credit = 0;
-                //     vat_val = 1;
-                // } else {
-                //     var debit = rows2[z].debit;
-                //     var credit = rows2[z].credit;
-                // }
+                var debit = 0;
+                var credit = 0;
 
                 if (jQuery.inArray(rows2[z].account_number, arr_vat) >= 0) {
-                    var debit = disc_tax;
-                    var credit = 0;
-                }
-
-                if (jQuery.inArray(rows2[z].account_number, arr_pph) >= 0) {
-                    var debit = 0;
-                    var credit = total_pph;
+                    debit = disc_tax;
+                    credit = 0;
+                    vat_val = 1;
+                } else if (jQuery.inArray(rows2[z].account_number, arr_pph) >= 0) {
+                    debit = 0;
+                    credit = total_pph;
                     pph_val = 1;
-                }
-
-                if (jQuery.inArray(rows2[z].account_number, arr_ap) >= 0) {
-                    var debit = 0;
-                    var credit = total_grand;
+                } else if (jQuery.inArray(rows2[z].account_number, arr_ap) >= 0) {
+                    debit = 0;
+                    credit = total_grand;
+                } else {
+                    // Untuk akun selain VAT, PPH, AP (misal: persediaan/barang)
+                    debit = total_sub;
+                    credit = 0;
                 }
 
                 var data2 = {

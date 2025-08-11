@@ -7,6 +7,7 @@
         scrollbar-width: none;
         -ms-overflow-style: none;
     }
+
     html::-webkit-scrollbar,
     body::-webkit-scrollbar {
         display: none;
@@ -14,7 +15,6 @@
     #p {
       display: flex;
       flex-direction: column;
-      /* height: calc(100vh - 200px); */
       height: 95vh;
       overflow: hidden !important;
     }

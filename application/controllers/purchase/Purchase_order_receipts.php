@@ -442,7 +442,7 @@ class Purchase_order_receipts extends CI_Controller
                 $autoLot = sprintf("%03s", $urutan + 1) . $p_month . $p_year;
             }
         }
-
+        
         foreach ($receipt_data as $po_receipt) {
             $receipt_id = $po_receipt->receipt_id;
             $qty_receipt = $po_receipt->qty_receipt;
@@ -587,7 +587,7 @@ class Purchase_order_receipts extends CI_Controller
         $config = $this->db->get()->row();
         $receipt_no = base64_decode($receipt_no);
         $receipt_data = $this->crud->reads('purchase_order_receipts', [], ["receipt_no" => $receipt_no]);
-
+        
         if (!empty($receipt_data)) {
             $first_receipt = $receipt_data[0];
             $date = new DateTime($first_receipt->receipt_date);

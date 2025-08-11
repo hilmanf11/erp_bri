@@ -85,20 +85,24 @@ class Report_control_po extends CI_Controller
 
             //Select Query
             $this->db->select('a.*, b.number as customer_number, b.name as customer_name, c.number as product_no, c.name as product_name');
-
             $this->db->select('(
                 SUM(CASE 
-                    WHEN (
-                        (YEAR(s.sales_order_date) < ' . $filter_period_year . ') 
-                        OR (YEAR(s.sales_order_date) = ' . $filter_period_year . ' AND MONTH(s.sales_order_date) < ' . $filter_period_month . ')
-                    )
-                    AND (s.closing_reason IS NULL OR s.closing_reason = "")
-                    AND (s.status = 0 OR s.status = 2)
-                    THEN s.outstanding 
-                    ELSE 0 
-                END)
+                    WHEN (YEAR(s.sales_order_date) < ' . $filter_period_year . ') 
+                        OR (YEAR(s.sales_order_date) = ' . $filter_period_year . ' AND MONTH(s.sales_order_date) < ' . $filter_period_month . ') 
+                    THEN s.qty ELSE 0 END)
+                - 
+                COALESCE((SELECT SUM(d.qty_so) 
+                          FROM delivery_orders d 
+                          WHERE d.customer_id = a.customer_id 
+                            AND d.item_fg_id = a.item_fg_id 
+                            AND d.status = 1
+                            AND (
+                                YEAR(d.delivery_order_date) < ' . $filter_period_year . ' 
+                                OR (YEAR(d.delivery_order_date) = ' . $filter_period_year . ' AND MONTH(d.delivery_order_date) < ' . $filter_period_month . ')
+                            )
+                        ), 0)
             ) as ost_so', false);
-
+             
             // $this->db->select('(
             //     SUM(CASE 
             //         WHEN (YEAR(s.sales_order_date) < ' . $filter_period_year . ') 
@@ -114,7 +118,6 @@ class Report_control_po extends CI_Controller
             // ) as ost_so', false); 
 
             $this->db->select('SUM(CASE WHEN YEAR(s.sales_order_date) = ' . $filter_period_year . ' AND MONTH(s.sales_order_date) = ' . $filter_period_month . ' THEN s.qty ELSE 0 END) as so_m0', false);
-
             $this->db->select('(
                 (
                     SUM(CASE 
@@ -136,43 +139,8 @@ class Report_control_po extends CI_Controller
                 +
                 SUM(CASE WHEN YEAR(s.sales_order_date) = ' . $filter_period_year . ' AND MONTH(s.sales_order_date) = ' . $filter_period_month . ' THEN s.qty ELSE 0 END)
             ) as total_so', false);
-
-            // $this->db->select('(
-            //     SELECT COALESCE(SUM(sod.qty), 0)
-            //         FROM sales_order_deliveries sod
-            //     WHERE sod.customer_id = s.customer_id
-            //         AND sod.item_fg_id = s.item_fg_id
-            //         AND (
-            //             YEAR(sod.trans_date) < ' . $filter_period_year . ' 
-            //             OR (
-            //                 YEAR(sod.trans_date) = ' . $filter_period_year . ' 
-            //                 AND MONTH(sod.trans_date) <= ' . $filter_period_month . '
-            //             )
-            //         )
-            //         AND (s.closing_reason IS NULL OR s.closing_reason = "")
-            // ) as delivery_schedule', false);
-
-            $this->db->select('(
-                SELECT 
-                    CASE 
-                        WHEN s.closing_reason IS NOT NULL AND TRIM(s.closing_reason) <> "" THEN 
-                            LEAST(COALESCE(SUM(sod.qty), 0), s.delivery)
-                        ELSE 
-                            COALESCE(SUM(sod.qty), 0)
-                    END
-                FROM sales_order_deliveries sod
-                WHERE sod.customer_id = s.customer_id
-                    AND sod.item_fg_id = s.item_fg_id
-                    AND (
-                        YEAR(sod.trans_date) > ' . $filter_period_year . ' 
-                        OR (
-                            YEAR(sod.trans_date) = ' . $filter_period_year . ' 
-                            AND MONTH(sod.trans_date) >= ' . $filter_period_month . '
-                        )
-                )
-            ) as delivery_schedule', false);
-
-
+            
+            
             $this->db->select('(
                 SELECT SUM(d.qty_del)
                 FROM delivery_orders d
@@ -181,7 +149,6 @@ class Report_control_po extends CI_Controller
                   AND YEAR(d.actual_delivery_date) = ' . $filter_period_year . '
                   AND MONTH(d.actual_delivery_date) = ' . $filter_period_month . '
             ) as delivery', false);
-
             $this->db->select('(
                 COALESCE((SELECT SUM(d.qty) 
                           FROM delivery_reports d 
@@ -208,63 +175,15 @@ class Report_control_po extends CI_Controller
             ) as balance', false);            
                        
             $this->db->select('a.month_1 as forecast', false);
-
-            // $this->db->select('ROUND((CASE 
-            // WHEN a.month_1 = 0 THEN 0 ELSE ((SUM(CASE WHEN YEAR(s.sales_order_date) = ' . $filter_period_year . ' AND MONTH(s.sales_order_date) = ' . $filter_period_month . ' THEN s.qty ELSE 0 END) - a.month_1) / a.month_1) * 100
-            // END), 2) as bal_forecast', false);
-
-            $this->db->select('
-                ROUND((
-                    CASE 
-                        WHEN a.month_1 = 0 THEN 0
-                        ELSE ((SUM(CASE 
-                            WHEN YEAR(s.sales_order_date) = ' . $filter_period_year . ' 
-                            AND MONTH(s.sales_order_date) = ' . $filter_period_month . ' 
-                            THEN s.qty ELSE 0 END) - a.month_1) / a.month_1) * 100
-                    END
-                ), 2) as bal_forecast
-            ', false);
-
-
-            // $this->db->select('ROUND((CASE 
-            // WHEN a.month_1 = 0 AND SUM(CASE WHEN YEAR(s.sales_order_date) = ' . $filter_period_year . ' AND MONTH(s.sales_order_date) = ' . $filter_period_month . ' THEN s.qty ELSE 0 END) > 0 THEN 100 ELSE ((SUM(CASE WHEN YEAR(s.sales_order_date) = ' . $filter_period_year . ' AND MONTH(s.sales_order_date) = ' . $filter_period_month . ' THEN s.qty ELSE 0 END) - a.month_1) / a.month_1) * 100
-            // END), 2) as bal_fc', false);
-
-            $this->db->select('ROUND((
-                CASE 
-                    WHEN a.month_1 = 0 
-                        AND SUM(CASE 
-                            WHEN YEAR(s.sales_order_date) = ' . $filter_period_year . ' 
-                                AND MONTH(s.sales_order_date) = ' . $filter_period_month . ' 
-                            THEN s.qty ELSE 0 
-                        END) > 0 
-                    THEN 100 
-                    ELSE (
-                        (SUM(CASE 
-                            WHEN YEAR(s.sales_order_date) = ' . $filter_period_year . ' 
-                                AND MONTH(s.sales_order_date) = ' . $filter_period_month . ' 
-                            THEN s.qty ELSE 0 
-                        END) - a.month_1) / a.month_1
-                    ) * 100 
-                END
-            ), 2) AS bal_fc', false);
-
-
+            $this->db->select('ROUND((CASE 
+            WHEN a.month_1 = 0 THEN 0 ELSE ((SUM(CASE WHEN YEAR(s.sales_order_date) = ' . $filter_period_year . ' AND MONTH(s.sales_order_date) = ' . $filter_period_month . ' THEN s.qty ELSE 0 END) - a.month_1) / a.month_1) * 100
+            END), 2) as bal_forecast', false);
+            
+            $this->db->select('ROUND((CASE 
+            WHEN a.month_1 = 0 AND SUM(CASE WHEN YEAR(s.sales_order_date) = ' . $filter_period_year . ' AND MONTH(s.sales_order_date) = ' . $filter_period_month . ' THEN s.qty ELSE 0 END) > 0 THEN 100 ELSE ((SUM(CASE WHEN YEAR(s.sales_order_date) = ' . $filter_period_year . ' AND MONTH(s.sales_order_date) = ' . $filter_period_month . ' THEN s.qty ELSE 0 END) - a.month_1) / a.month_1) * 100
+            END), 2) as bal_fc', false);
             //$this->db->select('ROUND((CASE WHEN a.month_1 != 0 THEN ((SUM(CASE WHEN YEAR(s.sales_order_date) = ' . $filter_period_year . ' AND MONTH(s.sales_order_date) = ' . $filter_period_month . ' THEN s.qty ELSE 0 END) - a.month_1) / a.month_1) * 100 ELSE 100 END), 2) as bal_forecast', false);
-
-            // $this->db->select('((SELECT SUM(d.qty) FROM delivery_reports d WHERE d.customer_id = a.customer_id AND d.item_fg_id = a.item_fg_id AND YEAR(d.delivery_report_date) = ' . $filter_period_year . ' AND MONTH(d.delivery_report_date) = ' . $filter_period_month . ') * ci.price) as total_sales', false);
-
-            $this->db->select('(
-                (SELECT SUM(d.qty) 
-                FROM delivery_reports d 
-                WHERE d.customer_id = a.customer_id 
-                    AND d.item_fg_id = a.item_fg_id 
-                    AND YEAR(d.delivery_report_date) = ' . $filter_period_year . ' 
-                    AND MONTH(d.delivery_report_date) = ' . $filter_period_month . ')
-                    * ci.price
-            ) as total_sales', false);
-
-
+            $this->db->select('((SELECT SUM(d.qty) FROM delivery_reports d WHERE d.customer_id = a.customer_id AND d.item_fg_id = a.item_fg_id AND YEAR(d.delivery_report_date) = ' . $filter_period_year . ' AND MONTH(d.delivery_report_date) = ' . $filter_period_month . ') * ci.price) as total_sales', false);
             $this->db->select('(
                 (
                     COALESCE((SELECT SUM(d.qty) 
@@ -287,7 +206,6 @@ class Report_control_po extends CI_Controller
                 ) * ci.price
             ) as bal_sales', false);
 
-            //? Mengambil hanya 1 baris forecast terbaru by customer dan item_fg (revision tertinggi)
             $this->db->from('(SELECT * FROM forecasts f1 
                             WHERE f1.revision = (
                                 SELECT MAX(f2.revision) 
@@ -297,7 +215,6 @@ class Report_control_po extends CI_Controller
                                     AND f2.p_month = f1.p_month 
                                     AND f2.p_year = f1.p_year
                             )) a');
-
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
             $this->db->join('customer_items ci', 'a.customer_id = ci.customer_id AND a.item_fg_id = ci.item_fg_id', 'left');

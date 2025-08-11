@@ -179,6 +179,8 @@ class Forecast_compound_used extends CI_Controller
         $this->db->where('a.deleted', 0);
         $this->db->like('a.p_month', $filter_period_month);
         $this->db->like('a.p_year', $filter_period_year);
+        // if (!empty($filter_compound_no)) {
+            // }
         if ($filter_product_family != "") {
             $this->db->where('b.item_family_number', $filter_product_family);
         }
@@ -187,6 +189,7 @@ class Forecast_compound_used extends CI_Controller
         // $this->db->group_by('a.item_fg_id');
         $this->db->order_by('a.item_fg_id', 'ASC');
         $records = $this->db->get()->result_array();
+
 
         $this->db->select("
             b.number as compound_no,
@@ -217,8 +220,6 @@ class Forecast_compound_used extends CI_Controller
         $this->db->group_by('b.number');
         $this->db->order_by('a.item_fg_id', 'ASC');
         $compound_fg_records = $this->db->get()->result_array();
-
-        // $records = array_merge($records, $compound_fg_records);
 
         $combined = [];
 

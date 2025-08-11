@@ -300,7 +300,7 @@ class Report_outstanding_so extends CI_Controller
             }
 
             $html .= '<tr>
-                        <th colspan="5" style="text-align:right;">TOTAL</th>
+                        <th colspan="4" style="text-align:right;">TOTAL</th>
                         <th style="text-align:right;">' . number_format($qty_order, 0, '.', '.') . '</th>
                         <th style="text-align:right;">' . number_format($qty_delivery, 0, '.', '.') . '</th>
                         <th style="text-align:right;">' . number_format($qty_outstanding, 0, '.', '.') . '</th>
@@ -315,6 +315,7 @@ class Report_outstanding_so extends CI_Controller
             $this->db->order_by('a.customer_order_no', 'ASC');
             $this->db->order_by('b.name', 'ASC');
             $this->db->order_by('a.sales_order_date', 'ASC');
+            $this->db->order_by('c.name', 'ASC');
             $this->db->order_by('c.name', 'ASC');
 
             // Filter by customer name
@@ -397,7 +398,7 @@ class Report_outstanding_so extends CI_Controller
             }
 
             $html .= '<tr>
-                        <th colspan="7" style="text-align:right;">TOTAL</th>
+                        <th colspan="6" style="text-align:right;">TOTAL</th>
                         <th style="text-align:right;">' . number_format($qty_order, 0, '.', '.') . '</th>
                         <th style="text-align:right;">' . number_format($qty_delivery, 0, '.', '.') . '</th>
                         <th style="text-align:right;">' . number_format($qty_outstanding, 0, '.', '.') . '</th>

@@ -78,7 +78,7 @@ class Supply_materials extends CI_Controller
 
         echo json_encode(['lot_no' => $data ? $data->lot_no : null]);
     }
-
+    
     public function readPeriod()
     {
         $records = $this->crud->query("SELECT `period` FROM supply_materials WHERE `status` = '0' GROUP BY `period`");
@@ -344,7 +344,7 @@ class Supply_materials extends CI_Controller
             $qty = $post['qty'];
             $request_type = $post['request_type']; // Add request_type
             $mpq = $post['mpq'];
-            // $lot_no = $post['lot_no'];
+            $lot_no = $post['lot_no'];
     
             // Pastikan jumlah yang dimasukkan tidak nol
             if ($qty <= 0) {
@@ -356,8 +356,7 @@ class Supply_materials extends CI_Controller
             $existingData = $this->crud->reads('supply_materials', [], [
                 "request_no" => $request_no,
                 // "item_fg_id" => $item_fg_id,
-                "item_rm_id" => $item_rm_id,
-                // "lot_no" => $lot_no
+                "item_rm_id" => $item_rm_id
             ]);
     
             if (count($existingData) > 0) {

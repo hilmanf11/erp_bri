@@ -54,6 +54,7 @@ class Equivalent extends CI_Controller
     {
         if ($this->input->post()) {
             //$get = $this->input->get();
+            $filters = json_decode($this->input->post('filterRules'));
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -73,6 +74,36 @@ class Equivalent extends CI_Controller
             $this->db->join('item_rm f', 'a.eq_4 = f.id','left');
             $this->db->join('item_rm g', 'a.eq_5 = g.id','left');
             $this->db->order_by('a.id', 'ASC');
+
+            if (@count($filters) > 0) {
+                foreach ($filters as $filter) {
+                    if ($filter->field == "item_rm_id") {
+                        $this->db->like("b.id", $filter->value);
+                    } elseif ($filter->field == "item_rm_number") {
+                        $this->db->like("b.number", $filter->value);
+                    } elseif ($filter->field == "item_rm_name") {
+                        $this->db->like("b.name", $filter->value);
+                    } elseif ($filter->field == "eq_1_name") {
+                        $this->db->like("c.name", $filter->value);
+                    } elseif ($filter->field == "eq_2_name") {
+                        $this->db->like("d.name", $filter->value);
+                    } elseif ($filter->field == "eq_3_name") {
+                        $this->db->like("e.name", $filter->value);
+                    } elseif ($filter->field == "eq_4_name") {
+                        $this->db->like("f.name", $filter->value);
+                    } elseif ($filter->field == "eq_5_name") {
+                        $this->db->like("g.name", $filter->value);
+                    } elseif ($filter->field == "created_date") {
+                        $this->db->like("a.created_date", $filter->value);
+                    } elseif ($filter->field == "created_by") {
+                        $this->db->like("a.created_by", $filter->value);
+                    } elseif ($filter->field == "updated_date") {
+                        $this->db->like("a.updated_date", $filter->value);
+                    } elseif ($filter->field == "updated_by") {
+                        $this->db->like("a.updated_by", $filter->value);
+                    }
+                }
+            }
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10

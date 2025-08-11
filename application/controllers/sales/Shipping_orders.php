@@ -330,8 +330,12 @@ class Shipping_orders extends CI_Controller
                 // Simpan data baru ke database
                 // $this->crud->create('delivery_notes', $data_to_insert);
                 // $this->crud->update('delivery_orders', ['delivery_order_no' => $delivery_order_no], ['status' => 1]);
+                
+            $user = $this->crud->read("users", [], ["username" => $this->session->username]);
+            $table_approval = (preg_match('/\bExtruder\b/i', $user->position))?'delivery_notes_2':'delivery_notes';
 
-                $insert_dn = $this->crud->create('delivery_notes', $data_to_insert);
+                $insert_dn = $this->crud->createPO('delivery_notes',$table_approval, $data_to_insert);
+                // $insert_dn = $this->crud->create('delivery_notes', $data_to_insert);
                 if (!$insert_dn) {
                     $this->db->trans_rollback();
                     echo json_encode([
@@ -375,6 +379,8 @@ class Shipping_orders extends CI_Controller
                 "message" => "Delivery Note has been created",
                 "theme" => "success"
             ]);
+
+            // echo json_encode(array("theme" => "success", "message" => "Delivery Note has been created", "title" => "Success"));
         } else {
             show_error("Cannot Process your request");
         }

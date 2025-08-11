@@ -289,6 +289,18 @@ class Notifications extends CI_Controller
             $this->load->view('notifications/delivery_notes');
         }
     }
+    public function delivery_notes_2($user, $name){
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['user'] = base64_decode($user);
+            $data['name'] = base64_decode($name);
+            $data['table'] = "delivery_notes_2";
+            
+            $this->load->view('template/header', $data);
+            $this->load->view('notifications/delivery_notes_2');
+        }
+    }
 
     public function delivery_orders($user, $name){
         if (empty($this->session->username)) {
@@ -519,6 +531,22 @@ class Notifications extends CI_Controller
         }
 
         if($table=='delivery_notes'){
+            $this->db->select('a.delivery_note_no, a.delivery_note_date, c.name as customer_name, 
+                              d.name as created_by_name, e.name as approved_by_name, h.id as id_notification');
+            $this->db->from('delivery_notes a');
+            $this->db->join('customers c', 'a.customer_id = c.id');
+            $this->db->join('users d', 'a.created_by = d.username', 'left');
+            $this->db->join('users e', 'a.approved_by = e.username', 'left'); 
+            $this->db->join('notifications h', 'a.id = h.table_id');
+            $this->db->where('h.users_id_to', $this->session->username);
+            $this->db->where('h.table_name', $table);
+            $this->db->where('h.users_id_from', $user);
+            $this->db->where('h.name', $name);
+            $this->db->where('h.deleted', 0);
+            $this->db->group_by('a.delivery_note_no');
+            $this->db->order_by('h.created_date', 'DESC');
+        }
+        if($table=='delivery_notes_2'){
             $this->db->select('a.delivery_note_no, a.delivery_note_date, c.name as customer_name, 
                               d.name as created_by_name, e.name as approved_by_name, h.id as id_notification');
             $this->db->from('delivery_notes a');

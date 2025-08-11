@@ -103,7 +103,6 @@ class Sales_order_closing extends CI_Controller
     // {
     //     if ($this->input->post()) {
     //         $post = $this->input->post();
-    //         $post['type_closing'] = 'CLOSING SO';
 
     //         $sales_orders = $this->crud->read("sales_orders", [], ["sales_order_no" => $post['sales_order_no']]);
     //         if (@$sales_orders->sales_order_no != "") {
