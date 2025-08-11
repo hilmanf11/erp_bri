@@ -300,7 +300,7 @@ class Report_outstanding_so extends CI_Controller
             }
 
             $html .= '<tr>
-                        <th colspan="4" style="text-align:right;">TOTAL</th>
+                        <th colspan="5" style="text-align:right;">TOTAL</th>
                         <th style="text-align:right;">' . number_format($qty_order, 0, '.', '.') . '</th>
                         <th style="text-align:right;">' . number_format($qty_delivery, 0, '.', '.') . '</th>
                         <th style="text-align:right;">' . number_format($qty_outstanding, 0, '.', '.') . '</th>
@@ -311,12 +311,30 @@ class Report_outstanding_so extends CI_Controller
             $this->db->from('sales_orders a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
-            $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
+            // $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
             $this->db->order_by('a.customer_order_no', 'ASC');
             $this->db->order_by('b.name', 'ASC');
             $this->db->order_by('a.sales_order_date', 'ASC');
             $this->db->order_by('c.name', 'ASC');
-            $this->db->order_by('c.name', 'ASC');
+
+
+            if($filter_type == "SO_DATE") {
+                if(!empty($filter_so_date_from) && !empty($filter_so_date_to)) {
+                    $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
+                }
+            } elseif($filter_type == "D_DATE") {
+                if(!empty($filter_d_date_from) && !empty($filter_d_date_to)) {
+                    $this->db->where("a.delivery_date between '$filter_d_date_from' and '$filter_d_date_to'");
+                }
+            } else {
+                if(!empty($filter_so_date_from) && !empty($filter_so_date_to)) {
+                    $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
+                }
+                if(!empty($filter_d_date_from) && !empty($filter_d_date_to)) {
+                    $this->db->where("a.delivery_date between '$filter_d_date_from' and '$filter_d_date_to'");
+                }
+            }
+
 
             // Filter by customer name
             if (!empty($filter_customer_name)) {
@@ -398,7 +416,7 @@ class Report_outstanding_so extends CI_Controller
             }
 
             $html .= '<tr>
-                        <th colspan="6" style="text-align:right;">TOTAL</th>
+                        <th colspan="7" style="text-align:right;">TOTAL</th>
                         <th style="text-align:right;">' . number_format($qty_order, 0, '.', '.') . '</th>
                         <th style="text-align:right;">' . number_format($qty_delivery, 0, '.', '.') . '</th>
                         <th style="text-align:right;">' . number_format($qty_outstanding, 0, '.', '.') . '</th>

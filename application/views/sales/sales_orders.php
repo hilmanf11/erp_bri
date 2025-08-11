@@ -488,17 +488,17 @@
                                     index: rowIndex,
                                     field: 'currency'
                                 });
-                                var ed6 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'delivery'
-                                });
+                                // var ed6 = dg.datagrid('getEditor', {
+                                //     index: rowIndex,
+                                //     field: 'delivery'
+                                // });
 
                                 $(ed.target).textbox('setValue', rows.number);
                                 $(ed2.target).textbox('setValue', rows.name);
                                 $(ed3.target).textbox('setValue', rows.uom);
                                 $(ed4.target).numberbox('setValue', rows.price);
                                 $(ed5.target).textbox('setValue', rows.currency);
-                                $(ed6.target).textbox('setValue', rows.delivery);
+                                // $(ed6.target).textbox('setValue', rows.delivery);
 
                                 // CEK EXPIRED PRICE
                                 var validFrom = rows.valid_from;
@@ -586,50 +586,52 @@
                                     field: 'price'
                                 });
 
-                                var ed3 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'outstanding'
-                                });
+                                // var ed3 = dg.datagrid('getEditor', {
+                                //     index: rowIndex,
+                                //     field: 'outstanding'
+                                // });
 
-                                var ed4 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'delivery'
-                                });
+                                // var ed4 = dg.datagrid('getEditor', {
+                                //     index: rowIndex,
+                                //     field: 'delivery'
+                                // });
 
-                                var delivery = $(ed4.target).numberbox('getValue');
+                                // var delivery = $(ed4.target).numberbox('getValue');
                                 var price = $(ed2.target).numberbox('getValue');
 
                                 var total = (parseInt(qty) * parseFloat(price));
-                                var outstanding = (parseInt(qty) - parseInt(delivery));
+                                // var outstanding = (parseInt(qty) - parseInt(delivery));
 
-                                $(ed3.target).numberbox('setValue', outstanding);
+                                // $(ed3.target).numberbox('setValue', outstanding);
                                 $(ed.target).numberbox('setValue', total);
                             }
                         }
                     }
-                }, {
-                    field: 'delivery',
-                    width: 80,
-                    halign: 'center',
-                    title: "Delivery",
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            readonly: true
-                        }
-                    }
-                }, {
-                    field: 'outstanding',
-                    width: 80,
-                    halign: 'center',
-                    title: "OS SO",
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            readonly: true
-                        }
-                    }
-                }, {
+                }, 
+                // {
+                //     field: 'delivery',
+                //     width: 80,
+                //     halign: 'center',
+                //     title: "Delivery",
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             readonly: true
+                //         }
+                //     }
+                // }, {
+                //     field: 'outstanding',
+                //     width: 80,
+                //     halign: 'center',
+                //     title: "OS SO",
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             readonly: true
+                //         }
+                //     }
+                // }, 
+                {
                     field: 'currency',
                     width: 80,
                     halign: 'center',
@@ -713,7 +715,7 @@
             if (endEditing()) {
                 $('#dg2').datagrid('appendRow', {
                     qty: '0',
-                    delivery: '0',
+                    // delivery: '0',
                 });
                 editIndex = $('#dg2').datagrid('getRows').length - 1;
                 $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
@@ -1171,8 +1173,8 @@
                                         item_fg_id: row.item_fg_id,
                                         uom: row.uom,
                                         qty: row.qty,
-                                        delivery: row.delivery,
-                                        outstanding: row.outstanding,
+                                        // delivery: row.delivery,
+                                        // outstanding: row.outstanding,
                                         currency: row.currency,
                                         price: row.price,
                                         total: row.total,

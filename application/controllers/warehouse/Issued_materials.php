@@ -564,6 +564,7 @@ class Issued_materials extends CI_Controller
 
                     if($purchase_order_labels->status_out == "1") {
                         echo json_encode(array("title" => "Available", "message" => "Data label has been Scanning", "theme" => "error"));
+                        return;
                     }else{
 
                         if ($issued_materials) {
@@ -695,13 +696,9 @@ class Issued_materials extends CI_Controller
                                 'qty' => $post['qty']
                             ];
                             
-                            
                             $this->crud->create('issued_material_details', $issued_detail_data);
                             
-                            $this->crud->update('purchase_order_labels', ["label_no" => $post['label_no'], "status" => 1], ['status_out'=> 1]);
-                            
-                            $this->crud->update('purchase_order_labels', ["label_no" => $post['label_no'], "status" => 1], ['status_out'=> 1]);
-
+                            // $this->crud->update('purchase_order_labels', ["label_no" => $post['label_no'], "status" => 1], ['status_out'=> 1]);
                             // Update status di new_barcode
                             $this->crud->update('new_barcode', ["label_no" => $post['label_no']], ["status" => 1]);
 

@@ -215,43 +215,70 @@
                             $(e.data.target).combobox('clear').combobox('textbox').focus();
                         }
                     }],
-                    onSelect: function(cus_order_no) {
-                        $('#filter_item_fg').combogrid({
-                            url: '<?php echo base_url('sales/report_outstanding_so/readItems?customer_order_no='); ?>' + cus_order_no.customer_order_no +
-                                "&filter_so_date_from=" + window.btoa(filter_so_date_from) +
-                                "&filter_so_date_to=" + window.btoa(filter_so_date_to),
-                            panelWidth: 400,
-                            idField: 'id',
-                            textField: 'number',
-                            valueField: 'number',
-                            mode: 'remote',
-                            fitColumns: true,
-                            prompt: "Select Product No",
-                            icons: [{
-                                iconCls: 'icon-clear',
-                                handler: function(e) {
-                                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-                                }
-                            }],
-                            columns: [
-                                [{
-                                    field: 'number',
-                                    title: 'Product No',
-                                    width: 200
-                                }, {
-                                    field: 'name',
-                                    title: 'Product Name',
-                                    width: 200
-                                }]
-                            ],
-                        });
+                    // onSelect: function(cus_order_no) {
+                    //     $('#filter_item_fg').combogrid({
+                    //         url: '<?php echo base_url('sales/report_outstanding_so/readItems?customer_order_no='); ?>' + cus_order_no.customer_order_no +
+                    //             "&filter_so_date_from=" + window.btoa(filter_so_date_from) +
+                    //             "&filter_so_date_to=" + window.btoa(filter_so_date_to),
+                    //         panelWidth: 400,
+                    //         idField: 'id',
+                    //         textField: 'number',
+                    //         valueField: 'number',
+                    //         mode: 'remote',
+                    //         fitColumns: true,
+                    //         prompt: "Select Product No",
+                    //         icons: [{
+                    //             iconCls: 'icon-clear',
+                    //             handler: function(e) {
+                    //                 $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                    //             }
+                    //         }],
+                    //         columns: [
+                    //             [{
+                    //                 field: 'number',
+                    //                 title: 'Product No',
+                    //                 width: 200
+                    //             }, {
+                    //                 field: 'name',
+                    //                 title: 'Product Name',
+                    //                 width: 200
+                    //             }]
+                    //         ],
+                    //     });
 
-                    }
+                    // }
                 });
                 
             }
         });
 
+        $('#filter_item_fg').combogrid({
+            url: '<?= base_url("master/item_fg/reads") ?>',
+            panelWidth: 400,
+            idField: 'id',
+            textField: 'number',
+            valueField: 'number',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Select Product No",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                }
+            }],
+            columns: [
+                [{
+                    field: 'number',
+                    title: 'Product No',
+                    width: 200
+                }, {
+                    field: 'name',
+                    title: 'Product Name',
+                    width: 200
+                }]
+            ]
+        });
 
         $("#filter_type").combobox({
             onChange: function(val) {
