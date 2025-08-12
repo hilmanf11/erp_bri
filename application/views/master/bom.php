@@ -3,7 +3,7 @@
         <div title="RELATIONS" style="padding: 20px;">
             <ul>
                 <li>The Data Product No is taken from <b>Master Data > Engineering > Item Finish Good</b></li>
-                <li>The Data Part No is taken from <b>Master Data > Engineering > Item Raw Material</b></li>
+                <li>The Data Part No Internal is taken from <b>Master Data > Engineering > Item Raw Material</b></li>
                 <li>The Data Weight is taken from <b>Master Data > Engineering > Item Finish Good</b></li>
                 <li>The Data Runner is taken from <b>Master Data > Engineering > Menu Loading</b></li>
                 <li>The Data Cavity Standard is taken from <b>Master Data > Engineering > Master Mold</b></li>
@@ -48,7 +48,7 @@
                 <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Part No</span>
+                <span style="width:35%; display:inline-block;">Part No Internal</span>
                 <input style="width:60%;" id="filter_item_rm_id" class="easyui-combogrid">
             </div>
             <div class="fitem">
@@ -67,7 +67,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; height: 600px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1170px; height: 600px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -118,25 +118,25 @@
             singleSelect: true,
             columns: [
                 [{
-                    field: 'item_rm_number',
-                    width: 150,
+                    field: 'item_rm_number_internal',
+                    width: 200,
                     halign: 'center',
-                    title: "Part No",
+                    title: "Part No Internal",
                     editor: {
                         type: 'combogrid',
                         options: {
-                            url: '<?= base_url('master/item_rm/reads'); ?>',
+                            url: '<?= base_url('master/item_rm/readsNumberInternal'); ?>',
                             required: true,
                             panelWidth: 400,
                             idField: 'id',
-                            textField: 'number',
+                            textField: 'number_internal',
                             mode: 'remote',
                             fitColumns: true,
-                            prompt: 'Choose Part No',
+                            prompt: 'Choose Part No Internal',
                             columns: [
                                 [{
-                                    field: 'number',
-                                    title: 'Part No',
+                                    field: 'number_internal',
+                                    title: 'Part No Internal',
                                     width: 150
                                 }, {
                                     field: 'name',
@@ -258,7 +258,7 @@
                     }
                 }, {
                     field: 'uom',
-                    width: 80,
+                    width: 120,
                     halign: 'center',
                     title: "Uom",
                     editor: {
@@ -576,9 +576,16 @@
                                 title: 'Part ID',
                                 halign: 'center',
                                 width: 150
-                            }, {
-                                field: 'item_rm_number',
-                                title: 'Part No',
+                            }, 
+                            // {
+                            //     field: 'item_rm_number',
+                            //     title: 'Part No',
+                            //     halign: 'center',
+                            //     width: 150
+                            // }, 
+                            {
+                                field: 'item_rm_number_internal',
+                                title: 'Part No Internal',
                                 halign: 'center',
                                 width: 150
                             }, {
@@ -757,21 +764,21 @@
     });
 
     $('#filter_item_rm_id').combogrid({
-        url: '<?= base_url('master/item_rm/reads'); ?>',
+        url: '<?= base_url('master/item_rm/readsNumberInternal'); ?>',
         panelWidth: 500,
         idField: 'id',
-        textField: 'number',
+        textField: 'number_internal',
         mode: 'remote',
         fitColumns: true,
-        prompt: "Choose Part No",
+        prompt: "Choose Part No Internal",
         columns: [
             [{
                 field: 'id',
                 title: 'Part ID',
                 width: 150
             }, {
-                field: 'number',
-                title: 'Part No',
+                field: 'number_internal',
+                title: 'Part No Internal',
                 width: 150
             }, {
                 field: 'name',

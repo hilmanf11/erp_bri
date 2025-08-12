@@ -129,7 +129,7 @@ class Bom extends CI_Controller
             $number = base64_decode($this->input->get('number'));
             $filter_item_rm_id = base64_decode($this->input->get('filter_item_rm_id'));
 
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.name as item_rm_name, e.name as process_name, a.uom as uom, c.item_family_id as product_family, d.name as product_family_name, (CASE WHEN a.type = "1" THEN "ORIGINAL" WHEN a.type = "2" THEN "RECYCLE" WHEN a.type = "3" THEN "BOTH" ELSE "INVALID" END) as type_name, CASE WHEN a.composition = FLOOR(a.composition) THEN FORMAT(CAST(FLOOR(a.composition) AS CHAR),0) ELSE FORMAT(CAST(a.composition AS CHAR),2) END AS formatted_composition');
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.number_internal as item_rm_number_internal, c.name as item_rm_name, e.name as process_name, a.uom as uom, c.item_family_id as product_family, d.name as product_family_name, (CASE WHEN a.type = "1" THEN "ORIGINAL" WHEN a.type = "2" THEN "RECYCLE" WHEN a.type = "3" THEN "BOTH" ELSE "INVALID" END) as type_name, CASE WHEN a.composition = FLOOR(a.composition) THEN FORMAT(CAST(FLOOR(a.composition) AS CHAR),0) ELSE FORMAT(CAST(a.composition AS CHAR),2) END AS formatted_composition');
             $this->db->from('bom a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
@@ -155,7 +155,7 @@ class Bom extends CI_Controller
         if ($this->input->get()) {
             $item_fg_id = base64_decode($this->input->get('item_fg_id'));
 
-            $this->db->select('a.*, c.number as item_rm_number, c.name as item_rm_name, a.uom, d.name as item_family_name, (CASE WHEN a.type = "1" THEN "ORIGINAL" WHEN a.type = "2" THEN "RECYCLE" WHEN a.type = "3" THEN "BOTH" ELSE "INVALID" END) as type_name, CASE WHEN a.composition = FLOOR(a.composition) THEN FORMAT(CAST(FLOOR(a.composition) AS CHAR),0) ELSE FORMAT(CAST(a.composition AS CHAR),2) END AS formatted_composition');
+            $this->db->select('a.*, c.number as item_rm_number, c.number_internal as item_rm_number_internal, c.name as item_rm_name, a.uom, d.name as item_family_name, (CASE WHEN a.type = "1" THEN "ORIGINAL" WHEN a.type = "2" THEN "RECYCLE" WHEN a.type = "3" THEN "BOTH" ELSE "INVALID" END) as type_name, CASE WHEN a.composition = FLOOR(a.composition) THEN FORMAT(CAST(FLOOR(a.composition) AS CHAR),0) ELSE FORMAT(CAST(a.composition AS CHAR),2) END AS formatted_composition');
             $this->db->from('bom a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
@@ -370,7 +370,7 @@ class Bom extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.name as item_rm_name, e.name as process_name, c.item_family_id as product_family, a.uom as uom, , d.name as product_family_name, CASE WHEN a.composition = FLOOR(a.composition) THEN FORMAT(CAST(FLOOR(a.composition) AS CHAR),0) ELSE FORMAT(CAST(a.composition AS CHAR),2) END AS formatted_composition');
+        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.number_internal as item_rm_number_internal, c.name as item_rm_name, e.name as process_name, c.item_family_id as product_family, a.uom as uom, , d.name as product_family_name, CASE WHEN a.composition = FLOOR(a.composition) THEN FORMAT(CAST(FLOOR(a.composition) AS CHAR),0) ELSE FORMAT(CAST(a.composition AS CHAR),2) END AS formatted_composition');
         $this->db->from('bom a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
@@ -411,7 +411,7 @@ class Bom extends CI_Controller
                 <th>Product No</th>
                 <th>Product Name</th>
                 <th>Part ID</th>
-                <th>Part No</th>
+                <th>Part No Internal</th>
                 <th>Part Name</th>
                 <th>Process Name</th>
                 <th>Type of Product</th>
@@ -429,7 +429,7 @@ class Bom extends CI_Controller
                     <td>' . $data['item_fg_number'] . '</td>
                     <td>' . $data['item_fg_name'] . '</td>
                     <td>' . $data['item_rm_id'] . '</td>
-                    <td>' . $data['item_rm_number'] . '</td>
+                    <td>' . $data['item_rm_number_internal'] . '</td>
                     <td>' . $data['item_rm_name'] . '</td>
                     <td>' . $data['process_name'] . '</td>
                     <td>' . $data['type'] . '</td>

@@ -13,7 +13,7 @@ class Purchase_orders extends CI_Controller
         $this->load->library('Ciqrcode');
         $this->load->model('crud');
         //Validasi Form
-        $this->form_validation->set_rules('item_rm_id', 'Product No', 'required|min_length[1]|max_length[100]'); //item_number
+        $this->form_validation->set_rules('item_rm_id', 'Part No', 'required|min_length[1]|max_length[100]'); //item_number
     }
 
     public function index()
@@ -822,8 +822,8 @@ class Purchase_orders extends CI_Controller
             $html .= '<table id="customers">
                                     <tr>
                                         <th rowspan="2" width="30" style="text-align:center;">No</th>
-                                        <th rowspan="2" width="150" style="text-align:center;">Product No</th>
-                                        <th rowspan="2" width="150" style="text-align:center;">Product Name</th>
+                                        <th rowspan="2" width="150" style="text-align:center;">Part No</th>
+                                        <th rowspan="2" width="150" style="text-align:center;">Part Name</th>
                                         <th rowspan="2" width="50" style="text-align:center;">Specification</th>
                                         <th rowspan="2" width="50" style="text-align:center;">Qty</th>
                                         <th rowspan="2" width="50" style="text-align:center;">Uom</th>
@@ -1331,8 +1331,8 @@ class Purchase_orders extends CI_Controller
             $html .= '<table id="customers">
             <tr>
                 <th width="30" style="text-align:center;">No</th>
-                <th width="150" style="text-align:center;">Product No</th>
-                <th width="150" style="text-align:center;">Product Name</th>
+                <th width="150" style="text-align:center;">Part No</th>
+                <th width="150" style="text-align:center;">Part Name</th>
                 <th width="50" style="text-align:center;">Specification</th>
                 <th width="50" style="text-align:center;">Qty</th>
                 <th width="50" style="text-align:center;">Uom</th>
@@ -1650,8 +1650,8 @@ class Purchase_orders extends CI_Controller
                     <th>PO Period</th>
                     <th>PO Name</th>
                     <th>Supplier</th>
-                    <th>Product No</th>
-                    <th>Product Name</th>
+                    <th>Part No External</th>
+                    <th>Part Name</th>
                     <th>MPQ</th>
                     <th>MOQ</th>
                     <th>Qty</th>

@@ -748,8 +748,8 @@ class Purchase_requests extends CI_Controller
                 <th>Request Date</th>
                 <th>Expected Date</th>
                 <th>Request Name</th>
-                <th>Product No</th>
-                <th>Product Name</th>
+                <th>Part No External</th>
+                <th>Part Name</th>
                 <th>Qty</th>
                 <th>Uom</th>
                 <th>PO No</th>

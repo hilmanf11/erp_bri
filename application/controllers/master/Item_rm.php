@@ -35,6 +35,13 @@ class Item_rm extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readsNumberInternal()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT a.*, b.name as item_family_name FROM item_rm a JOIN item_familys b ON a.item_family_id = b.id WHERE a.number_internal like '%$post%' or a.name like '%$post%' or a.id like '%$post%' or a.item_family_id like '%$post%'");
+        echo json_encode($send);
+    }
+
     public function readsC()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
@@ -109,6 +116,16 @@ class Item_rm extends CI_Controller
         $row = $sql->row();
         $kode = substr($row->kode, -4);
         $autoid = $code . "-" . sprintf("%04s", $kode + 1);
+        echo $autoid;
+    }
+    //CODE OTOMATIS
+    public function autoid_ps($item_family_sub_number = "NA")
+    {
+        // $code = $item_category_number . $item_family_number . $item_family_sub_number;
+        $sql = $this->db->query("SELECT COALESCE(MAX(number_internal), 0) as kode From item_rm where number_internal like '%$item_family_sub_number%'");
+        $row = $sql->row();
+        $kode = substr($row->kode, -5);
+        $autoid = $item_family_sub_number . "-" . sprintf("%05s", (int) $kode + 1);
         echo $autoid;
     }
     //CREATE DATA
@@ -350,11 +367,19 @@ class Item_rm extends CI_Controller
                 echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['part_no'] . " Duplicate Data", "theme" => "error"));
             } else {
                 //autoid
-                if (empty($prod_sub_fam->number)) {
-                    $code = $data['category'] . $data['product_family'] . "NA";
-                } else {
-                    $code = $data['category'] . $data['product_family'] . $data['sub_product_family'];
-                }
+                $code = $data['category'] . $data['product_family'] . "NA";
+
+                // if (empty($prod_sub_fam->number)) {
+                // } else {
+                //     $code = $data['category'] . $data['product_family'] . $data['sub_product_family'];
+                // }
+
+                //Cek Number Internal
+                $sqlItem = $this->db->query("SELECT COALESCE(MAX(number_internal), 0) as kode From item_rm where number_internal like '%$prod_sub_fam->number%'");
+                $rowItem = $sqlItem->row();
+                $codeItem = substr($rowItem->kode, -5);
+                $number_internal = $prod_sub_fam->number . "-" . sprintf("%05s", (int) $codeItem + 1);
+
                 $sql = $this->db->query("SELECT coalesce(max(`id`), 0) as kode From item_rm where id like '%$code%'");
                 $row = $sql->row();
                 $kode = substr($row->kode, -4);
@@ -363,6 +388,7 @@ class Item_rm extends CI_Controller
                     //field
                     "id" => $autoid,
                     "number" => $data['part_no'],
+                    "number_internal" => $number_internal,
                     "name" => $data['name'],
                     "uom" => $data['unit_of_measure'],
                     "type" => $data['type'],
@@ -434,7 +460,8 @@ class Item_rm extends CI_Controller
             <tr>
                 <th width="20">No</th>
                 <th>Product ID</th>
-                <th>Product No.</th>
+                <th>Part No External</th>
+                <th>Part No Internal</th>
                 <th>Part Name</th>
                 <th>UOM</th>
                 <th>Type</th>
@@ -457,6 +484,7 @@ class Item_rm extends CI_Controller
                         <td>' . $no . '</td>
                         <td>' . $data['id'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['number'] . '</td>
+                        <td style="mso-number-format:\@;">' . $data['number_internal'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['name'] . '</td>
                         <td>' . $data['uom'] . '</td>
                         <td>' . $data['type'] . '</td>

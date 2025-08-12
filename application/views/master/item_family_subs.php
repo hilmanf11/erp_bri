@@ -51,18 +51,20 @@
                 <span style="width:35%; display:inline-block;">Name</span>
                 <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
             </div>
-            <!-- <div class="fitem">
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Kind</span>
-                <select style="width:60%;" name="kind" id="kind" class="easyui-combobox" panelHeight="auto">
+                <!-- <select style="width:60%;" name="kind" id="kind" class="easyui-combobox" panelHeight="auto">
                     <option value="">Choose Kind</option>
                     <option value="TUBE">TUBE</option>
                     <option value="CUBE">CUBE</option>
-                </select>
+                </select> -->
+
+                <input style="width:60%;" name="kind" id="kind" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Density</span>
-                <input style="width:60%;" name="density" id="density" required="" class="easyui-numberbox" data-options="precision:2">
-            </div> -->
+                <input style="width:60%;" name="density" id="density" class="easyui-numberbox" data-options="precision:2">
+            </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Description</span>
                 <input style="width:60%;" name="description" id="description" class="easyui-textbox">

@@ -8,7 +8,8 @@
             <th rowspan="2" data-options="field:'po_no',width:150,halign:'center'">PO No</th>
             <th rowspan="2" data-options="field:'receipt_date',width:100,halign:'center'">Receipt Date</th>
             <th colspan="4" data-options="field:'coslpan',halign:'center'">Supplier</th>
-            <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Part No</th>
+            <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Part No External</th>
+            <th rowspan="2" data-options="field:'item_number_internal',width:150,halign:'center'">Part No Internal</th>
             <th rowspan="2" data-options="field:'item_name',width:200,halign:'center'">Part Name</th>
             <th rowspan="2" data-options="field:'qty_receipt',width:80,halign:'center',align:'right',formatter:numberformat">Qty</th>
             <th rowspan="2" data-options="field:'uom',width:80,halign:'center',align:'center'">UoM</th>
@@ -92,7 +93,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1000px; height: 100%; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1088px; height: 90%; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -153,6 +154,15 @@
 <iframe id="printout" src="<?= base_url('purchase/purchase_order_receipts/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
 
+    $.extend($.fn.validatebox.defaults.rules, {
+        greaterThanZero: {
+            validator: function(value) {
+                return parseFloat(value) > 0;
+            },
+            message: 'Nilai harus lebih dari 0'
+        }
+    });
+
     //Add Data
     function add() {
         $('#dlg_insert').dialog('open');
@@ -188,7 +198,7 @@
                         field: 'item_number',
                         width: 250,
                         halign: 'center',
-                        title: "Product No",
+                        title: "Part No External",
                         editor: {
                             type: 'combogrid',
                             options: {
@@ -199,17 +209,27 @@
                                 textField: 'item_number',
                                 mode: 'remote',
                                 fitColumns: true,
-                                prompt: 'Choose Product',
+                                prompt: 'Choose Part No External',
                                 columns: [
                                     [
-                                        { field: 'item_number', title: 'Product No', width: 150 },
-                                        { field: 'item_name', title: 'Product Name', width: 150 }
+                                        { field: 'item_number', title: 'Part No External', width: 150 },
+                                        { field: 'item_name', title: 'Part Name', width: 150 }
                                     ]
                                 ],
                                 onSelect: function (value, rows) {
                                     var dg = $('#dg2');
                                     var row = dg.datagrid('getSelected');
                                     var rowIndex = dg.datagrid('getRowIndex', row);
+
+                                    var isDuplicate = false;
+                                    var allRows = dg.datagrid('getRows');
+
+                                    for (var i = 0; i < allRows.length; i++) {
+                                        if (i !== rowIndex && allRows[i].item_number === rows.item_number) {
+                                            isDuplicate = true;
+                                            break;
+                                        }
+                                    }
 
                                     // Mapping editor fields
                                     var editors = {
@@ -231,9 +251,54 @@
                                     $(editors.uom.target).textbox('setValue', rows.uom);
                                     $(editors.qty_po.target).numberbox('setValue', rows.qty_po);
                                     $(editors.qty_os.target).numberbox('setValue', rows.qty_os);
-                                    $(editors.qty_receipt.target).numberbox('setValue', rows.qty_receipt);
+                                    // $(editors.qty_receipt.target).numberbox('setValue', rows.qty_receipt);
                                     $(editors.mpq.target).numberbox('setValue', rows.mpq);
-                                    $(editors.qty_label.target).numberbox('setValue', rows.qty_label);
+                                    // $(editors.qty_label.target).numberbox('setValue', rows.qty_label);
+
+                                    // Set qty_receipt dan qty_label sesuai kondisi duplicate
+                                    // if (isDuplicate) {
+                                    //     $(editors.qty_receipt.target).numberbox('initValue', 0.00);
+                                    //     $(editors.qty_label.target).numberbox('initValue', 0);
+                                    //     toastr.warning("Item sudah pernah dipilih. Qty Receipt diset 0.00", "Peringatan");
+                                    //     return;
+                                    // } else {
+                                    //     $(editors.qty_receipt.target).numberbox('setValue', rows.qty_receipt);
+                                    //     var f_mpq = parseInt(rows.mpq) || 0;
+                                    //     var f_receipt = parseInt(rows.qty_receipt) || 0;
+                                    //     var label = f_mpq > 0 ? Math.ceil(f_receipt / f_mpq) : 0;
+                                    //     $(editors.qty_label.target).numberbox('setValue', label);
+                                    // }
+
+                                    if (isDuplicate) {
+                                        // Hitung total qty_receipt dari item yang sama (selain current row)
+                                        var totalReceipt = 0;
+                                        for (var i = 0; i < allRows.length; i++) {
+                                            if (i !== rowIndex && allRows[i].item_number === rows.item_number) {
+                                                totalReceipt += parseFloat(allRows[i].qty_receipt) || 0;
+                                            }
+                                        }
+
+                                        // Hitung sisa dari qty_po atau qty_os
+                                        var sisa = (parseFloat(rows.qty_os) || parseFloat(rows.qty_po) || 0) - totalReceipt;
+                                        if (sisa < 0) sisa = 0;
+
+                                        // Set ke qty_receipt dan qty_label
+                                        $(editors.qty_receipt.target).numberbox('setValue', sisa);
+
+                                        var f_mpq = parseInt(rows.mpq) || 0;
+                                        var label = f_mpq > 0 ? Math.ceil(sisa / f_mpq) : 0;
+                                        $(editors.qty_label.target).numberbox('setValue', label);
+
+                                        toastr.info("Duplicate Item, Qty Receipt set remaining : " + sisa, "Info");
+                                    } else {
+                                        // Bukan duplikat, ambil qty_receipt asli dari hasil pencarian
+                                        $(editors.qty_receipt.target).numberbox('setValue', rows.qty_receipt);
+
+                                        var f_mpq = parseInt(rows.mpq) || 0;
+                                        var f_receipt = parseInt(rows.qty_receipt) || 0;
+                                        var label = f_mpq > 0 ? Math.ceil(f_receipt / f_mpq) : 0;
+                                        $(editors.qty_label.target).numberbox('setValue', label);
+                                    }
                                 }
                             }
                         }
@@ -242,7 +307,7 @@
                         field: 'item_name',
                         width: 150,
                         halign: 'center',
-                        title: "Product Name",
+                        title: "Part Name",
                         editor: { type: 'textbox' }
                     },
                     {
@@ -288,7 +353,11 @@
                         title: "Receipt",
                         editor: {
                             type: 'numberbox',
-                            options: { precision: 2 }
+                            options: { 
+                                required: true,
+                                precision: 2 ,
+                                validType: 'greaterThanZero'
+                            }
                         }
                     },
                     {
@@ -310,6 +379,19 @@
                             type: 'numberbox',
                             options: { readonly: true }
                         }
+                    },
+                    {
+                        field: 'lot_no',
+                        width: 170,
+                        halign: 'center',
+                        title: "Lot No",
+                        editor: {
+                            type: 'textbox',
+                            options: { 
+                                required: true,
+                                validType: 'length[1,30]'
+                            }
+                        }
                     }
                 ]
             ],
@@ -329,32 +411,139 @@
                 var mpq = $(editors[7].target); // MPQ
                 var qty_label = $(editors[8].target); // Label
 
+                // qty_receipt.numberbox({
+                //     onChange: function () {
+                //         var f_qty_po = parseInt(qty_po.numberbox('getValue')) || 0;
+                //         var f_qty_os = parseInt(qty_os.numberbox('getValue')) || 0;
+                //         var f_qty_receipt = parseInt(qty_receipt.numberbox('getValue')) || 0;
+                //         var f_mpq = parseInt(mpq.numberbox('getValue')) || 0;
+
+                //         if (f_qty_os === 0) {
+                //             if (f_qty_po >= f_qty_receipt) {
+                //                 var cost = Math.ceil(f_qty_receipt / f_mpq);
+                //                 qty_label.numberbox('setValue', cost);
+                //             } else {
+                //                 qty_receipt.numberbox('setValue', 0);
+                //                 toastr.warning("Qty Receipt > Qty PO", "Information");
+                //             }
+                //         } else {
+                //             if (f_qty_os >= f_qty_receipt) {
+                //                 var cost = Math.ceil(f_qty_receipt / f_mpq);
+                //                 qty_label.numberbox('setValue', cost);
+                //             } else {
+                //                 qty_receipt.numberbox('setValue', 0);
+                //                 toastr.warning("Qty Receipt > Qty OS PO", "Information");
+                //             }
+                //         }
+                //     }
+                // });
+
+
                 qty_receipt.numberbox({
                     onChange: function () {
+                        var dg = $('#dg2');
+                        var rows = dg.datagrid('getRows');
+                        var currentRow = dg.datagrid('getSelected');
+                        var currentIndex = dg.datagrid('getRowIndex', currentRow);
+                        var editors = dg.datagrid('getEditors', currentIndex);
+
+                        // Ambil value langsung dari editor baris saat ini
+                        var editor_item_number = dg.datagrid('getEditor', { index: currentIndex, field: 'item_number' });
+                        var item_number = $(editor_item_number.target).textbox('getValue');
+
+                        // Jika tetap kosong, abaikan validasi
+                        if (!item_number) return;
+
+                        var qty_po = $(editors[4].target);     // PO
+                        var qty_os = $(editors[5].target);     // OS PO
+                        var qty_receipt = $(editors[6].target); // Receipt
+                        var mpq = $(editors[7].target);        // MPQ
+                        var qty_label = $(editors[8].target);  // Label
+
                         var f_qty_po = parseInt(qty_po.numberbox('getValue')) || 0;
                         var f_qty_os = parseInt(qty_os.numberbox('getValue')) || 0;
                         var f_qty_receipt = parseInt(qty_receipt.numberbox('getValue')) || 0;
                         var f_mpq = parseInt(mpq.numberbox('getValue')) || 0;
 
+                        if (f_qty_receipt == 0 || f_qty_receipt == "" || f_qty_receipt == 0.00) {
+                            qty_receipt.numberbox('setValue', 0.00);
+                            qty_label.numberbox('setValue', 0);
+                            
+                            qty_receipt.numberbox('textbox').validatebox('validate');
+                            return;
+                        }
+
+                        // Hitung total receipt dari semua baris untuk item yang sama
+                        var total_receipt = 0;
+                        for (var i = 0; i < rows.length; i++) {
+                            var row_item_number = rows[i].item_number;
+
+                            if (i === currentIndex) {
+                                total_receipt += f_qty_receipt; // current edit value
+                            } else if (row_item_number === item_number) {
+                                total_receipt += parseInt(rows[i].qty_receipt) || 0;
+                            }
+                        }
+
+                        var max_limit = f_qty_os === 0 ? f_qty_po : f_qty_os;
+                        // console.log(item_number + " Total Receipt: " + total_receipt + " Max Limit: " + max_limit);
+
                         if (f_qty_os === 0) {
-                            if (f_qty_po >= f_qty_receipt) {
-                                var cost = Math.ceil(f_qty_receipt / f_mpq);
-                                qty_label.numberbox('setValue', cost);
-                            } else {
-                                qty_receipt.numberbox('setValue', 0);
+                            if (f_qty_receipt > f_qty_po) {
                                 toastr.warning("Qty Receipt > Qty PO", "Information");
+                                qty_receipt.numberbox('setValue', 0);
+                                qty_label.numberbox('setValue', 0);
+                                return;
                             }
                         } else {
-                            if (f_qty_os >= f_qty_receipt) {
-                                var cost = Math.ceil(f_qty_receipt / f_mpq);
-                                qty_label.numberbox('setValue', cost);
-                            } else {
-                                qty_receipt.numberbox('setValue', 0);
+                            if (f_qty_receipt > f_qty_os) {
                                 toastr.warning("Qty Receipt > Qty OS PO", "Information");
+                                qty_receipt.numberbox('setValue', 0);
+                                qty_label.numberbox('setValue', 0);
+                                return;
+                            }
+                        }
+
+                        if (total_receipt > max_limit) {
+                            toastr.warning("Total Qty Receipt for item " + item_number + " exceeds the limit of " + max_limit, "Warning");
+                            qty_receipt.numberbox('setValue', 0);
+                            qty_label.numberbox('setValue', 0);
+                            return;
+                        }
+
+                        // Hitung qty label jika valid
+                        var label_qty = f_mpq > 0 ? Math.ceil(f_qty_receipt / f_mpq) : 0;
+                        qty_label.numberbox('setValue', label_qty);
+                    }
+                });
+
+                var lot_no = $(editors[9].target);
+
+                lot_no.textbox({
+                    onChange: function () {
+                        var dg = $('#dg2');
+                        var rows = dg.datagrid('getRows');
+                        var currentRow = dg.datagrid('getSelected');
+                        var currentIndex = dg.datagrid('getRowIndex', currentRow);
+                        var editors = dg.datagrid('getEditors', currentIndex);
+
+                        var editor_item_number = dg.datagrid('getEditor', { index: currentIndex, field: 'item_number' });
+                        var item_number = $(editor_item_number.target).textbox('getValue');
+                        var lot_value = lot_no.textbox('getValue').trim();
+
+                        if (!item_number || !lot_value) return;
+
+                        for (var i = 0; i < rows.length; i++) {
+                            if (i !== currentIndex && rows[i].item_number === item_number && rows[i].lot_no === lot_value) {
+                                toastr.warning("Lot No must be unique for the same Part No External", "Information");
+                                lot_no.textbox('setValue', '');
+                                return;
                             }
                         }
                     }
                 });
+
+                
             }
         });
     }
@@ -749,7 +938,8 @@
                                                     '&qty_os=' + row.qty_os +
                                                     '&qty_receipt=' + row.qty_receipt +
                                                     '&qty_mpq=' + row.mpq +
-                                                    '&qty_label=' + row.qty_label,
+                                                    '&qty_label=' + row.qty_label +
+                                                    '&lot_no=' + row.lot_no,
                                                 dataType: "json",
                                                 success: function(result) {
                                                     Swal.fire({
@@ -778,7 +968,7 @@
                                                                         qty_receipt: qty_receipt,
                                                                         qty_label: qty_label
                                                                     };
-                                                                    
+                                                                    // CEK
                                                                     if (printResult.isConfirmed) {
                                                                         print_po(po);
                                                                     } else if (printResult.isDenied) {
@@ -860,7 +1050,7 @@
                     columns: [
                         [{
                             field: 'number',
-                            title: 'Part No',
+                            title: 'Part No External',
                             width: 200
                         }, {
                             field: 'name',

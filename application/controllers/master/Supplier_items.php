@@ -63,6 +63,14 @@ class Supplier_items extends CI_Controller
         echo json_encode($records);
     }
 
+    //GET DATA
+    public function readsv2()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT a.*, b.name as item_family_name FROM item_rm a JOIN item_familys b ON a.item_family_id = b.id WHERE a.number like '%$post%' or a.name like '%$post%' or a.id like '%$post%' or a.item_family_id like '%$post%'");
+        echo json_encode($send);
+    }
+
     public function readItem()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
@@ -120,7 +128,7 @@ class Supplier_items extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.id, a.supplier_id, a.item_rm_id, a.maker, a.item_supplier, a.mpq, a.moq, a.share_order, a.leadtime, a.currency, a.price, a.valid_date, a.safety_stock, a.calculate, a.created_date, a.created_by, a.updated_date, a.updated_by, a.approved_date, a.approved_by, b.number as supplier_number, b.name as supplier_name, b.type, b.status, b.currency as supplier_currency, c.number as item_rm_number, c.name as item_rm_name, c.item_family_id as item_rm_family, d.name as item_family_name, (CASE WHEN a.approved_to = "" THEN a.approved_to ELSE "Checking" END) as approved_to');
+            $this->db->select('a.id, a.supplier_id, a.item_rm_id, a.maker, a.item_supplier, a.mpq, a.moq, a.share_order, a.leadtime, a.currency, a.price, a.valid_date, a.safety_stock, a.calculate, a.created_date, a.created_by, a.updated_date, a.updated_by, a.approved_date, a.approved_by, b.number as supplier_number, b.name as supplier_name, b.type, b.status, b.currency as supplier_currency, c.number as item_rm_number, c.number_internal as item_rm_number_internal, c.name as item_rm_name, c.item_family_id as item_rm_family, d.name as item_family_name, (CASE WHEN a.approved_to = "" THEN a.approved_to ELSE "Checking" END) as approved_to');
             // $this->db->select('a.*, b.number as supplier_number, b.name as supplier_name, b.type, b.status,b.currency as supplier_currency, c.number as item_rm_number, c.name as item_rm_name, c.item_family_id as item_rm_family, d.name as item_family_name');
             $this->db->from('supplier_items a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id', 'left');
@@ -181,7 +189,7 @@ class Supplier_items extends CI_Controller
             $supplier_id = base64_decode($this->input->get('supplier_id'));
             $part_no = base64_decode($this->input->get('part_no'));
 
-            $this->db->select('a.*, b.number as item_rm_number, b.name as item_rm_name, b.item_family_id as item_rm_family, c.currency as supplier_currency, d.name as item_family_name');
+            $this->db->select('a.*, b.number as item_rm_number, b.name as item_rm_name, b.item_family_id as item_rm_family, b.number_internal, c.currency as supplier_currency, d.name as item_family_name');
             $this->db->from('supplier_items a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('suppliers c', 'a.supplier_id = c.id');
@@ -385,7 +393,7 @@ class Supplier_items extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.number as supplier_number, b.name as supplier_name, b.currency as supplier_currency, c.number as item_rm_number, c.name as item_rm_name, c.item_family_id as item_rm_family, d.name as item_family_name');
+        $this->db->select('a.*, b.number as supplier_number, b.name as supplier_name, b.currency as supplier_currency, c.number as item_rm_number, c.number_internal as item_rm_number_internal, c.name as item_rm_name, c.item_family_id as item_rm_family, d.name as item_family_name');
         $this->db->from('supplier_items a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id', 'left');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id', 'left');
@@ -429,7 +437,8 @@ class Supplier_items extends CI_Controller
                 <th>Supplier Code</th>
                 <th>Supplier Name</th>
                 <th>Part ID</th>
-                <th>Part No.</th>
+                <th>Part No External</th>
+                <th>Part No Internal</th>
                 <th>Part Name</th>
                 <th>Maker</th>
                 <th>Product Family</th>
@@ -452,6 +461,7 @@ class Supplier_items extends CI_Controller
                     <td>' . $data['supplier_name'] . '</td>
                     <td>' . $data['item_rm_id'] . '</td>
                     <td style="mso-number-format:\@;">' . $data['item_rm_number'] . '</td>
+                    <td style="mso-number-format:\@;">' . $data['item_rm_number_internal'] . '</td>
                     <td style="mso-number-format:\@;">' . $data['item_rm_name'] . '</td>
                     <td>' . $data['maker'] . '</td>
                     <td>' . $data['item_family_name'] . '</td>
