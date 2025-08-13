@@ -664,7 +664,7 @@ class Journal_postings extends CI_Controller
                         $transmonth = date('Y-m-01', strtotime('-1 month', strtotime($trans_date)));
                         $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $transmonth, "currency_from" => $currency, "currency_to" => "IDR"]);
 
-                        if ($currency != "IDR") {
+                        if ($journal['currency'] != "IDR") {
                             $original_debit = $debit;
                             $original_credit = $credit;
                             $local_debit = round($debit * @$exchange->middle, 2);
