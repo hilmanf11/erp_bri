@@ -37,8 +37,8 @@
             <th rowspan="2" data-options="field:'period',halign:'center',width:100" hidden>Period</th>
             <th rowspan="2" data-options="field:'wp',width:80,halign:'center'" hidden>WP</th>
             <th rowspan="2" data-options="field:'workorder',width:150,halign:'center'" hidden>WO ID</th>
-            <th rowspan="2" data-options="field:'item_rm_id',width:150,halign:'center'">Part id</th>
-            <th rowspan="2" data-options="field:'item_rm_no',width:200,halign:'center'">Part No</th>
+            <th rowspan="2" data-options="field:'item_rm_id',width:150,halign:'center'">Part ID</th>
+            <th rowspan="2" data-options="field:'item_rm_no',width:200,halign:'center'">Part No Internal</th>
             <th rowspan="2" data-options="field:'item_rm_name',width:200,halign:'center'">Part Name</th>
             <th rowspan="2" data-options="field:'mpq',width:80,halign:'center',align:'right'">MPQ</th>
             <th colspan="4" data-options="field:'',width:100,halign:'center',align:'right',formatter:numberformat"> Quantity</th>
@@ -446,7 +446,59 @@
             method: 'get',
             pagination: false,
             fitColumns: true,
-            singleSelect: true
+            singleSelect: true,
+            onLoadSuccess: function(data) {
+                const dg = $('#table-equivalent');
+                const panel = dg.datagrid('getPanel');
+
+                if (!data.rows || data.rows.length === 0) {
+                    const colCount = dg.datagrid('getColumnFields').length;
+
+                    dg.datagrid('loadData', {
+                        total: 1,
+                        rows: [{
+                            ck: '',
+                            item_rm_name: '',
+                            bal_wip: '',
+                            stock: '',
+                            action: ''
+                        }]
+                    });
+
+                    const body = panel.find('.datagrid-body');
+                    const firstRow = body.find('tr.datagrid-row');
+
+                    firstRow.find('td[field="ck"]').css({
+                        'border': 'none',
+                        'background': 'transparent',
+                        'width': '700px'
+                    }).off();
+
+                    panel.find('.datagrid-body td[field="ck"]').hover(function(e) {
+                        e.stopPropagation();
+                    });
+
+                    firstRow.find('td').not(':first').remove();
+
+                    firstRow.find('td')
+                        .attr('colspan', colCount)
+                        .css({
+                            'text-align': 'center',
+                            'font-style': 'italic',
+                            'color': '#666',
+                            'font-weight': 'bold'
+                        })
+                        .find('div')
+                        .css('width', '100%')
+                        .attr('style', 'width:100%; font-size: 14px !important;')
+                        .text('This Item Has No Equivalent Part');
+
+                    dg.datagrid('options').singleSelect = false;
+                } else {
+                    dg.datagrid('options').singleSelect = true;
+                }
+            }
+
         });
     }
 

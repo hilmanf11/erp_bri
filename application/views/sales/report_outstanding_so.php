@@ -6,7 +6,6 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Type Date</span>
                     <select style="width:60%;" id="filter_type" class="easyui-combobox" panelHeight="auto">
-                        <option value="">All Types</option>
                         <option value="SO_DATE">SO Date</option>
                         <option value="D_DATE">Delivery Date</option>
                     </select>
@@ -280,6 +279,10 @@
             ]
         });
 
+
+        $("#filter_d_date_from").datebox('disable');
+        $("#filter_d_date_to").datebox('disable');
+    
         $("#filter_type").combobox({
             onChange: function(val) {
                 if (val == "SO_DATE") {
@@ -298,11 +301,9 @@
                     $("#filter_so_date_from").datebox('enable');
                     $("#filter_so_date_to").datebox('enable');
                     
-                    $("#filter_d_date_from").datebox('enable');
-                    $("#filter_d_date_to").datebox('enable');
+                    $("#filter_d_date_from").datebox('disable');
+                    $("#filter_d_date_to").datebox('disable');
                 }
-
-                console.log(val);
             }
         });
 

@@ -35,6 +35,13 @@ class Item_rm extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readsRM()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT * FROM item_rm WHERE number like '%$post%' or name like '%$post%' or id like '%$post%' or number_internal like '%$post%'");
+        echo json_encode($send);
+    }
+
     public function readsNumberInternal()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";

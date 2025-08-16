@@ -275,10 +275,10 @@
                 idField: 'item_rm_id',
                 columns: [
                     [{
-                        field: 'item_rm_no',
+                        field: 'item_rm_no_internal',
                         width: 150,
                         halign: 'center',
-                        title: "Part No",
+                        title: "Part No Internal",
                     }, {
                         field: 'item_rm_name',
                         width: 250,
@@ -486,9 +486,9 @@
         var filter_period = $("#filter_period").combobox('getValue');
         var filter_wp = $("#filter_wp").combobox('getValue');
         var filter_request_no = $("#filter_request_no").combobox('getValue');
-        var filter_operation = $("#filter_operation").combobox('getValue');
+        // var filter_operation = $("#filter_operation").combobox('getValue');
 
-        url = "?filter_period=" + filter_period + "&filter_wp=" + filter_wp + "&filter_request_no=" + filter_request_no + "&filter_operation=" + filter_operation + "&filter_supply_type=" + filter_supply_type;
+        url = "?filter_period=" + filter_period + "&filter_wp=" + filter_wp + "&filter_request_no=" + filter_request_no + "&filter_supply_type=" + filter_supply_type;
         window.location.assign('<?= base_url('planning/supply_sheets/print/excel') ?>' + url);
     }
 

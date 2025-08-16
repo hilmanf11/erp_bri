@@ -241,34 +241,41 @@
                 $(e.data.target).combobox('clear').combobox('textbox').focus();
             }
         }],
-        onSelect: function(row) {
-            $('#filter_items').combogrid({
-                    url: '<?= base_url('master/item_rm/reads/') ?>' + row.number,
-                    panelWidth: 420,
-                    idField: 'id',
-                    textField: 'name',
-                    mode: 'remote',
-                    fitColumns: true,
-                    prompt: "Select Product No",
-                    icons: [{
-                        iconCls: 'icon-clear',
-                        handler: function(e) {
-                            $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-                        }
-                    }],
-                    columns: [
-                        [{
-                            field: 'number',
-                            title: 'Product No',
-                            width: 100
-                        }, {
-                            field: 'name',
-                            title: 'Product Name',
-                            width: 200
-                        }, ]
-                    ]
-            });
-        }
+    });
+
+    $('#filter_items').combogrid({
+            url: '<?= base_url('master/item_rm/readsRM/') ?>',
+            panelWidth: 420,
+            idField: 'id',
+            textField: 'name',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Select Product No",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    const cg = $(e.data.target);
+                    cg.combogrid('clear').combogrid('textbox').focus();
+                    
+                    // reload semua data
+                    cg.combogrid('grid').datagrid('load', {}); // kirim parameter kosong supaya semua muncul
+                }
+            }],
+            columns: [
+                [{
+                    field: 'number',
+                    title: 'Product No External',
+                    width: 220
+                }, {
+                    field: 'number_internal',
+                    title: 'Product No Internal',
+                    width: 220
+                }, {
+                    field: 'name',
+                    title: 'Product Name',
+                    width: 250
+                }]
+            ]
     });
 
     $('#filter_plant').combobox({

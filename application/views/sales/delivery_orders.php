@@ -376,6 +376,7 @@
                     valueField: 'trans_date',
                     textField: 'trans_date',
                     prompt: 'Choose Schedule Delivery Date',
+                    editable: false,
                     onSelect: function(deliverys) {
                         $("#actual_delivery_date").datebox('setValue',deliverys.trans_date);
                         updateDeliveryOrderNo(deliverys.trans_date);

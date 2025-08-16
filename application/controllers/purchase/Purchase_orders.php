@@ -64,13 +64,17 @@ class Purchase_orders extends CI_Controller
 
     public function readPonoOnAddPOR()
     {
-
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+    
         $supplier_id = $this->input->get('supplier_id');
         $records = $this->crud->query("SELECT po.po_no, po.po_date FROM (
             SELECT po_no as po_no, po_date as po_date, created_date as created_date FROM purchase_orders WHERE supplier_id = '$supplier_id' and status = 0 and deleted = 0 and approved_to = '' GROUP BY po_no
             UNION
             SELECT po_no as po_no, po_date as po_date, created_date as created_date FROM os_po WHERE supplier_id = '$supplier_id' and status = 0 and deleted = 0 GROUP BY po_no 
-            ) as po ORDER BY po.created_date desc");
+            ) as po 
+            WHERE po.po_no LIKE '%$post%'
+            OR DATE_FORMAT(po.po_date, '%Y-%m-%d') LIKE '%$post%'
+            ORDER BY po.created_date desc");
         echo json_encode($records);
     }
 

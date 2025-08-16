@@ -34,7 +34,7 @@
                     <input style="width:60%;" id="filter_receipt" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Part No</span>
+                    <span style="width:35%; display:inline-block;">Part No Internal</span>
                     <input style="width:60%;" id="filter_product_no" class="easyui-combogrid">
                 </div>
                 <div class="fitem filter-nbc-hide">
@@ -224,10 +224,10 @@
                     return row[opts.textField].toLowerCase().indexOf(q.toLowerCase()) >= 0 || 
                         row['item_name'].toLowerCase().indexOf(q.toLowerCase()) >= 0;
                 },
-                prompt: "Select Product No",
+                prompt: "Select Part No Internal",
                 columns: [[
-                    {field:'item_number',title:'Product No',width:150},
-                    {field:'item_name',title:'Product Name',width:250}
+                    {field:'item_number',title:'Part No Internal',width:150},
+                    {field:'item_name',title:'Part Name',width:250}
                 ]],
                 icons: [{
                     iconCls: 'icon-clear',
@@ -256,10 +256,10 @@
                     return row[opts.textField].toLowerCase().indexOf(q.toLowerCase()) >= 0 || 
                         row['item_name'].toLowerCase().indexOf(q.toLowerCase()) >= 0;
                 },
-                prompt: "Select Product No",
+                prompt: "Select Part No Internal",
                 columns: [[
-                    {field:'item_number',title:'Product No',width:150},
-                    {field:'item_name',title:'Product Name',width:250}
+                    {field:'item_number',title:'Part No Internal',width:150},
+                    {field:'item_name',title:'Part Name',width:250}
                 ]],
                 icons: [{
                     iconCls: 'icon-clear',

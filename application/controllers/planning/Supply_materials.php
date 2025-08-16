@@ -123,7 +123,7 @@ class Supply_materials extends CI_Controller
         //     WHERE status = '0' and number like '%$post%' or name like '$post'
         //     ORDER BY number ASC
         // ");
-        $records = $this->crud->query("SELECT id, number, name, uom FROM item_rm WHERE status = '0' AND (number like '%$post%' or name like '%$post%') ORDER BY number ASC");
+        $records = $this->crud->query("SELECT id, number_internal, name, uom FROM item_rm WHERE status = '0' AND (number_internal like '%$post%' or name like '%$post%') ORDER BY number_internal ASC");
         echo json_encode($records);
     }
 
@@ -272,7 +272,7 @@ class Supply_materials extends CI_Controller
                 echo json_encode($result);
             } else {
                 // Untuk detail table
-                $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom, 
+                $this->db->select('a.*, b.number_internal as item_number, b.name as item_name, b.uom, 
                     COALESCE(SUM(c.qty), 0) as qty_actual');
                 $this->db->from('supply_materials a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
@@ -666,7 +666,7 @@ class Supply_materials extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom');
+        $this->db->select('a.*, b.number_internal as item_number, b.name as item_name, b.uom');
         $this->db->from('supply_materials a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         // $this->db->join('uom d', 'b.uom_id = d.id');
@@ -718,8 +718,8 @@ class Supply_materials extends CI_Controller
                 <th>Request No</th>
                 <th>Request Date</th>
                 <th>Requester</th>
-                <th>Product No</th>
-                <th>Product Name</th>
+                <th>Part No Internal</th>
+                <th>Part Name</th>
                 <th>Qty</th>
                 <th>Uom</th>
             </tr>';

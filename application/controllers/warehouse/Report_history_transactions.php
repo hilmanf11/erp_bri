@@ -175,6 +175,7 @@ class Report_history_transactions extends CI_Controller
         $records = $this->crud->query("SELECT
             a.id,
             a.number, 
+            a.number_internal,
             a.name, 
             b.name as prodfam, 
             a.uom,
@@ -264,8 +265,9 @@ class Report_history_transactions extends CI_Controller
             <table id="customers" border="1" style="font-size: 11px;">
                 <tr>
                     <th width="20">No</th>
-                    <th colspan="3">Product No</th>
-                    <th colspan="2">Product Name</th>
+                    <th colspan="3">Part No External</th>
+                    <th colspan="3">Part No Internal</th>
+                    <th colspan="2">Part Name</th>
                     <th colspan="2">Uom</th>
                     <th>Product Family</th>
                     <th width="100">Begin<br>Stock</th>
@@ -350,6 +352,7 @@ class Report_history_transactions extends CI_Controller
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td colspan="3">' . $record->number . '</td>
+                            <td colspan="3">' . $record->number_internal . '</td>
                             <td colspan="2">' . $record->name . '</td>
                             <td colspan="2">' . $record->uom . '</td>
                             <td>' . $record->prodfam . '</td>
@@ -361,17 +364,17 @@ class Report_history_transactions extends CI_Controller
 
             if ($filter_display == "DETAIL") {
                 $html .= '  <tr>
-                                <td colspan="13" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
+                                <td colspan="16" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
                             </tr>
                             <tr>
                                 <th width="20"></th>
                                 <th width="20">No</th>
                                 <th>Trans Type</th>
-                                <th>Created By</th>
-                                <th>Trans Date</th>
+                                <th colspan="2">Created By</th>
+                                <th colspan="2">Trans Date</th>
                                 <th>Custom. Kind</th>
                                 <th>Custom. No</th>
-                                <th>Doc. No</th>
+                                <th colspan="2">Doc. No</th>
                                 <th>Custom. Date</th>
                                 <th>Begin</th>
                                 <th>In</th>
@@ -450,11 +453,11 @@ class Report_history_transactions extends CI_Controller
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>RECEIVE</td>
-                                            <td>' . $user->name . '</td>
-                                            <td>' . $os_rm->trans_date . '</td>
+                                            <td colspan="2">' . $user->name . '</td>
+                                            <td colspan="2">' . $os_rm->trans_date . '</td>
                                             <td>-</td>
                                             <td>-</td>
-                                            <td>-</td>
+                                            <td colspan="2">-</td>
                                             <td>-</td>
                                             <td style="text-align:right;">' . number_format($begin, 2, ',', '.') . '</td>
                                             <td style="text-align:right;">' . number_format($os_rm->qty, 2, ',', '.') . '</td>
@@ -472,11 +475,11 @@ class Report_history_transactions extends CI_Controller
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>RECEIVE</td>
-                                            <td>' . $receipt->username . '</td>
-                                            <td>' . $receipt->receipt_date . '</td>
+                                            <td colspan="2">' . $receipt->username . '</td>
+                                            <td colspan="2">' . $receipt->receipt_date . '</td>
                                             <td>' . $receipt->bc_kind . '</td>
                                             <td>' . $receipt->bc_aju . '</td>
-                                            <td>' . $receipt->bc_document . '</td>
+                                            <td colspan="2">' . $receipt->bc_document . '</td>
                                             <td>' . $receipt->bc_date . '</td>
                                             <td style="text-align:right;">' . number_format($begin, 2, ',', '.') . '</td>
                                             <td style="text-align:right;">' . number_format($receipt->qty_receipt, 2, ',', '.') . '</td>
@@ -495,11 +498,11 @@ class Report_history_transactions extends CI_Controller
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>ISSUED</td>
-                                            <td>' . $user->name . '</td>
-                                            <td>' . date("Y-m-d", strtotime($issued->created_date)) . '</td>
+                                            <td colspan="2">' . $user->name . '</td>
+                                            <td colspan="2">' . date("Y-m-d", strtotime($issued->created_date)) . '</td>
                                             <td>-</td>
                                             <td>' . $issued->label_no . '</td>
-                                            <td>' . $issued->request_no . '</td>
+                                            <td colspan="2">' . $issued->request_no . '</td>
                                             <td>-</td>
                                             <td style="text-align:right;">' . number_format($begin, 2, ',', '.') . '</td>
                                             <td style="text-align:right;">' . number_format(0, 2, ',', '.') . '</td>
@@ -526,11 +529,11 @@ class Report_history_transactions extends CI_Controller
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>' . $transaction->transaction_name . '</td>
-                                            <td>' . $transaction->username . '</td>
-                                            <td>' . $transaction->request_date . '</td>
+                                            <td colspan="2">' . $transaction->username . '</td>
+                                            <td colspan="2">' . $transaction->request_date . '</td>
                                             <td>-</td>
                                             <td>-</td>
-                                            <td>' . $transaction->request_no . '</td>
+                                            <td colspan="2">' . $transaction->request_no . '</td>
                                             <td>-</td>
                                             <td style="text-align:right;">' . number_format($begin, 2, ',', '.') . '</td>
                                             <td style="text-align:right;">' . number_format($qty_in, 2, ',', '.') . '</td>
@@ -565,11 +568,11 @@ class Report_history_transactions extends CI_Controller
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>RECEIVE</td>
-                                            <td>' . $receipt->username . '</td>
-                                            <td>' . $receipt->receipt_date . '</td>
+                                            <td colspan="2">' . $receipt->username . '</td>
+                                            <td colspan="2">' . $receipt->receipt_date . '</td>
                                             <td>' . $receipt->bc_kind . '</td>
                                             <td>' . $receipt->bc_aju . '</td>
-                                            <td>' . $receipt->bc_document . '</td>
+                                            <td colspan="2">' . $receipt->bc_document . '</td>
                                             <td>' . $receipt->bc_date . '</td>
                                             <td style="text-align:right;">' . number_format($begin, 2, ',', '.') . '</td>
                                             <td style="text-align:right;">' . number_format($receipt->qty_receipt, 2, ',', '.') . '</td>
@@ -595,11 +598,11 @@ class Report_history_transactions extends CI_Controller
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>RECEIVE</td>
-                                            <td>' . $user->name . '</td>
-                                            <td>' . $os_rm->trans_date . '</td>
+                                            <td colspan="2">' . $user->name . '</td>
+                                            <td colspan="2">' . $os_rm->trans_date . '</td>
                                             <td>-</td>
                                             <td>-</td>
-                                            <td>-</td>
+                                            <td colspan="2">-</td>
                                             <td>-</td>
                                             <td style="text-align:right;">' . number_format($begin, 2, ',', '.') . '</td>
                                             <td style="text-align:right;">' . number_format($os_rm->qty, 2, ',', '.') . '</td>
@@ -622,11 +625,11 @@ class Report_history_transactions extends CI_Controller
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>ISSUED</td>
-                                            <td>' . $user->name . '</td>
-                                            <td>' . date("Y-m-d", strtotime($issued->created_date)) . '</td>
+                                            <td colspan="2">' . $user->name . '</td>
+                                            <td colspan="2">' . date("Y-m-d", strtotime($issued->created_date)) . '</td>
                                             <td>-</td>
                                             <td>' . $issued->label_no . '</td>
-                                            <td>' . $issued->request_no . '</td>
+                                            <td colspan="2">' . $issued->request_no . '</td>
                                             <td>-</td>
                                             <td style="text-align:right;">' . number_format($begin, 2, ',', '.') . '</td>
                                             <td style="text-align:right;">' . number_format(0, 2, ',', '.') . '</td>
@@ -643,7 +646,7 @@ class Report_history_transactions extends CI_Controller
         }
 
         $html .= '<tr>
-            <td colspan="9" style="text-align:right;"><b>GRAND TOTAL</b></td>
+            <td colspan="12" style="text-align:right;"><b>GRAND TOTAL</b></td>
             <td style="text-align:right;">' . number_format($totalBeginStock, 2, ',', '.') . '</td>
             <td style="text-align:right;">' . number_format($totalIn, 2, ',', '.') . '</td>
             <td style="text-align:right;">' . number_format($totalOut, 2, ',', '.') . '</td>
@@ -718,6 +721,7 @@ class Report_history_transactions extends CI_Controller
         $records = $this->crud->query("SELECT
             a.id,
             a.number, 
+            a.number_internal, 
             a.name, 
             b.name as prodfam, 
             a.uom,
@@ -802,10 +806,11 @@ class Report_history_transactions extends CI_Controller
                 <tr>
                     <th>No</th>
                     <th>Trans Date</th>
-                    <th>Product No</th>
-                    <th>Product Name</th>
+                    <th>Part No External</th>
+                    <th>Part No Internal</th>
+                    <th>Part Name</th>
                     <th>Uom</th>
-                    <th>Division</th>
+                    <th>Plant</th>
                     <th>Product Family</th>
                     <th>Trans Type</th>
                     <th>Created By</th>
@@ -1107,6 +1112,7 @@ class Report_history_transactions extends CI_Controller
                                     <td style="text-align:center">' . $nod . '</td>
                                     <td>' . date("Y-m-d", strtotime($data['trans_date'])) . '</td>
                                     <td>' . $record->number . '</td>
+                                    <td>' . $record->number_internal . '</td>
                                     <td>' . $record->name . '</td>
                                     <td>' . $record->uom . '</td>
                                     <td>' . $record->division_number . '</td>

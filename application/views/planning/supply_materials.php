@@ -6,8 +6,8 @@
             <th rowspan="2" data-options="field:'request_date',width:120,halign:'center'">Kanban Date</th>
             <th rowspan="2" data-options="field:'request_name',width:120,halign:'center'">Requester</th>
             <th rowspan="2" data-options="field:'request_type',width:120,halign:'center',align:'center'">Request Type</th>
-            <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
-            <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Part No Internal</th>
+            <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Part Name</th>
             <th rowspan="2" data-options="field:'lot_no',width:100,halign:'center'">Lot No</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformatQpa">Qty</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
@@ -181,22 +181,22 @@
                     field: 'item_number',
                     width: 250,
                     halign: 'center',
-                    title: "Part No",
+                    title: "Part No Internal",
                     editor: {
                         type: 'combogrid',
                         options: {
                             url: '<?= base_url('planning/supply_materials/readItemRm') ?>',
                             required: true,
                             panelWidth: 400,
-                            idField: 'number',
-                            textField: 'number',
+                            idField: 'number_internal',
+                            textField: 'number_internal',
                             mode: 'remote',
                             fitColumns: true,
-                            prompt: 'Choose Part No',
+                            prompt: 'Choose Part No Internal',
                             columns: [
                                 [{
-                                    field: 'number',
-                                    title: 'Part No',
+                                    field: 'number_internal',
+                                    title: 'Part No Internal',
                                     width: 100
                                 }, {
                                     field: 'name',

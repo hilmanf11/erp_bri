@@ -22,7 +22,7 @@
             <th rowspan="2" data-options="field:'item_rm_number_internal',width:120,halign:'center',sortable:true">Part No Internal</th>
             <th rowspan="2" data-options="field:'item_rm_name',width:150,halign:'center',sortable:true">Part Name</th>
             <th rowspan="2" data-options="field:'maker',width:100,halign:'center',sortable:true">Maker</th>
-            <th rowspan="2" data-options="field:'item_supplier',width:200,halign:'center',sortable:true">Supplier Product</th>
+            <th rowspan="2" data-options="field:'item_supplier',width:200,halign:'center',sortable:true">Supplier Part</th>
             <th rowspan="2" data-options="field:'item_family_name',width:120,halign:'center',sortable:true">Product Family</th>
             <th rowspan="2" data-options="field:'mpq',width:100,halign:'center',sortable:true">MPQ</th>
             <th rowspan="2" data-options="field:'moq',width:100,halign:'center',sortable:true">MOQ</th>
