@@ -263,7 +263,7 @@
                     width: 150,
 
                     halign: 'center',
-                    title: "Division",
+                    title: "Plant",
                     editor: {
                         type: 'textbox'
                     },
@@ -560,7 +560,7 @@
                             align: 'center'
                         }, {
                             field: 'division_name',
-                            title: 'Division',
+                            title: 'Plant',
                             width: 100,
                             halign: 'center',
                             align: 'left',
@@ -845,80 +845,112 @@
         });
     }
 
-    // UPLOAD DATA
     $('#dlg_upload').dialog({
         buttons: [{
             text: 'List Failed',
-            handler: function() {
+            handler: function () {
                 window.open('<?= base_url('master/standard_price_rm/uploadDownloadFailed') ?>', '_blank');
             }
         }, {
             text: 'Upload',
             iconCls: 'icon-ok',
-            handler: function() {
+            handler: function () {
                 $('#frm_upload').form('submit', {
                     url: '<?= base_url('master/standard_price_rm/upload') ?>',
-                    onSubmit: function() {
-                        if ($(this).form('validate') == false) {
-                            return $(this).form('validate');
-                        } else {
-                            $.messager.progress({
-                                title: 'Please Wait',
-                                msg: 'Importing Excel to Database'
-                            });
-                        }
-                    },
-                    success: function(result) {
-                        $.messager.progress('close');
-                        //Clear File
-                        $.ajax({
-                            url: "<?= base_url('master/standard_price_rm/uploadclearFailed') ?>"
+                    onSubmit: function () {
+                        if (!$(this).form('validate')) return false;
+
+                        $.messager.progress({
+                            title: 'Please Wait',
+                            msg: 'Importing Excel to Database'
                         });
-                        var json = eval('(' + result + ')');
-                        requestData(json.total, json);
+                    },
+                    success: function (result) {
+                        $.messager.progress('close');
+                        // Clear File
+                        $.ajax({ 
+                            url: "<?= base_url('master/standard_price_rm/uploadclearFailed') ?>" 
+                        });
 
-                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                            if (value < 100) {
-                                value = Math.floor((number / total) * 100);
-                                $('#p_upload').progressbar('setValue', value);
-                                $('#p_start').html(number);
-                                $('#p_finish').html(total);
+                        let res = JSON.parse(result);
+                        let dataList = res.data ?? [];
 
-                                $.ajax({
-                                    type: "POST",
-                                    async: true,
-                                    url: "<?= base_url('master/standard_price_rm/uploadCreate') ?>",
-                                    data: {
-                                        "data": json[number - 1]
-                                    },
-                                    cache: false,
-                                    dataType: "json",
-                                    success: function(result) {
-                                        if (result.theme == "success") {
-                                            $('#p_success').html(success);
-                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                        } else {
-                                            $('#p_failed').html(failed);
-                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                            //Json Failed
-                                            $.ajax({
-                                                type: "POST",
-                                                async: true,
-                                                url: "<?= base_url('master/standard_price_rm/uploadcreateFailed') ?>",
-                                                data: {
-                                                    data: json[number - 1],
-                                                    message: result.message
-                                                },
-                                                cache: false
-                                            });
-                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                        }
-                                        $("#p_remarks").append(title + "<br>");
-                                    }
-                                });
-                            }
+                        if (dataList.length === 0) {
+                            $.messager.alert("Upload Failed", "Data not found from Excel file", "error");
+                            return;
                         }
+
+                        // Reset UI
+                        $('#p_upload').progressbar('setValue', 0);
+                        $('#p_start').html(0);
+                        $('#p_finish').html(dataList.length);
+                        $('#p_success').html(0);
+                        $('#p_failed').html(0);
+                        $('#p_remarks').html('');
+
+                        let totalExpected = dataList.length;
+
+                        console.log(dataList);
+                        
+
+                        // Kirim semua data
+                        $.ajax({
+                            type: "POST",
+                            url: "<?= base_url('master/standard_price_rm/uploadCreate') ?>",
+                            data: JSON.stringify({ data: dataList }),
+                            dataType: "json",
+                            success: function (response) {
+                                // if (response.theme === 'error') {
+                                //     $.messager.alert(response.title ?? "Upload Failed", response.message ?? "Some data failed to save", "error");
+                                // }
+
+                                $('#p_upload').progressbar('setValue', 0);
+                                let successCount = 0;
+                                let failedCount = 0;
+                                let progressCount = 0;
+                                let total = response.total_expected ?? response.results.length;
+
+                                function updateProgress() {
+                                    let percent = Math.floor((progressCount / total) * 100);
+                                    $('#p_upload').progressbar('setValue', percent);
+                                    $('#p_start').html(progressCount);
+                                    $('#p_success').html(successCount);
+                                    $('#p_failed').html(failedCount);
+                                }
+
+                                if (response.results && response.results.length > 0) {
+                                    let delayPerItem = 50;
+                                    response.results.forEach(function (r, i) {
+                                        setTimeout(function () {
+                                            let color = r.status === "success" ? "green" : "red";
+
+                                            if (r.status === "success") successCount++;
+                                            else failedCount++;
+
+                                            $('#p_remarks').append(
+                                                `<b style="color: ${color};">${r.item}</b> | ${r.message}<br>`
+                                            );
+
+                                            progressCount++;
+                                            updateProgress();
+
+                                            if(progressCount === total) {
+                                                if (response.theme === 'error') {
+                                                    $.messager.alert(response.title ?? "Upload Failed", response.message ?? "Some data failed to save", "error");
+                                                }
+                                            }
+
+                                        }, i * delayPerItem);
+                                    });
+                                }
+
+                                $('#dg').datagrid('reload');
+                            },
+
+                            error: function (xhr, status, error) {
+                                $.messager.alert("Upload Error", "An error occurred while saving the data", "error");
+                            }
+                        });
                     }
                 });
             }

@@ -261,136 +261,413 @@ class Standard_price_rm extends CI_Controller
     }
 
     //UPLOAD DATA
+    // public function uploadv1()
+    // {
+    //     error_reporting(0);
+    //     require_once 'assets/vendors/excel_reader2.php';
+    //     $target = basename($_FILES['file_upload']['name']);
+    //     move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
+    //     chmod($_FILES['file_upload']['name'], 0777);
+    //     $file = $_FILES['file_upload']['name'];
+    //     $data = new Spreadsheet_Excel_Reader($file, false);
+    //     $total_row = $data->rowcount($sheet_index = 0);
+    //     for ($i = 3; $i <= $total_row; $i++) {
+    //         $datas[] = array(
+    //             //excel
+    //             'start_date' => $data->val($i, 2),
+    //             'end_date' => $data->val($i, 3),
+    //             'item_rm_id' => $data->val($i, 4),
+    //             'currency' => $data->val($i, 5),
+    //             'price' => $data->val($i, 6)
+    //         );
+    //     }
+    //     $datas['total'] = count($datas);
+    //     echo json_encode($datas);
+    //     unlink($_FILES['file_upload']['name']);
+    // }
+
+    //UPLOAD DATA
     public function upload()
     {
         error_reporting(0);
         require_once 'assets/vendors/excel_reader2.php';
+
         $target = basename($_FILES['file_upload']['name']);
         move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
-        chmod($_FILES['file_upload']['name'], 0777);
-        $file = $_FILES['file_upload']['name'];
-        $data = new Spreadsheet_Excel_Reader($file, false);
+        chmod($target, 0777);
+
+        $data = new Spreadsheet_Excel_Reader($target, false);
         $total_row = $data->rowcount($sheet_index = 0);
+        $datas = [];
+
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
-                //excel
-                'start_date' => $data->val($i, 2),
-                'end_date' => $data->val($i, 3),
-                'item_rm_id' => $data->val($i, 4),
-                'currency' => $data->val($i, 5),
-                'price' => $data->val($i, 6)
+                'document_number' => $data->val($i, 2),
+                'start_date' => $data->val($i, 3),
+                'end_date' => $data->val($i, 4),
+                'item_rm_id' => $data->val($i, 5),
+                'currency' => $data->val($i, 6),
+                'price' => $data->val($i, 7)
             );
         }
-        $datas['total'] = count($datas);
-        echo json_encode($datas);
-        unlink($_FILES['file_upload']['name']);
+
+        echo json_encode([
+            "total" => count($datas),
+            "data" => $datas
+        ]);
+
+        unlink($target);
     }
+
     public function uploadclearFailed()
     {
-        @unlink('failed/standard_price_rm.txt');
+        @unlink('failed/standard_price_rm.xls');
     }
-    public function uploadcreateFailed()
-    {
-        if ($this->input->post()) {
-            $message = $this->input->post('message');
-            $textFailed = fopen('failed/standard_price_rm.txt', 'a');
-            fwrite($textFailed, $message . "\n");
-            fclose($textFailed);
-        }
-    }
+    // public function uploadcreateFailed()
+    // {
+    //     if ($this->input->post()) {
+    //         $message = $this->input->post('message');
+    //         $textFailed = fopen('failed/standard_price_rm.txt', 'a');
+    //         fwrite($textFailed, $message . "\n");
+    //         fclose($textFailed);
+    //     }
+    // }
     //UPLOAD DOWNLOAD FAILED
+    // public function uploadDownloadFailed()
+    // {
+    //     $file = "failed/standard_price_rm.txt";
+    //     header('Content-Description: File Failed');
+    //     header('Content-Disposition: attachment; filename=' . basename($file));
+    //     header('Expires: 0');
+    //     header('Cache-Control: must-revalidate');
+    //     header('Pragma: public');
+    //     header('Content-Length: ' . @filesize($file));
+    //     header("Content-Type: text/plain");
+    //     @readfile($file);
+    // }
+
     public function uploadDownloadFailed()
     {
-        $file = "failed/standard_price_rm.txt";
-        header('Content-Description: File Failed');
-        header('Content-Disposition: attachment; filename=' . basename($file));
-        header('Expires: 0');
-        header('Cache-Control: must-revalidate');
-        header('Pragma: public');
-        header('Content-Length: ' . @filesize($file));
-        header("Content-Type: text/plain");
-        @readfile($file);
+        $file = "failed/standard_price_rm.xls";
+
+        if (!file_exists($file)) {
+            echo "No failed data to download";
+            return;
+        }
+
+        $filename = "upload_failed_standard_price_rm_" . date("Ymd_s") . ".xls";
+
+        header("Content-Description: File Upload Failed");
+        header("Content-type: application/vnd.ms-excel");
+        header("Content-Disposition: attachment; filename={$filename}");
+        header("Pragma: no-cache");
+        header("Expires: 0");
+
+        readfile($file);
     }
+
+    //UPLOAD CREATE DATA
+    // public function uploadcreatev1()
+    // {
+    //     if ($this->input->post()) {
+    //         $data = $this->input->post('data');
+
+    //         //Cek Process Number          //table       //field        //field excel
+    //         $item_rm = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
+    //         $currencies = $this->crud->read('currencies', [], ["name" => $data['currency']]);
+
+    //         $division = @$item_rm->division;
+    //         $start_date = $data['start_date'];
+    //         $end_date = $data['end_date'];
+
+    //         $datenow = date("y", strtotime($start_date));
+    //         $sql = $this->db->query("SELECT max(`document_number`) as kode From standard_price_rm where division='$division' AND `start_date`='$start_date' AND `end_date`='$end_date'");
+    //         $sql2 = $this->db->query("SELECT max(`document_number`) as kode From standard_price_rm where `start_date`='$start_date' AND `end_date`='$end_date'");
+    //         $row = $sql->row();
+    //         $row2 = $sql2->row();
+    //         if (!empty(@$row->kode)) {
+    //             $document_number = @$row->kode;
+    //         } else {
+    //             if (empty(@$row2->kode)) {
+    //                 $kode = substr(@$row2->kode, 1);
+    //                 $document_number = "SP-RM" . $datenow . sprintf("%02s", $kode + 1);
+    //             } else {
+    //                 $kode = substr(@$row2->kode, -2);
+    //                 $document_number = "SP-RM" . $datenow . sprintf("%02s", $kode + 1);
+    //             }
+    //         }
+
+    //         if (empty($item_rm->number)) {
+    //             echo json_encode(array("title" => "Not Found", "message" => " Part No. " . $data['item_rm_id'] . " Not Found", "theme" => "error"));
+    //         } else if (empty($currencies->name)) {
+    //             echo json_encode(array("title" => "Not Found", "message" => " Currency Code. " . $data['currency'] . " Not Found", "theme" => "error"));
+    //         } else {
+    //             $whereupdate = array(
+    //                 "document_number" => $document_number,
+    //                 "item_rm_id" => $data['item_rm_id'],
+    //                 "start_date" => $data['start_date'],
+    //                 "end_date" => $data['end_date'],
+
+    //             );
+    //             $standard_price_rm = $this->crud->read('standard_price_rm', [], $whereupdate);
+
+    //             $dataFinal = array(
+    //                 //field
+    //                 "document_number" => $document_number,
+    //                 "division" => $division,
+    //                 "item_rm_id" => $data['item_rm_id'],
+    //                 "start_date" => $data['start_date'],
+    //                 "end_date" => $data['end_date'],
+    //                 "currency" => $data['currency'],
+    //                 "price" => $data['price']
+    //             );
+
+    //             if (@$standard_price_rm->item_rm_id != "") {
+    //                 if (
+    //                     @$standard_price_rm->document_number == $document_number &&
+    //                     @$standard_price_rm->division == $division &&
+    //                     @$standard_price_rm->start_date == $data['start_date'] &&
+    //                     @$standard_price_rm->end_date == $data['end_date'] &&
+    //                     @$standard_price_rm->item_rm_id == $data['item_rm_id'] &&
+    //                     @$standard_price_rm->currency == $data['currency'] &&
+    //                     @$standard_price_rm->price == $data['price']
+    //                 ) {
+    //                     $send = json_encode(array("title" => "No Update", "message" => "Data Is Same", "theme" => "warning"));
+    //                 } else {
+    //                     $send = $this->crud->update('standard_price_rm', $whereupdate, $dataFinal);
+    //                     $send2 = $this->crud->create('standard_price_rm_histories', $dataFinal);
+    //                 }
+    //             } else {
+    //                 $send = $this->crud->create('standard_price_rm', $dataFinal);
+    //                 $send2 = $this->crud->create('standard_price_rm_histories', $dataFinal);
+    //             }
+
+    //             echo $send;
+    //         }
+    //     }
+    // }
+
     //UPLOAD CREATE DATA
     public function uploadcreate()
     {
         if ($this->input->post()) {
-            $data = $this->input->post('data');
+            $raw = file_get_contents("php://input");
+            $postData = json_decode($raw, true);
 
-            //Cek Process Number          //table       //field        //field excel
-            $item_rm = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
-            $currencies = $this->crud->read('currencies', [], ["name" => $data['currency']]);
+            $data_list = $postData['data'];
+            
+            $total_expected = count($data_list);
+            $processed_count = 0;
 
-            $division = @$item_rm->division;
-            $start_date = $data['start_date'];
-            $end_date = $data['end_date'];
+            $this->db->trans_begin();
+            $results = [];
+            $generated_number = null;
 
-            $datenow = date("y", strtotime($start_date));
-            $sql = $this->db->query("SELECT max(`document_number`) as kode From standard_price_rm where division='$division' AND `start_date`='$start_date' AND `end_date`='$end_date'");
-            $sql2 = $this->db->query("SELECT max(`document_number`) as kode From standard_price_rm where `start_date`='$start_date' AND `end_date`='$end_date'");
-            $row = $sql->row();
-            $row2 = $sql2->row();
-            if (!empty(@$row->kode)) {
-                $document_number = @$row->kode;
-            } else {
-                if (empty(@$row2->kode)) {
-                    $kode = substr(@$row2->kode, 1);
-                    $document_number = "SP-RM" . $datenow . sprintf("%02s", $kode + 1);
-                } else {
-                    $kode = substr(@$row2->kode, -2);
-                    $document_number = "SP-RM" . $datenow . sprintf("%02s", $kode + 1);
+            foreach ($data_list as $index => $data) {
+                $processed_count++;
+
+                $price = str_replace(',', '.', $data['price']);
+
+                if (
+                        empty($data['item_rm_id']) ||
+                        empty($data['price']) ||
+                        empty($data['currency']) ||
+                        empty($data['start_date']) ||
+                        empty($data['end_date']) ||
+                        !is_numeric($price) ||
+                        !strtotime($data['start_date']) ||
+                        !strtotime($data['end_date']) ||
+                        strtotime($data['start_date']) > strtotime($data['end_date'])
+                    ) {
+                        $results[] = [
+                            "status" => "failed",
+                            "item" => "Line " . ($index + 1),
+                            "message" => "Invalid or missing data"
+                        ];
+                        continue;
                 }
-            }
 
-            if (empty($item_rm->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => " Part No. " . $data['item_rm_id'] . " Not Found", "theme" => "error"));
-            } else if (empty($currencies->name)) {
-                echo json_encode(array("title" => "Not Found", "message" => " Currency Code. " . $data['currency'] . " Not Found", "theme" => "error"));
-            } else {
-                $whereupdate = array(
-                    "document_number" => $document_number,
-                    "item_rm_id" => $data['item_rm_id'],
-                    "start_date" => $data['start_date'],
-                    "end_date" => $data['end_date'],
+                $data['price'] = (strpos($price, '.') !== false) ? (float) $price : (int) $price;
 
-                );
-                $standard_price_rm = $this->crud->read('standard_price_rm', [], $whereupdate);
+                $item_rm_id = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
+                if (empty($item_rm_id)) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Item RM ID " . $data['item_rm_id'] . " not found"
+                    ];
+                    continue;
+                }
+
+                // $item_family = $this->crud->read('item_familys', [], ["number" => $item_rm_id->item_family_number]);
+                $standard_price_rm = $this->crud->read('standard_price_rm', [], ["item_rm_id" => $data['item_rm_id']]);
+
+                // Siapkan nomor final
+                $final_number = $data['document_number'];
+
+                if (empty($data['document_number']) && empty($standard_price_rm)) {
+                    if ($generated_number === null) {
+                        $yearShort = date("y", strtotime($data['start_date']));
+                        $prefix = "SP-RM" . $yearShort;
+
+                        $this->db->select('MAX(`document_number`) as kode');
+                        $this->db->from('standard_price_rm');
+                        $this->db->like('document_number', $prefix);
+                        $result = $this->db->get()->row();
+
+                        $lastNumber = ($result->kode == NULL) ? 1 : ((int)substr($result->kode, -2) + 1);
+                        $generated_number = $prefix . sprintf("%02d", $lastNumber);
+                    }
+                    $final_number = $generated_number;
+                }
 
                 $dataFinal = array(
-                    //field
-                    "document_number" => $document_number,
-                    "division" => $division,
+                    "document_number" => $final_number,
                     "item_rm_id" => $data['item_rm_id'],
                     "start_date" => $data['start_date'],
                     "end_date" => $data['end_date'],
                     "currency" => $data['currency'],
-                    "price" => $data['price']
+                    "division" => $item_rm_id->division,
+                    "price" => $data['price'],
                 );
 
-                if (@$standard_price_rm->item_rm_id != "") {
-                    if (
-                        @$standard_price_rm->document_number == $document_number &&
-                        @$standard_price_rm->division == $division &&
-                        @$standard_price_rm->start_date == $data['start_date'] &&
-                        @$standard_price_rm->end_date == $data['end_date'] &&
-                        @$standard_price_rm->item_rm_id == $data['item_rm_id'] &&
-                        @$standard_price_rm->currency == $data['currency'] &&
-                        @$standard_price_rm->price == $data['price']
-                    ) {
-                        $send = json_encode(array("title" => "No Update", "message" => "Data Is Same", "theme" => "warning"));
+                try {
+                    if (!empty($standard_price_rm->item_rm_id)) {
+                        // Update
+                        $this->db->update('standard_price_rm', [
+                            "price" => $data['price'],
+                            "start_date" => $data['start_date'],
+                            "end_date" => $data['end_date']
+                        ], [
+                            "document_number" => $data['document_number'],
+                            "item_rm_id" => $data['item_rm_id'],
+                            "start_date" => $data['start_date'],
+                            "end_date" => $data['end_date']
+                        ]);
+                        // History
+                        $this->crud->createNotLog('standard_price_rm_histories', $dataFinal);
+
+                        $status = "update";
                     } else {
-                        $send = $this->crud->update('standard_price_rm', $whereupdate, $dataFinal);
-                        $send2 = $this->crud->create('standard_price_rm_histories', $dataFinal);
+                        // Insert
+                        $this->crud->create('standard_price_rm', $dataFinal);
+                        $this->crud->create('standard_price_rm_histories', $dataFinal);
+
+                        $status = "insert";
                     }
-                } else {
-                    $send = $this->crud->create('standard_price_rm', $dataFinal);
-                    $send2 = $this->crud->create('standard_price_rm_histories', $dataFinal);
+
+                    $res_item = ($status === "insert" ? "Create" : "Update");
+                    $res_msg  = ($status === "insert" ? "Data Saved Successfully" : "Part No $item_rm_id->number Data Updated");
+
+                    $results[] = [
+                        "status" => "success",
+                        "item" => $res_item,
+                        "message" => $res_msg
+                    ];
+                } catch (Exception $e) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => $item_rm_id->name,
+                        "message" => $e->getMessage()
+                    ];
+                    continue;
+                }
+            }
+
+            // if (count(array_filter($results, fn($r) => $r['status'] === 'failed')) > 0) {
+            //     echo json_encode([
+            //         "theme" => "error",
+            //         "title" => "Upload Failed",
+            //         "message" => "Data failed to save",
+            //         "results" => $results,
+            //         "total_expected" => $total_expected,
+            //         "processed_count" => $processed_count,
+            //         "stopped_at" => $index + 1
+            //     ]);
+            // } else {
+            //     $this->db->trans_commit();
+            //     echo json_encode([
+            //         "theme" => "success",
+            //         "title" => "Upload Successfully",
+            //         "message" => "Data uploaded successfully",
+            //         "results" => $results,
+            //         "total_expected" => $total_expected,
+            //         "processed_count" => $processed_count,
+            //         "stopped_at" => $index + 1
+            //     ]);
+            // }
+
+            $failed = array_filter($results, fn($r) => $r['status'] === 'failed');
+            $hasDbError = ($this->db->trans_status() === FALSE);
+            
+            if (count($failed) > 0 || $hasDbError) {
+                $filePath = 'failed/standard_price_rm.xls';
+
+                $html = '
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body>
+                    <table border="1" cellspacing="0" cellpadding="5" style="border-collapse: collapse; font-family: Arial, sans-serif;">
+                        <thead style="background-color: #f2f2f2;">
+                            <tr>
+                                <th style="width: 40px; text-align: center;">No</th>
+                                <th style="width: 100px; text-align: left;">Line</th>
+                                <th style="width: 450px; text-align: left;">Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                ';
+
+                $no = 1;
+                foreach ($failed as $row) {
+                    $line = htmlspecialchars($row['item']);
+                    $msg  = htmlspecialchars($row['message']);
+                    $html .= "
+                        <tr>
+                            <td style='text-align: center;'>{$no}</td>
+                            <td style='text-align: left;'>{$line}</td>
+                            <td style='text-align: left;'>{$msg}</td>
+                        </tr>";
+                    $no++;
                 }
 
-                echo $send;
+                $html .= '
+                        </tbody>
+                    </table>
+                </body>
+                </html>';
+
+                file_put_contents($filePath, $html);
+
+                echo json_encode([
+                    "theme" => "error",
+                    "title" => "Upload Failed",
+                    "message" => "Data failed to save",
+                    "results" => $results,
+                    "total_expected" => $total_expected,
+                    "processed_count" => $processed_count,
+                    "stopped_at" => $index + 1
+                ]);
+            } else {
+                @unlink('failed/standard_price_rm.xls');
+
+                $this->db->trans_commit();
+                echo json_encode([
+                    "theme" => "success",
+                    "title" => "Upload Successfully",
+                    "message" => "Data uploaded successfully",
+                    "results" => $results,
+                    "total_expected" => $total_expected,
+                    "processed_count" => $processed_count,
+                    "stopped_at" => $index + 1
+                ]);
             }
+
         }
     }
+
     //PRINT & EXCEL DATA
     public function print($option = "")
     {

@@ -872,12 +872,9 @@
                         $.ajax({
                             type: "POST",
                             url: "<?= base_url('master/standard_price_fg/uploadCreate') ?>",
-                            data: { data: dataList },
+                            data: JSON.stringify({ data: dataList }),
                             dataType: "json",
                             success: function (response) {
-                                if (response.theme === 'error') {
-                                    $.messager.alert(response.title ?? "Upload Failed", response.message ?? "Some data failed to save", "error");
-                                }
 
                                 $('#p_upload').progressbar('setValue', 0);
                                 let successCount = 0;
@@ -909,6 +906,12 @@
                                             progressCount++;
                                             updateProgress();
 
+                                            if(progressCount == total) {
+                                                if (response.theme === 'error') {
+                                                    $.messager.alert(response.title ?? "Upload Failed", response.message ?? "Some data failed to save", "error");
+                                                }
+                                            }
+
                                         }, i * delayPerItem);
                                     });
                                 }
@@ -917,7 +920,6 @@
                             },
 
                             error: function (xhr, status, error) {
-                                clearInterval(simInterval);
                                 $.messager.alert("Upload Error", "An error occurred while saving the data", "error");
                             }
                         });
