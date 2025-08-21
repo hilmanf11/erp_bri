@@ -743,7 +743,7 @@ class Generate_mps_2 extends CI_Controller
                 $deliverySums = [];
 
                 // Ambil 3 bulan terakhir termasuk bulan sekarang
-                for ($m = 0; $m < 3; $m++) {
+                for ($m = 1; $m <= 3; $m++) {
                     $date = clone $currentDate;
                     $date->modify("-$m month");
                     $previousMonths[] = $date->format('Y-m');
@@ -769,8 +769,16 @@ class Generate_mps_2 extends CI_Controller
                 // Hitung rata-rata dari total delivery qty selama 3 bulan
                 $avg_delivery = count($deliverySums) > 0 ? array_sum($deliverySums) / count($deliverySums) : 0;
 
+                if ($avg_delivery < 1000) {
+                    $product_class = "SM";
+                } elseif ($avg_delivery <= 5000) {
+                    $product_class = "MM";
+                } else {
+                    $product_class = "FM";
+                }
+
                 // Kirim nilai rata-rata ke fungsi klasifikasi dalam array
-                $product_class = $this->get_final_classification([$avg_delivery]);
+                // $product_class = $this->get_final_classification([$avg_delivery]);
 
                 // Gunakan persentase sesuai klasifikasi
                 $persentase = ($product_class === "FM") ? 20 : 6;

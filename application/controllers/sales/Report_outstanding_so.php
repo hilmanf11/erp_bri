@@ -228,10 +228,9 @@ class Report_outstanding_so extends CI_Controller
             }
 
             $this->db->group_by('a.sales_order_no');
-            $this->db->order_by('a.customer_order_no', 'ASC');
-            $this->db->order_by('b.name', 'ASC');
             $this->db->order_by('a.sales_order_date', 'ASC');
-            $this->db->order_by('a.status', 'ASC');
+            $this->db->order_by('b.name', 'ASC');
+            $this->db->order_by('a.customer_order_no', 'ASC');
             $records = $this->db->get()->result_array();
 
             if (!empty($filter_status)) {
@@ -312,9 +311,9 @@ class Report_outstanding_so extends CI_Controller
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
             // $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
-            $this->db->order_by('a.customer_order_no', 'ASC');
-            $this->db->order_by('b.name', 'ASC');
             $this->db->order_by('a.sales_order_date', 'ASC');
+            $this->db->order_by('b.name', 'ASC');
+            $this->db->order_by('a.customer_order_no', 'ASC');
             $this->db->order_by('c.name', 'ASC');
 
 

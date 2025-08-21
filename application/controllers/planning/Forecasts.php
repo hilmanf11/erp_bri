@@ -360,6 +360,12 @@ class Forecasts extends CI_Controller
             $existing = $this->crud->read("forecasts", [], $where);
             unset($post['mode']);
 
+            for ($i = 1; $i <= 12; $i++) {
+                if (!isset($post["month_$i"]) || $post["month_$i"] === '' || $post["month_$i"] === null) {
+                    $post["month_$i"] = null; // kosong -> NULL
+                }
+            }
+
             if ($mode === 'insert') {
                 if (!empty($existing)) {
                     $errors[] = "Customer ID, Product No, Revision, Month, and Year already exists";
@@ -599,6 +605,13 @@ class Forecasts extends CI_Controller
         @readfile($file);
     }
 
+    public function filterInput($value) {
+        if ($value === null || $value === '') {
+            return false;
+        }
+        return true;
+    }
+
     //UPLOAD CREATE DATA
     public function uploadcreate()
     {
@@ -677,20 +690,16 @@ class Forecasts extends CI_Controller
                         "p_month" => $data['p_month'],
                         "p_year" => $data['p_year'],
                         "revision" => $data['revision'],
-                        "month_1" => $data['month_1'],
-                        "month_2" => $data['month_2'],
-                        "month_3" => $data['month_3'],
-                        "month_4" => $data['month_4'],
-                        "month_5" => $data['month_5'],
-                        "month_6" => $data['month_6'],
-                        "month_7" => $data['month_7'],
-                        "month_8" => $data['month_8'],
-                        "month_9" => $data['month_9'],
-                        "month_10" => $data['month_10'],
-                        "month_11" => $data['month_11'],
-                        "month_12" => $data['month_12'],
                         "remark" => $data['remark'],
                     );
+
+                    for ($i = 1; $i <= 12; $i++) {
+                        $key = "month_$i";
+                        if (array_key_exists($key, $data) && $this->filterInput($data[$key])) {
+                            $dataFinal[$key] = $data[$key];
+                        }
+                    }
+
                     $send   = $this->crud->create('forecasts', $dataFinal);
                     $send2  = $this->crud->create('forecast_histories', $dataFinal);
                     echo $send;

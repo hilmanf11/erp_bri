@@ -69,11 +69,12 @@ class Item_rm extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.name as item_category_name, c.name as item_family_name, d.number as item_sub_family_number, d.name as item_sub_family_name');
+            $this->db->select('a.*, b.name as item_category_name, c.name as item_family_name, d.number as item_sub_family_number, d.name as item_sub_family_name, e.name as division');
             $this->db->from('item_rm a');
             $this->db->join('item_categories b', 'a.item_category_id = b.id');
             $this->db->join('item_familys c', 'a.item_family_id = c.id');
             $this->db->join('item_family_subs d', 'a.item_sub_family_id = d.id', 'left');
+            $this->db->join('divisions e', 'a.division = e.number', 'left');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {

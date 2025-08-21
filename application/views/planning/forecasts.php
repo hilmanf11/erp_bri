@@ -906,6 +906,9 @@
                         }
                     }
 
+                    console.log(JSON.stringify(items));
+                    
+
                     $.ajax({
                         type: "post",
                         url: '<?= base_url('planning/forecasts/create') ?>',

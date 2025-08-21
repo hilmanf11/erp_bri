@@ -46,12 +46,12 @@
                     <input style="width:60%;" id="filter_customer_id" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Delivery Note No</span>
-                    <input style="width:60%;" id="filter_delivery_note_no" class="easyui-combobox">
-                </div>
-                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Customer Order No</span>
                     <input style="width:60%;" id="filter_customer_order_no" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Delivery Note No</span>
+                    <input style="width:60%;" id="filter_delivery_note_no" class="easyui-combobox">
                 </div>
             </div>
             <div style="width: 50%; float: left;">
@@ -161,47 +161,59 @@
         window.location.reload();
     }
 
-    $('#filter_customer_id').combobox({
-        url: '<?= base_url('master/customers/reads'); ?>',
-        valueField: 'id',
-        textField: 'name',
-        prompt: 'Choose All',
-        icons: [{
-            iconCls: 'icon-clear',
-            handler: function(e) {
-                $(e.data.target).combobox('clear').combobox('textbox').focus();
-            }
-        }],
-        onSelect: function(customer) {
-            $('#filter_delivery_note_no').combobox({
-                url: '<?= base_url('sales/delivery_notes/readDelivery_note_no/'); ?>' + customer.id,
-                valueField: 'delivery_note_no',
-                textField: 'delivery_note_no',
-                prompt: 'Choose All',
-                icons: [{
-                    iconCls: 'icon-clear',
-                    handler: function(e) {
-                        $(e.data.target).combobox('clear').combobox('textbox').focus();
-                    }
-                }],
-                onSelect: function(deliver_note) {
-                    $('#filter_customer_order_no').combobox({
-                        url: '<?= base_url('sales/delivery_notes/readCustomerOrder/'); ?>' + customer.id,
-                        valueField: 'customer_order_no',
-                        textField: 'customer_order_no',
-                        prompt: 'Choose All',
-                        icons: [{
-                            iconCls: 'icon-clear',
-                            handler: function(e) {
-                                $(e.data.target).combobox('clear').combobox('textbox').focus();
-                            }
-                        }],
-                    });
-
+    // $(function() {
+        $('#filter_customer_id').combobox({
+            url: '<?= base_url('master/customers/reads'); ?>',
+            valueField: 'id',
+            textField: 'name',
+            prompt: 'Choose All',
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
                 }
-            });
-        }
-    });
+            }],
+            onSelect: function(customer) {
+                var filter_from = $("#filter_from").datebox("getValue");
+                var filter_to = $("#filter_to").datebox("getValue");
+
+                console.log('Customer : ', customer);
+                console.log('From : ', filter_from);
+                console.log('To : ', filter_to);
+                
+                $('#filter_delivery_note_no').combobox({
+                    url: '<?= base_url('sales/delivery_notes/readDelivery_note_no?customer_id='); ?>' + customer.id + "&filter_from=" + filter_from + "&filter_to=" + filter_to,
+                    valueField: 'delivery_note_no',
+                    textField: 'delivery_note_no',
+                    prompt: 'Choose All',
+                    icons: [{
+                        iconCls: 'icon-clear',
+                        handler: function(e) {
+                            $(e.data.target).combobox('clear').combobox('textbox').focus();
+                        }
+                    }],
+                });
+
+                    // onSelect: function(deliver_note) {
+                $('#filter_customer_order_no').combobox({
+                    // url: '<?= base_url('sales/delivery_notes/readCustomerOrder/'); ?>' + customer.id,
+                    url: '<?= base_url('sales/delivery_notes/readCustomerOrder?customer_id='); ?>' + customer.id + '&filter_from=' + filter_from + '&filter_to=' + filter_to,
+                    valueField: 'customer_order_no',
+                    textField: 'customer_order_no',
+                    prompt: 'Choose All',
+                    icons: [{
+                        iconCls: 'icon-clear',
+                        handler: function(e) {
+                            $(e.data.target).combobox('clear').combobox('textbox').focus();
+                        }
+                    }],
+
+                    // }
+                });
+            }
+        });
+    // });
+
 
     $('#filter_item_fg').combogrid({
         url: '<?= base_url("master/item_fg/reads") ?>',

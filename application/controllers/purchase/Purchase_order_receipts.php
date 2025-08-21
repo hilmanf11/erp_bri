@@ -222,7 +222,10 @@ class Purchase_order_receipts extends CI_Controller
             $query .= " WHERE po.item_number LIKE '%$search_query%' OR po.item_name LIKE '%$search_query%'";
         }
 
-        $query .= " ORDER BY po.po_no DESC";
+        // $query .= " ORDER BY po.po_no DESC";
+
+        $query .= " ORDER BY po.item_name ASC";
+
 
         $records = $this->crud->query($query);
         echo json_encode($records);
@@ -247,7 +250,7 @@ class Purchase_order_receipts extends CI_Controller
             $result = array();
             $id = $_POST['id'];
             if ($id === "0") {
-                $this->db->select('a.po_no, a.receipt_no, a.receipt_date, a.awb_no, a.awb_date, a.bc_kind, a.bc_document, a.bc_aju, a.bc_date, b.number as supplier_id, b.name as supplier_name, a.total_receipt as qty_receipt, a.total_label as qty_label, a.status');
+                $this->db->select('a.po_no, a.receipt_no, a.receipt_date, a.awb_no, a.awb_date, a.bc_kind, a.bc_document, a.bc_aju, a.bc_date, b.number as supplier_id, b.name as supplier_name, a.total_receipt as qty_receipt_dt, a.total_label as qty_label, a.status');
                 $this->db->from('(SELECT *, sum(qty_label) as total_label, sum(qty_receipt) as total_receipt FROM purchase_order_receipts GROUP BY receipt_no ORDER BY status asc) a');
                 $this->db->join('suppliers b', 'a.supplier_id = b.id', 'left');
                 $this->db->join('purchase_orders c', 'a.po_no = c.po_no and a.item_rm_id = c.item_rm_id', 'left');
@@ -307,6 +310,7 @@ class Purchase_order_receipts extends CI_Controller
                 echo json_encode($result);
             } else {
                 $this->db->select('a.*, 
+                    a.qty_receipt as qty_receipt_dt,
                     a.id as purchase_order_receipts_id, 
                     a.receipt_id as id, 
                     b.number as supplier_id, 
@@ -319,6 +323,8 @@ class Purchase_order_receipts extends CI_Controller
                     c.uom,
                     e.mpq,
                     sum(g.status) as total_scan,
+                    g.lot_no as label_lot_no,
+                    a.lot_no as por_lot_no,
                     h.name as transaction_type');
                 $this->db->from('purchase_order_receipts a');
                 $this->db->join('suppliers b', 'a.supplier_id = b.id');
@@ -483,6 +489,224 @@ class Purchase_order_receipts extends CI_Controller
         echo $deletePurchaseOrderReceipts;
     }
 
+    // from create new label
+    // public function print_label_pov1($receipt_no)
+    // {
+    //     //Config
+    //     $this->db->select('*');
+    //     $this->db->from('config');
+    //     $config = $this->db->get()->row();
+    //     $receipt_no = base64_decode($receipt_no);
+    //     $receipt_data = $this->crud->reads('purchase_order_receipts', [], ["receipt_no" => $receipt_no]);
+
+    //     // if (!empty($receipt_data)) {
+    //     //     $first_receipt = $receipt_data[0];
+    //     //     $date = new DateTime($first_receipt->receipt_date);
+    //     //     $p_month = $date->format('m');
+    //     //     $p_year = $date->format('y');
+    //     //     $datenow = $p_month . $p_year;
+
+    //     //     $sqlGetLot = $this->db->query("SELECT max(lot_no) as kode FROM purchase_order_labels WHERE lot_no LIKE '%$datenow%'");
+    //     //     $rowLot = $sqlGetLot->row();
+    //     //     $lot_no = $rowLot->kode;
+
+    //     //     if ($lot_no === NULL) {
+    //     //         $autoLot = sprintf("%03s", 1) . $p_month . $p_year;
+    //     //     } else {
+    //     //         $urutan = (int) substr($lot_no, 0, 3);
+    //     //         $autoLot = sprintf("%03s", $urutan + 1) . $p_month . $p_year;
+    //     //     }
+    //     // }
+
+    //     foreach ($receipt_data as $po_receipt) {
+    //         $receipt_id = $po_receipt->receipt_id;
+    //         $qty_receipt = $po_receipt->qty_receipt;
+
+    //         $date = new DateTime($po_receipt->receipt_date);
+    //         $p_month = $date->format('m');
+    //         $p_year = $date->format('y');
+
+    //         //Cek Label
+    //         $po_receipt_label = $this->crud->reads('purchase_order_labels', [], ["receipt_id" => $receipt_id]);
+    //         if (!$po_receipt_label) {
+    //             for ($i = 0; $i < $po_receipt->qty_label; $i++) {
+    //                 //Read Label ID
+    //                 $sqlGetID = $this->db->query("SELECT max(label_no) as kode FROM purchase_order_labels WHERE receipt_id = '$receipt_id'");
+    //                 $rowID = $sqlGetID->row();
+    //                 $label = $rowID->kode;
+    //                 if ($label == NULL) {
+    //                     $autoID = $receipt_id . sprintf("%04s", $label + 1);
+    //                 } else {
+    //                     $urutan = (int) substr($label, -4);
+    //                     $autoID = $receipt_id . sprintf("%04s", $urutan + 1);
+    //                 }
+    //                 if ($qty_receipt > $po_receipt->qty_mpq) {
+    //                     $qty = $po_receipt->qty_mpq;
+    //                 } else {
+    //                     $qty = $qty_receipt;
+    //                 }
+
+    //                 //Simpan Label
+    //                 $arrLabel = [
+    //                     "receipt_id" => $po_receipt->receipt_id,
+    //                     "label_no" => $autoID,
+    //                     "qty" => $qty,
+    //                     "lot_no" => $po_receipt->lot_no,
+    //                     "p_month" => $p_month,
+    //                     "p_year" => $p_year
+    //                 ];
+    //                 $send = $this->crud->create('purchase_order_labels', $arrLabel);
+    //                 $qty_receipt = ($qty_receipt - $po_receipt->qty_mpq);
+    //             }
+    //         }
+    //     }
+
+    //     $this->db->select('a.*, b.receipt_date, c.number, c.number_internal, c.name, d.location, d.area, c.color, c.uom, c.item_family_id, c.id as item_rm_id');
+    //     $this->db->from('purchase_order_labels a');
+    //     $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
+    //     $this->db->join('item_rm c', 'b.item_rm_id = c.id');
+    //     $this->db->join('warehouse_location_items d', 'd.item_rm_id = c.id', 'left');
+    //     $this->db->join('item_familys e', 'c.item_family_id = e.id');
+    //     $this->db->where('a.deleted', 0);
+    //     //$this->db->where('a.status', 0);
+    //     $this->db->where('b.receipt_no', $receipt_no);
+    //     $this->db->order_by('a.label_no', 'asc');
+    //     $records = $this->db->get()->result_object();
+    //     $html = '<html>
+    //                 <head>
+    //                     <title>' . $receipt_no . '</title>
+    //                     <link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="16x16">
+    //                 </head>
+    //                 <style>body {font-family: Arial, Helvetica, sans-serif; margin:5px;}#customers {border-collapse: collapse; width: 100%; font-size: 9px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}
+    //                 .lotno {
+    //                     padding: 0;
+    //                 }
+    //                 .lotno-wrap {
+    //                     display: table-cell;
+    //                     width: 100%;
+    //                     height: 100%;
+    //                     vertical-align: middle;
+    //                     text-align: center;
+    //                 }
+    //                 .lotno-text {
+    //                     writing-mode: vertical-rl;
+    //                     transform: rotate(180deg);
+    //                     font-size: 7px;
+    //                     white-space: nowrap;
+    //                 }
+    //                 </style><body>';
+    //     if ($records) {
+    //         $html .= '<div style="width: 60mm;">';
+    //         $no = 1;
+    //         $printed_labels = [];
+
+    //         foreach ($records as $record) {
+    //             if (in_array($record->label_no, $printed_labels)) {
+    //                 continue;
+    //             }
+
+    //             $printed_labels[] = $record->label_no;
+
+    //             if ($no == 2) {
+    //                 $no = 1;
+    //             }
+    //             if ($no == 1) {
+    //                 $padding = "margin:2mm 3mm 3mm 2mm;";
+    //             } else {
+    //                 $padding = "margin:2mm 0mm 3mm 4mm;";
+    //             }
+    //             //Generate QRcode
+    //             $this->createQrcode($record->label_no, "assets/image/qrcode/");
+
+    //             // Jika item_family_id = P06, generate QR tambahan
+    //             if ($record->item_family_id == 'P06') {
+    //                 $this->createQrcode($record->item_rm_id, "assets/image/qrcode/");
+    //                 $qr_item_rm = '<img src="' . base_url('assets/image/qrcode/' . $record->item_rm_id . '.png') . '" width="30"/>';
+    //                 $this->createQrcode($record->lot_no, "assets/image/qrcode/");
+    //                 // Styling QR Lot No agar di pojok kanan atas area Quantity
+    //                 $qr_lot_no = '<div style="position:absolute; top:7px; left:4px;"><img src="' . base_url('assets/image/qrcode/' . $record->lot_no . '.png') . '" width="22.5" style="display:block;"/></div>';
+    //             } else {
+    //                 $qr_item_rm = "";
+    //                 $qr_lot_no = "";
+    //             }
+    //             $html .= '  <div style="width: 48mm; max-height:41mm; float:left; box-sizing: border-box;' . $padding . '">
+    //                             <table id="customers" border="1" style="margin-bottom:20px;">
+    //                                 <tr>
+    //                                     <th colspan="3" style="font-size:7px; text-align:center;"><b>' . $config->name . '</b></th>
+    //                                 </tr>
+    //                                 <tr>
+    //                                     <th style="text-align:left; height: 35px;">
+    //                                             <small style="font-size:10px;"><b>' . $record->number_internal . '</b></small>
+    //                                             <br>
+    //                                             <b style="font-size:10px;">' . $record->name . " - " . $record->color . '</b>
+    //                                     </th>
+    //                                     <th style="text-align:right; height: 35px; position:relative;">
+
+    //                                     ';
+
+    //             if ($record->item_family_id == 'P06') {
+    //                 $html .= '<div style="position: absolute; left: 4px; top: 1px;">
+    //                             <small style="font-size:15px; display: block;"><b>'.$record->p_month.'</b><small style="font-size:15px;display: block;"><b>' . $record->p_year . '</b></small>
+    //                           </div>';
+    //             } else {
+    //                 $html .= '<small style="font-size:15px;"><b>'.$record->p_month.'</b></small><small style="font-size:15px;"><b>' . "-" . $record->p_year . '</b></small>';
+    //             }
+
+    //             $html .= '
+    //                                             ' . $qr_item_rm . '
+    //                                     </th>
+    //                                     <th rowspan="4" class="lotno">
+    //                                         <div class="lotno-wrap">
+    //                                             <span class="lotno-text">Lot No: '. $record->lot_no .'</span>
+    //                                         </div>
+    //                                     </th>
+    //                                 </tr>
+
+    //                                 <tr>
+    //                                     <th style="text-align:left;">
+    //                                         <small>Quantity</small><br>
+    //                                         <div style="display:flex; align-items:center; margin-top:2px;">
+    //                                             <span style="font-size:20px; font-weight:bold; margin-right:8px;">' . number_format($record->qty, 2) . '</span>
+    //                                             <span style="font-size:15px; font-weight:bold; margin-right:8px;">' . $record->uom . '</span>
+    //                                             </div>
+    //                                     </th>
+    //                                     <th style="text-align:right; position:relative;">
+    //                                         <span>' . $qr_lot_no . '</span>
+    //                                         <small>Location</small><br><b style="font-size:10px;">' . $record->location . '</b><br>
+    //                                     </th>
+    //                                 </tr>
+
+    //                                 <tr>
+    //                                     <th style="text-align:left">
+    //                                         <div style="display: inline-block;">
+    //                                             <small>Date :</small><br> 
+    //                                             <b style="font-size:8px;">' . $record->receipt_date . '</b>
+    //                                         </div>
+    //                                         <div style="display: inline-block;">
+    //                                             <small>Label No :</small><br>
+    //                                             <b style="font-size:8px;">' . $record->label_no . '</b>
+    //                                         </div>
+    //                                         <div style="display: inline-block;">
+    //                                             <small>QC Passed</small><br>
+    //                                             <b style="font-size:8px;">by:' . $this->session->name . '</b></small>
+    //                                         </div>
+    //                                     </th>
+    //                                     <th style="text-align:center;">
+    //                                         <img src="' . base_url('assets/image/qrcode/' . $record->label_no . '.png') . '" width="50" style="padding: 0px 4px;"/>
+    //                                     </th>
+    //                                 </tr>
+    //                             </table>
+    //                         </div>';
+    //             $no++;
+    //         }
+    //         $html .= '</div><script>window.print()</script>';
+    //     } else {
+    //         $html .= "<br><br><br><center><h3>Data not found or data has been scanned</h3></center>";
+    //     }
+    //     die($html);
+    // }
+
+    // from create
     public function print_label_po($receipt_no)
     {
         //Config
@@ -554,7 +778,9 @@ class Purchase_order_receipts extends CI_Controller
             }
         }
 
-        $this->db->select('a.*, b.receipt_date, c.number, c.number_internal, c.name, d.location, d.area, c.color, c.uom');
+
+        $this->db->select('a.*, b.receipt_date, c.number, c.number_internal, c.name, d.location, d.area, c.color, c.uom, c.item_family_id, c.id as item_rm_id');
+        // $this->db->select('a.*, b.receipt_date, c.number, c.number_internal, c.name, d.location, d.area, c.color, c.uom');
         $this->db->from('purchase_order_labels a');
         $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
         $this->db->join('item_rm c', 'b.item_rm_id = c.id');
@@ -593,13 +819,25 @@ class Purchase_order_receipts extends CI_Controller
                 }
                 //Generate QRcode
                 $this->createQrcode($record->label_no, "assets/image/qrcode/");
+
+                // Jika item_family_id = P06, generate QR tambahan
+                if ($record->item_family_id == 'P06') {
+                    $this->createQrcode($record->item_rm_id, "assets/image/qrcode/");
+                    $qr_item_rm = '<img src="' . base_url('assets/image/qrcode/' . $record->item_rm_id . '.png') . '" width="30"/>';
+                    $this->createQrcode($record->lot_no, "assets/image/qrcode/");
+                    // Styling QR Lot No agar di pojok kanan atas area Quantity
+                    $qr_lot_no = '<div style="position:absolute; top:4px; right:4px;"><img src="' . base_url('assets/image/qrcode/' . $record->lot_no . '.png') . '" width="22" style="display:block;"/></div>';
+                } else {
+                    $qr_item_rm = "";
+                    $qr_lot_no = "";
+                }
                 $html .= '  <div style="width: 48mm; max-height:41mm; float:left; ' . $padding . '">
                                 <table id="customers" border="1" style="margin-bottom:20px;">
                                     <tr>
                                         <th colspan="3" style="font-size:7px; text-align:center;"><b>' . $config->name . '</b></th>
                                     </tr>
                                     <tr>
-                                        <td colspan="3" style="height:35px;">
+                                        <td colspan="2" style="height:35px; position:relative;">
                                             <div style="float:left;">
                                                 <small style="font-size:10px;"><b>' . $record->number_internal . '</b></small>
                                                 <br>
@@ -607,18 +845,24 @@ class Purchase_order_receipts extends CI_Controller
                                             </div>
                                             
                                             <div style="float:right;">
-                                                <small style="font-size:15px;"><b>' . $record->p_month . '</b></small><small style="font-size:15px;"><b>' . " - " . $record->p_year . '</b></small>
+                                                <small style="font-size:15px;"><b>' . $record->p_month . '</b></small>
+                                                <small style="font-size:15px;"><b>' . " - " . $record->p_year . '</b></small>
+                                                ' . $qr_item_rm . '
                                             </div>
                                         </td>
                                     </tr>
                                     <tr>
+                                        <th style="text-align:left; position:relative;">
+                                            <small>Quantity</small>
+                                            <div style="display:flex; align-items:center; margin-top:2px;">
+                                                <span style="font-size:20px; font-weight:bold; margin-right:8px;">' . number_format($record->qty, 2) . '</span>
+                                                <span style="font-size:15px; font-weight:bold; margin-right:8px;">' . $record->uom . '</span>
+                                                <span>' . $qr_lot_no . '</span>
+                                            </div>
+                                        </th>
                                         <th style="text-align:left">
-                                            <small>Quantity</small><br><b style="font-size:20px;">' . number_format($record->qty, 2) . '</b></small>
-                                            <small style="font-size:15px; float: right;"><b>' . $record->uom . '</b></small>
-                                            </th>
-                                        <th style="text-align:left">
-                                            <small>Location</small><br><b style="font-size:10px;">' . $record->location . '</b><br>
                                             <small>Lot No. </small><b style="font-size:10px;">' . $record->lot_no . '</b>
+                                            <small>Location</small><br><b style="font-size:10px;">' . $record->location . '</b><br>
                                         </th>
                                     </tr>
                                     
@@ -652,6 +896,7 @@ class Purchase_order_receipts extends CI_Controller
         die($html);
     }
 
+    // from create
     public function print_label_po_multiple($receipt_no)
     {
         //Config
@@ -723,7 +968,7 @@ class Purchase_order_receipts extends CI_Controller
             }
         }
 
-        $this->db->select('a.*, b.receipt_date, c.number, c.number_internal, c.name, d.location, d.area, c.color, c.uom');
+        $this->db->select('a.*, b.receipt_date, c.number, c.number_internal, c.name, d.location, d.area, c.color, c.uom, c.item_family_id, c.id as item_rm_id');
         $this->db->from('purchase_order_labels a');
         $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
         $this->db->join('item_rm c', 'b.item_rm_id = c.id');
@@ -756,38 +1001,56 @@ class Purchase_order_receipts extends CI_Controller
                     $no = 1;
                 }
                 if ($no == 1) {
-                    $padding = "padding:2mm 3mm 3mm 2mm;";
+                    $padding = "margin:2mm 3mm 3mm 2mm;";
                 } else {
-                    $padding = "padding:2mm 0mm 3mm 4mm;";
+                    $padding = "margin:2mm 0mm 3mm 4mm;";
                 }
                 //Generate QRcode
                 $this->createQrcode($record->label_no, "assets/image/qrcode/");
-                $html .= '  <div style="width: 48mm; max-height:41mm; float:left; ' . $padding . '">
+
+                // Jika item_family_id = P06, generate QR tambahan
+                if ($record->item_family_id == 'P06') {
+                    $this->createQrcode($record->item_rm_id, "assets/image/qrcode/");
+                    $qr_item_rm = '<img src="' . base_url('assets/image/qrcode/' . $record->item_rm_id . '.png') . '" width="30"/>';
+                    $this->createQrcode($record->lot_no, "assets/image/qrcode/");
+                    // Styling QR Lot No agar di pojok kanan atas area Quantity
+                    $qr_lot_no = '<div style="position:absolute; top:4px; right:4px;"><img src="' . base_url('assets/image/qrcode/' . $record->lot_no . '.png') . '" width="22" style="display:block;"/></div>';
+                } else {
+                    $qr_item_rm = "";
+                    $qr_lot_no = "";
+                }
+                $html .= '  <div style="width: 48mm; max-height:41mm; float:left; box-sizing: border-box; ' . $padding . '">
                                 <table id="customers" border="1" style="margin-bottom:20px;">
                                     <tr>
                                         <th colspan="3" style="font-size:7px; text-align:center;"><b>' . $config->name . '</b></th>
                                     </tr>
                                     <tr>
-                                        <td colspan="3" style="height:35px;">
+                                        <td colspan="2" style="height:35px; position:relative;">
                                             <div style="float:left;">
                                                 <small style="font-size:10px;"><b>' . $record->number_internal . '</b></small>
                                                 <br>
                                                 <b style="font-size:7px;">' . $record->name . " - " . $record->color . '</b>
                                             </div>
-                                            
                                             <div style="float:right;">
-                                                <small style="font-size:15px;"><b>' . $record->p_month . '</b></small><small style="font-size:15px;"><b>' . " - " . $record->p_year . '</b></small>
+                                                <small style="font-size:15px;"><b>' . $record->p_month . '</b></small>
+                                                <small style="font-size:15px;"><b> - ' . $record->p_year . '</b></small>
+                                                ' . $qr_item_rm . '
                                             </div>
                                         </td>
                                     </tr>
+
                                     <tr>
+                                        <th style="text-align:left; position:relative;">
+                                            <small>Quantity</small>
+                                            <div style="display:flex; align-items:center; margin-top:2px;">
+                                                <span style="font-size:20px; font-weight:bold; margin-right:8px;">' . number_format($record->qty, 2) . '</span>
+                                                <span style="font-size:15px; font-weight:bold; margin-right:8px;">' . $record->uom . '</span>
+                                                <span>' . $qr_lot_no . '</span>
+                                            </div>
+                                        </th>
                                         <th style="text-align:left">
-                                            <small>Quantity</small><br><b style="font-size:20px;">' . number_format($record->qty, 2) . '</b></small>
-                                            <small style="font-size:15px; float: right;"><b>' . $record->uom . '</b></small>
-                                            </th>
-                                        <th style="text-align:left">
-                                            <small>Location</small><br><b style="font-size:10px;">' . $record->location . '</b><br>
                                             <small>Lot No. </small><b style="font-size:10px;">' . $record->lot_no . '</b>
+                                            <small>Location</small><br><b style="font-size:10px;">' . $record->location . '</b><br>
                                         </th>
                                     </tr>
                                     
@@ -821,6 +1084,233 @@ class Purchase_order_receipts extends CI_Controller
         die($html);
     }
 
+    // from datatables new label
+    // public function print_labelv1($receipt_id)
+    // {
+    //     //Config
+    //     $this->db->select('*');
+    //     $this->db->from('config');
+    //     $config = $this->db->get()->row();
+    //     $receipt_id = base64_decode($receipt_id);
+    //     $po_receipt = $this->crud->read('purchase_order_receipts', [], ["receipt_id" => $receipt_id]);
+
+    //     $date = new DateTime($po_receipt->receipt_date);
+    //     $p_month = $date->format('m');
+    //     $p_year = $date->format('y');
+
+    //     if (!empty($po_receipt)) {
+    //         // $receipt_no = $po_receipt->receipt_no;
+
+    //         // $this->db->select('a.lot_no');
+    //         // $this->db->from('purchase_order_labels a');
+    //         // $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
+    //         // $this->db->where('b.receipt_no', $receipt_no);
+    //         // $this->db->where('a.deleted', 0);
+    //         // $this->db->limit(1);
+    //         // $rowExist = $this->db->get()->row();
+
+    //         // if ($rowExist) {
+    //         //     $autoLot = $rowExist->lot_no;
+    //         // } else {
+    //         //     $datenow = $p_month . $p_year;
+
+    //         //     $sqlGetLot = $this->db->query("SELECT max(lot_no) as kode FROM purchase_order_labels WHERE lot_no LIKE '%$datenow%'");
+    //         //     $rowLot = $sqlGetLot->row();
+    //         //     $lot_no = $rowLot->kode;
+
+    //         //     if ($lot_no === NULL) {
+    //         //         $autoLot = sprintf("%03s", 1) . $p_month . $p_year;
+    //         //     } else {
+    //         //         $urutan = (int) substr($lot_no, 0, 3);
+    //         //         $autoLot = sprintf("%03s", $urutan + 1) . $p_month . $p_year;
+    //         //     }
+    //         // }
+
+    //         $autoLot = !empty($po_receipt->lot_no) ? $po_receipt->lot_no : '0';
+    //     }
+
+    //     $qty_receipt = $po_receipt->qty_receipt;
+    //     //Cek Label
+    //     $po_receipt_label = $this->crud->reads('purchase_order_labels', [], ["receipt_id" => $receipt_id]);
+    //     if (!$po_receipt_label) {
+    //         for ($i = 0; $i < $po_receipt->qty_label; $i++) {
+    //             //Read Label ID
+    //             $sqlGetID = $this->db->query("SELECT max(label_no) as kode FROM purchase_order_labels WHERE receipt_id = '$receipt_id'");
+    //             $rowID = $sqlGetID->row();
+    //             $label = $rowID->kode;
+    //             if ($label == NULL) {
+    //                 $autoID = $receipt_id . sprintf("%04s", $label + 1);
+    //             } else {
+    //                 $urutan = (int) substr($label, -4);
+    //                 $autoID = $receipt_id . sprintf("%04s", $urutan + 1);
+    //             }
+    //             if ($qty_receipt > $po_receipt->qty_mpq) {
+    //                 $qty = $po_receipt->qty_mpq;
+    //             } else {
+    //                 $qty = $qty_receipt;
+    //             }
+
+    //             //Simpan Label
+    //             $arrLabel = [
+    //                 "receipt_id" => $po_receipt->receipt_id,
+    //                 "label_no" => $autoID,
+    //                 "qty" => $qty,
+    //                 "lot_no" => $autoLot,
+    //                 "p_month" => $p_month,
+    //                 "p_year" => $p_year
+    //             ];
+    //             $send = $this->crud->create('purchase_order_labels', $arrLabel);
+    //             $qty_receipt = ($qty_receipt - $po_receipt->qty_mpq);
+    //         }
+    //     }
+    //     $this->db->select('a.*, b.receipt_date, c.number, c.number_internal, c.name, c.item_family_id, d.location, d.area, c.color, c.uom, c.id as item_rm_id');
+    //     $this->db->from('purchase_order_labels a');
+    //     $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
+    //     $this->db->join('item_rm c', 'b.item_rm_id = c.id');
+    //     $this->db->join('warehouse_location_items d', 'd.item_rm_id = c.id', 'left');
+    //     $this->db->join('item_familys e', 'c.item_family_id = e.id');
+    //     $this->db->where('a.deleted', 0);
+    //     //$this->db->where('a.status', 0);
+    //     $this->db->where('a.receipt_id', $receipt_id);
+    //     $this->db->order_by('a.label_no', 'asc');
+    //     $records = $this->db->get()->result_object();
+
+    //     $html = '<html>
+    //                 <head>
+    //                     <title>' . $receipt_id . '</title>
+    //                     <link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="16x16">
+    //                 </head>
+    //                 <style>body {font-family: Arial, Helvetica, sans-serif; margin:5px;}#customers {border-collapse: collapse; width: 100%; font-size: 9px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}
+    //                 .lotno {
+    //                     padding: 0;
+    //                 }
+    //                 .lotno-wrap {
+    //                     display: table-cell;
+    //                     width: 100%;
+    //                     height: 100%;
+    //                     vertical-align: middle;
+    //                     text-align: center;
+    //                 }
+    //                 .lotno-text {
+    //                     writing-mode: vertical-rl;
+    //                     transform: rotate(180deg);
+    //                     font-size: 7px;
+    //                     white-space: nowrap;
+    //                 }
+    //                 </style><body>';
+    //     if ($records) {
+    //         $html .= '<div style="width: 60mm;">';
+    //         $no = 1;
+    //         $printed_labels = [];
+
+    //         foreach ($records as $record) {
+    //             if (in_array($record->label_no, $printed_labels)) {
+    //                 continue;
+    //             }
+
+    //             $printed_labels[] = $record->label_no;
+
+    //             if ($no == 2) {
+    //                 $no = 1;
+    //             }
+    //             if ($no == 1) {
+    //                 $padding = "margin:2mm 3mm 3mm 2mm;";
+    //             } else {
+    //                 $padding = "margin:2mm 0mm 3mm 4mm;";
+    //             }
+    //             //Generate QRcode
+    //             $this->createQrcode($record->label_no, "assets/image/qrcode/");
+
+    //             // Jika item_family_id = P06, generate QR tambahan
+    //             if ($record->item_family_id == 'P06') {
+    //                 $this->createQrcode($record->item_rm_id, "assets/image/qrcode/");
+    //                 $qr_item_rm = '<img src="' . base_url('assets/image/qrcode/' . $record->item_rm_id . '.png') . '" width="30"/>';
+    //                 $this->createQrcode($record->lot_no, "assets/image/qrcode/");
+    //                 // Styling QR Lot No agar di pojok kanan atas area Quantity
+    //                 $qr_lot_no = '<div style="position:absolute; top:7px; left:4px;"><img src="' . base_url('assets/image/qrcode/' . $record->lot_no . '.png') . '" width="22.5" style="display:block;"/></div>';
+    //             } else {
+    //                 $qr_item_rm = "";
+    //                 $qr_lot_no = "";
+    //             }
+                
+    //             $html .= '  <div style="width: 48mm; max-height:41mm; float:left; box-sizing: border-box; ' . $padding . '">
+    //                             <table id="customers" border="1" style="margin-bottom:20px;">
+    //                                 <tr>
+    //                                     <th colspan="3" style="font-size:7px; text-align:center;"><b>' . $config->name . '</b></th>
+    //                                 </tr>
+
+    //                                 <tr>
+    //                                     <th style="text-align:left; height: 35px;">
+    //                                             <small style="font-size:10px;"><b>' . $record->number_internal . '</b></small>
+    //                                             <br>
+    //                                             <b style="font-size:10px;">' . $record->name . " - " . $record->color . '</b>
+    //                                     </th>
+    //                                     <th style="text-align:right; height: 35px; position:relative;">
+    //                                     ';
+
+    //             if ($record->item_family_id == 'P06') {
+    //                 $html .= '<div style="position: absolute; left: 4px; top: 1px;">
+    //                             <small style="font-size:15px; display: block;"><b>'.$record->p_month.'</b><small style="font-size:15px;display: block;"><b>' . $record->p_year . '</b></small>
+    //                           </div>';
+    //             } else {
+    //                 $html .= '<small style="font-size:15px;"><b>'.$record->p_month.'</b></small><small style="font-size:15px;"><b>' . "-" . $record->p_year . '</b></small>';
+    //             }
+
+    //             $html .= '
+    //                                             ' . $qr_item_rm . '
+    //                                     </th>
+    //                                     <th rowspan="4" class="lotno">
+    //                                         <div class="lotno-wrap">
+    //                                             <span class="lotno-text">Lot No: '. $record->lot_no .'</span>
+    //                                         </div>
+    //                                     </th>
+    //                                 </tr>
+
+    //                                 <tr>
+    //                                     <th style="text-align:left;">
+    //                                         <small>Quantity</small><br>
+    //                                         <div style="display:flex; align-items:center; margin-top:2px;">
+    //                                             <span style="font-size:20px; font-weight:bold; margin-right:8px;">' . number_format($record->qty, 2) . '</span>
+    //                                             <span style="font-size:15px; font-weight:bold; margin-right:8px;">' . $record->uom . '</span>
+    //                                             </div>
+    //                                     </th>
+    //                                     <th style="text-align:right; position:relative;">
+    //                                         <span>' . $qr_lot_no . '</span>
+    //                                         <small>Location</small><br><b style="font-size:10px;">' . $record->location . '</b><br>
+    //                                     </th>
+    //                                 </tr>
+
+    //                                 <tr>
+    //                                     <th style="text-align:left">
+    //                                         <div style="display: inline-block;">
+    //                                             <small>Date :</small><br> 
+    //                                             <b style="font-size:8px;">' . $record->receipt_date . '</b>
+    //                                         </div>
+    //                                         <div style="display: inline-block;">
+    //                                             <small>Label No :</small><br>
+    //                                             <b style="font-size:8px;">' . $record->label_no . '</b>
+    //                                         </div>
+    //                                         <div style="display: inline-block;">
+    //                                             <small>QC Passed</small><br>
+    //                                             <b style="font-size:8px;">by:' . $this->session->name . '</b></small>
+    //                                         </div>
+    //                                     </th>
+    //                                     <th style="text-align:center;">
+    //                                         <img src="' . base_url('assets/image/qrcode/' . $record->label_no . '.png') . '" width="50" style="padding: 0px 4px;"/>
+    //                                     </th>
+    //                                 </tr>
+    //                             </table>
+    //                         </div>';
+    //             $no++;
+    //         }
+    //         $html .= '</div><script>window.print()</script>';
+    //     } else {
+    //         $html .= "<br><br><br><center><h3>Data not found or data has been scanned</h3></center>";
+    //     }
+    //     die($html);
+    // }
+
+    // from datatables
     public function print_label($receipt_id)
     {
         //Config
@@ -1356,7 +1846,232 @@ class Purchase_order_receipts extends CI_Controller
         echo $html;
     }
 
+    // from datatables new label
+    // public function print_label_multiplev1($receipt_id)
+    // {
+    //     //Config
+    //     $this->db->select('*');
+    //     $this->db->from('config');
+    //     $config = $this->db->get()->row();
+    //     $receipt_id = base64_decode($receipt_id);
+    //     $po_receipt = $this->crud->read('purchase_order_receipts', [], ["receipt_id" => $receipt_id]);
 
+    //     $date = new DateTime($po_receipt->receipt_date);
+    //     $p_month = $date->format('m');
+    //     $p_year = $date->format('y');
+
+    //     if (!empty($po_receipt)) {
+    //         // $receipt_no = $po_receipt->receipt_no;
+
+    //         // $this->db->select('a.lot_no');
+    //         // $this->db->from('purchase_order_labels a');
+    //         // $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
+    //         // $this->db->where('b.receipt_no', $receipt_no);
+    //         // $this->db->where('a.deleted', 0);
+    //         // $this->db->limit(1);
+    //         // $rowExist = $this->db->get()->row();
+
+    //         // if ($rowExist) {
+    //         //     $autoLot = $rowExist->lot_no;
+    //         // } else {
+    //         //     $datenow = $p_month . $p_year;
+
+    //         //     $sqlGetLot = $this->db->query("SELECT max(lot_no) as kode FROM purchase_order_labels WHERE lot_no LIKE '%$datenow%'");
+    //         //     $rowLot = $sqlGetLot->row();
+    //         //     $lot_no = $rowLot->kode;
+
+    //         //     if ($lot_no === NULL) {
+    //         //         $autoLot = sprintf("%03s", 1) . $p_month . $p_year;
+    //         //     } else {
+    //         //         $urutan = (int) substr($lot_no, 0, 3);
+    //         //         $autoLot = sprintf("%03s", $urutan + 1) . $p_month . $p_year;
+    //         //     }
+    //         // }
+
+    //         $autoLot = !empty($po_receipt->lot_no) ? $po_receipt->lot_no : '0';
+    //     }
+
+    //     $qty_receipt = $po_receipt->qty_receipt;
+    //     //Cek Label
+    //     $po_receipt_label = $this->crud->reads('purchase_order_labels', [], ["receipt_id" => $receipt_id]);
+    //     if (!$po_receipt_label) {
+    //         for ($i = 0; $i < $po_receipt->qty_label; $i++) {
+    //             //Read Label ID
+    //             $sqlGetID = $this->db->query("SELECT max(label_no) as kode FROM purchase_order_labels WHERE receipt_id = '$receipt_id'");
+    //             $rowID = $sqlGetID->row();
+    //             $label = $rowID->kode;
+    //             if ($label == NULL) {
+    //                 $autoID = $receipt_id . sprintf("%04s", $label + 1);
+    //             } else {
+    //                 $urutan = (int) substr($label, -4);
+    //                 $autoID = $receipt_id . sprintf("%04s", $urutan + 1);
+    //             }
+    //             if ($qty_receipt > $po_receipt->qty_mpq) {
+    //                 $qty = $po_receipt->qty_mpq;
+    //             } else {
+    //                 $qty = $qty_receipt;
+    //             }
+
+    //             //Simpan Label
+    //             $arrLabel = [
+    //                 "receipt_id" => $po_receipt->receipt_id,
+    //                 "label_no" => $autoID,
+    //                 "qty" => $qty,
+    //                 "lot_no" => $autoLot,
+    //                 "p_month" => $p_month,
+    //                 "p_year" => $p_year
+    //             ];
+    //             $send = $this->crud->create('purchase_order_labels', $arrLabel);
+    //             $qty_receipt = ($qty_receipt - $po_receipt->qty_mpq);
+    //         }
+    //     }
+    //     $this->db->select('a.*, b.receipt_date, c.number, c.number_internal, c.name, c.item_family_id, d.location, d.area, c.color, c.uom, c.id as item_rm_id');
+    //     $this->db->from('purchase_order_labels a');
+    //     $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
+    //     $this->db->join('item_rm c', 'b.item_rm_id = c.id');
+    //     $this->db->join('warehouse_location_items d', 'd.item_rm_id = c.id', 'left');
+    //     $this->db->join('item_familys e', 'c.item_family_id = e.id');
+    //     $this->db->where('a.deleted', 0);
+    //     //$this->db->where('a.status', 0);
+    //     $this->db->where('a.receipt_id', $receipt_id);
+    //     $this->db->order_by('a.label_no', 'asc');
+    //     $records = $this->db->get()->result_object();
+    //     $html = '<html>
+    //                 <head>
+    //                     <title>' . $receipt_id . '</title>
+    //                     <link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="16x16">
+    //                 </head>
+    //                 <style>body {font-family: Arial, Helvetica, sans-serif; margin:5px;}#customers {border-collapse: collapse; width: 100%; font-size: 9px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}
+    //                 .lotno {
+    //                     padding: 0;
+    //                 }
+    //                 .lotno-wrap {
+    //                     display: table-cell;
+    //                     width: 100%;
+    //                     height: 100%;
+    //                     vertical-align: middle;
+    //                     text-align: center;
+    //                 }
+    //                 .lotno-text {
+    //                     writing-mode: vertical-rl;
+    //                     transform: rotate(180deg);
+    //                     font-size: 7px;
+    //                     white-space: nowrap;
+    //                 }
+    //                 </style><body>';
+    //     if ($records) {
+    //         $html .= '<div style="width: 100%;">';
+    //         $no = 1;
+    //         $printed_labels = [];
+
+    //         foreach ($records as $record) {
+    //             if (in_array($record->label_no, $printed_labels)) {
+    //                 continue;
+    //             }
+
+    //             $printed_labels[] = $record->label_no;
+
+    //             if ($no == 2) {
+    //                 $no = 1;
+    //             }
+    //             if ($no == 1) {
+    //                 $padding = "margin:2mm 3mm 3mm 2mm;";
+    //             } else {
+    //                 $padding = "margin:2mm 0mm 3mm 4mm;";
+    //             }
+    //             //Generate QRcode
+    //             $this->createQrcode($record->label_no, "assets/image/qrcode/");
+
+    //             // Jika item_family_id = P06, generate QR tambahan
+    //             if ($record->item_family_id == 'P06') {
+    //                 $this->createQrcode($record->item_rm_id, "assets/image/qrcode/");
+    //                 $qr_item_rm = '<img src="' . base_url('assets/image/qrcode/' . $record->item_rm_id . '.png') . '" width="30"/>';
+    //                 $this->createQrcode($record->lot_no, "assets/image/qrcode/");
+    //                 // Styling QR Lot No agar di pojok kanan atas area Quantity
+    //                 $qr_lot_no = '<div style="position:absolute; top:7px; left:4px;"><img src="' . base_url('assets/image/qrcode/' . $record->lot_no . '.png') . '" width="22.5" style="display:block;"/></div>';
+    //             } else {
+    //                 $qr_item_rm = "";
+    //                 $qr_lot_no = "";
+    //             }
+    //             $html .= '  <div style="width: 48mm; max-height:41mm; float:left; box-sizing: border-box; ' . $padding . '">
+    //                             <table id="customers" border="1" style="margin-bottom:20px;">
+    //                                 <tr>
+    //                                     <th colspan="3" style="font-size:7px; text-align:center;"><b>' . $config->name . '<b></th>
+    //                                 </tr>
+
+    //                                 <tr>
+    //                                     <th style="text-align:left; height: 35px;">
+    //                                             <small style="font-size:10px;"><b>' . $record->number_internal . '</b></small>
+    //                                             <br>
+    //                                             <b style="font-size:10px;">' . $record->name . " - " . $record->color . '</b>
+    //                                     </th>
+    //                                     <th style="text-align:right; height: 35px; position:relative;">
+
+    //                                     ';
+
+    //             if ($record->item_family_id == 'P06') {
+    //                 $html .= '<div style="position: absolute; left: 4px; top: 1px;">
+    //                             <small style="font-size:15px; display: block;"><b>'.$record->p_month.'</b><small style="font-size:15px;display: block;"><b>' . $record->p_year . '</b></small>
+    //                           </div>';
+    //             } else {
+    //                 $html .= '<small style="font-size:15px;"><b>'.$record->p_month.'</b></small><small style="font-size:15px;"><b>' . "-" . $record->p_year . '</b></small>';
+    //             }
+
+    //             $html .= '
+    //                                             ' . $qr_item_rm . '
+    //                                     </th>
+    //                                     <th rowspan="4" class="lotno">
+    //                                         <div class="lotno-wrap">
+    //                                             <span class="lotno-text">Lot No: '. $record->lot_no .'</span>
+    //                                         </div>
+    //                                     </th>
+    //                                 </tr>
+
+    //                                 <tr>
+    //                                     <th style="text-align:left;">
+    //                                         <small>Quantity</small><br>
+    //                                         <div style="display:flex; align-items:center; margin-top:2px;">
+    //                                             <span style="font-size:20px; font-weight:bold; margin-right:8px;">' . number_format($record->qty, 2) . '</span>
+    //                                             <span style="font-size:15px; font-weight:bold; margin-right:8px;">' . $record->uom . '</span>
+    //                                             </div>
+    //                                     </th>
+    //                                     <th style="text-align:right; position:relative;">
+    //                                         <span>' . $qr_lot_no . '</span>
+    //                                         <small>Location</small><br><b style="font-size:10px;">' . $record->location . '</b><br>
+    //                                     </th>
+    //                                 </tr>
+
+    //                                 <tr>
+    //                                     <th style="text-align:left">
+    //                                         <div style="display: inline-block;">
+    //                                             <small>Date :</small><br> 
+    //                                             <b style="font-size:8px;">' . $record->receipt_date . '</b>
+    //                                         </div>
+    //                                         <div style="display: inline-block;">
+    //                                             <small>Label No :</small><br>
+    //                                             <b style="font-size:8px;">' . $record->label_no . '</b>
+    //                                         </div>
+    //                                         <div style="display: inline-block;">
+    //                                             <small>QC Passed</small><br>
+    //                                             <b style="font-size:8px;">by:' . $this->session->name . '</b></small>
+    //                                         </div>
+    //                                     </th>
+    //                                     <th style="text-align:center;">
+    //                                         <img src="' . base_url('assets/image/qrcode/' . $record->label_no . '.png') . '" width="50" style="padding: 0px 4px;"/>
+    //                                     </th>
+    //                                 </tr>
+    //                             </table>
+    //                         </div>';
+    //             $no++;
+    //         }
+    //         $html .= '</div><script>window.print()</script>';
+    //     } else {
+    //         $html .= "<br><br><br><center><h3>Data not found or data has been scanned</h3></center>";
+    //     }
+    //     die($html);
+    // }
+
+    // from datatables
     public function print_label_multiple($receipt_id)
     {
         //Config

@@ -101,9 +101,18 @@ class Delivery_notes extends CI_Controller
         echo json_encode($send);
     }
  
-    public function readDelivery_note_no($customer_id)
+    public function readDelivery_note_no()
     {
-        $send = $this->crud->query("SELECT DISTINCT delivery_note_no, delivery_order_no FROM delivery_notes WHERE customer_id = '$customer_id'");
+        $customer_id = $this->input->get("customer_id");
+        $filter_from = $this->input->get("filter_from");
+        $filter_to = $this->input->get("filter_to");
+
+        $send = $this->crud->query("SELECT DISTINCT delivery_note_no, delivery_order_no 
+            FROM delivery_notes 
+            WHERE customer_id = '$customer_id'
+            AND delivery_note_date BETWEEN '$filter_from' AND '$filter_to'
+        ");
+
         echo json_encode($send);
     }
 
@@ -119,9 +128,17 @@ class Delivery_notes extends CI_Controller
         echo json_encode($send);
     }
 
-    public function readCustomerOrder($customer_id)
+    public function readCustomerOrder()
     {
-        $send = $this->crud->query("SELECT DISTINCT customer_order_no FROM delivery_notes WHERE customer_id = '$customer_id'");
+        $customer_id = $this->input->get('customer_id');
+        $filter_from = $this->input->get('filter_from');
+        $filter_to = $this->input->get('filter_to');
+
+        $send = $this->crud->query("SELECT DISTINCT customer_order_no 
+            FROM delivery_notes 
+            WHERE customer_id = '$customer_id'
+            AND delivery_note_date BETWEEN '$filter_from' AND '$filter_to'
+        ");
         echo json_encode($send);
     }
 

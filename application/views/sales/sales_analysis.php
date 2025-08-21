@@ -14,7 +14,7 @@
     #p {
       display: flex;
       flex-direction: column;
-      height: 83vh;
+      height: 84vh;
       overflow: hidden !important;
     }
     #p #printout {
@@ -134,11 +134,11 @@
             "&filter_division=" + window.btoa(filter_division) +
             "&filter_product_family=" + window.btoa(filter_product_family);
 
-        if (filter_period_year == "" && filter_period_month_from == "" && filter_period_month_to == "") {
+        if (filter_period_year == "" || filter_period_month_from == "" || filter_period_month_to == "") {
             toastr.warning("Please select Periode, Customer, and Product No.!");
         } else {
             $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-            $("#printout").attr('src', '<?= base_url('planning/forecast_analysis/print') ?>' + url);
+            $("#printout").attr('src', '<?= base_url('sales/sales_analysis/print') ?>' + url);
         }
     }
 
@@ -162,7 +162,7 @@
         if (filter_period_year == "" && filter_period_month_from == "" && filter_period_month_to == "") {
             toastr.warning("Please select Year, Periode, Customer, or Product No.!");
         } else {
-            window.location.assign('<?= base_url('planning/forecast_analysis/print/excel') ?>' + url);
+            window.location.assign('<?= base_url('sales/sales_analysis/print/excel') ?>' + url);
         }
     }
 
@@ -188,7 +188,7 @@
     });
 
     // $('#filter_period_month').combobox({
-    //     url: '<?= base_url('planning/summary_forecasts/readPeriod/month'); ?>',
+    //     url: '<?= base_url('sales/summary_forecasts/readPeriod/month'); ?>',
     //     valueField: 'id',
     //     textField: 'name',
     //     prompt: 'Choose Months',
@@ -226,20 +226,6 @@
         }],
     });
 
-    $('#filter_division').combobox({
-        url: '<?= base_url('master/divisions/reads'); ?>',
-        valueField: 'number',
-        textField: 'name',
-        panelHeight: 'panelHeight',
-        prompt: 'Choose Plant',
-        icons: [{
-            iconCls: 'icon-clear',
-            handler: function(e) {
-                $(e.data.target).combobox('clear').combobox('textbox').focus();
-            }
-        }],
-    });
-
     $('#filter_item_fg').combogrid({
         url: '<?= base_url("master/item_fg/reads") ?>',
         panelWidth: 400,
@@ -265,6 +251,20 @@
                 width: 200
             }]
         ],
+    });
+
+    $('#filter_division').combobox({
+        url: '<?= base_url('master/divisions/reads'); ?>',
+        valueField: 'number',
+        textField: 'name',
+        panelHeight: 'panelHeight',
+        prompt: 'Choose Plant',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
     });
 
     $('#filter_customer_name').combogrid({
@@ -313,11 +313,4 @@
             {field: 'name', title: 'Product Family', width: 200}
         ]]
     });
-
-
-    // $(function() {
-    //     var filter_period_year = $("#filter_period_year").combobox('getValue');
-    //     var filter_period_month = $("#filter_period_month").combobox('getValue');
-
-    // });
 </script>

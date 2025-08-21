@@ -339,6 +339,7 @@ class Forecast_analysis extends CI_Controller
         $filter_month_to = base64_decode($this->input->get("filter_period_month_to"));
         $filter_customer_name = $this->input->get("filter_customer_name");
         $filter_item_fg = $this->input->get("filter_item_fg");
+        $filter_division = base64_decode($this->input->get("filter_division"));
         $filter_product_family = base64_decode($this->input->get("filter_product_family"));
 
         $is_same_month = ($filter_month_from == $filter_month_to);
@@ -412,6 +413,9 @@ class Forecast_analysis extends CI_Controller
         }
         if ($filter_product_family != "") {
             $this->db->where('b.item_family_number', $filter_product_family);
+        }
+        if ($filter_division != "") {
+            $this->db->where('a.plant', $filter_division);
         }
         $this->db->group_by('a.customer_id');
         $this->db->group_by('a.item_fg_id');

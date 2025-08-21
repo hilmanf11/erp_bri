@@ -1,3 +1,40 @@
+<style>
+.datagrid-body td[field="qty_receipt"] .datagrid-cell {
+    background-color: #d7ecff !important;
+    margin: 0 !important;
+}
+
+.datagrid-body td[field="qty_receipt"] .textbox,
+.datagrid-body td[field="qty_receipt"] .numberbox {
+    width: 100% !important;
+    box-sizing: border-box;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.datagrid-body td[field="qty_receipt"] .textbox-text {
+    background-color: #d7ecff !important;
+    width: 100% !important;
+    box-sizing: border-box;
+    padding: 3px !important;
+    margin: 0 !important;
+}
+
+.datagrid-body td[field="qty_receipt"] .textbox-text.validatebox-invalid {
+    background-color: #fff3f3 !important;
+}
+
+.datagrid-body td[field="qty_receipt"] .textbox-addon,
+.datagrid-body td[field="qty_receipt"] .textbox-addon-right {
+    display: none !important;
+}
+
+.datagrid-body td[field="qty_receipt"] .textbox,
+.datagrid-body td[field="qty_receipt"] .numberbox {
+    border-right: 2px solid #6891c8 !important;
+}
+</style>
+
 <table id="dg" class="easyui-treegrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
         <tr>
@@ -11,11 +48,12 @@
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Part No External</th>
             <th rowspan="2" data-options="field:'item_number_internal',width:150,halign:'center'">Part No Internal</th>
             <th rowspan="2" data-options="field:'item_name',width:200,halign:'center'">Part Name</th>
-            <th rowspan="2" data-options="field:'qty_receipt',width:80,halign:'center',align:'right',formatter:numberformat">Qty</th>
+            <th rowspan="2" data-options="field:'qty_receipt_dt',width:80,halign:'center',align:'right',formatter:numberformat">Qty</th>
             <th rowspan="2" data-options="field:'uom',width:80,halign:'center',align:'center'">UoM</th>
             <th rowspan="2" data-options="field:'currency',width:80,halign:'center',align:'center'">Currency</th>
             <th rowspan="2" data-options="field:'mpq',width:80,halign:'center',align:'right'">MPQ</th>
             <th rowspan="2" data-options="field:'qty_label',width:80,halign:'center',align:'right'">Qty <br> Label</th>
+            <th rowspan="2" data-options="field:'por_lot_no',width:200,halign:'center',align:'right'">Lot No</th>
             <th rowspan="2" data-options="field:'transaction_type',width:80,halign:'center',align:'right'">Trans Type</th>
             <th rowspan="2" data-options="field:'state',width:80,align:'center',formatter:BtnPrintLabel">Label</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -224,6 +262,7 @@
                                     var isDuplicate = false;
                                     var allRows = dg.datagrid('getRows');
 
+                                    
                                     for (var i = 0; i < allRows.length; i++) {
                                         if (i !== rowIndex && allRows[i].item_number === rows.item_number) {
                                             isDuplicate = true;
@@ -233,15 +272,42 @@
 
                                     // Mapping editor fields
                                     var editors = {
-                                        item_rm_id: dg.datagrid('getEditor', { index: rowIndex, field: 'item_rm_id' }),
-                                        item_number: dg.datagrid('getEditor', { index: rowIndex, field: 'item_number' }),
-                                        item_name: dg.datagrid('getEditor', { index: rowIndex, field: 'item_name' }),
-                                        uom: dg.datagrid('getEditor', { index: rowIndex, field: 'uom' }),
-                                        qty_po: dg.datagrid('getEditor', { index: rowIndex, field: 'qty_po' }),
-                                        qty_os: dg.datagrid('getEditor', { index: rowIndex, field: 'qty_os' }),
-                                        qty_receipt: dg.datagrid('getEditor', { index: rowIndex, field: 'qty_receipt' }),
-                                        mpq: dg.datagrid('getEditor', { index: rowIndex, field: 'mpq' }),
-                                        qty_label: dg.datagrid('getEditor', { index: rowIndex, field: 'qty_label' })
+                                        item_rm_id: dg.datagrid('getEditor', { 
+                                            index: rowIndex, 
+                                            field: 'item_rm_id' 
+                                        }),
+                                        item_number: dg.datagrid('getEditor', { 
+                                            index: rowIndex, 
+                                            field: 'item_number' 
+                                        }),
+                                        item_name: dg.datagrid('getEditor', { 
+                                            index: rowIndex, 
+                                            field: 'item_name' 
+                                        }),
+                                        uom: dg.datagrid('getEditor', { 
+                                            index: rowIndex, 
+                                            field: 'uom' 
+                                        }),
+                                        qty_po: dg.datagrid('getEditor', { 
+                                            index: rowIndex, 
+                                            field: 'qty_po' 
+                                        }),
+                                        qty_os: dg.datagrid('getEditor', { 
+                                            index: rowIndex, 
+                                            field: 'qty_os' 
+                                        }),
+                                        qty_receipt: dg.datagrid('getEditor', { 
+                                            index: rowIndex, 
+                                            field: 'qty_receipt' 
+                                        }),
+                                        mpq: dg.datagrid('getEditor', { 
+                                            index: rowIndex, 
+                                            field: 'mpq' 
+                                        }),
+                                        qty_label: dg.datagrid('getEditor', { 
+                                            index: rowIndex, 
+                                            field: 'qty_label' 
+                                        })
                                     };
 
                                     // Set values from selected row
@@ -251,23 +317,12 @@
                                     $(editors.uom.target).textbox('setValue', rows.uom);
                                     $(editors.qty_po.target).numberbox('setValue', rows.qty_po);
                                     $(editors.qty_os.target).numberbox('setValue', rows.qty_os);
-                                    // $(editors.qty_receipt.target).numberbox('setValue', rows.qty_receipt);
                                     $(editors.mpq.target).numberbox('setValue', rows.mpq);
-                                    // $(editors.qty_label.target).numberbox('setValue', rows.qty_label);
 
-                                    // Set qty_receipt dan qty_label sesuai kondisi duplicate
-                                    // if (isDuplicate) {
-                                    //     $(editors.qty_receipt.target).numberbox('initValue', 0.00);
-                                    //     $(editors.qty_label.target).numberbox('initValue', 0);
-                                    //     toastr.warning("Item sudah pernah dipilih. Qty Receipt diset 0.00", "Peringatan");
-                                    //     return;
-                                    // } else {
-                                    //     $(editors.qty_receipt.target).numberbox('setValue', rows.qty_receipt);
-                                    //     var f_mpq = parseInt(rows.mpq) || 0;
-                                    //     var f_receipt = parseInt(rows.qty_receipt) || 0;
-                                    //     var label = f_mpq > 0 ? Math.ceil(f_receipt / f_mpq) : 0;
-                                    //     $(editors.qty_label.target).numberbox('setValue', label);
-                                    // }
+                                    allRows[rowIndex].original_qty_os = parseFloat(rows.qty_os) || parseFloat(rows.qty_po) || 0;
+                                    
+                                    // $(editors.qty_receipt.target).numberbox('setValue', rows.qty_receipt);
+                                    // $(editors.qty_label.target).numberbox('setValue', rows.qty_label);
 
                                     if (isDuplicate) {
                                         // Hitung total qty_receipt dari item yang sama (selain current row)
@@ -278,18 +333,19 @@
                                             }
                                         }
 
-                                        // Hitung sisa dari qty_po atau qty_os
-                                        var sisa = (parseFloat(rows.qty_os) || parseFloat(rows.qty_po) || 0) - totalReceipt;
-                                        if (sisa < 0) sisa = 0;
+                                        var originalOS = parseFloat(rows.qty_os) || parseFloat(rows.qty_po) || 0;
+                                        var sisa_os = originalOS - totalReceipt;
+                                        if (sisa_os < 0) sisa_os = 0;
 
-                                        // Set ke qty_receipt dan qty_label
-                                        $(editors.qty_receipt.target).numberbox('setValue', sisa);
+                                        $(editors.qty_os.target).numberbox('setValue', sisa_os);
+                                        $(editors.qty_receipt.target).numberbox('setValue', sisa_os);
 
                                         var f_mpq = parseInt(rows.mpq) || 0;
-                                        var label = f_mpq > 0 ? Math.ceil(sisa / f_mpq) : 0;
+                                        var label = f_mpq > 0 ? Math.ceil(sisa_os / f_mpq) : 0;
                                         $(editors.qty_label.target).numberbox('setValue', label);
 
-                                        toastr.info("Duplicate Item, Qty Receipt set remaining : " + sisa, "Info");
+                                        toastr.info("Duplicate Item, Qty Receipt set remaining : " + sisa_os, "Info");
+                             
                                     } else {
                                         // Bukan duplikat, ambil qty_receipt asli dari hasil pencarian
                                         $(editors.qty_receipt.target).numberbox('setValue', rows.qty_receipt);
@@ -351,6 +407,7 @@
                         width: 80,
                         halign: 'center',
                         title: "Receipt",
+                        styler: cellStyler,
                         editor: {
                             type: 'numberbox',
                             options: { 
@@ -396,10 +453,17 @@
                 ]
             ],
             onClickRow: function (rowIndex) {
-                if (lastIndex != rowIndex) {
-                    $(this).datagrid('endEdit', lastIndex);
-                    $(this).datagrid('beginEdit', rowIndex);
+                var dg = $(this);
+                endAllEdit(dg);
+                var rowCount = dg.datagrid('getRows').length;
+
+                for (var i = 0; i < rowCount; i++) {
+                    if (dg.datagrid('getEditors', i).length) {
+                        dg.datagrid('endEdit', i);
+                    }
                 }
+
+                dg.datagrid('beginEdit', rowIndex);
                 lastIndex = rowIndex;
             },
             onBeginEdit: function (rowIndex, row) {
@@ -410,34 +474,6 @@
                 var qty_receipt = $(editors[6].target); // Receipt
                 var mpq = $(editors[7].target); // MPQ
                 var qty_label = $(editors[8].target); // Label
-
-                // qty_receipt.numberbox({
-                //     onChange: function () {
-                //         var f_qty_po = parseInt(qty_po.numberbox('getValue')) || 0;
-                //         var f_qty_os = parseInt(qty_os.numberbox('getValue')) || 0;
-                //         var f_qty_receipt = parseInt(qty_receipt.numberbox('getValue')) || 0;
-                //         var f_mpq = parseInt(mpq.numberbox('getValue')) || 0;
-
-                //         if (f_qty_os === 0) {
-                //             if (f_qty_po >= f_qty_receipt) {
-                //                 var cost = Math.ceil(f_qty_receipt / f_mpq);
-                //                 qty_label.numberbox('setValue', cost);
-                //             } else {
-                //                 qty_receipt.numberbox('setValue', 0);
-                //                 toastr.warning("Qty Receipt > Qty PO", "Information");
-                //             }
-                //         } else {
-                //             if (f_qty_os >= f_qty_receipt) {
-                //                 var cost = Math.ceil(f_qty_receipt / f_mpq);
-                //                 qty_label.numberbox('setValue', cost);
-                //             } else {
-                //                 qty_receipt.numberbox('setValue', 0);
-                //                 toastr.warning("Qty Receipt > Qty OS PO", "Information");
-                //             }
-                //         }
-                //     }
-                // });
-
 
                 qty_receipt.numberbox({
                     onChange: function () {
@@ -484,10 +520,7 @@
                                 total_receipt += parseInt(rows[i].qty_receipt) || 0;
                             }
                         }
-
-                        var max_limit = f_qty_os === 0 ? f_qty_po : f_qty_os;
-                        // console.log(item_number + " Total Receipt: " + total_receipt + " Max Limit: " + max_limit);
-
+                        
                         if (f_qty_os === 0) {
                             if (f_qty_receipt > f_qty_po) {
                                 toastr.warning("Qty Receipt > Qty PO", "Information");
@@ -504,8 +537,19 @@
                             }
                         }
 
-                        if (total_receipt > max_limit) {
-                            toastr.warning("Total Qty Receipt for item " + item_number + " exceeds the limit of " + max_limit, "Warning");
+                        var originalLimit = 0;
+                        for (var i = 0; i < rows.length; i++) {
+                            if (rows[i].item_number === item_number && rows[i].original_qty_os) {
+                                originalLimit = rows[i].original_qty_os;
+                                break;
+                            }
+                        }
+                        if (originalLimit === 0) {
+                            originalLimit = f_qty_po; // fallback
+                        }
+
+                        if (total_receipt > originalLimit) {
+                            toastr.warning("Total Qty Receipt for item " + item_number + " exceeds the limit of " + originalLimit, "Warning");
                             qty_receipt.numberbox('setValue', 0);
                             qty_label.numberbox('setValue', 0);
                             return;
@@ -517,28 +561,71 @@
                     }
                 });
 
+                // var lot_no = $(editors[9].target);
+                // lot_no.textbox({
+                //     onChange: function () {
+                //         var dg = $('#dg2');
+                //         var rows = dg.datagrid('getRows');
+                //         var currentRow = dg.datagrid('getSelected');
+                //         var currentIndex = dg.datagrid('getRowIndex', currentRow);
+                //         var editors = dg.datagrid('getEditors', currentIndex);
+
+                //         var editor_item_number = dg.datagrid('getEditor', { index: currentIndex, field: 'item_number' });
+                //         var item_number = $(editor_item_number.target).textbox('getValue');
+                //         var lot_value = lot_no.textbox('getValue').trim();
+
+                //         if (!item_number || !lot_value) return;
+
+                //         for (var i = 0; i < rows.length; i++) {
+                //             if (i !== currentIndex && rows[i].item_number === item_number && rows[i].lot_no === lot_value) {
+                //                 toastr.warning("Lot No must be unique for the same Part No External", "Information");
+                //                 lot_no.textbox('setValue', '');
+                //                 return;
+                //             }
+                //         }
+                //     }
+                // });
+
+                var thisIndex = rowIndex;
                 var lot_no = $(editors[9].target);
 
                 lot_no.textbox({
-                    onChange: function () {
+                    onChange: function (newVal, oldVal) {
                         var dg = $('#dg2');
                         var rows = dg.datagrid('getRows');
-                        var currentRow = dg.datagrid('getSelected');
-                        var currentIndex = dg.datagrid('getRowIndex', currentRow);
-                        var editors = dg.datagrid('getEditors', currentIndex);
+                        var lot_value = (newVal || '').toString().trim();
 
-                        var editor_item_number = dg.datagrid('getEditor', { index: currentIndex, field: 'item_number' });
-                        var item_number = $(editor_item_number.target).textbox('getValue');
-                        var lot_value = lot_no.textbox('getValue').trim();
+                        var ed_item = dg.datagrid('getEditor', { index: thisIndex, field: 'item_number' });
+                        var item_number = ed_item
+                        ? $(ed_item.target).textbox('getValue').toString().trim()
+                        : (rows[thisIndex] && rows[thisIndex].item_number ? rows[thisIndex].item_number.toString().trim() : '');
 
-                        if (!item_number || !lot_value) return;
+                        if (!item_number || !lot_value) return; // kalau kosong skip validasi
 
                         for (var i = 0; i < rows.length; i++) {
-                            if (i !== currentIndex && rows[i].item_number === item_number && rows[i].lot_no === lot_value) {
-                                toastr.warning("Lot No must be unique for the same Part No External", "Information");
-                                lot_no.textbox('setValue', '');
-                                return;
-                            }
+                        if (i === thisIndex) continue;
+
+                        // ambil item_number baris i (editor jika sedang diedit, else rows)
+                        var ed_item_i = dg.datagrid('getEditor', { index: i, field: 'item_number' });
+                        var compare_item = ed_item_i
+                            ? $(ed_item_i.target).textbox('getValue').toString().trim()
+                            : (rows[i].item_number ? rows[i].item_number.toString().trim() : '');
+
+                        if (compare_item !== item_number) continue;
+
+                        // ambil lot_no baris i (editor jika sedang diedit, else rows)
+                        var ed_lot_i = dg.datagrid('getEditor', { index: i, field: 'lot_no' });
+                        var compare_lot = ed_lot_i
+                            ? $(ed_lot_i.target).textbox('getValue').toString().trim()
+                            : (rows[i].lot_no ? rows[i].lot_no.toString().trim() : '');
+
+                        if (!compare_lot) continue; // kosong dianggap tidak ada
+
+                        if (compare_lot === lot_value) {
+                            toastr.warning("Lot No must be unique for the same Part No External", "Information");
+                            lot_no.textbox('setValue', ''); // clear input
+                            return;
+                        }
                         }
                     }
                 });
@@ -549,6 +636,15 @@
     }
 
     var editIndex = undefined;
+
+    function endAllEdit(dg) {
+        var rowCount = dg.datagrid('getRows').length;
+        for (var i = 0; i < rowCount; i++) {
+            if (dg.datagrid('getEditors', i).length) {
+                dg.datagrid('endEdit', i);
+            }
+        }
+    }
 
     function endEditing() {
         if (editIndex == undefined) {
@@ -578,12 +674,30 @@
         }
     }
 
+    // function removeit() {
+    //     if (editIndex == undefined) {
+    //         return true;
+    //     }
+    //     $('#dg2').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
+    //     editIndex = undefined;
+    // }
+
     function removeit() {
-        if (editIndex == undefined) {
-            return true;
+        if (endEditing()) {
+            var row = $('#dg2').datagrid('getSelected');
+            if (row) {
+                var rowIndex = $('#dg2').datagrid('getRowIndex', row);
+                $('#dg2').datagrid('deleteRow', rowIndex);
+            }
+            editIndex = undefined;
+        } else {
+            var dg = $('#dg2');
+            var row = dg.datagrid('getSelected');
+            var rowIndex = dg.datagrid('getRowIndex', row);
+
+            $('#dg2').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
+            editIndex = undefined;
         }
-        $('#dg2').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
-        editIndex = undefined;
     }
 
     function receipt_no(date = "") {
@@ -909,79 +1023,109 @@
                         toastr.warning("Please input Doc No and Doc Date!", "Information");
                     } else {
                         let isProcessed;
-                        $('#dg2').datagrid('acceptChanges');
-                        var rows = $('#dg2').datagrid('getRows');
+                        // $('#dg2').datagrid('acceptChanges');
+                        // var rows = $('#dg2').datagrid('getRows');
+
+                        var dg = $('#dg2');
+                        endAllEdit(dg);
+                        var rows = dg.datagrid('getRows');
+
+                        for (var i = 0; i < rows.length; i++) {
+
+                            if (!dg.datagrid('validateRow', i)) {
+                                toastr.warning("Please complete all required fields", "Information");
+                                return;
+                            }
+
+                            var row = rows[i];
+
+                            if ((parseInt(row.qty_receipt) === 0 && parseInt(row.qty_po) !== 0) ||
+                                (parseInt(row.qty_receipt) === 0 && parseInt(row.qty_os) !== 0)) {
+                                toastr.warning("Qty Receipt cannot be 0", "Information");
+                                return;
+                            }
+
+                            if (!row.lot_no || row.lot_no.trim() === "") {
+                                toastr.warning("Lot No is required", "Information");
+                                return;
+                            }
+
+                            if (parseInt(row.qty_os) < parseInt(row.qty_receipt)) {
+                                toastr.warning("Qty Receipt > Qty OS PO", "Information");
+                                return;
+                            }
+
+                            if (parseInt(row.qty_po) < parseInt(row.qty_receipt)) {
+                                toastr.warning("Qty Receipt > Qty PO", "Information");
+                                return;
+                            }
+                        }
+
                         if (rows.length > 0) {
                             $.messager.confirm('Warning', 'Are you sure you want to save this data?', function(r) {
                                 if (r) {
                                     for (var i = 0; i < rows.length; i++) {
-                                        var row = rows[i];
-                                        if (parseInt(row.qty_os) < parseInt(row.qty_receipt)) {
-                                            toastr.warning("Qty Receipt > Qty OS PO", "Information");
-                                        } else if (parseInt(row.qty_po) < parseInt(row.qty_receipt)) {
-                                            toastr.warning("Qty Receipt > Qty PO", "Information");
-                                        } else if (parseInt((row.qty_receipt) === 0 && parseInt(row.qty_po) !== 0) || (parseInt(row.qty_receipt) === 0 && parseInt(row.qty_os) !== 0)) {
-                                            toastr.warning("Qty Receipt cannot be 0", "Information");
-                                        } else {
-                                            isProcessed = 1;
-                                            $.ajax({
-                                                type: "post",
-                                                url: '<?= base_url('purchase/purchase_order_receipts/create') ?>',
-                                                data: 'item_rm_id=' + row.item_rm_id +
-                                                    '&supplier_id=' + supplier_id +
-                                                    '&receipt_date=' + receipt_date +
-                                                    '&receipt_no=' + receipt_no +
-                                                    '&po_no=' + po_no +
-                                                    '&bc_document=' + bc_document +
-                                                    '&bc_date=' + bc_date +
-                                                    '&qty_po=' + row.qty_po +
-                                                    '&qty_os=' + row.qty_os +
-                                                    '&qty_receipt=' + row.qty_receipt +
-                                                    '&qty_mpq=' + row.mpq +
-                                                    '&qty_label=' + row.qty_label +
-                                                    '&lot_no=' + row.lot_no,
-                                                dataType: "json",
-                                                success: function(result) {
-                                                    Swal.fire({
-                                                        title: result.message,
-                                                        icon: result.theme,
-                                                        confirmButtonText: 'Ok',
-                                                        allowOutsideClick: false,
-                                                    }).then((result) => {
-                                                        if (result.isConfirmed) {
-                                                            Swal.fire({
-                                                                title: 'Select print barcode mode!',
-                                                                icon: 'question',
-                                                                showCancelButton: true,
-                                                                showDenyButton: true,
-                                                                confirmButtonText: 'Single',
-                                                                denyButtonText: 'Multiple',
-                                                                cancelButtonText: 'Cancel'
-                                                            }).then((printResult) => {
-                                                                if (printResult.isConfirmed || printResult.isDenied) {
-                                                                    var receipt_no = $("#receipt_no").textbox('getValue');
-                                                                    var qty_receipt = row ? row.qty_receipt : 0;
-                                                                    var qty_label = row ? row.qty_label : 0;
-                                                                    
-                                                                    var po = {
-                                                                        receipt_no: receipt_no,
-                                                                        qty_receipt: qty_receipt,
-                                                                        qty_label: qty_label
-                                                                    };
-                                                                    // CEK
-                                                                    if (printResult.isConfirmed) {
-                                                                        print_po(po);
-                                                                    } else if (printResult.isDenied) {
-                                                                        print_po_multiple(po);
-                                                                    }
-                                                                    window.location.reload();
+                                        let row = rows[i];
+
+                                        isProcessed = 1;
+                                        $.ajax({
+                                            type: "post",
+                                            url: '<?= base_url('purchase/purchase_order_receipts/create') ?>',
+                                            data: 'item_rm_id=' + row.item_rm_id +
+                                                '&supplier_id=' + supplier_id +
+                                                '&receipt_date=' + receipt_date +
+                                                '&receipt_no=' + receipt_no +
+                                                '&po_no=' + po_no +
+                                                '&bc_document=' + bc_document +
+                                                '&bc_date=' + bc_date +
+                                                '&qty_po=' + row.qty_po +
+                                                '&qty_os=' + row.qty_os +
+                                                '&qty_receipt=' + row.qty_receipt +
+                                                '&qty_mpq=' + row.mpq +
+                                                '&qty_label=' + row.qty_label +
+                                                '&lot_no=' + row.lot_no,
+                                            dataType: "json",
+                                            async: false,
+                                            success: function(result) {
+                                                Swal.fire({
+                                                    title: result.message,
+                                                    icon: result.theme,
+                                                    confirmButtonText: 'Ok',
+                                                    allowOutsideClick: false,
+                                                }).then((result) => {
+                                                    if (result.isConfirmed) {
+                                                        Swal.fire({
+                                                            title: 'Select print barcode mode!',
+                                                            icon: 'question',
+                                                            showCancelButton: true,
+                                                            showDenyButton: true,
+                                                            confirmButtonText: 'Single',
+                                                            denyButtonText: 'Multiple',
+                                                            cancelButtonText: 'Cancel'
+                                                        }).then((printResult) => {
+                                                            if (printResult.isConfirmed || printResult.isDenied) {
+                                                                var receipt_no = $("#receipt_no").textbox('getValue');
+                                                                var qty_receipt = row ? row.qty_receipt : 0;
+                                                                var qty_label = row ? row.qty_label : 0;
+                                                                
+                                                                var po = {
+                                                                    receipt_no: receipt_no,
+                                                                    qty_receipt: qty_receipt,
+                                                                    qty_label: qty_label
+                                                                };
+                                                                // CEK
+                                                                if (printResult.isConfirmed) {
+                                                                    print_po(po);
+                                                                } else if (printResult.isDenied) {
+                                                                    print_po_multiple(po);
                                                                 }
-                                                            });
-                                                        }
-                                                    });
-                                                }
-                                            });
-                                        }
+                                                                window.location.reload();
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        });
                                     }
                                     if (isProcessed === 1) {
                                         $('#dg').treegrid('reload');
@@ -1111,6 +1255,7 @@
                     panelWidth: 500,
                     idField: 'po_no',
                     textField: 'po_no',
+                    valueField: 'po_no',
                     mode: 'remote',
                     fitColumns: true,
                     prompt: "Choose Purchase Order",
@@ -1125,7 +1270,7 @@
                             width: 150
                         }]
                     ],
-                    onChange: function(row) {
+                    onSelect: function(row) {
                         var selectedRows = $("#po_no").combobox('getValues');
 
                         addTable(selectedRows);
@@ -1238,5 +1383,9 @@
         console.log(po);
         var url = '<?= base_url('purchase/purchase_order_receipts/print_label_po_multiple/') ?>' + window.btoa(po.receipt_no);
         window.open(url, '_blank');
+    }
+
+    function cellStyler(value, row, index) {
+        return 'background: #d7ecff';
     }
 </script>

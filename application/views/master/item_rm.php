@@ -22,6 +22,7 @@
             <th rowspan="2" data-options="field:'name',width:150,halign:'center',sortable:true">Part Name</th>
             <th rowspan="2" data-options="field:'uom',width:100,halign:'center',sortable:true">Uom</th>
             <th rowspan="2" data-options="field:'type',width:150,halign:'center',sortable:true">Type</th>
+            <th rowspan="2" data-options="field:'division',width:150,halign:'center',sortable:true">Plant</th>
             <th rowspan="2" data-options="field:'item_category_name',width:150,halign:'center',sortable:true">Category</th>
             <th rowspan="2" data-options="field:'item_family_name',width:150,halign:'center',sortable:true">Product Family</th>
             <th rowspan="2" data-options="field:'item_sub_family_name',width:150,halign:'center',sortable:true">Sub Product Family</th>
@@ -96,12 +97,16 @@
                     <input style="width:60%;" name="item_sub_family_id" id="item_sub_family_id" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Account No</span>
-                    <input style="width:60%;" name="account_number" id="account_number" class="easyui-textbox">
+                    <span style="width:35%; display:inline-block;">Plant</span>
+                    <input style="width:60%;" name="division" id="division_id" required="" class="easyui-combobox">
                 </div>
             </div>
 
             <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Account No</span>
+                    <input style="width:60%;" name="account_number" id="account_number" class="easyui-textbox">
+                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Account Name</span>
                     <input style="width:60%;" name="account_name" id="account_name" class="easyui-textbox">
@@ -489,6 +494,14 @@
             return 'NO';
         }
     };
+
+    $('#division_id').combobox({
+        url: '<?= base_url('master/divisions/reads'); ?>',
+        valueField: 'number',
+        textField: 'name',
+        panelHeight: 'panelHeight',
+        prompt: 'Choose Plant',
+    });
 
     $('#item_category_id').combobox({
         url: '<?= base_url('master/item_categories/readsnotfg'); ?>',
