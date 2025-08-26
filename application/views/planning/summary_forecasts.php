@@ -134,9 +134,9 @@
                 $(e.data.target).combobox('clear').combobox('textbox').focus();
             }
         }],
-        onChange: function(newValue, oldValue) {
-            updateItemFG();
-        }
+        // onChange: function(newValue, oldValue) {
+        //     updateItemFG();
+        // }
     });
 
     $('#filter_period_month').combobox({
@@ -150,26 +150,62 @@
                 $(e.data.target).combobox('clear').combobox('textbox').focus();
             }
         }],
-        onChange: function(newValue, oldValue) {
-            updateItemFG();
-        }
+        // onChange: function(newValue, oldValue) {
+        //     updateItemFG();
+        // }
     });
 
-    function updateItemFG() {
-        var year = $('#filter_period_year').combobox('getValue');
-        var month = $('#filter_period_month').combobox('getValue');
+    // function updateItemFG() {
+    //     var year = $('#filter_period_year').combobox('getValue');
+    //     var month = $('#filter_period_month').combobox('getValue');
 
-        if (year && month) {
-            var newUrl = '<?= base_url("planning/summary_forecasts/reads") ?>' + '/' + window.btoa(month) + '/' + window.btoa(year);
-            $('#filter_item_fg').combogrid('grid').datagrid('load', newUrl);
-            $('#filter_item_fg').combogrid('options').url = newUrl;
-        }
-    }
+    //     if (year && month) {
+    //         var newUrl = '<?= base_url("planning/summary_forecasts/reads") ?>' + '/' + window.btoa(month) + '/' + window.btoa(year);
+    //         $('#filter_item_fg').combogrid('grid').datagrid('load', newUrl);
+    //         $('#filter_item_fg').combogrid('options').url = newUrl;
+    //     }
+    // }
+
+    // $('#filter_item_fg').combogrid({
+    //     panelWidth: 400,
+    //     idField: 'id',
+    //     textField: 'number',
+    //     mode: 'remote',
+    //     fitColumns: true,
+    //     prompt: "Select Product No.",
+    //     icons: [{
+    //         iconCls: 'icon-clear',
+    //         handler: function(e) {
+    //             $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+    //         }
+    //     }],
+    //     columns: [
+    //         [{ 
+    //             field: 'number', 
+    //             title: 'Product No', 
+    //             width: 200 
+    //         }, { 
+    //             field: 'name', 
+    //             title: 'Product Name', 
+    //             width: 200 
+    //         }]
+    //     ],
+    //     onChange: function(newValue, oldValue) {
+    //         var url = $('#filter_item_fg').combogrid('options').url;
+    //         if (url) {
+    //             $('#filter_item_fg').combogrid('grid').datagrid('load', {
+    //                 q: newValue
+    //             });
+    //         }
+    //     }
+    // });
 
     $('#filter_item_fg').combogrid({
+        url: '<?= base_url("master/item_fg/reads") ?>',
         panelWidth: 400,
         idField: 'id',
         textField: 'number',
+        valueField: 'number',
         mode: 'remote',
         fitColumns: true,
         prompt: "Select Product No.",
@@ -180,25 +216,18 @@
             }
         }],
         columns: [
-            [{ 
-                field: 'number', 
-                title: 'Product No', 
-                width: 200 
-            }, { 
-                field: 'name', 
-                title: 'Product Name', 
-                width: 200 
+            [{
+                field: 'number',
+                title: 'Product No',
+                width: 200
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 200
             }]
         ],
-        onChange: function(newValue, oldValue) {
-            var url = $('#filter_item_fg').combogrid('options').url;
-            if (url) {
-                $('#filter_item_fg').combogrid('grid').datagrid('load', {
-                    q: newValue
-                });
-            }
-        }
     });
+
 
     $('#filter_product_family').combogrid({
         url: '<?= base_url('planning/forecasts/readsProductFamily') ?>',

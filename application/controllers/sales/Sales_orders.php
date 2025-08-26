@@ -49,10 +49,48 @@ class Sales_orders extends CI_Controller
         echo json_encode($send);
     }
 
+    // public function readItemFg($customer_id)
+    // {
+    //     $post = isset($_POST['q']) ? $_POST['q'] : "";
+    //     $send = $this->crud->query("SELECT 
+    //             b.id, 
+    //             b.number, 
+    //             b.name, 
+    //             b.number_customer, 
+    //             a.price, 
+    //             c.currency, 
+    //             b.uom, 
+    //             a.valid_from, 
+    //             a.valid_to, 
+    //             COALESCE(SUM(d.qty_del), 0) AS delivery
+    //         FROM customer_items a 
+    //         JOIN item_fg b 
+    //             ON a.item_fg_id = b.id AND b.type = 'FG'
+    //         JOIN customers c 
+    //             ON a.customer_id = c.id
+    //         JOIN delivery_orders d 
+    //             ON b.id = d.item_fg_id 
+    //             AND d.status = 0 
+    //             AND c.id = d.customer_id
+    //         JOIN sales_orders so 
+    //             ON d.customer_order_no = so.customer_order_no 
+    //             AND d.customer_id = so.customer_id 
+    //             AND d.item_fg_id = so.item_fg_id
+    //         WHERE a.customer_id = '$customer_id' 
+    //             AND (b.number LIKE '%$post%' OR b.name LIKE '%$post%')
+    //         GROUP BY b.number
+    //     ");
+
+    //     echo json_encode($send);
+    // }
+
     public function readItemFg($customer_id)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT 
+        $customer_order_no = isset($_POST['customer_order_no']) ? $_POST['customer_order_no'] : "";
+
+        $sql = "
+            SELECT 
                 b.id, 
                 b.number, 
                 b.name, 
@@ -72,17 +110,20 @@ class Sales_orders extends CI_Controller
                 ON b.id = d.item_fg_id 
                 AND d.status = 0 
                 AND c.id = d.customer_id
+                " . (!empty($customer_order_no) ? " AND d.customer_order_no = '$customer_order_no'" : "") . "
             LEFT JOIN sales_orders so 
                 ON d.customer_order_no = so.customer_order_no 
                 AND d.customer_id = so.customer_id 
                 AND d.item_fg_id = so.item_fg_id
             WHERE a.customer_id = '$customer_id' 
-                AND (b.number LIKE '%$post%' OR b.name LIKE '%$post%')
-            GROUP BY b.number
-        ");
+            AND (b.number LIKE '%$post%' OR b.name LIKE '%$post%')
+            GROUP BY b.id, b.number, b.name, b.number_customer, a.price, c.currency, b.uom, a.valid_from, a.valid_to
+        ";
 
+        $send = $this->crud->query($sql);
         echo json_encode($send);
     }
+
 
     public function readItems($customer_id, $sales_order_no)
     {
