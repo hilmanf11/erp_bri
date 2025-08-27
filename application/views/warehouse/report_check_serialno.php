@@ -12,10 +12,6 @@
                     <span style="width:35%; display:inline-block;">Supplier</span>
                     <input style="width:60%;" id="filter_supplier" class="easyui-combobox">
                 </div>
-                <div class="fitem filter-nbc-hide">
-                    <span style="width:35%; display:inline-block;">Label No</span>
-                    <input style="width:60%;" id="filter_serial_no" class="easyui-textbox" data-options="prompt:'Input Label No'">
-                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Display By</span>
                     <select style="width:60%;" id="filter_display_by" class="easyui-combobox" panelHeight="auto">
@@ -23,9 +19,17 @@
                         <option value="nbc">New Barcode</option>
                     </select>
                 </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;"></span>
-                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                <div class="fitem filter-nbc-hide">
+                    <span style="width:35%; display:inline-block;">Label No</span>
+                    <input style="width:60%;" id="filter_serial_no" class="easyui-textbox" data-options="prompt:'Input Label No'">
+                </div>
+                <div class="fitem filter-nbc-hide">
+                    <span style="width:35%; display:inline-block;">Lot No BRI</span>
+                    <input style="width:60%;" id="filter_lot_no_bri" class="easyui-textbox" data-options="prompt:'Input Lot No BRI'">
+                </div>
+                <div class="fitem filter-nbc-hide">
+                    <span style="width:35%; display:inline-block;">Lot No Supplier</span>
+                    <input style="width:60%;" id="filter_lot_no_supplier" class="easyui-textbox" data-options="prompt:'Input Lot No Supplier'">
                 </div>
             </div>
             <div style="width: 50%; float: left;">
@@ -53,6 +57,10 @@
                         <option value="1">CLOSE</option>
                     </select>
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;"></span>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                </div>
             </div>
         </fieldset>
     </div>
@@ -69,6 +77,8 @@
         var filter_from = $("#filter_from").datebox("getValue");
         var filter_to = $("#filter_to").datebox("getValue");
         var filter_serial_no = $("#filter_serial_no").textbox("getValue");
+        var filter_lot_no_bri = $("#filter_lot_no_bri").textbox("getValue");
+        var filter_lot_no_supplier = $("#filter_lot_no_supplier").textbox("getValue");
         var filter_supplier = $("#filter_supplier").combobox("getValue");
         var filter_receipt = $("#filter_receipt").combobox("getValue");
         var filter_product_no = $("#filter_product_no").combogrid("getValue");
@@ -83,7 +93,9 @@
             "&filter_product_no=" + filter_product_no +
             "&filter_status_in=" + filter_status_in +
             "&filter_status_out=" + filter_status_out +
-            "&filter_display_by=" + filter_display_by;
+            "&filter_display_by=" + filter_display_by +
+            "&filter_lot_no_bri=" + filter_lot_no_bri +
+            "&filter_lot_no_supplier=" + filter_lot_no_supplier;
         if (filter_display_by === "nbc") {
             if (filter_from == "" || filter_to == "") {
                 toastr.warning("Please select Trans Date!");
@@ -189,6 +201,21 @@
         } else {
             $('#filter_status_out').combobox('setValue', '-');
         }
+
+
+        $('#filter_display_by').combobox({
+            onChange: function(newValue, oldValue) {
+                    $('#filter_lot_no_bri').textbox('clear');
+                    $('#filter_lot_no_supplier').textbox('clear');
+                if (newValue === 'po') {
+                    $('#filter_lot_no_bri').textbox('enable');
+                    $('#filter_lot_no_supplier').textbox('enable');
+                } else {
+                    $('#filter_lot_no_bri').textbox('disable');
+                    $('#filter_lot_no_supplier').textbox('disable');
+                }
+            }
+        });
     });
     //Format Datepicker
     function myformatter(date) {
