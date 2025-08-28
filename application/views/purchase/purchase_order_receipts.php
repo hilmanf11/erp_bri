@@ -53,7 +53,8 @@
             <th rowspan="2" data-options="field:'currency',width:80,halign:'center',align:'center'">Currency</th>
             <th rowspan="2" data-options="field:'mpq',width:80,halign:'center',align:'right'">MPQ</th>
             <th rowspan="2" data-options="field:'qty_label',width:80,halign:'center',align:'right'">Qty <br> Label</th>
-            <th rowspan="2" data-options="field:'por_lot_no',width:200,halign:'center',align:'right'">Lot No</th>
+            <th rowspan="2" data-options="field:'por_lot_no_bri',width:200,halign:'center',align:'right'">Lot No BRI</th>
+            <th rowspan="2" data-options="field:'por_lot_no',width:200,halign:'center',align:'right'">Lot No Supplier</th>
             <th rowspan="2" data-options="field:'transaction_type',width:80,halign:'center',align:'right'">Trans Type</th>
             <th rowspan="2" data-options="field:'state',width:80,align:'center',formatter:BtnPrintLabel">Label</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -145,8 +146,12 @@
                     <input style="width:60%;" name="receipt_no" id="receipt_no" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Doc No</span>
-                    <input style="width:60%;" name="bc_document" id="bc_document" required="" class="easyui-textbox">
+                    <span style="width:35%; display:inline-block;">Lot No</span>
+                    <input style="width:60%;" name="lot_no_internal" id="lot_no_internal" readonly required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Supplier</span>
+                    <input style="width:60%;" name="supplier_id" id="supplier_id" required="" class="easyui-combogrid">
                 </div>
                 <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;"></span>
@@ -159,8 +164,8 @@
                     <input style="width:60%;" name="bc_date" id="bc_date" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Supplier</span>
-                    <input style="width:60%;" name="supplier_id" id="supplier_id" required="" class="easyui-combogrid">
+                    <span style="width:35%; display:inline-block;">Doc No</span>
+                    <input style="width:60%;" name="bc_document" id="bc_document" required="" class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">PO No</span>
@@ -206,6 +211,7 @@
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
         receipt_no();
+        generate_lotno();
         $('#receipt_date').datebox('setValue', '<?= date("Y-m-d") ?>');
         $("#supplier_id").combobox('enable');
         $("#po_no").combobox('enable');
@@ -711,6 +717,19 @@
         });
     }
 
+
+    function generate_lotno(date = ""){
+        
+        $.ajax({
+            type: "post",
+            url: "<?= base_url('purchase/purchase_order_receipts/generate_lotno/') ?>" + window.btoa(date),
+            dataType: "html",
+            success: function(response) {
+                $('#lot_no_internal').textbox('setValue', response);
+            }
+        });
+    }
+
     // function preview() {
     //     var po_no = $("#po_no").combogrid('getValue');
     //     if (po_no === "") {
@@ -1014,6 +1033,7 @@
                 handler: function() {
                     var receipt_date = $("#receipt_date").datebox('getValue');
                     var receipt_no = $("#receipt_no").textbox('getValue');
+                    var lot_no_internal = $("#lot_no_internal").textbox('getValue');
                     var bc_document = $("#bc_document").textbox('getValue');
                     var bc_date = $("#bc_date").datebox('getValue');
                     var supplier_id = $("#supplier_id").combogrid('getValue');
@@ -1083,7 +1103,8 @@
                                                 '&qty_receipt=' + row.qty_receipt +
                                                 '&qty_mpq=' + row.mpq +
                                                 '&qty_label=' + row.qty_label +
-                                                '&lot_no=' + row.lot_no,
+                                                '&lot_no=' + row.lot_no +
+                                                '&lot_no_internal=' + lot_no_internal,
                                             dataType: "json",
                                             async: false,
                                             success: function(result) {
@@ -1144,6 +1165,7 @@
         $("#receipt_date").datebox({
             onSelect: function(date) {
                 receipt_no(date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate());
+                generate_lotno(date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate());
             }
         });
         readReceiptNo();

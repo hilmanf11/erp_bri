@@ -27,6 +27,27 @@ class Purchase_order_receipts extends CI_Controller
             redirect('error_access');
         }
     }
+
+    public function generate_lotno($date = "") {
+        if ($date == "") {
+            $current_fullyear = date('Y');
+            $current_year = date('y');
+            $current_month = date('m');
+        } else {
+            $current_fullyear = date('Y', strtotime(base64_decode($date)));
+            $current_year = date('y', strtotime(base64_decode($date)));
+            $current_month = date('m', strtotime(base64_decode($date)));
+        }
+        
+        $query = $this->db->query("SELECT COUNT(*) as total_group FROM (SELECT receipt_no FROM purchase_order_receipts WHERE YEAR(receipt_date) = ? AND MONTH(receipt_date) = ? GROUP BY receipt_no) as total", [$current_fullyear, $current_month]);
+        $row = $query->row();
+        if (intval($row->total_group) > 0) {
+            $new_sequence_number = sprintf("%03d", intval($row->total_group) + 1);
+        } else {
+            $new_sequence_number = '001';
+        }
+        echo $new_sequence_number . $current_month . $current_year ;
+    }
     public function reads()
     {
         $request_no = $this->input->get('request_no');
@@ -325,6 +346,7 @@ class Purchase_order_receipts extends CI_Controller
                     sum(g.status) as total_scan,
                     g.lot_no as label_lot_no,
                     a.lot_no as por_lot_no,
+                    a.lot_no_internal as por_lot_no_bri,
                     h.name as transaction_type');
                 $this->db->from('purchase_order_receipts a');
                 $this->db->join('suppliers b', 'a.supplier_id = b.id');
@@ -415,26 +437,28 @@ class Purchase_order_receipts extends CI_Controller
 
                 $totalReceipt = (float) $totalRow->total_receipt;
 
-                // Ambil data OS PO untuk cek limit
+                $po = $this->crud->read("purchase_orders", [], [
+                    "po_no" => $post['po_no'],
+                    "item_rm_id" => $post['item_rm_id']
+                ]);
+
+                $status = 0;
+
+                if (!empty($po->po_no)) {
+                    $limitQty = $po->qty;
+
+                    if ($totalReceipt >= $limitQty) {
+                        $status = 1;
+                    }
+                }
+
                 $os_po = $this->crud->read("os_po", [], [
                     "po_no" => $post['po_no'],
                     "item_rm_id" => $post['item_rm_id']
                 ]);
 
                 if (!empty($os_po->po_no)) {
-                    // Total limit ambil dari qty_os jika ada, kalau 0 ambil dari qty_po
-                    $limitQty = ($os_po->qty_os > 0) ? $os_po->qty_os : $os_po->qty;
-
-                    if ($totalReceipt >= $limitQty) {
-                        $status = 1; // Sudah full terima
-                    } else {
-                        $status = 0; // Masih outstanding
-                    }
-                } else {
-                    // Jika tidak ada os_po, fallback logic
-                    $limitQty = ($post['qty_os'] > 0) ? $post['qty_os'] : $post['qty_po'];
-
-                    if ($totalReceipt >= $limitQty) {
+                    if ($totalReceipt >= $os_po->qty) {
                         $status = 1;
                     } else {
                         $status = 0;
@@ -779,7 +803,7 @@ class Purchase_order_receipts extends CI_Controller
         }
 
 
-        $this->db->select('a.*, b.receipt_date, c.number, c.number_internal, c.name, d.location, d.area, c.color, c.uom, c.item_family_id, c.id as item_rm_id');
+        $this->db->select('a.*, b.receipt_date, c.number, c.number_internal, c.name, d.location, d.area, c.color, c.uom, c.item_family_id, c.id as item_rm_id, b.lot_no_internal');
         // $this->db->select('a.*, b.receipt_date, c.number, c.number_internal, c.name, d.location, d.area, c.color, c.uom');
         $this->db->from('purchase_order_labels a');
         $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
@@ -824,9 +848,9 @@ class Purchase_order_receipts extends CI_Controller
                 if ($record->item_family_id == 'P06') {
                     $this->createQrcode($record->item_rm_id, "assets/image/qrcode/");
                     $qr_item_rm = '<img src="' . base_url('assets/image/qrcode/' . $record->item_rm_id . '.png') . '" width="30"/>';
-                    $this->createQrcode($record->lot_no, "assets/image/qrcode/");
+                    $this->createQrcode($record->lot_no_internal, "assets/image/qrcode/");
                     // Styling QR Lot No agar di pojok kanan atas area Quantity
-                    $qr_lot_no = '<div style="position:absolute; top:4px; right:4px;"><img src="' . base_url('assets/image/qrcode/' . $record->lot_no . '.png') . '" width="22" style="display:block;"/></div>';
+                    $qr_lot_no = '<div style="position:absolute; top:4px; right:4px;"><img src="' . base_url('assets/image/qrcode/' . $record->lot_no_internal . '.png') . '" width="22" style="display:block;"/></div>';
                 } else {
                     $qr_item_rm = "";
                     $qr_lot_no = "";
@@ -861,7 +885,7 @@ class Purchase_order_receipts extends CI_Controller
                                             </div>
                                         </th>
                                         <th style="text-align:left">
-                                            <small>Lot No. </small><b style="font-size:10px;">' . $record->lot_no . '</b>
+                                            <small>Lot No. </small><b style="font-size:10px;">' . $record->lot_no_internal . '</b>
                                             <small>Location</small><br><b style="font-size:10px;">' . $record->location . '</b><br>
                                         </th>
                                     </tr>
@@ -968,7 +992,7 @@ class Purchase_order_receipts extends CI_Controller
             }
         }
 
-        $this->db->select('a.*, b.receipt_date, c.number, c.number_internal, c.name, d.location, d.area, c.color, c.uom, c.item_family_id, c.id as item_rm_id');
+        $this->db->select('a.*, b.receipt_date, c.number, c.number_internal, c.name, d.location, d.area, c.color, c.uom, c.item_family_id, c.id as item_rm_id, b.lot_no_internal');
         $this->db->from('purchase_order_labels a');
         $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
         $this->db->join('item_rm c', 'b.item_rm_id = c.id');
@@ -1012,9 +1036,9 @@ class Purchase_order_receipts extends CI_Controller
                 if ($record->item_family_id == 'P06') {
                     $this->createQrcode($record->item_rm_id, "assets/image/qrcode/");
                     $qr_item_rm = '<img src="' . base_url('assets/image/qrcode/' . $record->item_rm_id . '.png') . '" width="30"/>';
-                    $this->createQrcode($record->lot_no, "assets/image/qrcode/");
+                    $this->createQrcode($record->lot_no_internal, "assets/image/qrcode/");
                     // Styling QR Lot No agar di pojok kanan atas area Quantity
-                    $qr_lot_no = '<div style="position:absolute; top:4px; right:4px;"><img src="' . base_url('assets/image/qrcode/' . $record->lot_no . '.png') . '" width="22" style="display:block;"/></div>';
+                    $qr_lot_no = '<div style="position:absolute; top:4px; right:4px;"><img src="' . base_url('assets/image/qrcode/' . $record->lot_no_internal . '.png') . '" width="22" style="display:block;"/></div>';
                 } else {
                     $qr_item_rm = "";
                     $qr_lot_no = "";
@@ -1049,7 +1073,7 @@ class Purchase_order_receipts extends CI_Controller
                                             </div>
                                         </th>
                                         <th style="text-align:left">
-                                            <small>Lot No. </small><b style="font-size:10px;">' . $record->lot_no . '</b>
+                                            <small>Lot No. </small><b style="font-size:10px;">' . $record->lot_no_internal . '</b>
                                             <small>Location</small><br><b style="font-size:10px;">' . $record->location . '</b><br>
                                         </th>
                                     </tr>
@@ -1389,7 +1413,7 @@ class Purchase_order_receipts extends CI_Controller
                 $qty_receipt = ($qty_receipt - $po_receipt->qty_mpq);
             }
         }
-        $this->db->select('a.*, b.receipt_date, c.number, c.number_internal, c.name, c.item_family_id, d.location, d.area, c.color, c.uom, c.id as item_rm_id');
+        $this->db->select('a.*, b.receipt_date, c.number, c.number_internal, c.name, c.item_family_id, d.location, d.area, c.color, c.uom, c.id as item_rm_id, b.lot_no_internal');
         $this->db->from('purchase_order_labels a');
         $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
         $this->db->join('item_rm c', 'b.item_rm_id = c.id');
@@ -1434,9 +1458,9 @@ class Purchase_order_receipts extends CI_Controller
                 if ($record->item_family_id == 'P06') {
                     $this->createQrcode($record->item_rm_id, "assets/image/qrcode/");
                     $qr_item_rm = '<img src="' . base_url('assets/image/qrcode/' . $record->item_rm_id . '.png') . '" width="30"/>';
-                    $this->createQrcode($record->lot_no, "assets/image/qrcode/");
+                    $this->createQrcode($record->lot_no_internal, "assets/image/qrcode/");
                     // Styling QR Lot No agar di pojok kanan atas area Quantity
-                    $qr_lot_no = '<div style="position:absolute; top:4px; right:4px;"><img src="' . base_url('assets/image/qrcode/' . $record->lot_no . '.png') . '" width="22" style="display:block;"/></div>';
+                    $qr_lot_no = '<div style="position:absolute; top:4px; right:4px;"><img src="' . base_url('assets/image/qrcode/' . $record->lot_no_internal . '.png') . '" width="22" style="display:block;"/></div>';
                 } else {
                     $qr_item_rm = "";
                     $qr_lot_no = "";
@@ -1470,7 +1494,7 @@ class Purchase_order_receipts extends CI_Controller
                                             </div>
                                         </th>
                                         <th style="text-align:left">
-                                            <small>Lot No. </small><b style="font-size:10px;">' . $record->lot_no . '</b>
+                                            <small>Lot No. </small><b style="font-size:10px;">' . $record->lot_no_internal . '</b>
                                             <small>Location</small><br><b style="font-size:10px;">' . $record->location . '</b><br>
                                         </th>
                                     </tr>
@@ -2150,7 +2174,7 @@ class Purchase_order_receipts extends CI_Controller
                 $qty_receipt = ($qty_receipt - $po_receipt->qty_mpq);
             }
         }
-        $this->db->select('a.*, b.receipt_date, c.number, c.number_internal, c.name, c.item_family_id, d.location, d.area, c.color, c.uom, c.id as item_rm_id');
+        $this->db->select('a.*, b.receipt_date, c.number, c.number_internal, c.name, c.item_family_id, d.location, d.area, c.color, c.uom, c.id as item_rm_id, b.lot_no_internal');
         $this->db->from('purchase_order_labels a');
         $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
         $this->db->join('item_rm c', 'b.item_rm_id = c.id');
@@ -2194,9 +2218,9 @@ class Purchase_order_receipts extends CI_Controller
                 if ($record->item_family_id == 'P06') {
                     $this->createQrcode($record->item_rm_id, "assets/image/qrcode/");
                     $qr_item_rm = '<img src="' . base_url('assets/image/qrcode/' . $record->item_rm_id . '.png') . '" width="30"/>';
-                    $this->createQrcode($record->lot_no, "assets/image/qrcode/");
+                    $this->createQrcode($record->lot_no_internal, "assets/image/qrcode/");
                     // Styling QR Lot No agar di pojok kanan atas area Quantity
-                    $qr_lot_no = '<div style="position:absolute; top:4px; right:4px;"><img src="' . base_url('assets/image/qrcode/' . $record->lot_no . '.png') . '" width="22" style="display:block;"/></div>';
+                    $qr_lot_no = '<div style="position:absolute; top:4px; right:4px;"><img src="' . base_url('assets/image/qrcode/' . $record->lot_no_internal . '.png') . '" width="22" style="display:block;"/></div>';
                 } else {
                     $qr_item_rm = "";
                     $qr_lot_no = "";
@@ -2230,7 +2254,7 @@ class Purchase_order_receipts extends CI_Controller
                                             </div>
                                         </th>
                                         <th style="text-align:left">
-                                            <small>Lot No. </small><b style="font-size:10px;">' . $record->lot_no . '</b>
+                                            <small>Lot No. </small><b style="font-size:10px;">' . $record->lot_no_internal . '</b>
                                             <small>Location</small><br><b style="font-size:10px;">' . $record->location . '</b><br>
                                         </th>
                                     </tr>
