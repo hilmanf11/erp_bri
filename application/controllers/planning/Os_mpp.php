@@ -223,7 +223,7 @@ class Os_mpp extends CI_Controller
 
     public function uploadclearFailed()
     {
-        @unlink('failed/os_mpp.txt');
+        @unlink('failed/os_mpp.xls');
     }
 
     // public function uploadcreateFailed()

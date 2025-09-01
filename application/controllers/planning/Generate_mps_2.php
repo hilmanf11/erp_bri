@@ -163,7 +163,7 @@ class Generate_mps_2 extends CI_Controller
         }
 
         $today = date('Y-m-d');
-        return true;
+        // return true;
         return $generate_date == $today;
     }
 
@@ -917,7 +917,9 @@ class Generate_mps_2 extends CI_Controller
                         // $prodPlan = @round(($forecastData + $safetyStock) - $beginBalance);
                     } else if ($i == 2) {
                         // Begin balance M2 dari hasil M1
-                        $beginBalance = ($prevProdPlan - $prevForecast) + $prevBeginBalance;
+                        
+                        $compareFCSOM2 = max($prevForecast, $soOut);
+                        $beginBalance = ($prevProdPlan - $compareFCSOM2) + $prevBeginBalance;
                         
                         $forecastData = @round($sum_forecast['month_2']);
                         $deliveryRate = @round($forecastData / $hkw);
