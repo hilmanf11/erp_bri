@@ -36,6 +36,22 @@ class Machines extends CI_Controller
          echo json_encode($send);
      }
 
+    //GET DATA
+    public function readMachinePress()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT * FROM machines WHERE type_process_id = 'PT01' AND (number like '%$post%' or name like '%$post%' or id like '%$post%') AND status = 0");
+        echo json_encode($send);
+    }
+
+    //GET DATA
+    public function readMachineMixings()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT * FROM machines WHERE type_process_id = 'PT05' AND (number like '%$post%' or name like '%$post%' or id like '%$post%') AND status = 0");
+        echo json_encode($send);
+    }
+
      //CODE OTOMATIS
      public function autoid($type_process_id){
          $code = $type_process_id; 

@@ -172,7 +172,9 @@
                                         "&period=" + row[i].period +
                                         "&wp=" + row[i].wp +
                                         "&workorder=" + row[i].workorder +
-                                        "&qty=" + row[i].qty_req,
+                                        "&qty=" + row[i].qty_req +
+                                        "&qty_act=" + row[i].qty_act +
+                                        "&mpq=" + row[i].mpq,
                                     dataType: "json",
                                     success: function(result) {
                                         $('#receipt_id').focus();

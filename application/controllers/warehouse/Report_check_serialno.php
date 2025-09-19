@@ -167,7 +167,10 @@ class Report_check_serialno extends CI_Controller
             } else {
                 $status_out = "<b style='color:red;'>CLOSE</b>";
             }
-            $html .= '  <tr><td style="text-align:center">' . $no . '</td><td>' . $data['receipt_no'] . '</td><td>' . $data['receipt_date'] . '</td><td>' . $data['label_no'] . '</td><td>' . $data['lot_no_internal'] . '</td><td>' . $data['lot_no'] . '</td><td>' . $data['item_number_internal'] . '</td><td>' . $data['item_name'] . '</td><td style="text-align:right">' . number_format($data['qty'], 2) . '</td><td>' . $status_in . '</td><td>' . $status_out . '</td><td>' . $data['created_by'] . '</td></tr>';
+
+            $lot_no_internal = isset($data['lot_no_internal']) ? $data['lot_no_internal'] : '';
+
+            $html .= '  <tr><td style="text-align:center">' . $no . '</td><td>' . $data['receipt_no'] . '</td><td>' . $data['receipt_date'] . '</td><td>' . $data['label_no'] . '</td><td>' . $lot_no_internal . '</td><td>' . $data['lot_no'] . '</td><td>' . $data['item_number_internal'] . '</td><td>' . $data['item_name'] . '</td><td style="text-align:right">' . number_format($data['qty'], 2) . '</td><td>' . $status_in . '</td><td>' . $status_out . '</td><td>' . $data['created_by'] . '</td></tr>';
             $no++;
         }
         $html .= '</table></body></html>';

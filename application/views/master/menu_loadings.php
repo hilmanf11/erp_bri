@@ -1,3 +1,11 @@
+<style>
+    .window-shadow{
+        background: none !important;
+        box-shadow: none !important;
+        -webkit-box-shadow: none !important;
+    }
+</style>
+
 <div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
     <div class="easyui-accordion" style="width:100%; height: 100%;">
         <div title="RELATIONS" style="padding: 20px;">
@@ -29,11 +37,11 @@
             <th rowspan="2" data-options="field:'mold_cavity_standard',width:120,halign:'center',sortable:true">Cavity Standard</th>
             <th rowspan="2" data-options="field:'shift',width:100,halign:'center',sortable:true">Shift</th>
             <th rowspan="2" data-options="field:'shift_hour',width:100,halign:'center',sortable:true">Hour/Shift</th>
-            <th rowspan="2" data-options="field:'productcivity',width:100,halign:'center',sortable:true">Productivity <br>Factor (%)</th>
+            <th rowspan="2" data-options="field:'productcivity',width:100,halign:'center',sortable:true">Efficiency (%)</th>
             <th rowspan="2" data-options="field:'cycle_time',width:90,halign:'center',sortable:true">Cycle Time <br>(Second)</th>
-            <th rowspan="2" data-options="field:'cycle_time_process',width:150,halign:'center',sortable:true">Cycle Time Second <br>Process</th>
+            <!-- <th rowspan="2" data-options="field:'cycle_time_process',width:150,halign:'center',sortable:true">Cycle Time Second <br>Process</th> -->
             <th rowspan="2" data-options="field:'manpower',width:100,halign:'center',sortable:true">Man Power</th>
-            <th rowspan="2" data-options="field:'runner',width:110,halign:'center',sortable:true">Runner/Shoot</th>
+            <th rowspan="2" data-options="field:'runner',width:110,halign:'center',sortable:true">Compound/Shoot</th>
             <th rowspan="2" data-options="field:'priority',width:110,halign:'center',sortable:true">Priority</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -58,9 +66,9 @@
             <legend><b>Form Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No.</span>
-                <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combobox">
+                <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combogrid">
             </div>
-            <div class="fitem">
+            <div class="fitem" id="mold_wrapper">
                 <span style="width:35%; display:inline-block;">Mold ID</span>
                 <input style="width:60%;" name="mold_id" id="mold_id" required="" class="easyui-combobox">
             </div>
@@ -77,28 +85,30 @@
                 <input style="width:60%;" name="shift_hour" id="shift_hour" class="easyui-numberbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Productivity Factor</span>
+                <span style="width:35%; display:inline-block;">Efficiency</span>
                 <input style="width:60%;" name="productcivity" id="productcivity" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Cycle Time</span>
-                <input style="width:60%;" name="cycle_time" id="cycle_time" precision="2" class="easyui-numberbox">
+                <input style="width:44%;" name="cycle_time" id="cycle_time" readonly="" precision="2" class="easyui-numberbox">
+                <span style="padding-left: 5px;">Second</span>
             </div>
-            <div class="fitem">
+            <!-- <div class="fitem">
                 <span style="width:35%; display:inline-block;">Cycle Time Process</span>
                 <input style="width:60%;" name="cycle_time_process" id="cycle_time_process" precision="2" class="easyui-numberbox">
-            </div>
+            </div> -->
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Man Power</span>
-                <input style="width:30%;" name="manpower" id="manpower" class="easyui-numberbox">
+                <input style="width:60%;" name="manpower" id="manpower" class="easyui-numberbox">
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Runner/Shoot</span>
-                <input style="width:30%;" name="runner" id="runner" precision="5" class="easyui-numberbox">
+            <div class="fitem" id="runner-wrapper">
+                <span style="width:35%; display:inline-block;">Compound/Shoot</span>
+                <input style="width:48%;" name="runner" id="runner" precision="5" class="easyui-numberbox">
+                <span style="padding-left: 5px;">Gram</span>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Priority</span>
-                <input style="width:30%;" name="priority" id="priority" class="easyui-numberbox">
+                <input style="width:60%;" name="priority" id="priority" class="easyui-numberbox">
             </div>
         </fieldset>
     </form>
@@ -182,7 +192,7 @@
     }
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_menu_loadings.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_menu_loadings_.xls') ?>');
     }
     //PRINT PDF
     function pdf() {
@@ -295,7 +305,7 @@
                     },
                     {
                         field: 'productcivity',
-                        title: 'Productivity <br>Factor (%)',
+                        title: 'Efficiency (%)',
                         width: 100,
                         align: 'center',
                         sortable: true,
@@ -309,14 +319,14 @@
                         sortable: true,
                         resizable: true
                     },
-                    {
-                        field: 'cycle_time_process',
-                        title: 'Cycle Time Second <br>Process',
-                        width: 150,
-                        align: 'center',
-                        sortable: true,
-                        resizable: true
-                    },
+                    // {
+                    //     field: 'cycle_time_process',
+                    //     title: 'Cycle Time Second <br>Process',
+                    //     width: 150,
+                    //     align: 'center',
+                    //     sortable: true,
+                    //     resizable: true
+                    // },
                     {
                         field: 'manpower',
                         title: 'Man Power',
@@ -327,8 +337,8 @@
                     },
                     {
                         field: 'runner',
-                        title: 'Runner/Shoot',
-                        width: 110,
+                        title: 'Compound/Shoot',
+                        width: 130,
                         align: 'center',
                         sortable: true,
                         resizable: true
@@ -404,102 +414,203 @@
         });
     });
 
-    $('#item_fg_id').combobox({
-        url: '<?= base_url('master/item_fg/reads/'); ?>',
-        valueField: 'id',
-        textField: 'number',
-        prompt: 'Choose Product No.',
-        onSelect: function(item_fg) {
-            $('#mold_id').combobox({
-                url: '<?= base_url('master/molds/reads/'); ?>' + btoa(item_fg.id),
-                valueField: 'id',
-                textField: 'id',
-                prompt: 'Choose Mold ID',
+    // $('#item_fg_id').combobox({
+    //     url: '<?= base_url('master/item_fg/reads/'); ?>',
+    //     valueField: 'id',
+    //     textField: 'number',
+    //     prompt: 'Choose Product No.',
+    //     onSelect: function(item_fg) {
+    //         $('#mold_id').combobox({
+    //             url: '<?= base_url('master/molds/reads/'); ?>' + btoa(item_fg.id),
+    //             valueField: 'id',
+    //             textField: 'id',
+    //             prompt: 'Choose Mold ID',
+    //         });
+    //     }
+    // });
+    
+    $('#item_fg_id').combogrid({
+        url: '<?php echo base_url('master/menu_loadings/readItems'); ?>',
+        required: true,
+        panelWidth: 500,
+        idField: 'item_fg_id',
+        textField: 'item_fg_number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: 'Choose Product No',
+        columns: [
+            [{
+                field: 'item_fg_id',
+                title: 'Product ID',
+                width: 120
+            }, {
+                field: 'item_fg_number',
+                title: 'Product No.',
+                width: 150
+            }, {
+                field: 'item_fg_name',
+                title: 'Product Name',
+                width: 200
+            }]
+        ],
+        onSelect: function(index, row) {
+            let { item_family_number } = row;
+
+            if (item_family_number === 'CD') {
+                // $('#mold_id').combobox('disable');
+
+                $('#mold_id').combobox('clear');
+                $('#mold_id').combobox('disableValidation'); 
+                $('#mold_wrapper').hide();
+                $('#runner-wrapper').hide();
+            } else {
+                // $('#mold_id').combobox('enable');
+                
+                $('#mold_wrapper').show();
+                $('#runner-wrapper').show();
+                $('#mold_id').combobox('enableValidation');
+
+                $('#mold_id').combobox({
+                    url: '<?= base_url('master/menu_loadings/readSettingMolds/'); ?>' + btoa(row.item_fg_id),
+                    valueField: 'mold_id',
+                    textField: 'mold_id',
+                    prompt: 'Choose Mold ID',
+                    onLoadSuccess: function(data) {
+                        if (data.length === 1) {
+                            $('#mold_id').combobox('setValue', data[0].mold_id);
+                        }
+                    }
+                });
+            }
+
+            $('#machine_id').combobox({
+                url: '<?= base_url('master/menu_loadings/readMachines/'); ?>' + btoa(row.item_fg_id) + '/' + btoa(item_family_number),
+                valueField: 'machine_id',
+                textField: 'number',
+                prompt: 'Choose Machine No.',
+                onLoadSuccess: function(data) {
+                    console.log('Data :  ', data);
+                    if (data.length === 1) {
+                        $('#machine_id').combobox('setValue', data[0].machine_id);
+                    }
+
+                    $('#cycle_time').numberbox('setValue', data[0].cycle_time ? data[0].cycle_time : 0);
+                }
             });
         }
     });
 
-    $('#machine_id').combobox({
-        url: '<?= base_url('master/machines/reads/'); ?>',
-        valueField: 'id',
-        textField: 'number',
-        prompt: 'Choose Machine No.',
-    });
+    // $('#machine_id').combobox({
+    //     url: '<?= base_url('master/machines/reads/'); ?>',
+    //     valueField: 'id',
+    //     textField: 'number',
+    //     prompt: 'Choose Machine No.',
+    // });
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
         buttons: [{
             text: 'List Failed',
-            handler: function() {
+            handler: function () {
                 window.open('<?= base_url('master/menu_loadings/uploadDownloadFailed') ?>', '_blank');
             }
         }, {
             text: 'Upload',
             iconCls: 'icon-ok',
-            handler: function() {
+            handler: function () {
                 $('#frm_upload').form('submit', {
                     url: '<?= base_url('master/menu_loadings/upload') ?>',
-                    onSubmit: function() {
-                        if ($(this).form('validate') == false) {
-                            return $(this).form('validate');
-                        } else {
-                            $.messager.progress({
-                                title: 'Please Wait',
-                                msg: 'Importing Excel to Database'
-                            });
-                        }
-                    },
-                    success: function(result) {
-                        $.messager.progress('close');
-                        //Clear File
-                        $.ajax({
-                            url: "<?= base_url('master/menu_loadings/uploadclearFailed') ?>"
+                    onSubmit: function () {
+                        if (!$(this).form('validate')) return false;
+
+                        $.messager.progress({
+                            title: 'Please Wait',
+                            msg: 'Importing Excel to Database'
                         });
-                        var json = eval('(' + result + ')');
-                        requestData(json.total, json);
+                    },
+                    success: function (result) {
+                        $.messager.progress('close');
+                        // Clear File
+                        $.ajax({ 
+                            url: "<?= base_url('master/menu_loadings/uploadclearFailed') ?>" 
+                        });
 
-                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                            if (value < 100) {
-                                value = Math.floor((number / total) * 100);
-                                $('#p_upload').progressbar('setValue', value);
-                                $('#p_start').html(number);
-                                $('#p_finish').html(total);
+                        let res = JSON.parse(result);
+                        let dataList = res.data ?? [];
 
-                                $.ajax({
-                                    type: "POST",
-                                    async: true,
-                                    url: "<?= base_url('master/menu_loadings/uploadCreate') ?>",
-                                    data: {
-                                        "data": json[number - 1]
-                                    },
-                                    cache: false,
-                                    dataType: "json",
-                                    success: function(result) {
-                                        if (result.theme == "success") {
-                                            $('#p_success').html(success);
-                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                        } else {
-                                            $('#p_failed').html(failed);
-                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                            //Json Failed
-                                            $.ajax({
-                                                type: "POST",
-                                                async: true,
-                                                url: "<?= base_url('master/menu_loadings/uploadcreateFailed') ?>",
-                                                data: {
-                                                    data: json[number - 1],
-                                                    message: result.message
-                                                },
-                                                cache: false
-                                            });
-                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                        }
-                                        $("#p_remarks").append(title + "<br>");
-                                    }
-                                });
-                            }
+                        console.log(dataList);
+
+                        if (dataList.length === 0) {
+                            $.messager.alert("Upload Failed", "Data not found from Excel file", "error");
+                            return;
                         }
+
+                        // Reset UI
+                        $('#p_upload').progressbar('setValue', 0);
+                        $('#p_start').html(0);
+                        $('#p_finish').html(dataList.length);
+                        $('#p_success').html(0);
+                        $('#p_failed').html(0);
+                        $('#p_remarks').html('');
+
+                        let totalExpected = dataList.length;
+
+                        // Kirim semua data
+                        $.ajax({
+                            type: "POST",
+                            url: "<?= base_url('master/menu_loadings/uploadCreate') ?>",
+                            data: JSON.stringify({ data: dataList }),
+                            dataType: "json",
+                            success: function (response) {
+
+                                $('#p_upload').progressbar('setValue', 0);
+                                let successCount = 0;
+                                let failedCount = 0;
+                                let progressCount = 0;
+                                let total = response.total_expected ?? response.results.length;
+                                
+                                function updateProgress() {
+                                    let percent = Math.floor((progressCount / total) * 100);
+                                    $('#p_upload').progressbar('setValue', percent);
+                                    $('#p_start').html(progressCount);
+                                    $('#p_success').html(successCount);
+                                    $('#p_failed').html(failedCount);
+                                }
+
+                                if (response.results && response.results.length > 0) {
+                                    let delayPerItem = 50;
+                                    response.results.forEach(function (r, i) {
+                                        setTimeout(function () {
+                                            let color = r.status === "success" ? "green" : "red";
+
+                                            if (r.status === "success") successCount++;
+                                            else failedCount++;
+
+                                            $('#p_remarks').append(
+                                                `<b style="color: ${color};">${r.item}</b> | ${r.message}<br>`
+                                            );
+
+                                            progressCount++;
+                                            updateProgress();
+
+                                            if(progressCount == total) {
+                                                if (response.theme === 'error') {
+                                                    $.messager.alert(response.title ?? "Upload Failed", response.message ?? "Some data failed to save", "error");
+                                                }
+
+                                                $('#dg').datagrid('reload');
+                                            }
+
+                                        }, i * delayPerItem);
+                                    });
+                                }
+
+                            },
+
+                            error: function (xhr, status, error) {
+                                $.messager.alert("Upload Error", "An error occurred while saving the data", "error");
+                            }
+                        });
                     }
                 });
             }

@@ -618,25 +618,61 @@ class Purchase_orders extends CI_Controller
             ELSE '0' END AS approved_by FROM approvals WHERE table_name = '$table_approval'");
             $sqlApproval = $approval->row();
 
+        $poDate = date('Y-m-d', strtotime($purchase_orders->po_date)); 
+        $cutoffDate = '2025-09-01';
+
+        $user1 = null;
+        $user2 = null;
+
         if(intval($sqlApproval->approved_by)==5){
-            $user1=$sqlApproval->user_approval_4;
-            $user2=$sqlApproval->user_approval_5;
+
+            if ($poDate <= $cutoffDate) {
+                $user1 = 'DR001';
+                $user2 = 'PRESDIR';
+            } else {
+                $user1 = $sqlApproval->user_approval_4;
+                $user2 = $sqlApproval->user_approval_5;
+            }
+
         }
         if(intval($sqlApproval->approved_by)==4){
-            $user1=$sqlApproval->user_approval_3;
-            $user2=$sqlApproval->user_approval_4;
+
+            if ($poDate <= $cutoffDate) {
+                $user1 = 'DR001';
+                $user2 = 'PRESDIR';
+            } else {
+                $user1=$sqlApproval->user_approval_3;
+                $user2=$sqlApproval->user_approval_4;
+            }
         }
         if(intval($sqlApproval->approved_by)==3){
-            $user1=$sqlApproval->user_approval_2;
-            $user2=$sqlApproval->user_approval_3;
+
+            if ($poDate <= $cutoffDate) {
+                $user1 = 'DR001';
+                $user2 = 'PRESDIR';
+            } else {
+                $user1=$sqlApproval->user_approval_2;
+                $user2=$sqlApproval->user_approval_3;
+            }
         }
         if(intval($sqlApproval->approved_by)==2){
-            $user1=$sqlApproval->user_approval_1;
-            $user2=$sqlApproval->user_approval_2;
+
+            if ($poDate <= $cutoffDate) {
+                $user1 = 'scmbri01';
+                $user2 = 'DR001';
+            } else {
+                $user1=$sqlApproval->user_approval_1;
+                $user2=$sqlApproval->user_approval_2;
+            }
         }
         if(intval($sqlApproval->approved_by)==1){
             $user1=null;
             $user2=$sqlApproval->user_approval_1;
+        }
+
+        if(intval($sqlApproval->approved_by)==0){
+            $user1='DR001';
+            $user2='PRESDIR';
         }
 
         if($user1!==null){
@@ -966,12 +1002,6 @@ class Purchase_orders extends CI_Controller
                             <div style="margin-top: 100px;">(.........................)</div>
                         </div>
                         <div style="text-align: center; display: flex; flex-direction:row;">
-                            <div style="text-align: center; margin-right:10px">
-                                <div style="margin-top: 30px;">Approved By</div>
-                                <div style="margin-top: 10px;"><img src="' . base_url('assets/image/qrcode/' . md5($user_1->name) . '.png') . '" width="80"/></div>
-                                <div style="margin-top: 10px;">' . $user_1->name . '</div>
-                                <div>' . $user_1->position . '</div>
-                            </div>
                             <div style="text-align: center;">
                                 <div style="margin-top: 30px;">Approved By</div>
                                 <div style="margin-top: 10px;"><img src="' . base_url('assets/image/qrcode/' . md5($user_2->name) . '.png') . '" width="80"/></div>
@@ -1086,26 +1116,62 @@ class Purchase_orders extends CI_Controller
         ELSE '0' END AS approved_by FROM approvals WHERE table_name = '$table_approval'");
         $sqlApproval = $approval->row();
 
-    if(intval($sqlApproval->approved_by)==5){
-        $user1=$sqlApproval->user_approval_4;
-        $user2=$sqlApproval->user_approval_5;
-    }
-    if(intval($sqlApproval->approved_by)==4){
-        $user1=$sqlApproval->user_approval_3;
-        $user2=$sqlApproval->user_approval_4;
-    }
-    if(intval($sqlApproval->approved_by)==3){
-        $user1=$sqlApproval->user_approval_2;
-        $user2=$sqlApproval->user_approval_3;
-    }
-    if(intval($sqlApproval->approved_by)==2){
-        $user1=$sqlApproval->user_approval_1;
-        $user2=$sqlApproval->user_approval_2;
-    }
-    if(intval($sqlApproval->approved_by)==1){
-        $user1=null;
-        $user2=$sqlApproval->user_approval_1;
-    }
+        $poDate = date('Y-m-d', strtotime($purchase_orders->po_date)); 
+        $cutoffDate = '2025-09-01';
+
+        $user1 = null;
+        $user2 = null;
+
+        if(intval($sqlApproval->approved_by)==5){
+
+            if ($poDate <= $cutoffDate) {
+                $user1 = 'DR001';
+                $user2 = 'PRESDIR';
+            } else {
+                $user1 = $sqlApproval->user_approval_4;
+                $user2 = $sqlApproval->user_approval_5;
+            }
+
+        }
+        if(intval($sqlApproval->approved_by)==4){
+
+            if ($poDate <= $cutoffDate) {
+                $user1 = 'DR001';
+                $user2 = 'PRESDIR';
+            } else {
+                $user1=$sqlApproval->user_approval_3;
+                $user2=$sqlApproval->user_approval_4;
+            }
+        }
+        if(intval($sqlApproval->approved_by)==3){
+
+            if ($poDate <= $cutoffDate) {
+                $user1 = 'DR001';
+                $user2 = 'PRESDIR';
+            } else {
+                $user1=$sqlApproval->user_approval_2;
+                $user2=$sqlApproval->user_approval_3;
+            }
+        }
+        if(intval($sqlApproval->approved_by)==2){
+
+            if ($poDate <= $cutoffDate) {
+                $user1 = 'scmbri01';
+                $user2 = 'DR001';
+            } else {
+                $user1=$sqlApproval->user_approval_1;
+                $user2=$sqlApproval->user_approval_2;
+            }
+        }
+        if(intval($sqlApproval->approved_by)==1){
+            $user1=null;
+            $user2=$sqlApproval->user_approval_1;
+        }
+
+        if(intval($sqlApproval->approved_by)==0){
+            $user1='DR001';
+            $user2='PRESDIR';
+        }
 
     if($user1!==null){
         $user_1 = $this->crud->read('users', [], ["username" => $user1]);
@@ -1158,9 +1224,9 @@ class Purchase_orders extends CI_Controller
 
         //Generate QRcode
         $this->createQrcode($purchase_orders->po_no, "assets/image/qrcode/");
-        if($user1!==null){
-            $this->createQrcode(md5($user_1->name), "assets/image/qrcode/");
-        }
+        // if($user1!==null){
+        //     $this->createQrcode(md5($user_1->name), "assets/image/qrcode/");
+        // }
         $this->createQrcode(md5($user_2->name), "assets/image/qrcode/");
 
         // if ($purchase_orders->approved == 0) {
@@ -1462,12 +1528,6 @@ class Purchase_orders extends CI_Controller
                             <div style="margin-top: 100px;">(.........................)</div>
                         </div>
                         <div style="text-align: center; display: flex; flex-direction:row;">
-                            <div style="text-align: center; margin-right:10px">
-                                <div style="margin-top: 30px;">Approved By</div>
-                                <div style="margin-top: 10px;"><img src="' . base_url('assets/image/qrcode/' . md5($user_1->name) . '.png') . '" width="80"/></div>
-                                <div style="margin-top: 10px;">' . $user_1->name . '</div>
-                                <div>' . $user_1->position . '</div>
-                            </div>
                             <div style="text-align: center;">
                                 <div style="margin-top: 30px;">Approved By</div>
                                 <div style="margin-top: 10px;"><img src="' . base_url('assets/image/qrcode/' . md5($user_2->name) . '.png') . '" width="80"/></div>

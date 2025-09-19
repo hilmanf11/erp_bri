@@ -447,9 +447,9 @@ class Purchase_invoices extends CI_Controller
         $por_no_ex = explode(",", $por_no);
 
         $this->db->select("a.receipt_no as por_no, a.po_no, c.id as item_rm_id, c.number as item_number, c.name as item_name, c.uom, b.currency, e.item_supplier as supplier_product,
-            a.qty_receipt as qty, f.price, f.discount, 'IDR' as currency_local, h.account_number, i.account_name,
-            ((a.qty_receipt * f.price) - (a.qty_receipt * f.price) * (f.discount / 100)) as total,COALESCE(g. middle,1) as middle, 
-            (CASE WHEN g.middle != '' THEN (g.middle * ((a.qty_receipt * f.price) - (a.qty_receipt * f.price) * (f.discount / 100))) ELSE ((a.qty_receipt * f.price) - (a.qty_receipt * f.price) * (f.discount / 100)) END) as total_local");
+            SUM(a.qty_receipt) as qty, f.price, f.discount, 'IDR' as currency_local, h.account_number, i.account_name,
+            ((SUM(a.qty_receipt) * f.price) - (SUM(a.qty_receipt) * f.price) * (f.discount / 100)) as total,COALESCE(g. middle,1) as middle, 
+            (CASE WHEN g.middle != '' THEN (g.middle * ((SUM(a.qty_receipt) * f.price) - (SUM(a.qty_receipt) * f.price) * (f.discount / 100))) ELSE ((SUM(a.qty_receipt) * f.price) - (SUM(a.qty_receipt) * f.price) * (f.discount / 100)) END) as total_local");
         $this->db->from('purchase_order_receipts a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');

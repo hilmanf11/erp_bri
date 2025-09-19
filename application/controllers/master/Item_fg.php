@@ -36,6 +36,24 @@ class item_fg extends CI_Controller
         echo json_encode($send);
     }
 
+    //GET DATA
+    public function readCompounds()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        //$send = $this->crud->query("SELECT * FROM item_fg WHERE number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%'");
+        $send = $this->crud->query("SELECT * FROM item_fg WHERE item_family_number = 'CD' AND (number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%') AND status = 0");
+        echo json_encode($send);
+    }
+
+    //GET DATA
+    public function readRubberParts()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        //$send = $this->crud->query("SELECT * FROM item_fg WHERE number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%'");
+        $send = $this->crud->query("SELECT * FROM item_fg WHERE item_family_number = 'RP' AND (number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%') AND status = 0");
+        echo json_encode($send);
+    }
+
     //GET DATATABLES
     public function datatables()
     {
