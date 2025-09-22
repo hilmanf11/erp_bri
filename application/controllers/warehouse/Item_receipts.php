@@ -64,7 +64,7 @@ class Item_receipts extends CI_Controller
         $date = date("Y-m-d");
         $purchase_order_label = $this->crud->read('purchase_order_labels', [], ["label_no" => base64_decode($label_no)]);
         //Select Query
-        $this->db->select('a.label_no, b.receipt_no, b.bc_kind, b.bc_document, b.bc_date, b.po_no, d.number as item_number, d.name as item_name, d.uom, a.qty, a.created_by, a.created_date');
+        $this->db->select('a.label_no, b.receipt_no, b.bc_kind, b.bc_document, b.bc_date, b.po_no, d.number as item_number, d.number_internal as item_number_internal, d.name as item_name, d.uom, a.qty, a.created_by, a.created_date');
         $this->db->from('scan_item_receipts a');
         $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id and a.receipt_no = b.receipt_no and a.po_no = b.po_no');
         $this->db->join('purchase_order_labels c', 'a.label_no = c.label_no');
@@ -82,7 +82,7 @@ class Item_receipts extends CI_Controller
 
         if (!$records) {
             $return_material_labels = $this->crud->read('return_material_labels', [], ["label_no" => base64_decode($label_no)]);
-            $this->db->select('a.label_no, b.return_no as receipt_no, a.po_no, d.number as item_number, d.name as item_name, d.uom, a.qty, a.created_by, a.created_date');
+            $this->db->select('a.label_no, b.return_no as receipt_no, a.po_no, d.number as item_number, d.name as item_name, d.number_internal as item_number_internal, d.uom, a.qty, a.created_by, a.created_date');
             $this->db->from('scan_item_receipts a');
             $this->db->join('return_materials b', 'a.receipt_id = b.return_id and a.receipt_no = b.return_no');
             $this->db->join('return_material_labels c', 'a.label_no = c.label_no');

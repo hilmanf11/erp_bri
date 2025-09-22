@@ -18,10 +18,11 @@
             <th rowspan="2" data-options="field:'status',width:100,align:'center',sortable:true,styler:cellStyler,formatter:cellFormatter,sortable:true">Status</th>
             <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center',align:'center',sortable:true,styler:styleApproved,formatter:formatApproved,sortable:true">Approval</th>
             <th rowspan="2" data-options="field:'supplier_name',width:200,halign:'center',sortable:true">Supplier Name</th>
-            <th rowspan="2" data-options="field:'item_rm_number',width:100,halign:'center',sortable:true">Part No</th>
+            <th rowspan="2" data-options="field:'item_rm_number',width:120,halign:'center',sortable:true">Part No External</th>
+            <th rowspan="2" data-options="field:'item_rm_number_internal',width:120,halign:'center',sortable:true">Part No Internal</th>
             <th rowspan="2" data-options="field:'item_rm_name',width:150,halign:'center',sortable:true">Part Name</th>
             <th rowspan="2" data-options="field:'maker',width:100,halign:'center',sortable:true">Maker</th>
-            <th rowspan="2" data-options="field:'item_supplier',width:200,halign:'center',sortable:true">Supplier Product</th>
+            <th rowspan="2" data-options="field:'item_supplier',width:200,halign:'center',sortable:true">Supplier Part</th>
             <th rowspan="2" data-options="field:'item_family_name',width:120,halign:'center',sortable:true">Product Family</th>
             <th rowspan="2" data-options="field:'mpq',width:100,halign:'center',sortable:true">MPQ</th>
             <th rowspan="2" data-options="field:'moq',width:100,halign:'center',sortable:true">MOQ</th>
@@ -145,7 +146,7 @@
                     field: 'item_rm_number',
                     width: 200,
                     halign: 'center',
-                    title: "Part No.",
+                    title: "Part No External",
                     editor: {
                         type: 'combogrid',
                         options: {
@@ -156,11 +157,15 @@
                             textField: 'number',
                             mode: 'remote',
                             fitColumns: true,
-                            prompt: 'Choose Part No.',
+                            prompt: 'Choose Part No External',
                             columns: [
                                 [{
                                     field: 'number',
-                                    title: 'Part No.',
+                                    title: 'Part No External',
+                                    width: 150
+                                }, {
+                                    field: 'number_internal',
+                                    title: 'Part No Internal',
                                     width: 150
                                 }, {
                                     field: 'name',
@@ -189,11 +194,16 @@
                                     index: rowIndex,
                                     field: 'item_rm_name'
                                 });
-
+                                var ed5 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'number_internal'
+                                });
+                                
                                 $(ed.target).textbox('setValue', rows.number);
                                 $(ed2.target).textbox('setValue', rows.id);
                                 $(ed3.target).textbox('setValue', rows.item_family_name);
                                 $(ed4.target).textbox('setValue', rows.name);
+                                $(ed5.target).textbox('setValue', rows.number_internal);
                             }
                         }
                     }
@@ -205,6 +215,17 @@
                     title: "Part ID",
                     editor: {
                         type: 'textbox'
+                    }
+                }, {
+                    field: 'number_internal',
+                    width: 200,
+                    halign: 'center',
+                    title: "Part No Internal",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
                     }
                 }, {
                     field: 'item_rm_name',
@@ -229,7 +250,7 @@
                     field: 'item_supplier',
                     width: 150,
                     halign: 'center',
-                    title: "Supplier Product",
+                    title: "Supplier Part",
                     editor: {
                         type: 'textbox'
                     }

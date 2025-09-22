@@ -1,71 +1,82 @@
-<div id="f" class="easyui-panel" style="width:100%; background: #F4F4F4; padding: 10px;">
-    <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;">
-        <fieldset style="width: 35%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
-            <legend><b>Form Filter Data</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Period</span>
-                <input style="width:30%;" name="filter_month" id="filter_month" value="<?= date("m") ?>" class="easyui-combobox" data-options="prompt:'Month'">
-                <input style="width:30%;" name="filter_year" id="filter_year" value="<?= date("Y") ?>" class="easyui-combobox" data-options="prompt:'Year'">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Revision</span>
-                <input style="width:60%;" name="filter_revision" id="filter_revision" value="<?= "0" ?>" class="easyui-combobox" data-options="prompt:'Revision'" panelHeight="auto">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Customer</span>
-                <input style="width:60%;" id="filter_customer" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product No</span>
-                <input style="width:60%;" name="filter_product_no" id="filter_product_no" class="easyui-combogrid">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;"></span>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="formula()"><i class="fa fa-list"></i> Formula</a>
-            </div>
-        </fieldset>
-        <fieldset style="width: 15%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
-            <legend><b>Component Check</b></legend>
-            <div style="margin:12px;">
-                <input class="easyui-checkbox" id="check_forecast" value="on" readonly="true"> &nbsp; Forecast
-            </div>
-            <div style="margin:12px;">
-                <input class="easyui-checkbox" id="check_fg" value="on" readonly="true"> &nbsp; Stock Finish Good
-            </div>
-            <div style="margin:12px;">
-                <input class="easyui-checkbox" id="check_wip" value="on" readonly="true"> &nbsp; Stock WIP
-            </div>
-            <div style="margin:12px;">
-                <input class="easyui-checkbox" id="check_so" value="on" readonly="true"> &nbsp; Sales Order
-            </div>
-            <div style="margin:12px;">
-                <input class="easyui-checkbox" id="check_ost_so" value="on" readonly="true"> &nbsp; OST Sales Order
-            </div>
-            <div style="margin:12px;">
-                <input class="easyui-checkbox" id="check_ost_mpp" value="on" readonly="true"> &nbsp; OST MPP
-            </div>
-        </fieldset>
-        <fieldset style="width: 15%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
-            <legend><b>Working Calendar</b></legend>
-            <div id="showWorkingCalendar">
+<style>
+    .messager-body .messager-input {
+        padding: 4px !important;
+    }
+</style>
 
-            </div>
-        </fieldset>
-        <fieldset style="width: 33%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
-            <legend><b>Process Generate Data</b></legend>
-            <a href="javascript:;" style="float: left; color:green;" class="easyui-linkbutton" plain="true"><i class="fa fa-check"></i> SUCCESS : <b id="p_success">0</b></a>
-            <a href="javascript:;" style="float: right; color:red;" class="easyui-linkbutton" plain="true" onclick="downloadFailed()"><i class="fa fa-times"></i> FAILED : <b id="p_failed">0</b></a>
-            <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
-            <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
-            <div id="p_remarks" class="easyui-panel" style="width:100%; height:120px; padding:10px; margin-top: 10px; overflow: auto;">
-                <ul id="remarks">
+<div id="f" class="easyui-accordion" style="width:99.5%;">
+<!-- <div id="f" class="easyui-panel" style="width:100%; background: #F4F4F4; padding: 10px;"> -->
+    <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
+    <div title="Click this to hide the filter" data-options="selected:true" style="padding:10px; background:#F4F4F4">
+        <div style="display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;">
+            <fieldset style="width: 35%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+                <legend><b>Form Filter Data</b></legend>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Period</span>
+                    <input style="width:30%;" name="filter_month" id="filter_month" value="<?= date("m") ?>" class="easyui-combobox" data-options="prompt:'Month'">
+                    <input style="width:30%;" name="filter_year" id="filter_year" value="<?= date("Y") ?>" class="easyui-combobox" data-options="prompt:'Year'">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Revision</span>
+                    <input style="width:60%;" name="filter_revision" id="filter_revision" value="<?= "0" ?>" class="easyui-combobox" data-options="prompt:'Revision'" panelHeight="auto">
+                </div>
+                <!-- <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Customer</span>
+                    <input style="width:60%;" id="filter_customer" class="easyui-combobox">
+                </div> -->
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product No</span>
+                    <input style="width:60%;" name="filter_product_no" id="filter_product_no" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;"></span>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="formula()"><i class="fa fa-list"></i> Formula</a>
+                </div>
+            </fieldset>
+            <fieldset style="width: 15%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+                <legend><b>Component Check</b></legend>
+                <div style="margin:12px;">
+                    <input class="easyui-checkbox" id="check_forecast" value="on" readonly="true"> &nbsp; Forecast
+                </div>
+                <div style="margin:12px;">
+                    <input class="easyui-checkbox" id="check_fg" value="on" readonly="true"> &nbsp; Stock Finish Good
+                </div>
+                <div style="margin:12px;">
+                    <input class="easyui-checkbox" id="check_wip" value="on" readonly="true"> &nbsp; Stock WIP
+                </div>
+                <div style="margin:12px;">
+                    <input class="easyui-checkbox" id="check_so" value="on" readonly="true"> &nbsp; Sales Order
+                </div>
+                <div style="margin:12px;">
+                    <input class="easyui-checkbox" id="check_ost_so" value="on" readonly="true"> &nbsp; OST Sales Order
+                </div>
+                <div style="margin:12px;">
+                    <input class="easyui-checkbox" id="check_ost_mpp" value="on" readonly="true"> &nbsp; OST MPP
+                </div>
+            </fieldset>
+            <fieldset style="width: 15%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+                <legend><b>Working Calendar</b></legend>
+                <div id="showWorkingCalendar">
 
-                </ul>
-            </div>
-        </fieldset>
+                </div>
+            </fieldset>
+            <fieldset style="width: 33%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+                <legend><b>Process Generate Data</b></legend>
+                <a href="javascript:;" style="float: left; color:green;" class="easyui-linkbutton" plain="true"><i class="fa fa-check"></i> SUCCESS : <b id="p_success">0</b></a>
+                <a href="javascript:;" style="float: right; color:red;" class="easyui-linkbutton" plain="true" onclick="downloadFailed()"><i class="fa fa-times"></i> FAILED : <b id="p_failed">0</b></a>
+                <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
+                <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
+                <div id="p_remarks" class="easyui-panel" style="width:100%; height:120px; padding:10px; margin-top: 10px; overflow: auto;">
+                    <ul id="remarks">
+
+                    </ul>
+                </div>
+            </fieldset>
+        </div>
+
+        <?= $button ?>
     </div>
-    <?= $button ?>
 </div>
 
 <div id="dlg-formula" class="easyui-dialog" title="Formula" style="width: 600px; padding:10px; top: 20px;" data-options="closed: true, modal:false">
@@ -82,10 +93,25 @@
 </div>
 
 <div id="p" class="easyui-panel" title="Print Preview" style="width:100%;">
-    <iframe id="printout" src="" style="width: 100%; height: 450px; border: 0;"></iframe>
+    <iframe id="printout" src="" style="width: 100%; height: 400px; border: 0;"></iframe>
 </div>
 
 <script>
+
+    $(function () {
+        function updatePrintoutHeight() {
+            if ($('.accordion-header-selected').length > 0) {
+                $('#printout').css('height', '400px');
+            } else {
+                $('#printout').css('height', '110vh');
+            }
+        }
+
+        updatePrintoutHeight();
+        setInterval(updatePrintoutHeight, 200);
+        // console.log("Accordion detected:", $(".accordion-header-selected").length);
+    });
+
     function formula() {
         $("#dlg-formula").dialog('open');
     }
@@ -95,7 +121,7 @@
         var filter_month = $("#filter_month").combobox('getValue');
         var filter_year = $("#filter_year").textbox('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
-        var filter_customer = $("#filter_customer").combobox('getValue');
+        // var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_product_no = $("#filter_product_no").combogrid('getValue');
         var check_forecast = $("#check_forecast").checkbox('options');
         var check_fg = $("#check_fg").checkbox('options');
@@ -104,7 +130,14 @@
         var check_ost_mpp = $("#check_ost_mpp").checkbox('options');
         var check_so = $("#check_so").checkbox('options');
 
-        if (check_forecast.checked == true && check_fg.checked == true && check_wip.checked == true && check_ost_so.checked == true && check_ost_mpp.checked == true == check_so.checked == true) {
+        if (
+            check_forecast.checked == true && 
+            check_fg.checked == true && 
+            check_wip.checked == true && 
+            check_ost_so.checked == true && 
+            check_ost_mpp.checked == true && 
+            check_so.checked == true
+        ) {
             $.messager.prompt('Generate MPS', 'Please input Password Generate', function(r) {
                 if (r == "GENERATEMPS") {
                     Swal.fire({
@@ -132,7 +165,7 @@
                         data: "filter_month=" + window.btoa(filter_month) +
                             "&filter_year=" + window.btoa(filter_year) +
                             "&filter_revision=" + window.btoa(filter_revision) +
-                            "&filter_customer=" + window.btoa(filter_customer) +
+                            // "&filter_customer=" + window.btoa(filter_customer) +
                             "&filter_product_no=" + window.btoa(filter_product_no),
                         dataType: "text",
                         success: function(rows) {
@@ -202,8 +235,14 @@
                             }
                         }
                     });
+                }else{
+                    toastr.error("Opsss! Wrong Password!", "Error");
                 }
             });
+
+            setTimeout(function () {
+                $(".messager-input").attr("type", "password");
+            }, 50);
         } else {
             toastr.warning("Component Check Not Complete ", "Information");
         }
@@ -217,13 +256,13 @@
         var filter_month = $("#filter_month").combobox('getValue');
         var filter_year = $("#filter_year").textbox('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
-        var filter_customer = $("#filter_customer").combobox('getValue');
+        // var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_product_no = $("#filter_product_no").combogrid('getValue');
 
         var url = "?filter_month=" + window.btoa(filter_month) +
             "&filter_year=" + window.btoa(filter_year) +
             "&filter_revision=" + window.btoa(filter_revision) +
-            "&filter_customer=" + window.btoa(filter_customer) +
+            // "&filter_customer=" + window.btoa(filter_customer) +
             "&filter_product_no=" + window.btoa(filter_product_no);
 
         if (filter_month == "" || filter_year == "") {
@@ -275,8 +314,8 @@
             type: "get",
             url: "<?= base_url('planning/generate_mps_2/checkFg') ?>",
             data: "filter_month=" + window.btoa(filter_month) +
-                "&filter_year=" + window.btoa(filter_year) +
-                "&filter_revision=" + window.btoa(filter_revision),
+            // "&filter_revision=" + window.btoa(filter_revision) +
+                "&filter_year=" + window.btoa(filter_year),
             dataType: "json",
             success: function(ost_so) {
                 if (ost_so.theme == "success") {
@@ -395,14 +434,14 @@
         var filter_year = $("#filter_year").textbox('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
         // var filter_line_no = $("#filter_line_no").combobox('getValue');
-        var filter_customer = $("#filter_customer").combobox('getValue');
+        // var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_product_no = $("#filter_product_no").combogrid('getValue');
 
         var url = "?filter_month=" + window.btoa(filter_month) +
             "&filter_year=" + window.btoa(filter_year) +
             "&filter_revision=" + window.btoa(filter_revision) +
             // "&filter_line_no=" + window.btoa(filter_line_no) +
-            "&filter_customer=" + window.btoa(filter_customer) +
+            // "&filter_customer=" + window.btoa(filter_customer) +
             "&filter_product_no=" + window.btoa(filter_product_no);
 
         if (filter_month == "" || filter_year == "") {
@@ -509,20 +548,20 @@
             }
         });
 
-        $('#filter_customer').combobox({
-            url: '<?php echo base_url('master/customers/reads'); ?>',
-            valueField: 'id',
-            textField: 'name',
-            prompt: 'Choose Customer',
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }],
-            onSelect: function(customer) {
+        // $('#filter_customer').combobox({
+        //     url: '<?php echo base_url('master/customers/reads'); ?>',
+        //     valueField: 'id',
+        //     textField: 'name',
+        //     prompt: 'Choose Customer',
+        //     icons: [{
+        //         iconCls: 'icon-clear',
+        //         handler: function(e) {
+        //             $(e.data.target).combobox('clear').combobox('textbox').focus();
+        //         }
+        //     }],
+        //     onSelect: function(customer) {
                 $('#filter_product_no').combogrid({
-                    url: '<?= base_url('master/customer_items/reads/') ?>' + btoa(customer.id),
+                    url: '<?= base_url('master/item_fg/reads/') ?>',
                     panelWidth: 400,
                     idField: 'id',
                     textField: 'number',
@@ -547,8 +586,8 @@
                         }]
                     ]
                 });
-            }
-        });
+        //     }
+        // });
     });
 
     //Format Datepicker

@@ -330,7 +330,7 @@ class Supply_sheets extends CI_Controller
                 e.period, 
                 e.wp, 
                 c.id as item_rm_id,
-                c.number as item_rm_no, 
+                c.number_internal as item_rm_no, 
                 c.name as item_rm_name,
                 (CASE WHEN g.uom_soft is null THEN d.name ELSE h.name END) as uom,
                 (CASE WHEN g.uom_soft is null THEN f.composition ELSE (f.composition * g.convertion) END) as composition,
@@ -485,6 +485,7 @@ class Supply_sheets extends CI_Controller
         $this->db->select('
             c.id as item_rm_id,
             c.number as item_rm_no, 
+            c.number_internal as item_rm_no_internal, 
             c.name as item_rm_name, 
             h.mpq,
             COALESCE(f.uom_soft, b.uom) as uom,
@@ -747,6 +748,23 @@ class Supply_sheets extends CI_Controller
                         $supplySheetId = $this->crud->create_return_id('supply_chemical', $post);
                     }
 
+                        // Tambahkan notifikasi jika berhasil
+                        if ($supplySheetId) {
+                            $notificationData = [
+                                'created_by' => $this->session->userdata('username'),
+                                'created_date' => date('Y-m-d H:i:s'),
+                                'approvals_id' => null,
+                                'users_id_from' => $this->session->userdata('username'),
+                                'users_id_to' => 'scmbri04',
+                                'table_id' => $supplySheetId,
+                                'table_name' => 'supply_sheets',
+                                'name' => 'Created',
+                                'description' => 'Data in Module Supply Sheets has been created',
+                                'status' => 0
+                            ];
+                            $this->crud->create('notifications', $notificationData);
+                        }
+
                         $workorderExists = $this->db->get_where("production_schedules", ["workorder" => $post['workorder']])->num_rows();
 
                         if ($workorderExists > 0) {
@@ -922,8 +940,21 @@ class Supply_sheets extends CI_Controller
     {
         $data = $this->input->post();
         $send = $this->crud->delete('supply_sheets', ["id" => $data['id']]);
-        $update = $this->crud->update('production_schedules', ["workorder" => $data['workorder'], "item_fg_id" => $data['item_fg_id']], ["status" => 0]);
-        $delete = $this->crud->delete('wip_balances', ["request_no" => $data['request_no'], "item_rm_id" => $data['item_rm_id']]);
+        $update = $this->crud->update('production_schedules', [
+            "workorder" => $data['workorder'], 
+            "item_fg_id" => $data['item_fg_id']
+        ], ["status" => 0]);
+
+        $deleteChemical = $this->crud->delete('supply_chemical', [
+            "workorder" => $data['workorder'], 
+            "item_fg_id" => $data["item_fg_id"]
+        ]);
+        
+        $delete = $this->crud->delete('wip_balances', [
+            "request_no" => $data['request_no'], 
+            "item_rm_id" => $data['item_rm_id']
+        ]);
+
         echo $send;
     }
 
@@ -999,7 +1030,7 @@ class Supply_sheets extends CI_Controller
         $hal = 1;
         $subtotal = 0;
         for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*, (CASE WHEN a.mpq > 0 THEN a.mpq ELSE g.mpq END) as mpq, c.number as item_rm_no, c.name as item_rm_name, e.composition, f.location, c.uom');
+            $this->db->select('a.*, (CASE WHEN a.mpq > 0 THEN a.mpq ELSE g.mpq END) as mpq, c.number_internal as item_rm_no, c.name as item_rm_name, e.composition, f.location, c.uom');
             $this->db->from('supply_sheets a');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
             $this->db->join('uom d', 'c.uom = d.name');
@@ -1181,7 +1212,8 @@ class Supply_sheets extends CI_Controller
         $filter_period = $this->input->get('filter_period');
         $filter_wp   = $this->input->get('filter_wp');
         $filter_request_no = $this->input->get('filter_request_no');
-        $filter_operation = $this->input->get('filter_operation');
+        // $filter_operation = $this->input->get('filter_operation');
+
         //Config
         $this->db->select('*');
         $this->db->from('config');
@@ -1192,7 +1224,7 @@ class Supply_sheets extends CI_Controller
             e.period, 
             e.wp, 
             c.id as item_rm_id,
-            c.number as item_rm_no, 
+            c.number_internal as item_rm_no, 
             c.name as item_rm_name, 
             (CASE WHEN g.uom_soft is null THEN d.name ELSE h.name END) as uom,
             (CASE WHEN g.uom_soft is null THEN f.composition ELSE (f.composition * g.convertion) END) as composition,
@@ -1226,9 +1258,9 @@ class Supply_sheets extends CI_Controller
         if ($filter_request_no != "") {
             $this->db->where('a.request_no', $filter_request_no);
         }
-        if ($filter_operation != "") {
-            $this->db->where('f.operation', $filter_operation);
-        }
+        // if ($filter_operation != "") {
+        //     $this->db->where('f.operation', $filter_operation);
+        // }
         $this->db->group_by('a.workorder');
         $this->db->group_by('a.item_rm_id');
         $records = $this->db->get()->result_array();

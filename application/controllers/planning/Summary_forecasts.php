@@ -136,56 +136,133 @@ class Summary_forecasts extends CI_Controller
 
         // $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, d.number as compound_no, b.item_family_number as item_prodfam');
 
+        // $this->db->select('
+        //     a.item_fg_id,
+        //     a.deleted,
+        //     a.p_month,
+        //     a.p_year,
+        //     b.number as item_fg_number,
+        //     b.name as item_fg_name,
+        //     CASE 
+        //         WHEN b.item_family_number != "CD" THEN (
+        //             SELECT d.number 
+        //             FROM bom c 
+        //             LEFT JOIN item_rm d ON c.item_rm_id = d.id 
+        //             WHERE c.item_fg_id = a.item_fg_id AND c.priority = 1 
+        //             LIMIT 1
+        //         )
+        //         ELSE NULL
+        //     END as compound_no,
+        //     b.uom as uom,
+        //     b.item_family_number as item_prodfam,
+        //     SUM(a.month_1) as month_1,
+        //     SUM(a.month_2) as month_2,
+        //     SUM(a.month_3) as month_3,
+        //     SUM(a.month_4) as month_4,
+        //     SUM(a.month_5) as month_5,
+        //     SUM(a.month_6) as month_6,
+        //     SUM(a.month_7) as month_7,
+        //     SUM(a.month_8) as month_8,
+        //     SUM(a.month_9) as month_9,
+        //     SUM(a.month_10) as month_10,
+        //     SUM(a.month_11) as month_11,
+        //     SUM(a.month_12) as month_12
+        // ');
+
+        // $this->db->from('forecasts a');
+        // $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+
+        // $this->db->join("(
+        //     SELECT f1.item_fg_id, f1.p_month, f1.p_year,
+        //         COALESCE(MAX(f1.revision), 0) as max_rev
+        //     FROM forecasts f1
+        //     WHERE f1.deleted = 0
+        //     GROUP BY f1.item_fg_id, f1.p_month, f1.p_year
+        // ) x",
+        // "x.item_fg_id = a.item_fg_id 
+        // AND x.p_month = a.p_month 
+        // AND x.p_year = a.p_year 
+        // AND a.revision = x.max_rev", "inner");
+
+        // // $this->db->join('bom c', 'a.item_fg_id = c.item_fg_id', 'left');
+        // // $this->db->join('item_rm d', 'c.item_rm_id = d.id', 'left');
+        // $this->db->where('a.deleted', 0);
+        // $this->db->like('a.p_month', $filter_period_month);
+        // $this->db->like('a.p_year', $filter_period_year);
+        // $this->db->like('a.item_fg_id', $filter_item_fg);
+        // // $this->db->where("a.p_year '$filter_period_year'");
+        // // $this->db->where("a.p_month '$filter_period_month'");
+        // if ($filter_product_family != "") {
+        //     $this->db->where('b.item_family_number', $filter_product_family);
+        // }
+        // $this->db->group_by('a.item_fg_id');
+        // // $this->db->group_by('a.p_month');
+        // // $this->db->group_by('a.p_year');
+        // $this->db->order_by('a.item_fg_id', 'ASC');
+        // $records = $this->db->get()->result_array();
+
         $this->db->select('
-            a.item_fg_id,
-            a.deleted,
-            a.p_month,
-            a.p_year,
-            b.number as item_fg_number,
-            b.name as item_fg_name,
+            i.id as item_fg_id,
+            i.number as item_fg_number,
+            i.name as item_fg_name,
+            i.uom,
+            i.item_family_number as item_prodfam,
             CASE 
-                WHEN b.item_family_number != "CD" THEN (
+                WHEN i.item_family_number != "CD" THEN (
                     SELECT d.number 
                     FROM bom c 
                     LEFT JOIN item_rm d ON c.item_rm_id = d.id 
-                    WHERE c.item_fg_id = a.item_fg_id AND c.priority = 1 
+                    WHERE c.item_fg_id = i.id AND c.priority = 1 
                     LIMIT 1
                 )
                 ELSE NULL
             END as compound_no,
-            b.uom as uom,
-            b.item_family_number as item_prodfam,
-            SUM(a.month_1) as month_1,
-            SUM(a.month_2) as month_2,
-            SUM(a.month_3) as month_3,
-            SUM(a.month_4) as month_4,
-            SUM(a.month_5) as month_5,
-            SUM(a.month_6) as month_6,
-            SUM(a.month_7) as month_7,
-            SUM(a.month_8) as month_8,
-            SUM(a.month_9) as month_9,
-            SUM(a.month_10) as month_10,
-            SUM(a.month_11) as month_11,
-            SUM(a.month_12) as month_12
+            SUM(f.month_1) as month_1,
+            SUM(f.month_2) as month_2,
+            SUM(f.month_3) as month_3,
+            SUM(f.month_4) as month_4,
+            SUM(f.month_5) as month_5,
+            SUM(f.month_6) as month_6,
+            SUM(f.month_7) as month_7,
+            SUM(f.month_8) as month_8,
+            SUM(f.month_9) as month_9,
+            SUM(f.month_10) as month_10,
+            SUM(f.month_11) as month_11,
+            SUM(f.month_12) as month_12
         ');
 
-        $this->db->from('forecasts a');
-        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-        // $this->db->join('bom c', 'a.item_fg_id = c.item_fg_id and c.priority = 1', 'left');
-        // $this->db->join('item_rm d', 'c.item_rm_id = d.id', 'left');
-        $this->db->where('a.deleted', 0);
-        $this->db->like('a.p_month', $filter_period_month);
-        $this->db->like('a.p_year', $filter_period_year);
-        $this->db->like('a.item_fg_id', $filter_item_fg);
-        // $this->db->where("a.p_year '$filter_period_year'");
-        // $this->db->where("a.p_month '$filter_period_month'");
-        if ($filter_product_family != "") {
-            $this->db->where('b.item_family_number', $filter_product_family);
+        $this->db->from('item_fg i');
+        $this->db->join("(
+            SELECT ff.*
+            FROM forecasts ff
+            INNER JOIN (
+                SELECT item_fg_id, customer_id, p_month, p_year, MAX(revision) AS max_rev
+                FROM forecasts
+                WHERE deleted = 0
+                GROUP BY item_fg_id, customer_id, p_month, p_year
+            ) x 
+                ON ff.item_fg_id  = x.item_fg_id 
+            AND ff.customer_id = x.customer_id
+            AND ff.p_month     = x.p_month
+            AND ff.p_year      = x.p_year
+            AND ff.revision    = x.max_rev
+        ) f", 
+        "f.item_fg_id = i.id 
+        AND (f.p_month = '".$filter_period_month."' OR f.p_month IS NULL) 
+        AND (f.p_year  = '".$filter_period_year."' OR f.p_year IS NULL)", 
+        "left");
+
+        $this->db->where('i.status', 0);
+        if ($filter_item_fg != "") {
+            $this->db->like('i.id', $filter_item_fg);
         }
-        $this->db->group_by('a.item_fg_id');
-        // $this->db->group_by('a.p_month');
-        // $this->db->group_by('a.p_year');
-        $this->db->order_by('a.item_fg_id', 'ASC');
+        if ($filter_product_family != "") {
+            $this->db->where('i.item_family_number', $filter_product_family);
+        }
+
+        $this->db->group_by('i.id');
+        $this->db->order_by('i.number', 'ASC');
+
         $records = $this->db->get()->result_array();
 
         if ($filter_period_month == "01") {
@@ -322,19 +399,29 @@ class Summary_forecasts extends CI_Controller
                         <td style="mso-number-format:\'\\@\';">' . $data['item_fg_number'] . '</td>
                         <td style="mso-number-format:\'\\@\';">' . $data['item_fg_name'] . '</td>
                         <td style="mso-number-format:\'\\@\';">' . $compound_no . '</td>
-                        <td style="text-align: center;"> '. $data['uom'] .'</td>
-                        <td style="text-align: right;">' . number_format($data['month_1'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_2'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_3'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_4'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_5'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_6'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_7'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_8'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_9'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_10'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_11'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_12'], 0, ',', '.') . '</td>';
+                        <td style="text-align: center;"> '. $data['uom'] .'</td>';
+
+                        for ($i = 1; $i <= 12; $i++) {
+                            $val = $data["month_$i"];
+                            $bg = is_null($val) ? "background-color:#ffc1c1;" : "";
+                            $html .= '<td style="text-align: right;' . $bg . '">'
+                                . (is_null($val) ? '0' : number_format($val, 0, ',', '.'))
+                                . '</td>';
+                        }
+
+                // $html .= '
+                //         <td style="text-align: right;">' . number_format($data['month_1'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_2'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_3'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_4'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_5'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_6'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_7'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_8'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_9'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_10'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_11'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_12'], 0, ',', '.') . '</td>';
                 $no++;
             }
             $html .= '<tr>
@@ -464,20 +551,30 @@ class Summary_forecasts extends CI_Controller
                         <td style="mso-number-format:\'\\@\';">' . $data['item_fg_number'] . '</td>
                         <td style="mso-number-format:\'\\@\';">' . $data['item_fg_name'] . '</td>
                         <td style="mso-number-format:\'\\@\';">' . $compound_no . '</td>
-                        <td style="text-align: center;"> '. $data['uom'] .'</td>
-                        <td style="text-align: right;">' . number_format($data['month_1'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_2'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_3'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_4'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_5'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_6'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_7'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_8'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_9'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_10'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_11'], 0, ',', '.') . '</td>
-                        <td style="text-align: right;">' . number_format($data['month_12'], 0, ',', '.') . '</td>';
-                $no++;
+                        <td style="text-align: center;"> '. $data['uom'] .'</td>';
+
+                        for ($i = 1; $i <= 12; $i++) {
+                            $val = $data["month_$i"];
+                            $bg = is_null($val) ? "background-color:#ffc1c1;" : "";
+                            $html .= '<td style="text-align: right;' . $bg . '">'
+                                . (is_null($val) ? '0' : number_format($val, 0, ',', '.'))
+                                . '</td>';
+                        }
+
+                // $html .='
+                //         <td style="text-align: right;">' . number_format($data['month_1'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_2'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_3'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_4'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_5'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_6'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_7'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_8'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_9'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_10'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_11'], 0, ',', '.') . '</td>
+                //         <td style="text-align: right;">' . number_format($data['month_12'], 0, ',', '.') . '</td>';
+                // $no++;
             }
             $html .= '<tr>
                         <th colspan="5">Grand Total</th>

@@ -428,6 +428,8 @@
     }
 
     function addTable(customer_id, link = "") {
+        var customerOrderNo = $('#customer_order_no').textbox('getValue');
+        // console.log(customerOrderNo);
         $('#dg2').datagrid({
             url: link,
             singleSelect: true,
@@ -448,6 +450,7 @@
                             mode: 'remote',
                             fitColumns: true,
                             prompt: 'Choose Product ID',
+                            queryParams: { customer_order_no: customerOrderNo },
                             columns: [
                                 [{
                                     field: 'id',
@@ -607,7 +610,8 @@
                             }
                         }
                     }
-                }, {
+                }, 
+                {
                     field: 'delivery',
                     width: 80,
                     halign: 'center',
@@ -629,7 +633,8 @@
                             readonly: true
                         }
                     }
-                }, {
+                }, 
+                {
                     field: 'currency',
                     width: 80,
                     halign: 'center',

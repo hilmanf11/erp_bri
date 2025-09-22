@@ -55,7 +55,7 @@ class Calendars extends CI_Controller
                 $hkw -= 1;
             }
 
-            if (date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Sunday") {
+            if (date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Sunday" || date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Saturday") {
                 $hkw -= 1;
             }
         }
@@ -120,7 +120,9 @@ class Calendars extends CI_Controller
                         <td align=center width="180">Wednesday</td>
                         <td align=center width="200">Thursday</td>
                         <td align=center width="200">Friday</td>
-                        <td align=center width="200">Saturday</td>
+                        <td align=center width="200">
+                            <font color="#FF0000">Saturday</font>
+                        </td>
                     </tr>';
         $s = date("w", mktime(0, 0, 0, $bulan, 1, $tahun));
 
@@ -149,7 +151,7 @@ class Calendars extends CI_Controller
                 $style = "background:#FFDADA !important;";
             }
 
-            if (date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Sunday") {
+            if (date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Sunday" || date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Saturday") {
                 $style = "background:#FFDADA !important;";
                 $note = "<textarea rows='2' hidden name='remarks[]'></textarea>";
             }

@@ -12,8 +12,8 @@
             <th rowspan="2" data-options="field:'po_date',width:100,align:'center'">PO Date</th>
             <th rowspan="2" data-options="field:'delivery_date',width:100,align:'center'">Delivery Date</th>
             <th rowspan="2" data-options="field:'supplier_name',width:200,halign:'center'">Supplier</th>
-            <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
-            <th rowspan="2" data-options="field:'item_name',width:200,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Part No</th>
+            <th rowspan="2" data-options="field:'item_name',width:200,halign:'center'">Part Name</th>
             <th rowspan="2" data-options="field:'mpq',width:80,halign:'center',align:'right',formatter:numberformatInteger">MPQ</th>
             <th rowspan="2" data-options="field:'moq',width:80,halign:'center',align:'right',formatter:numberformatInteger">MOQ</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformatInteger">Qty</th>
@@ -62,7 +62,7 @@
             </div>
             <div style="width: 50%; float:left;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product No</span>
+                    <span style="width:35%; display:inline-block;">Part No</span>
                     <input style="width:60%;" id="filter_product_no" class="easyui-combogrid">
                 </div>
                 <div class="fitem">
@@ -294,7 +294,7 @@
                                 width: 150,
                                 readonly: true,
                                 halign: 'center',
-                                title: "Product No",
+                                title: "Part No",
                                 editor: {
                                     type: 'textbox',
                                     options: {
@@ -318,7 +318,7 @@
                                 width: 200,
                                 readonly: true,
                                 halign: 'center',
-                                title: "Product Name"
+                                title: "Part Name"
                             }, {
                                 field: 'category_name',
                                 width: 150,
@@ -493,7 +493,7 @@
                                 width: 150,
                                 hidden: true,
                                 halign: 'center',
-                                title: "Product ID",
+                                title: "Part ID",
                                 editor: {
                                     type: 'textbox',
                                 }
@@ -629,7 +629,7 @@
                                                     $(totalEditor.target).numberbox('setValue', totalDiscountedPrice);
                                                 }
                                             } else {
-                                                toastr.warning("Please Input Product No in Supplier Items");
+                                                toastr.warning("Please Input Part No in Supplier Items");
                                             }
                                         },
                                         onSelect: function(index, row) {
@@ -854,10 +854,10 @@
                 return row[opts.textField].toLowerCase().indexOf(q.toLowerCase()) >= 0 || 
                        row['item_name'].toLowerCase().indexOf(q.toLowerCase()) >= 0;
             },
-            prompt: "Select Product No",
+            prompt: "Select Part No",
             columns: [[
-                {field:'item_number',title:'Product No',width:150},
-                {field:'item_name',title:'Product Name',width:250}
+                {field:'item_number',title:'Part No',width:150},
+                {field:'item_name',title:'Part Name',width:250}
             ]],
             icons: [{
                 iconCls: 'icon-clear',

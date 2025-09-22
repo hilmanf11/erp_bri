@@ -330,6 +330,242 @@ class Delivery_orders extends CI_Controller
 
 
 
+    // public function datatablesTemp($sales_order, $delivery_date, $customer_id, $customer_order_no)
+
+    // {
+
+    //     $delivery_date = base64_decode($delivery_date);
+
+    //     $customer_id = base64_decode($customer_id);
+
+    //     $customer_order_no = explode(",", base64_decode($customer_order_no));
+
+    //     $queryEarlierDate = $this->db->query("SELECT item_fg_id, MIN(actual_delivery_date) AS earliest_date FROM delivery_orders WHERE status=1");
+        
+    //     if ($queryEarlierDate->num_rows() > 0) {
+    //         $row = $queryEarlierDate->row();
+    //         $earlierDate = $row->earliest_date;
+    //     } else {
+    //         $earlierDate = date('Y-m-d');
+    //     }
+
+    //     $filter_from = date('2025-01-01');
+    //     $filter_to = date('Y-m-d');
+
+    //     if ($sales_order == "FG") {
+    //         $this->db->select("
+    //             b.item_fg_id,
+    //             d.number as item_fg_number,
+    //             d.name as item_fg_name,
+    //             b.customer_order_no,
+    //             b.sales_order_no,
+    //             d.uom,
+    //             b.qty as qty_so,
+    //             (b.qty - COALESCE(SUM(c.qty_del), 0)) as qty_remain,
+    //             COALESCE(SUM(c.qty_del), 0) as qty_do,
+    //             (
+    //                 CASE
+    //                     WHEN EXISTS (
+    //                         SELECT 1 FROM delivery_orders do 
+    //                         WHERE do.item_fg_id = a.item_fg_id 
+    //                         AND do.customer_order_no = a.customer_order_no 
+    //                         AND do.delivery_date = a.trans_date
+    //                         AND do.partial = 1
+    //                         AND do.deleted = 0
+    //                     )
+    //                     THEN (
+    //                         a.qty - COALESCE((
+    //                             SELECT SUM(do2.qty_del) 
+    //                             FROM delivery_orders do2 
+    //                             WHERE do2.item_fg_id = a.item_fg_id 
+    //                             AND do2.customer_order_no = a.customer_order_no 
+    //                             AND do2.delivery_date = a.trans_date 
+    //                             AND do2.deleted = 0
+    //                         ), 0)
+    //                     )
+    //                     ELSE COALESCE(a.qty, 0)
+    //                 END
+    //             ) as qty_del,
+
+    //             (
+    //                 COALESCE((
+    //                     SELECT 
+    //                         (
+    //                             COALESCE(SUM(CASE 
+    //                                 WHEN f2.deleted = 0 AND DATE(f2.scan_date) < '$filter_from'
+    //                                 THEN f2.qty 
+    //                                 ELSE 0 
+    //                             END),0) + 
+    //                             COALESCE(SUM(CASE 
+    //                                 WHEN o2.deleted = 0 AND DATE(o2.trans_date) < '$filter_from'
+    //                                 THEN o2.qty
+    //                                 ELSE 0 
+    //                             END),0) +
+    //                             COALESCE(SUM(CASE 
+    //                                 WHEN tf2.deleted = 0 AND DATE(tf2.request_date) < '$filter_from' AND LEFT(tf2.transaction_type, 2) = 'RE'
+    //                                 THEN tf2.qty
+    //                                 ELSE 0
+    //                             END),0) - 
+    //                             COALESCE(SUM(CASE 
+    //                                 WHEN sh2.deleted = 0 AND DATE(sh2.created_date) < '$filter_from'
+    //                                 THEN sh2.qty
+    //                                 ELSE 0 
+    //                             END),0) -
+    //                             COALESCE(SUM(CASE 
+    //                                 WHEN tf3.deleted = 0 AND DATE(tf3.request_date) < '$filter_from' AND LEFT(tf3.transaction_type, 2) = 'IS'
+    //                                 THEN tf3.qty
+    //                                 ELSE 0
+    //                             END),0)
+    //                         )
+    //                     FROM fg_scan_in_label f2
+    //                     LEFT JOIN os_fg o2 ON f2.item_fg_id = o2.item_fg_id
+    //                     LEFT JOIN shipping_orders sh2 ON f2.item_fg_id = sh2.item_fg_id
+    //                     LEFT JOIN transaction_fg tf2 ON f2.item_fg_id = tf2.item_fg_id
+    //                     LEFT JOIN transaction_fg tf3 ON f2.item_fg_id = tf3.item_fg_id
+    //                     WHERE f2.item_fg_id = b.item_fg_id
+    //                 ), 0)
+
+    //                 +
+
+    //                 COALESCE((SELECT SUM(f.qty) FROM fg_scan_in_label f WHERE f.item_fg_id = b.item_fg_id AND f.deleted = 0 AND f.scan_date BETWEEN '$filter_from' AND '$filter_to'), 0) +
+    //                 COALESCE((SELECT SUM(o.qty) FROM os_fg o WHERE o.item_fg_id = b.item_fg_id AND o.deleted = 0 AND o.trans_date BETWEEN '$filter_from' AND '$filter_to'), 0) +
+    //                 COALESCE((SELECT SUM(tf.qty) FROM transaction_fg tf WHERE tf.item_fg_id = b.item_fg_id AND tf.deleted = 0 AND tf.request_date BETWEEN '$filter_from' AND '$filter_to' AND LEFT(tf.transaction_type, 2) = 'RE'), 0)
+
+    //                 -
+
+    //                 COALESCE((SELECT SUM(sh.qty) FROM shipping_orders sh WHERE sh.item_fg_id = b.item_fg_id AND sh.deleted = 0 AND DATE(sh.created_date) BETWEEN '$filter_from' AND '$filter_to'), 0) -
+    //                 COALESCE((SELECT SUM(tf.qty) FROM transaction_fg tf WHERE tf.item_fg_id = b.item_fg_id AND tf.deleted = 0 AND tf.request_date BETWEEN '$filter_from' AND '$filter_to' AND LEFT(tf.transaction_type, 2) = 'IS'), 0)
+
+    //                 - 
+
+    //                 COALESCE((SELECT SUM(do.qty_del) FROM delivery_orders do WHERE do.item_fg_id = b.item_fg_id AND status = '0'), 0)
+
+    //             ) as stock,
+
+    //             ((b.qty - COALESCE(SUM(c.qty_del), 0)) - COALESCE(a.qty, 0)) as stock_bal,
+
+    //             (
+    //                 CASE
+    //                     WHEN EXISTS(
+    //                         SELECT 1 FROM delivery_orders do2
+    //                         WHERE do2.item_fg_id = a.item_fg_id
+    //                             AND do2.customer_order_no = a.customer_order_no
+    //                             AND do2.delivery_date = a.trans_date
+    //                             AND do2.partial = 1
+    //                             AND do2.deleted = 0
+    //                     )
+    //                     THEN '1'
+    //                     ELSE '0'
+    //                 END
+    //             ) AS partial
+
+    //         ");
+
+    //         $this->db->from('sales_orders b');
+    //         //$this->db->join('sales_order_deliveries a', 'a.customer_order_no = b.customer_order_no and a.trans_date = b.delivery_date');
+    //         $this->db->join('sales_order_deliveries a', 'a.customer_order_no = b.customer_order_no and a.sales_order_no = b.sales_order_no and a.item_fg_id = b.item_fg_id and a.customer_id = b.customer_id');
+
+    //         //$this->db->join('sales_order_deliveries a', 'a.sales_order_no = b.sales_order_no and a.item_fg_id = b.item_fg_id and a.customer_id = b.customer_id');
+
+    //         //$this->db->join('delivery_orders c', 'b.sales_order_no = c.sales_order_no and b.item_fg_id = c.item_fg_id and b.customer_id = c.customer_id', 'left');
+    //         $this->db->join('delivery_orders c', 'b.item_fg_id = c.item_fg_id and b.customer_order_no = c.customer_order_no', 'left');
+
+    //         $this->db->join('item_fg d', 'b.item_fg_id = d.id');
+
+    //         // $this->db->join('scan_item_receipts_fg e', 'a.sales_order_no = e.so_number', 'left');
+    //         // $this->db->join('fg_scan_in_label f', 'b.item_fg_id = f.item_fg_id', 'left');
+    //         // $this->db->join('os_fg g', 'b.item_fg_id = g.item_fg_id', 'left');
+    //         // $this->db->join('shipping_orders h', 'b.item_fg_id = h.item_fg_id', 'left');
+
+    //         $this->db->where('b.customer_id', $customer_id);
+    //         $this->db->where('a.trans_date', $delivery_date);
+    //         $this->db->where('a.status', 0);
+
+    //         $this->db->where_in('b.customer_order_no', $customer_order_no);
+
+    //         $this->db->group_by('b.item_fg_id');
+
+    //         $this->db->group_by('b.sales_order_no');
+
+    //         $this->db->order_by('b.item_fg_id', 'asc');
+    //     } else {
+
+    //         $this->db->select("
+    //             b.item_fg_id, 
+    //             d.number as item_fg_number, 
+    //             d.name as item_fg_name, 
+    //             b.customer_order_no,
+    //             b.sales_order_no,
+    //             d.uom,
+    //             b.qty as qty_so, 
+    //             (b.qty - COALESCE(SUM(c.qty_del), 0)) as qty_remain,
+    //             COALESCE(SUM(c.qty_del), 0) as qty_do,
+    //             COALESCE(a.qty, 0) as qty_del,
+                
+    //             /* Perhitungan stok akhir */
+    //             (
+    //                 /* Begin Stock */
+    //                 (
+    //                     (SELECT COALESCE(SUM(f1.qty),0) FROM fg_scan_in_label f1 
+    //                     WHERE f1.deleted = 0 AND f1.scan_date < '$filter_from' AND f1.item_fg_id = b.item_fg_id)
+    //                     +
+    //                     (SELECT COALESCE(SUM(g1.qty),0) FROM os_fg g1 
+    //                     WHERE g1.deleted = 0 AND g1.trans_date < '$filter_from' AND g1.item_fg_id = b.item_fg_id)
+    //                     -
+    //                     (SELECT COALESCE(SUM(h1.qty),0) FROM shipping_orders h1 
+    //                     WHERE h1.deleted = 0 AND h1.created_date < '$filter_from' AND h1.item_fg_id = b.item_fg_id)
+    //                 )
+    //                 +
+    //                 /* Qty In (selama periode) */
+    //                 (
+    //                     (SELECT COALESCE(SUM(f2.qty),0) FROM fg_scan_in_label f2 
+    //                     WHERE f2.deleted = 0 AND f2.scan_date BETWEEN '$filter_from' AND '$filter_to' AND f2.item_fg_id = b.item_fg_id)
+    //                     +
+    //                     (SELECT COALESCE(SUM(g2.qty),0) FROM os_fg g2 
+    //                     WHERE g2.deleted = 0 AND g2.trans_date BETWEEN '$filter_from' AND '$filter_to' AND g2.item_fg_id = b.item_fg_id)
+    //                 )
+    //                 -
+    //                 /* Qty Out (selama periode) */
+    //                 (
+    //                     (SELECT COALESCE(SUM(h2.qty),0) FROM shipping_orders h2 
+    //                     WHERE h2.deleted = 0 AND h2.created_date BETWEEN '$filter_from' AND '$filter_to' AND h2.item_fg_id = b.item_fg_id)
+    //                 )
+    //             ) AS stock,
+
+    //             ((b.qty - COALESCE(SUM(c.qty_del), 0)) - a.qty) as stock_bal
+    //         ");
+
+    //         $this->db->from('sales_order_rm b');
+
+    //         $this->db->join('sales_order_delivery_rm a', 'a.sales_order_no = b.sales_order_no and a.item_fg_id = b.item_fg_id and a.customer_id = b.customer_id');
+
+    //         $this->db->join('delivery_orders c', 'b.item_fg_id = c.item_fg_id', 'left');
+
+    //         $this->db->join('item_fg d', 'b.item_fg_id = d.id');
+            
+    //         // $this->db->join('scan_item_receipts_fg e', 'a.sales_order_no = e.so_number', 'left');
+    //         // $this->db->join('fg_scan_in_label f', 'b.item_fg_id = f.item_fg_id', 'left');
+    //         // $this->db->join('os_fg g', 'b.item_fg_id = g.item_fg_id', 'left');
+    //         // $this->db->join('shipping_orders h', 'b.item_fg_id = h.item_fg_id', 'left');
+
+    //         $this->db->where('b.customer_id', $customer_id);
+
+    //         $this->db->where_in('b.customer_order_no', $customer_order_no);
+
+    //         $this->db->group_by('b.item_fg_id');
+
+    //         $this->db->group_by('b.sales_order_no');
+
+    //         $this->db->order_by('b.item_fg_id', 'asc');
+    //     }
+
+
+
+    //     $records = $this->db->get()->result_array();
+
+    //     echo json_encode($records);
+    // }
+
     public function datatablesTemp($sales_order, $delivery_date, $customer_id, $customer_order_no)
 
     {
@@ -650,8 +886,6 @@ class Delivery_orders extends CI_Controller
 
         echo json_encode($records);
     }
-
-
 
     //GET DATATABLES
 

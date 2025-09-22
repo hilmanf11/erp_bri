@@ -36,6 +36,10 @@ class Approvals extends CI_Controller
                 $table_approval = (preg_match('/\bExtruder\b/i', $user->position))?'supplier_items_2':'supplier_items';
                 $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
             }
+            if($table_name==="delivery_notes"){
+                $table_approval = (preg_match('/\bExtruder\b/i', $user->position))?'delivery_notes_2':'delivery_notes';
+                $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
+            }
 
             if ($data->approved == 1) {
                 $users_id = @$approval->user_approval_2;
@@ -138,6 +142,10 @@ class Approvals extends CI_Controller
         }
         if($tablename==="supplier_items"){
             $table_approval = (preg_match('/\bExtruder\b/i', $user->position))?'supplier_items_2':'supplier_items';
+            $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
+        }
+        if($tablename==="delivery_notes"){
+            $table_approval = (preg_match('/\bExtruder\b/i', $user->position))?'delivery_notes_2':'delivery_notes';
             $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
         }
 
@@ -269,6 +277,11 @@ class Approvals extends CI_Controller
     if ($tablename === "supplier_items") {
         $user = $this->crud->read('users', [], ["username" => $read->created_by]);
         $table_approval = (preg_match('/\bExtruder\b/i', $user->position)) ? 'supplier_items_2' : 'supplier_items';
+        $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
+    }
+    if ($tablename === "delivery_notes") {
+        $user = $this->crud->read('users', [], ["username" => $read->created_by]);
+        $table_approval = (preg_match('/\bExtruder\b/i', $user->position)) ? 'delivery_notes_2' : 'delivery_notes';
         $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
     }
 

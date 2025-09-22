@@ -155,12 +155,14 @@ class Stock_wip extends CI_Controller
     {
         error_reporting(0);
         require_once 'assets/vendors/excel_reader2.php';
+
         $target = basename($_FILES['file_upload']['name']);
         move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
-        chmod($_FILES['file_upload']['name'], 0777);
-        $file = $_FILES['file_upload']['name'];
-        $data = new Spreadsheet_Excel_Reader($file, false);
+        chmod($target, 0777);
+
+        $data = new Spreadsheet_Excel_Reader($target, false);
         $total_row = $data->rowcount($sheet_index = 0);
+        $datas = [];
 
         $p_month = $data->val(2, 3);
         $p_year = $data->val(2, 4);
@@ -176,83 +178,211 @@ class Stock_wip extends CI_Controller
                 'pp' => $data->val($i, 4),
                 'p1' => $data->val($i, 5),
                 'p2' => $data->val($i, 6),
-                'p3' => $data->val($i, 7)
+                'p3' => $data->val($i, 7),
             );
         }
 
-        $datas['total'] = count($datas);
-        echo json_encode($datas);
-        unlink($_FILES['file_upload']['name']);
+        echo json_encode([
+            "total" => count($datas),
+            "data" => $datas
+        ]);
+
+        unlink($target);
     }
 
     public function uploadclearFailed()
     {
-        @unlink('failed/stock_wip.txt');
+        @unlink('failed/stock_wip.xls');
     }
 
-    public function uploadcreateFailed()
-    {
-        if ($this->input->post()) {
-            $message = $this->input->post('message');
-            $textFailed = fopen('failed/stock_wip.txt', 'a');
-            fwrite($textFailed, $message . "\n");
-            fclose($textFailed);
-        }
-    }
-
-    //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "failed/stock_wip.txt";
-        header('Content-Description: File Failed');
-        header('Content-Disposition: attachment; filename=' . basename($file));
-        header('Expires: 0');
-        header('Cache-Control: must-revalidate');
-        header('Pragma: public');
-        header('Content-Length: ' . @filesize($file));
-        header("Content-Type: text/plain");
-        @readfile($file);
+        $file = "failed/stock_wip.xls";
+
+        if (!file_exists($file)) {
+            echo "No failed data to download";
+            return;
+        }
+
+        $filename = "upload_failed_stock_wip_" . date("Ymd_s") . ".xls";
+
+        header("Content-Description: File Upload Failed");
+        header("Content-type: application/vnd.ms-excel");
+        header("Content-Disposition: attachment; filename={$filename}");
+        header("Pragma: no-cache");
+        header("Expires: 0");
+
+        readfile($file);
     }
 
     //UPLOAD CREATE DATA
     public function uploadcreate()
     {
         if ($this->input->post()) {
-            $data = $this->input->post('data');
-            
-            $item_fg = $this->crud->read('item_fg', [], [
-                "number" => $data['item_fg_id'],
-            ]);
+            $raw = file_get_contents("php://input");
+            $postData = json_decode($raw, true);
 
-            if (empty($item_fg->id)) {
-                echo json_encode(array("title" => "Not found", "message" => " Product No. " . $data['item_fg_id'] . " is Not Found!", "theme" => "error"));
-                return;
+            $data_list = $postData['data'];
+            
+            $total_expected = count($data_list);
+            $processed_count = 0;
+
+            $this->db->trans_begin();
+            $results = [];
+
+            foreach ($data_list as $index => $data) {
+                $processed_count++;
+
+                if (
+                        empty($data['p_month']) ||
+                        empty($data['p_year']) ||
+                        $data['revision'] === "" ||$data['revision'] === null ||
+                        empty($data['item_fg_id']) ||
+                        empty($data['pp'])
+                    ) {
+                        $results[] = [
+                            "status" => "failed",
+                            "item" => "Line " . ($index + 1),
+                            "message" => "Invalid or missing data"
+                        ];
+                        continue;
+                }
+
+
+                $item_fg_id = $this->crud->read('item_fg', [], ["number" => $data['item_fg_id']]);
+                if (empty($item_fg_id)) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Product No " . $data['item_fg_id'] . " not found"
+                    ];
+                    continue;
+                }
+
+                $data['item_fg_id'] = $item_fg_id->id;
+
+                $stock_wip = $this->crud->read('stock_wip', [], [
+                    "item_fg_id" => $data['item_fg_id'],
+                    "p_month" => $data['p_month'],
+                    "p_year" => $data['p_year'],
+                    "revision" => $data['revision'],
+                ]);
+
+                $dataFinal = array(
+                    "p_month" => $data['p_month'],
+                    "p_year" => $data['p_year'],
+                    "revision" => $data['revision'],
+                    "document_no" => $data['document_no'],
+                    "item_fg_id" => $data['item_fg_id'],
+                    "pp" => $data['pp']
+                );
+
+                try {
+                    if (!empty($stock_wip->item_fg_id)) {
+                        // Update
+                        $this->db->update('stock_wip', [
+                            "pp" => $data['pp'],
+                        ], [
+                            "item_fg_id" => $data['item_fg_id'],
+                            "p_month" => $data['p_month'],
+                            "p_year" => $data['p_year'],
+                            "revision" => $data['revision'],
+                        ]);
+
+                        $status = "update";
+                    } else {
+                        // Insert
+                        $this->crud->create('stock_wip', $dataFinal);
+
+                        $status = "insert";
+                    }
+
+                    $res_item = ($status === "insert" ? "Create" : "Update");
+                    $res_msg  = ($status === "insert" ? "Data Saved Successfully" : "Product No $item_fg_id->number Data Updated");
+
+                    $results[] = [
+                        "status" => "success",
+                        "item" => $res_item,
+                        "message" => $res_msg
+                    ];
+                } catch (Exception $e) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => $item_fg_id->name,
+                        "message" => $e->getMessage()
+                    ];
+                    continue;
+                }
             }
 
-            $data['item_fg_id'] = $item_fg->id;
+            $failed = array_filter($results, fn($r) => $r['status'] === 'failed');
+            $hasDbError = ($this->db->trans_status() === FALSE);
 
-            $stock_wip = $this->crud->read('stock_wip', [], [
-                "document_no" => $data['document_no'],
-                // "customer_id" => $data['customer_id'],
-                "item_fg_id" => $data['item_fg_id'],
-                "p_month" => $data['p_month'],
-                "p_year" => $data['p_year'],
-                "revision" => $data['revision'],
-                'pp' => $data['pp'],
-                'p1' => $data['p1'],
-                'p2' => $data['p2'],
-                'p3' => $data['p3'],
-            ]);
-            
-            
-            if (!empty($stock_wip->document_no)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Document No. " . $data['document_no'] . " is Duplicate Data", "theme" => "error"));
-            } elseif (!empty($stock_wip->item_fg_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $item_fg->number . " is Duplicate Data", "theme" => "error"));
+            if (count($failed) > 0 || $hasDbError) {
+                $filePath = 'failed/stock_wip.xls';
+
+                $html = '
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body>
+                    <table border="1" cellspacing="0" cellpadding="5" style="border-collapse: collapse; font-family: Arial, sans-serif;">
+                        <thead style="background-color: #f2f2f2;">
+                            <tr>
+                                <th style="width: 40px; text-align: center;">No</th>
+                                <th style="width: 100px; text-align: left;">Line</th>
+                                <th style="width: 450px; text-align: left;">Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                ';
+
+                $no = 1;
+                foreach ($failed as $row) {
+                    $line = htmlspecialchars($row['item']);
+                    $msg  = htmlspecialchars($row['message']);
+                    $html .= "
+                        <tr>
+                            <td style='text-align: center;'>{$no}</td>
+                            <td style='text-align: left;'>{$line}</td>
+                            <td style='text-align: left;'>{$msg}</td>
+                        </tr>";
+                    $no++;
+                }
+
+                $html .= '
+                        </tbody>
+                    </table>
+                </body>
+                </html>';
+
+                file_put_contents($filePath, $html);
+
+                echo json_encode([
+                    "theme" => "error",
+                    "title" => "Upload Failed",
+                    "message" => "Data failed to save",
+                    "results" => $results,
+                    "total_expected" => $total_expected,
+                    "processed_count" => $processed_count,
+                    "stopped_at" => $index + 1
+                ]);
             } else {
-                $send   = $this->crud->create('stock_wip', $data);
-                echo $send;
+                @unlink('failed/stock_wip.xls');
+
+                $this->db->trans_commit();
+                echo json_encode([
+                    "theme" => "success",
+                    "title" => "Upload Successfully",
+                    "message" => "Data uploaded successfully",
+                    "results" => $results,
+                    "total_expected" => $total_expected,
+                    "processed_count" => $processed_count,
+                    "stopped_at" => $index + 1
+                ]);
             }
+
         }
     }
 

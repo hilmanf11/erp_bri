@@ -273,39 +273,62 @@ class Standard_price_fg extends CI_Controller
   //UPLOAD CLEAR CACHE
   public function uploadclearFailed()
   {
-      @unlink('excel/failed/standard_price_fg.txt');
+      @unlink('failed/standard_price_fg.xls');
   }
 
   //UPLOAD CREATE FAILED
-  public function uploadcreateFailed()
-  {
-      if ($this->input->post()) {
-          $message = $this->input->post('message');
-          $textFailed = fopen('excel/failed/standard_price_fg.txt', 'a');
-          fwrite($textFailed, $message . "\n");
-          fclose($textFailed);
-      }
-  }
+//   public function uploadcreateFailed()
+//   {
+//       if ($this->input->post()) {
+//           $message = $this->input->post('message');
+//           $textFailed = fopen('excel/failed/standard_price_fg.xls', 'a');
+//           fwrite($textFailed, $message . "\n");
+//           fclose($textFailed);
+//       }
+//   }
 
   //UPLOAD DOWNLOAD FAILED
-  public function uploadDownloadFailed()
-  {
-      $file = "excel/failed/standard_price_fg.txt";
-      header('Content-Description: File Failed');
-      header('Content-Disposition: attachment; filename=' . basename($file));
-      header('Expires: 0');
-      header('Cache-Control: must-revalidate');
-      header('Pragma: public');
-      header('Content-Length: ' . @filesize($file));
-      header("Content-Type: text/plain");
-      @readfile($file);
-  }
+//   public function uploadDownloadFailed()
+//   {
+//       $file = "excel/failed/standard_price_fg.txt";
+//       header('Content-Description: File Failed');
+//       header('Content-Disposition: attachment; filename=' . basename($file));
+//       header('Expires: 0');
+//       header('Cache-Control: must-revalidate');
+//       header('Pragma: public');
+//       header('Content-Length: ' . @filesize($file));
+//       header("Content-Type: text/plain");
+//       @readfile($file);
+//   }
+
+    public function uploadDownloadFailed()
+    {
+        $file = "failed/standard_price_fg.xls";
+
+        if (!file_exists($file)) {
+            echo "No failed data to download";
+            return;
+        }
+
+        $filename = "upload_failed_standard_price_fg_" . date("Ymd_s") . ".xls";
+
+        header("Content-Description: File Upload Failed");
+        header("Content-type: application/vnd.ms-excel");
+        header("Content-Disposition: attachment; filename={$filename}");
+        header("Pragma: no-cache");
+        header("Expires: 0");
+
+        readfile($file);
+    }
 
     //UPLOAD CREATE DATA
     public function uploadcreate()
     {
         if ($this->input->post()) {
-            $data_list = $this->input->post('data');
+            $raw = file_get_contents("php://input");
+            $postData = json_decode($raw, true);
+
+            $data_list = $postData['data'];
             
             $total_expected = count($data_list);
             $processed_count = 0;
@@ -317,13 +340,15 @@ class Standard_price_fg extends CI_Controller
             foreach ($data_list as $index => $data) {
                 $processed_count++;
 
+                $price = str_replace(',', '.', $data['price']);
+
                 if (
                         empty($data['item_fg_id']) ||
                         empty($data['price']) ||
                         empty($data['currency']) ||
                         empty($data['start_date']) ||
                         empty($data['end_date']) ||
-                        !is_numeric($data['price']) ||
+                        !is_numeric($price) ||
                         !strtotime($data['start_date']) ||
                         !strtotime($data['end_date']) ||
                         strtotime($data['start_date']) > strtotime($data['end_date'])
@@ -333,9 +358,10 @@ class Standard_price_fg extends CI_Controller
                             "item" => "Line " . ($index + 1),
                             "message" => "Invalid or missing data"
                         ];
-                        $this->db->trans_rollback();
-                        break;
+                        continue;
                 }
+
+                $data['price'] = (strpos($price, '.') !== false) ? (float) $price : (int) $price;
 
                 $item_fg_id = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
                 if (empty($item_fg_id)) {
@@ -344,8 +370,7 @@ class Standard_price_fg extends CI_Controller
                         "item" => "Line " . ($index + 1),
                         "message" => "Item ID " . $data['item_fg_id'] . " not found"
                     ];
-                    $this->db->trans_rollback();
-                    break;
+                    continue;
                 }
 
                 $item_family = $this->crud->read('item_familys', [], ["number" => $item_fg_id->item_family_number]);
@@ -426,12 +451,77 @@ class Standard_price_fg extends CI_Controller
                         "item" => $item_fg_id->name,
                         "message" => $e->getMessage()
                     ];
-                    $this->db->trans_rollback();
-                    break;
+                    continue;
                 }
             }
 
-            if (count(array_filter($results, fn($r) => $r['status'] === 'failed')) > 0) {
+            // if (count(array_filter($results, fn($r) => $r['status'] === 'failed')) > 0) {
+            //     echo json_encode([
+            //         "theme" => "error",
+            //         "title" => "Upload Failed",
+            //         "message" => "Data failed to save",
+            //         "results" => $results,
+            //         "total_expected" => $total_expected,
+            //         "processed_count" => $processed_count,
+            //         "stopped_at" => $index + 1
+            //     ]);
+            // } else {
+            //     $this->db->trans_commit();
+            //     echo json_encode([
+            //         "theme" => "success",
+            //         "title" => "Upload Successfully",
+            //         "message" => "Data uploaded successfully",
+            //         "results" => $results,
+            //         "total_expected" => $total_expected,
+            //         "processed_count" => $processed_count,
+            //         "stopped_at" => $index + 1
+            //     ]);
+            // }
+
+            $failed = array_filter($results, fn($r) => $r['status'] === 'failed');
+            $hasDbError = ($this->db->trans_status() === FALSE);
+
+            if (count($failed) > 0 || $hasDbError) {
+                $filePath = 'failed/standard_price_fg.xls';
+
+                $html = '
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body>
+                    <table border="1" cellspacing="0" cellpadding="5" style="border-collapse: collapse; font-family: Arial, sans-serif;">
+                        <thead style="background-color: #f2f2f2;">
+                            <tr>
+                                <th style="width: 40px; text-align: center;">No</th>
+                                <th style="width: 100px; text-align: left;">Line</th>
+                                <th style="width: 450px; text-align: left;">Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                ';
+
+                $no = 1;
+                foreach ($failed as $row) {
+                    $line = htmlspecialchars($row['item']);
+                    $msg  = htmlspecialchars($row['message']);
+                    $html .= "
+                        <tr>
+                            <td style='text-align: center;'>{$no}</td>
+                            <td style='text-align: left;'>{$line}</td>
+                            <td style='text-align: left;'>{$msg}</td>
+                        </tr>";
+                    $no++;
+                }
+
+                $html .= '
+                        </tbody>
+                    </table>
+                </body>
+                </html>';
+
+                file_put_contents($filePath, $html);
+
                 echo json_encode([
                     "theme" => "error",
                     "title" => "Upload Failed",
@@ -442,6 +532,8 @@ class Standard_price_fg extends CI_Controller
                     "stopped_at" => $index + 1
                 ]);
             } else {
+                @unlink('failed/standard_price_fg.xls');
+
                 $this->db->trans_commit();
                 echo json_encode([
                     "theme" => "success",
@@ -453,6 +545,7 @@ class Standard_price_fg extends CI_Controller
                     "stopped_at" => $index + 1
                 ]);
             }
+
         }
     }
 

@@ -8,8 +8,8 @@
             <th rowspan="2" data-options="field:'request_date',width:150,halign:'center',sortable:true">Request Date</th>
             <th rowspan="2" data-options="field:'expected_date',width:100,halign:'center'">Expected Date</th>
             <th rowspan="2" data-options="field:'request_name',width:150,halign:'center'">Request Name</th>
-            <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
-            <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Part No External</th>
+            <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Part Name</th>
             <th rowspan="2" data-options="field:'category_name',width:150,halign:'center'">Product Family</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right'">Total Qty</th>
@@ -221,7 +221,7 @@
                     field: 'item_number',
                     width: 250,
                     halign: 'center',
-                    title: "Product No",
+                    title: "Part No External",
                     editor: {
                         type: 'combogrid',
                         options: {
@@ -232,15 +232,15 @@
                             textField: 'item_number',
                             mode: 'remote',
                             fitColumns: true,
-                            prompt: 'Choose Product',
+                            prompt: 'Choose Part No External',
                             columns: [
                                 [{
                                     field: 'item_number',
-                                    title: 'Product No',
+                                    title: 'Part No External',
                                     width: 150
                                 }, {
                                     field: 'item_name',
-                                    title: 'Product Name',
+                                    title: 'Part Name',
                                     width: 150
                                 }]
                             ],
@@ -306,7 +306,7 @@
                     width: 150,
                     readonly: true,
                     halign: 'center',
-                    title: "Product Name",
+                    title: "Part Name",
                     editor: {
                         type: 'textbox'
                     }
@@ -398,7 +398,7 @@
                     field: 'item_number',
                     width: 250,
                     halign: 'center',
-                    title: "Product No",
+                    title: "Part No External",
                     editor: {
                         type: 'combogrid',
                         options: {
@@ -409,15 +409,15 @@
                             textField: 'item_number',
                             mode: 'remote',
                             fitColumns: true,
-                            prompt: 'Choose Product',
+                            prompt: 'Choose Part No External',
                             columns: [
                                 [{
                                     field: 'item_number',
-                                    title: 'Product No',
+                                    title: 'Part No External',
                                     width: 150
                                 }, {
                                     field: 'item_name',
-                                    title: 'Product Name',
+                                    title: 'Part Name',
                                     width: 150
                                 }]
                             ],
@@ -483,7 +483,7 @@
                     width: 150,
                     readonly: true,
                     halign: 'center',
-                    title: "Product Name",
+                    title: "Part Name",
                     editor: {
                         type: 'textbox'
                     }

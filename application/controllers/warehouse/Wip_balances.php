@@ -49,7 +49,7 @@ class Wip_balances extends CI_Controller
             // Select Query
             $this->db->select('a.created_by, a.created_date, a.updated_by, a.updated_date,
                 a.id, a.request_no, a.item_rm_id, a.begin, a.need, a.issued, a.balance, a.warehouse, a.status,
-                b.number as item_number, b.name as item_name, b.uom, IFNULL(c.qty_req, 0) AS qty_req,,
+                b.number_internal as item_number, b.name as item_name, b.uom, IFNULL(c.qty_req, 0) AS qty_req,,
                 IFNULL(c.qty_act, 0) as qty_act, g.mpq
             ');
             $this->db->from('wip_balances a');

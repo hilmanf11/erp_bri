@@ -98,7 +98,7 @@ class Os_mpp extends CI_Controller
             $this->db->group_by('a.revision');
             // $this->db->group_by('a.customer_id');
             $this->db->group_by('a.item_fg_id');
-            $this->db->order_by('a.item_fg_id', 'ASC');
+            $this->db->order_by('b.number', 'ASC');
 
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
@@ -151,16 +151,51 @@ class Os_mpp extends CI_Controller
     }
 
     //UPLOAD DATA
+    // public function uploadv1()
+    // {
+    //     error_reporting(0);
+    //     require_once 'assets/vendors/excel_reader2.php';
+    //     $target = basename($_FILES['file_upload']['name']);
+    //     move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
+    //     chmod($_FILES['file_upload']['name'], 0777);
+    //     $file = $_FILES['file_upload']['name'];
+    //     $data = new Spreadsheet_Excel_Reader($file, false);
+    //     $total_row = $data->rowcount($sheet_index = 0);
+
+    //     $p_month = $data->val(2, 3);
+    //     $p_year = $data->val(2, 4);
+    //     $revision = $data->val(3, 3);
+
+    //     for ($i = 5; $i <= $total_row; $i++) {
+    //         $datas[] = array(
+    //             'p_month' => $p_month,
+    //             'p_year' => $p_year,
+    //             'revision' => $revision,
+    //             'document_no' => $data->val($i, 2),
+    //             // 'customer_id' => $data->val($i, 3),
+    //             'item_fg_id' => $data->val($i, 3),
+    //             'qty' => $data->val($i, 4)
+    //         );
+    //     }
+
+    //     $datas['total'] = count($datas);
+    //     echo json_encode($datas);
+    //     unlink($_FILES['file_upload']['name']);
+    // }
+
+    //UPLOAD DATA
     public function upload()
     {
         error_reporting(0);
         require_once 'assets/vendors/excel_reader2.php';
+
         $target = basename($_FILES['file_upload']['name']);
         move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
-        chmod($_FILES['file_upload']['name'], 0777);
-        $file = $_FILES['file_upload']['name'];
-        $data = new Spreadsheet_Excel_Reader($file, false);
+        chmod($target, 0777);
+
+        $data = new Spreadsheet_Excel_Reader($target, false);
         $total_row = $data->rowcount($sheet_index = 0);
+        $datas = [];
 
         $p_month = $data->val(2, 3);
         $p_year = $data->val(2, 4);
@@ -172,87 +207,281 @@ class Os_mpp extends CI_Controller
                 'p_year' => $p_year,
                 'revision' => $revision,
                 'document_no' => $data->val($i, 2),
-                // 'customer_id' => $data->val($i, 3),
                 'item_fg_id' => $data->val($i, 3),
                 'qty' => $data->val($i, 4)
             );
         }
 
-        $datas['total'] = count($datas);
-        echo json_encode($datas);
-        unlink($_FILES['file_upload']['name']);
+        echo json_encode([
+            "total" => count($datas),
+            "data" => $datas
+        ]);
+
+        unlink($target);
+        // unlink($_FILES['file_upload']['name']);
     }
 
     public function uploadclearFailed()
     {
-        @unlink('failed/os_mpp.txt');
+        @unlink('failed/os_mpp.xls');
     }
 
-    public function uploadcreateFailed()
-    {
-        if ($this->input->post()) {
-            $message = $this->input->post('message');
-            $textFailed = fopen('failed/os_mpp.txt', 'a');
-            fwrite($textFailed, $message . "\n");
-            fclose($textFailed);
-        }
-    }
+    // public function uploadcreateFailed()
+    // {
+    //     if ($this->input->post()) {
+    //         $message = $this->input->post('message');
+    //         $textFailed = fopen('failed/os_mpp.txt', 'a');
+    //         fwrite($textFailed, $message . "\n");
+    //         fclose($textFailed);
+    //     }
+    // }
 
     //UPLOAD DOWNLOAD FAILED
+    // public function uploadDownloadFailed()
+    // {
+    //     $file = "failed/os_mpp.txt";
+    //     header('Content-Description: File Failed');
+    //     header('Content-Disposition: attachment; filename=' . basename($file));
+    //     header('Expires: 0');
+    //     header('Cache-Control: must-revalidate');
+    //     header('Pragma: public');
+    //     header('Content-Length: ' . @filesize($file));
+    //     header("Content-Type: text/plain");
+    //     @readfile($file);
+    // }
+
     public function uploadDownloadFailed()
     {
-        $file = "failed/os_mpp.txt";
-        header('Content-Description: File Failed');
-        header('Content-Disposition: attachment; filename=' . basename($file));
-        header('Expires: 0');
-        header('Cache-Control: must-revalidate');
-        header('Pragma: public');
-        header('Content-Length: ' . @filesize($file));
-        header("Content-Type: text/plain");
-        @readfile($file);
+        $file = "failed/os_mpp.xls";
+
+        if (!file_exists($file)) {
+            echo "No failed data to download";
+            return;
+        }
+
+        $filename = "upload_failed_os_mpp_" . date("Ymd_s") . ".xls";
+
+        header("Content-Description: File Upload Failed");
+        header("Content-type: application/vnd.ms-excel");
+        header("Content-Disposition: attachment; filename={$filename}");
+        header("Pragma: no-cache");
+        header("Expires: 0");
+
+        readfile($file);
     }
+
+    //UPLOAD CREATE DATA
+    // public function uploadcreatev1()
+    // {
+    //     if ($this->input->post()) {
+    //         $data = $this->input->post('data');
+
+    //         $item_fg = $this->crud->read('item_fg', [], [
+    //             "number" => $data['item_fg_id'],
+    //         ]);
+
+    //         // $customer = $this->crud->read('customers', [], [
+    //         //     "number" => $data['customer_id'],
+    //         // ]);
+
+    //         if (empty($item_fg->id)) {
+    //             echo json_encode(array("title" => "Not found", "message" => " Product No. " . $data['item_fg_id'] . " is Not Found!", "theme" => "error"));
+    //             return;
+    //         }
+
+    //         // if (empty($customer->id)) {
+    //         //     echo json_encode(array("title" => "Not found", "message" => " Customer No. " . $data['customer_id'] . " is Not Found!", "theme" => "error"));
+    //         //     return;
+    //         // }
+
+    //         $data['item_fg_id'] = $item_fg->id;
+    //         // $data['customer_id'] = $customer->id;
+
+    //         $os_mpp = $this->crud->read('os_mpp', [], [
+    //             // "customer_id" => $data['customer_id'],
+    //             "item_fg_id" => $data['item_fg_id'],
+    //             "p_month" => $data['p_month'],
+    //             "p_year" => $data['p_year'],
+    //             "revision" => $data['revision'],
+    //         ]);
+
+    //         if (!empty($os_mpp->item_fg_id)) {
+    //             echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $item_fg->number . " is Duplicate Data", "theme" => "error"));
+    //         } else {
+    //             $send   = $this->crud->create('os_mpp', $data);
+    //             echo $send;
+    //         }
+    //     }
+    // }
 
     //UPLOAD CREATE DATA
     public function uploadcreate()
     {
         if ($this->input->post()) {
-            $data = $this->input->post('data');
+            $raw = file_get_contents("php://input");
+            $postData = json_decode($raw, true);
 
-            $item_fg = $this->crud->read('item_fg', [], [
-                "number" => $data['item_fg_id'],
-            ]);
+            $data_list = $postData['data'];
+            
+            $total_expected = count($data_list);
+            $processed_count = 0;
 
-            // $customer = $this->crud->read('customers', [], [
-            //     "number" => $data['customer_id'],
-            // ]);
+            $this->db->trans_begin();
+            $results = [];
 
-            if (empty($item_fg->id)) {
-                echo json_encode(array("title" => "Not found", "message" => " Product No. " . $data['item_fg_id'] . " is Not Found!", "theme" => "error"));
-                return;
+            foreach ($data_list as $index => $data) {
+                $processed_count++;
+
+                if (
+                        empty($data['p_month']) ||
+                        empty($data['p_year']) ||
+                        $data['revision'] === "" ||$data['revision'] === null ||
+                        empty($data['item_fg_id']) ||
+                        empty($data['qty'])
+                    ) {
+                        $results[] = [
+                            "status" => "failed",
+                            "item" => "Line " . ($index + 1),
+                            "message" => "Invalid or missing data"
+                        ];
+                        continue;
+                }
+
+                $item_fg_id = $this->crud->read('item_fg', [], ["number" => $data['item_fg_id']]);
+                if (empty($item_fg_id)) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Product No " . $data['item_fg_id'] . " not found"
+                    ];
+                    continue;
+                }
+
+                $data['item_fg_id'] = $item_fg_id->id;
+
+                // $item_family = $this->crud->read('item_familys', [], ["number" => $item_fg_id->item_family_number]);
+                $os_mpp = $this->crud->read('os_mpp', [], [
+                    "item_fg_id" => $data['item_fg_id'],
+                    "p_month" => $data['p_month'],
+                    "p_year" => $data['p_year'],
+                    "revision" => $data['revision'],
+                ]);
+
+                $dataFinal = array(
+                    "p_month" => $data['p_month'],
+                    "p_year" => $data['p_year'],
+                    "revision" => $data['revision'],
+                    "document_no" => $data['document_no'],
+                    "item_fg_id" => $data['item_fg_id'],
+                    "qty" => $data['qty']
+                );
+
+                try {
+                    if (!empty($os_mpp->item_fg_id)) {
+                        // Update
+                        $this->db->update('os_mpp', [
+                            "qty" => $data['qty'],
+                        ], [
+                            "item_fg_id" => $data['item_fg_id'],
+                            "p_month" => $data['p_month'],
+                            "p_year" => $data['p_year'],
+                            "revision" => $data['revision'],
+                        ]);
+
+                        $status = "update";
+                    } else {
+                        // Insert
+                        $this->crud->create('os_mpp', $dataFinal);
+
+                        $status = "insert";
+                    }
+
+                    $res_item = ($status === "insert" ? "Create" : "Update");
+                    $res_msg  = ($status === "insert" ? "Data Saved Successfully" : "Product No $item_fg_id->number Data Updated");
+
+                    $results[] = [
+                        "status" => "success",
+                        "item" => $res_item,
+                        "message" => $res_msg
+                    ];
+                } catch (Exception $e) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => $item_fg_id->name,
+                        "message" => $e->getMessage()
+                    ];
+                    continue;
+                }
             }
 
-            // if (empty($customer->id)) {
-            //     echo json_encode(array("title" => "Not found", "message" => " Customer No. " . $data['customer_id'] . " is Not Found!", "theme" => "error"));
-            //     return;
-            // }
+            $failed = array_filter($results, fn($r) => $r['status'] === 'failed');
+            $hasDbError = ($this->db->trans_status() === FALSE);
 
-            $data['item_fg_id'] = $item_fg->id;
-            // $data['customer_id'] = $customer->id;
+            if (count($failed) > 0 || $hasDbError) {
+                $filePath = 'failed/os_mpp.xls';
 
-            $os_mpp = $this->crud->read('os_mpp', [], [
-                // "customer_id" => $data['customer_id'],
-                "item_fg_id" => $data['item_fg_id'],
-                "p_month" => $data['p_month'],
-                "p_year" => $data['p_year'],
-                "revision" => $data['revision'],
-            ]);
+                $html = '
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body>
+                    <table border="1" cellspacing="0" cellpadding="5" style="border-collapse: collapse; font-family: Arial, sans-serif;">
+                        <thead style="background-color: #f2f2f2;">
+                            <tr>
+                                <th style="width: 40px; text-align: center;">No</th>
+                                <th style="width: 100px; text-align: left;">Line</th>
+                                <th style="width: 450px; text-align: left;">Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                ';
 
-            if (!empty($os_mpp->item_fg_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $item_fg->number . " is Duplicate Data", "theme" => "error"));
+                $no = 1;
+                foreach ($failed as $row) {
+                    $line = htmlspecialchars($row['item']);
+                    $msg  = htmlspecialchars($row['message']);
+                    $html .= "
+                        <tr>
+                            <td style='text-align: center;'>{$no}</td>
+                            <td style='text-align: left;'>{$line}</td>
+                            <td style='text-align: left;'>{$msg}</td>
+                        </tr>";
+                    $no++;
+                }
+
+                $html .= '
+                        </tbody>
+                    </table>
+                </body>
+                </html>';
+
+                file_put_contents($filePath, $html);
+
+                echo json_encode([
+                    "theme" => "error",
+                    "title" => "Upload Failed",
+                    "message" => "Data failed to save",
+                    "results" => $results,
+                    "total_expected" => $total_expected,
+                    "processed_count" => $processed_count,
+                    "stopped_at" => $index + 1
+                ]);
             } else {
-                $send   = $this->crud->create('os_mpp', $data);
-                echo $send;
+                @unlink('failed/os_mpp.xls');
+
+                $this->db->trans_commit();
+                echo json_encode([
+                    "theme" => "success",
+                    "title" => "Upload Successfully",
+                    "message" => "Data uploaded successfully",
+                    "results" => $results,
+                    "total_expected" => $total_expected,
+                    "processed_count" => $processed_count,
+                    "stopped_at" => $index + 1
+                ]);
             }
+
         }
     }
 

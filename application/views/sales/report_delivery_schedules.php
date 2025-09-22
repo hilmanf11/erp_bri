@@ -26,6 +26,13 @@
                     <span style="width:35%; display:inline-block;">Customer Order No</span>
                     <input style="width:60%;" id="filter_customer_order_no" class="easyui-combobox">
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Report Display</span>
+                    <select style="width:60%;" id="filter_display" class="easyui-combobox" panelHeight="auto">
+                        <option value="RECAP">RECAP</option>
+                        <option value="DETAIL">DETAIL</option>
+                    </select>
+                </div>
             </div>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
@@ -37,11 +44,8 @@
                     <input style="width:60%;" id="filter_item_fg_name" class="easyui-textbox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Report Display</span>
-                    <select style="width:60%;" id="filter_display" class="easyui-combobox" panelHeight="auto">
-                        <option value="RECAP">RECAP</option>
-                        <option value="DETAIL">DETAIL</option>
-                    </select>
+                    <span style="width:35%; display:inline-block;">Plant</span>
+                    <input style="width:60%;" id="filter_division" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status</span>
@@ -93,6 +97,7 @@
         var filter_item_fg = $("#filter_item_fg").combobox("getValue");
         var filter_item_fg_name = $("#filter_item_fg_name").textbox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
+        var filter_division = $("#filter_division").combobox('getValue');
         var filter_status = $("#filter_status").combobox("getValue");
 
         var url = "?filter_type=" + window.btoa(filter_type) + 
@@ -104,6 +109,7 @@
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
             "&filter_item_fg_name=" + window.btoa(filter_item_fg_name) +
             "&filter_display=" + window.btoa(filter_display) +
+            "&filter_division=" + window.btoa(filter_division) +
             "&filter_status=" + window.btoa(filter_status);
 
         // if(filter_type == "") {
@@ -152,6 +158,7 @@
         var filter_item_fg = $("#filter_item_fg").combobox("getValue");
         var filter_item_fg_name = $("#filter_item_fg_name").textbox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
+        var filter_division = $("#filter_division").combobox('getValue');
         var filter_status = $("#filter_status").combobox("getValue");
 
         var url = "?filter_type=" + window.btoa(filter_type) +
@@ -163,6 +170,7 @@
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
             "&filter_item_fg_name=" + window.btoa(filter_item_fg_name) +
             "&filter_display=" + window.btoa(filter_display) +
+            "&filter_division=" + window.btoa(filter_division) +
             "&filter_status=" + window.btoa(filter_status);
 
         // if (filter_so_date_from == "" && filter_so_date_to == "") {
@@ -331,6 +339,19 @@
             }
         });
 
+        $('#filter_division').combobox({
+            url: '<?= base_url('master/divisions/reads'); ?>',
+            valueField: 'number',
+            textField: 'name',
+            panelHeight: 'panelHeight',
+            prompt: 'Choose Plant',
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }],
+        });
 
     });
 

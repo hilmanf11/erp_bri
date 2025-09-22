@@ -376,6 +376,7 @@
                     valueField: 'trans_date',
                     textField: 'trans_date',
                     prompt: 'Choose Schedule Delivery Date',
+                    editable: false,
                     onSelect: function(deliverys) {
                         $("#actual_delivery_date").datebox('setValue',deliverys.trans_date);
                         updateDeliveryOrderNo(deliverys.trans_date);
@@ -427,6 +428,117 @@
             }
         });
     });
+
+    // function preview(url = "") {
+    //     var sales_order = $("#sales_order").combobox('getValue');
+    //     var delivery_date = $("#delivery_date").combobox('getValue');
+    //     var actual_delivery_date = $("#actual_delivery_date").datebox('getValue');
+    //     var customer_id = $("#customer_id").combobox('getValue');
+    //     var customer_order_no = $("#customer_order_no").combobox('getText');
+
+    //     if (url == "") {
+    //         var urlGet = "<?= base_url('sales/delivery_orders/datatablesTemp/') ?>" + sales_order + "/" + btoa(delivery_date) + "/" + btoa(customer_id) + "/" + btoa(customer_order_no);
+    //     } else {
+    //         var urlGet = url;
+    //     }
+
+    //     if (delivery_date == "" || actual_delivery_date == "" || customer_id == "" || customer_order_no == "") {
+    //         toastr.warning('Please Select Schedule Delivery Date, Actual Delivery Date, Customer and Customer Order No', 'Required');
+    //     } else {
+    //         var lastIndex;
+    //         var dg = $('#dg_request').datagrid({
+    //             url: urlGet,
+    //             fitColumns: true,
+    //             onClickRow: function(rowIndex) {
+    //                 // if (lastIndex != rowIndex) {
+    //                 if ($('#dg_request').datagrid('validateRow', lastIndex)) {
+    //                     $(this).datagrid('endEdit', lastIndex);
+    //                     $(this).datagrid('beginEdit', rowIndex);
+    //                 }
+    //                 lastIndex = rowIndex;
+    //             },
+    //             onLoadSuccess: function(data) {
+    //                 if (data.rows.length > 0) {
+    //                     for (var i = 0; i < data.rows.length; i++) {
+    //                         $('#dg_request').datagrid('beginEdit', i);
+    //                         editors = $('#dg_request').datagrid('getEditors', i);
+    //                         var item_fg_id = $(editors[0].target);
+    //                         var sales_order_no = $(editors[1].target);
+    //                         var accum_qty_do = $(editors[4].target);
+    //                         var qty_del = $(editors[6].target);
+    //                         var stock = $(editors[8].target);
+    //                         // var stock_bal = $(editors[9].target);
+
+    //                         var f_qty_del = parseFloat(qty_del.numberbox('getValue'));
+    //                         var f_stock = parseFloat(stock.numberbox('getValue'));
+
+    //                         var f_balance = parseFloat(f_stock - f_qty_del);
+
+    //                         // stock_bal.numberbox('setValue', f_balance);
+
+
+    //                         // var f_item_fg_id = item_fg_id.textbox('getValue');
+    //                         // var f_sales_order_no = sales_order_no.textbox('getValue');
+    //                         // if (f_item_fg_id && f_sales_order_no) {
+    //                         // $.ajax({
+    //                         //     url: '<?= base_url('sales/delivery_orders/checkDo/') ?>' + window.btoa(f_item_fg_id) + "/" + f_sales_order_no,
+    //                         //     type: 'POST',
+    //                         //     dataType: 'json',
+    //                         //     success: function(response) {
+    //                         //         console.log(response);
+    //                         //         $(editors[5].target).numberbox('setValue',response.qty);
+    //                         //     },
+    //                         //     error: function(xhr, status, error) {
+    //                         //         toastr.error('An error occurred while checking qty');
+    //                         //     }
+    //                         // });
+    //                         // }
+    //                         // $('#dg_request').datagrid('endEdit', i);
+    //                     }
+    //                 }
+
+    //                  // Tangani event change tanpa memicu checkbox baris
+    //                 $('.partial-checkbox').off('change').on('change', function () {
+    //                     const index = $(this).data('index');
+    //                     const isChecked = $(this).is(':checked') ? '1' : '0';
+
+    //                     // Update ke data row
+    //                     const rows = $('#dg_request').datagrid('getRows');
+    //                     if (rows[index]) {
+    //                         rows[index].partial = isChecked;
+    //                     }
+
+    //                     $('#dg_request').datagrid('refreshRow', index);
+    //                 });
+
+    //             },
+    //             onBeginEdit: function(rowIndex, row) {
+    //                 var editors = $('#dg_request').datagrid('getEditors', rowIndex);
+
+    //                 var qty_remain = $(editors[5].target);
+    //                 var qty_del = $(editors[6].target);
+    //                 var stock = $(editors[8].target);
+    //                 // var stock_bal = $(editors[9].target);
+
+    //                 qty_del.numberbox({
+    //                     onChange: function(delivery) {
+    //                         var f_qty_remain = parseFloat(qty_remain.numberbox('getValue'));
+    //                         var f_qty_del = parseFloat(qty_del.numberbox('getValue'));
+    //                         var f_stock = parseFloat(stock.numberbox('getValue'));
+    //                         var f_balance = parseFloat(f_stock - f_qty_del);
+
+    //                         // stock_bal.numberbox('setValue', f_balance);
+
+    //                         if (f_qty_del > f_qty_remain) {
+    //                             qty_del.numberbox('setValue', 0);
+    //                             toastr.error("Qty Delivery > Qty Remain, Please change qty delivery");
+    //                         }
+    //                     }
+    //                 });
+    //             }
+    //         });
+    //     }
+    // }
 
     function preview(url = "") {
         var sales_order = $("#sales_order").combobox('getValue');
@@ -544,74 +656,6 @@
         const checked = value === '1' ? 'checked' : '';
         return `<input type="checkbox" class="partial-checkbox" data-index="${index}" ${checked} onclick="event.stopPropagation()">`;
     }
-
-    // function preview(url = "") {
-    //     var sales_order = $("#sales_order").combobox('getValue');
-    //     var delivery_date = $("#delivery_date").combobox('getValue');
-    //     var actual_delivery_date = $("#actual_delivery_date").datebox('getValue');
-    //     var customer_id = $("#customer_id").combobox('getValue');
-    //     var customer_order_no = $("#customer_order_no").combobox('getText');
-
-    //     if (!sales_order || !delivery_date || !actual_delivery_date || !customer_id || !customer_order_no) {
-    //         toastr.warning('Please Select Schedule Delivery Date, Actual Delivery Date, Customer and Customer Order No', 'Required');
-    //         return;
-    //     }
-
-    //     var urlGet = url !== "" ? url : "<?= base_url('sales/delivery_orders/datatablesTemp/') ?>" + sales_order + "/" + btoa(delivery_date) + "/" + btoa(customer_id) + "/" + btoa(customer_order_no);
-
-    //     var lastIndex;
-    //     $('#dg_request').datagrid({
-    //         url: urlGet,
-    //         fitColumns: true,
-    //         idField: 'item_fg_id',
-    //         onClickRow: function(rowIndex) {
-    //             if ($('#dg_request').datagrid('validateRow', lastIndex)) {
-    //                 $('#dg_request').datagrid('endEdit', lastIndex);
-    //                 $('#dg_request').datagrid('beginEdit', rowIndex);
-    //                 lastIndex = rowIndex;
-    //             }
-    //         },
-    //         onLoadSuccess: function(data) {
-    //             if (data.rows.length > 0) {
-    //                 for (var i = 0; i < data.rows.length; i++) {
-    //                     $('#dg_request').datagrid('beginEdit', i);
-
-    //                     const editors = $('#dg_request').datagrid('getEditors', i);
-    //                     const qty_del = $(editors[6].target); // qty_del
-    //                     const stock = $(editors[8].target);   // stock
-
-    //                     const f_qty_del = parseFloat(qty_del.numberbox('getValue')) || 0;
-    //                     const f_stock = parseFloat(stock.numberbox('getValue')) || 0;
-    //                     const f_balance = f_stock - f_qty_del;
-
-    //                     // Tambahkan validasi jika qty_del melebihi stock atau remain
-    //                     qty_del.numberbox({
-    //                         onChange: function(val) {
-    //                             const f_qty = parseFloat(val) || 0;
-    //                             const f_stok = parseFloat(stock.numberbox('getValue')) || 0;
-    //                             if (f_qty > f_stok) {
-    //                                 qty_del.numberbox('setValue', 0);
-    //                                 toastr.error("Qty Delivery > Stock, Please adjust");
-    //                             }
-    //                         }
-    //                     });
-    //                 }
-    //             }
-
-    //             // Re-attach event checkbox partial agar tidak dobel
-    //             $('.partial-checkbox').off('change').on('change', function () {
-    //                 const index = $(this).data('index');
-    //                 const isChecked = $(this).is(':checked') ? '1' : '0';
-    //                 const rows = $('#dg_request').datagrid('getRows');
-    //                 if (rows[index]) {
-    //                     rows[index].partial = isChecked;
-    //                 }
-    //                 $('#dg_request').datagrid('refreshRow', index);
-    //             });
-    //         }
-    //     });
-    // }
-
 
     function updateDeliveryOrderNo(date) {
         const selectedDate = new Date(date);

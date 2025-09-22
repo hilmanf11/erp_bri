@@ -17,10 +17,10 @@
             <th rowspan="2" data-options="field:'mold_name',width:150,halign:'center',sortable:true">Mold Name</th>
             <th rowspan="2" data-options="field:'type',width:130,halign:'center',sortable:true">Property of</th>
             <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center',sortable:true">Customer Name</th>
-            <th rowspan="2" data-options="field:'project_year',width:150,halign:'center',sortable:true">Project Year</th>
+            <th rowspan="2" data-options="field:'project_year',width:150,halign:'center',sortable:true,formatter:formatYear">Project Year</th>
             <th rowspan="2" data-options="field:'total_mold',width:150,halign:'center',sortable:true">Total Mold</th>
             <th rowspan="2" data-options="field:'mold_no',width:150,halign:'center',sortable:true">Mold No</th>
-            <th rowspan="2" data-options="field:'mold_year',width:150,halign:'center',sortable:true">Mold Year</th>
+            <th rowspan="2" data-options="field:'mold_year',width:150,halign:'center',sortable:true,formatter:formatYear">Mold Year</th>
             <th rowspan="2" data-options="field:'mold_size',width:150,halign:'center',sortable:true">Mold Size</th>
             <th rowspan="2" data-options="field:'cavity_standard',width:150,halign:'center',sortable:true">Standard Cavity</th>
             <th rowspan="2" data-options="field:'cavity_actual',width:150,halign:'center',sortable:true">Actual Cavity</th>
@@ -73,7 +73,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Project Year</span>
-                    <input style="width:60%;" name="project_year" data-options="formatter:myformatter,parser:myparser" required="" class="easyui-datebox">
+                    <input style="width:60%;" name="project_year" data-options="formatter:myformatter,parser:myparser" class="easyui-datebox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Total Mold</span>
@@ -85,7 +85,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Mold Year</span>
-                    <input style="width:60%;" name="mold_year" data-options="formatter:myformatter,parser:myparser" required="" class="easyui-datebox">
+                    <input style="width:60%;" name="mold_year" data-options="formatter:myformatter,parser:myparser" class="easyui-datebox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Mold Size</span>
@@ -189,6 +189,7 @@
     function update() {
         var row = $('#dg').datagrid('getSelected');
         if (row) {
+            console.log(row);
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
             url_save = '<?= base_url('master/molds/update') ?>?id=' + btoa(row.id);
@@ -273,6 +274,7 @@
 
     // FORMAT tahun-bulan-tanggal
     function myformatter(date) {
+        if (!date) return '';
         var y = date.getFullYear();
         var m = date.getMonth() + 1;
         var d = date.getDate();
@@ -280,6 +282,9 @@
     }
 
     function myparser(s) {
+    if (!s || s === '0000-00-00') {
+        return null; // biar datebox kosong
+    }
         if (!s) return new Date();
         var ss = (s.split('-'));
         var y = parseInt(ss[0], 10);
@@ -474,4 +479,11 @@
             }
         }]
     });
+
+    function formatYear(value) {
+    if (value == '0000-00-00') {
+        return '';
+    }
+    return value;
+    }
 </script>

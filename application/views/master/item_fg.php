@@ -609,7 +609,7 @@
             });
         }
     });
-
+    
     $('#division_id').combobox({
         url: '<?= base_url('master/divisions/reads'); ?>',
         valueField: 'id',

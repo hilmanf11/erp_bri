@@ -73,7 +73,7 @@ class Setting_molds extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.number as item_fg_no, b.name as item_fg_name, c.number as machine_no , d.model as mold_model, d.actual as mold_actual, d.standard as mold_standard');
+            $this->db->select('a.*, b.number as item_fg_no, b.name as item_fg_name, c.number as machine_no , d.model as mold_model, d.cavity_actual as mold_actual, d.cavity_standard as mold_standard');
             $this->db->from('setting_molds a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('machines c', 'a.machine_id = c.id');
@@ -191,8 +191,7 @@ class Setting_molds extends CI_Controller
                 'mold_id' => $data->val($i, 4),
                 'cycle_time' => $data->val($i, 5),
                 'lot_size' => $data->val($i, 6),
-                'efficiency' => $data->val($i, 7),
-                'priority' => $data->val($i, 8),
+                'priority' => $data->val($i, 7),
             );
         }
         $datas['total'] = count($datas);

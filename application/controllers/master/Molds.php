@@ -31,7 +31,7 @@ class Molds extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('molds', ["id" => $post]);
+        $send = $this->crud->reads('molds', ["mold_name" => $post]);
         echo json_encode($send);
     }
 

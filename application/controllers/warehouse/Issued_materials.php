@@ -188,8 +188,16 @@ class Issued_materials extends CI_Controller
                 }else{
                      $querynew_barcode = $this->db->query("SELECT item_rm_id, qty FROM new_barcode WHERE label_no='".$receipt_id."' and status=0");
                       $rowsnew_barcode = $querynew_barcode->row();
-                     
-                        $this->db->select("a.label_no, b.item_rm_id, a.qty, '$rowsnew_barcode->item_rm_id' as eq_item_rm_id, '$rowsnew_barcode->qty' as qty_po");
+
+                        if ($rowsnew_barcode) {
+                            $eq_item_rm_id = $rowsnew_barcode->item_rm_id;
+                            $qty_po = $rowsnew_barcode->qty;
+                        } else {
+                            $eq_item_rm_id = null; // atau 0, sesuai kebutuhan
+                            $qty_po = 0;
+                        }
+
+                        $this->db->select("a.label_no, b.item_rm_id, a.qty, '$eq_item_rm_id' as eq_item_rm_id, '$qty_po' as qty_po");
                         $this->db->from('purchase_order_labels a');
                         $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
                         $this->db->where('a.label_no', $receipt_id);
@@ -198,7 +206,7 @@ class Issued_materials extends CI_Controller
                         $records = $this->db->get()->result_array();
     
                         if (!$records) {
-                            $this->db->select("a.label_divided as label_no, b.item_rm_id, a.qty, '$rowsnew_barcode->item_rm_id' as eq_item_rm_id, '$rowsnew_barcode->qty' as qty_po");
+                            $this->db->select("a.label_divided as label_no, b.item_rm_id, a.qty, '$eq_item_rm_id' as eq_item_rm_id, '$qty_po' as qty_po");
                             $this->db->from('barcode_divides a');
                             $this->db->join('purchase_order_receipts b', 'a.reff = b.receipt_id');
                             $this->db->where('a.label_divided', $receipt_id);
@@ -207,7 +215,7 @@ class Issued_materials extends CI_Controller
                         }
         
                         if (!$records) {
-                            $this->db->select("label_no, item_rm_id, qty, '$rowsnew_barcode->item_rm_id' as eq_item_rm_id, '$rowsnew_barcode->qty' as qty_po");
+                            $this->db->select("label_no, item_rm_id, qty, '$eq_item_rm_id' as eq_item_rm_id, '$qty_po' as qty_po");
                             $this->db->from('new_barcode');
                             $this->db->where('label_no', $receipt_id);
                             $totalRows = $this->db->count_all_results('', false);
@@ -238,7 +246,7 @@ class Issued_materials extends CI_Controller
             $this->db->select('
                 a.*, 
                 c.number as item_number, 
-                c.number as item_rm_no, 
+                c.number_internal as item_rm_no, 
                 c.name as item_rm_name, 
                 c.uom, 
                 COALESCE(d.qty_req, 0) as qty_req, 
@@ -468,15 +476,23 @@ class Issued_materials extends CI_Controller
     
     public function create_label()
     {
-        if ($this->input->post()) {
-            $post = $this->input->post();
-            $post['transaction_type'] = 'IS-0001';
-            $request_no = $post['request_no'];
-            $item_rm_id = $post['item_rm_id'];
-            $eq_item_rm_id = $post['eq_item_rm_id'];
-            $qty_po = intval($post['qty_po']);
-            $label_no = $post['label_no'];
+        if (!$this->input->post()) {
+            show_error("Cannot Process your request");
+            return;
+        }
 
+        $post = $this->input->post();
+        $transaction_type = 'IS-0001';
+        $request_no = $post['request_no'];
+        $item_rm_id = $post['item_rm_id'];
+        $eq_item_rm_id = $post['eq_item_rm_id'];
+        $qty_po = intval($post['qty_po']);
+        $label_no = $post['label_no'];
+
+        $this->db->trans_begin();
+        $response = [];
+
+        try {
             if($item_rm_id != $eq_item_rm_id){
                 $this->db->select('*');
                 $this->db->from('issued_materials');
@@ -484,24 +500,20 @@ class Issued_materials extends CI_Controller
                 $this->db->where('request_no', $request_no); 
                 $queryIM = $this->db->get();
                 $resultIM = $queryIM->row();
+
                 $this->db->select('*');
                 $this->db->from('supply_sheets');
                 $this->db->where('item_rm_id', $eq_item_rm_id);
                 $this->db->where('request_no', $request_no); 
                 $querySup = $this->db->get();
                 $resultSup = $querySup->row();
+
                 $this->db->select('*');
                 $this->db->from('supplier_items');
                 $this->db->where('item_rm_id', $item_rm_id); // eq item rm id
                 $querySI = $this->db->get();
                 $resultSI = $querySI->row();
                 $qty_supply=$resultSI->mpq;
-                // $this->db->select('*');
-                // $this->db->from('supplier_items');
-                // $this->db->where('item_rm_id', $eq_item_rm_id);
-                // $eqquerySI = $this->db->get();
-                // $eqresultSI = $eqquerySI->row();
-                // $eq_qty_supply=$eqresultSI->mpq;
 
                 $qty_need = $resultSup->qty_act ? $resultSup->qty_act : $qty_po;
 
@@ -509,35 +521,59 @@ class Issued_materials extends CI_Controller
                     $roundingUpResult = ceil(floatval($qty_need) / floatval($resultSI->mpq));
                     $qty_supply=floatval($resultSI->mpq) * $roundingUpResult;
                 }
-                // if(floatval($qty_po) > floatval($eqresultSI->mpq)){
-                //     $roundingUpResult = ceil(floatval($qty_po) / floatval($eqresultSI->mpq));
-                //     $eq_qty_supply=floatval($eqresultSI->mpq) * $roundingUpResult;
-                // }
-
 
                 $post = [
                     "request_no" => $request_no,
                     "label_no" => $label_no,
                     "item_rm_id" => $item_rm_id,
-                    "qty" => $qty_po
+                    "qty" => $qty_po,
+                    "transaction_type" => $transaction_type,
                 ];
 
-                $this->crud->update('issued_materials',["request_no" => $request_no,"item_rm_id" => $eq_item_rm_id],['eq_from'=>'-']);
-                //$this->crud->update('supply_sheets',["request_no" => $request_no,"item_rm_id" => $eq_item_rm_id ],['qty_act'=> 'qty_act - '.$qty_po]);
+                $this->crud->update('issued_materials',[
+                    "request_no" => $request_no,
+                    "item_rm_id" => $eq_item_rm_id
+                ],['eq_from'=>'-']);
 
-                $this->crud->create('issued_materials', ["request_no" => $request_no, "item_fg_id"=>$resultSup->item_fg_id, "item_rm_id" => $item_rm_id, "period"=> $resultIM->period, "wp"=> $resultIM->wp,"workorder"=>$resultIM->workorder,"qty"=>$qty_supply, "transaction_type"=>$post['transaction_type'], "eq_from"=>$eq_item_rm_id]);
+                $this->crud->create('issued_materials', [
+                    "request_no" => $request_no, 
+                    "item_fg_id"=>$resultSup->item_fg_id, 
+                    "item_rm_id" => $item_rm_id, 
+                    "period"=> $resultIM->period, 
+                    "wp"=> $resultIM->wp,
+                    "workorder" => $resultIM->workorder,
+                    "qty" => $qty_supply, 
+                    "transaction_type" => $transaction_type,
+                    "eq_from"=>$eq_item_rm_id
+                ]);
 
-                $this->crud->create('issued_material_details', $post);
+                // $this->crud->create('issued_material_details', $post);
 
-                $this->crud->create('supply_sheets', ["request_no" => $request_no, "item_fg_id"=>$resultSup->item_fg_id, "item_rm_id" => $item_rm_id, "request_date"=> $resultSup->request_date, "request_name"=> $resultSup->request_name,"workorder"=>$resultSup->workorder, "mpq"=>$resultSI->mpq, "qty_req"=>$qty_supply, "qty_act"=> $resultSup->qty_act, "qty_issued"=>$resultSup->qty_issued, "qty_bal"=>0]);
+                $this->crud->create('supply_sheets', [
+                    "request_no" => $request_no, 
+                    "item_fg_id" => $resultSup->item_fg_id, 
+                    "item_rm_id" => $item_rm_id, 
+                    "request_date" => $resultSup->request_date, 
+                    "request_name" => $resultSup->request_name,
+                    "workorder" => $resultSup->workorder, 
+                    "mpq" => $resultSI->mpq, 
+                    "qty_req" => $qty_supply, 
+                    "qty_act" => $resultSup->qty_act, 
+                    "qty_issued" => $resultSup->qty_issued, 
+                    "qty_bal" => 0
+                ]);
 
-                $this->crud->update('supply_sheets',["request_no" => $request_no,"item_rm_id" => $eq_item_rm_id],['qty_bal'=> 0]);
-
-                // $this->crud->create('supply_sheets', ["request_no" => $request_no, "item_fg_id"=>$resultSup->item_fg_id, "item_rm_id" => $eq_item_rm_id, "request_date"=> $resultSup->request_date, "request_name"=> $resultSup->request_name,"workorder"=>$resultSup->workorder, "mpq"=>$eqresultSI->mpq, "qty_req"=>$eq_qty_supply, "qty_act"=> $resultSup->$qty_act, "qty_issued"=>$resultSup->qty_issued, "qty_bal"=>$resultSup->qty_bal]);
+                $this->crud->update('supply_sheets',[
+                    "request_no" => $request_no,
+                    "item_rm_id" => $eq_item_rm_id
+                ],['qty_bal'=> 0]);
                 
                 $this->create_wip_balance($request_no, $item_rm_id, $resultSup->qty_act, $resultSI->mpq);
                 
-                $this->crud->update('wip_balances',["request_no" => $request_no,"item_rm_id" => $eq_item_rm_id],['balance'=> 0]);
+                $this->crud->update('wip_balances',[
+                    "request_no" => $request_no,
+                    "item_rm_id" => $eq_item_rm_id
+                ],['balance'=> 0]);
             }
 
             $post = [
@@ -545,95 +581,128 @@ class Issued_materials extends CI_Controller
                 "label_no" => $label_no,
                 "item_rm_id" => $item_rm_id,
                 "qty" => $post['qty'],
+                "transaction_type" => $transaction_type,
             ];
 
 
-            $totalSupply = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id'");
-            $issued_material_details = $this->crud->read("issued_material_details", [], ["label_no" => $label_no]);
-            $purchase_order_labels = $this->crud->read("purchase_order_labels", [], ["label_no" => $label_no, "status" => 1]);
-            $barcode_divides = $this->crud->read("barcode_divides", [], ["label_divided" => $label_no, "status" => 0]);
-            $issued_materials = $this->crud->read("issued_materials", [], ["request_no" => $request_no, "item_rm_id" => $item_rm_id]);
+            // $totalSupply = $this->crud->query("SELECT SUM(qty) as qty 
+            //     FROM issued_material_details 
+            //     WHERE request_no = '$request_no' and item_rm_id='$item_rm_id'
+            // ");
+
+            $issued_material_details = $this->crud->read("issued_material_details", [], [
+                "label_no" => $label_no
+            ]);
+            $purchase_order_labels = $this->crud->read("purchase_order_labels", [], [
+                "label_no" => $label_no, 
+                "status" => 1
+            ]);
+            $barcode_divides = $this->crud->read("barcode_divides", [], [
+                "label_divided" => $label_no, 
+                "status" => 0
+            ]);
+            $issued_materials = $this->crud->read("issued_materials", [], [
+                "request_no" => $request_no, 
+                "item_rm_id" => $item_rm_id
+            ]);
 
             // Cek apakah label_no ada di tabel new_barcode dengan status 0
             $new_barcode = $this->crud->read("new_barcode", [], ["label_no" => $label_no, "status" => 0]);
 
             if (!$issued_material_details) {
                 if ($purchase_order_labels) {
-                    if ($issued_materials) {
-                        $purchase_order_receipts = $this->crud->read("purchase_order_receipts", [], ["receipt_id" => $purchase_order_labels->receipt_id]);
-                        $receipt_date_current = $purchase_order_receipts->receipt_date;
-                        
-                        // Validasi FIFO berdasarkan tanggal lebih tua
-                        $checkOlder = $this->crud->query("
-                            SELECT b.label_no, a.receipt_date
-                            FROM purchase_order_receipts a
-                            JOIN purchase_order_labels b ON a.receipt_id = b.receipt_id
-                            LEFT JOIN barcode_divides c ON b.label_no = c.label_no
-                            LEFT JOIN issued_material_details d ON b.label_no = d.label_no
-                            WHERE a.item_rm_id = '$purchase_order_receipts->item_rm_id'
-                            AND DATE(a.receipt_date) < DATE('$receipt_date_current')
-                            AND c.label_no IS NULL
-                            AND d.label_no IS NULL
-                            ORDER BY a.receipt_date ASC
-                        ");
 
-                        if (count($checkOlder) > 0) {
-                            echo json_encode([
-                                "title" => "FIFO Violation",
-                                "message" => "There are old labels that have not been processed",
-                                "theme" => "error"
-                            ]);
-                            return;
-                        }
+                    if($purchase_order_labels->status_out == "1") {
+                        throw new Exception(json_encode([
+                            "title" => "Available",
+                            "message" => "Data label has been Scanning"
+                        ]));
+                    }else{
+                        if ($issued_materials) {
+                            $purchase_order_receipts = $this->crud->read("purchase_order_receipts", [], ["receipt_id" => $purchase_order_labels->receipt_id]);
+                            $receipt_date_current = $purchase_order_receipts->receipt_date;
+                            
+                            // Validasi FIFO berdasarkan tanggal lebih tua
+                            $checkOlder = $this->crud->query("
+                                SELECT b.label_no, a.receipt_date
+                                FROM purchase_order_receipts a
+                                JOIN purchase_order_labels b ON a.receipt_id = b.receipt_id
+                                LEFT JOIN barcode_divides c ON b.label_no = c.label_no
+                                LEFT JOIN issued_material_details d ON b.label_no = d.label_no
+                                WHERE a.item_rm_id = '$purchase_order_receipts->item_rm_id'
+                                AND DATE(a.receipt_date) < DATE('$receipt_date_current')
+                                AND c.label_no IS NULL
+                                AND d.label_no IS NULL
+                                AND b.status_out = 0
+                                ORDER BY a.receipt_date ASC
+                            ");
 
-                        $this->db->select('
-                            COUNT(a.id) as total_items,
-                            SUM(CASE WHEN a.qty = COALESCE(d.qty_actual, 0) THEN 1 ELSE 0 END) as closed_items
-                        ');
-                        $this->db->from('supply_materials a');
-                        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-                        $this->db->join('(
-                            SELECT request_no, item_rm_id, COALESCE(SUM(qty), 0) as qty_actual 
-                            FROM issued_material_details 
-                            GROUP BY request_no, item_rm_id
-                        ) d', 'a.request_no = d.request_no AND a.item_rm_id = d.item_rm_id', 'left');
-
-                        $this->db->where('a.deleted', 0);
-                        $this->db->where('a.request_no', $request_no);
-                        $this->db->where('a.item_rm_id', $item_rm_id);
-
-                        $checkSt = $this->db->get()->row();
-
-                        if ($checkSt && isset($checkSt->total_items) && isset($checkSt->closed_items)) {
-                            $status = ($checkSt->total_items == $checkSt->closed_items) ? "1" : "0";
-                            if ($status === "0") {
-                                if (!empty($purchase_order_labels->lot_no)) {
-                                    $this->crud->update('supply_materials', [
-                                        "request_no" => $request_no,
-                                        "item_rm_id" => $item_rm_id
-                                    ], ['lot_no' => $purchase_order_labels->lot_no]);
+                            if ($purchase_order_labels->status_out == 0) {
+                                if (count($checkOlder) > 0) {
+                                    throw new Exception(json_encode([
+                                        "title" => "FIFO Violation",
+                                        "message" => "There are old labels that have not been processed"
+                                    ]));
                                 }
-                            } else {
-                                echo json_encode([
-                                    "title" => "Label Already Scan",
-                                    "message" => "The label has already been scanned",
-                                    "theme" => "error"
-                                ]);
-                                return;
                             }
-                        }
+    
+                            $this->db->select('
+                                COUNT(a.id) as total_items,
+                                SUM(CASE WHEN a.qty = COALESCE(d.qty_actual, 0) THEN 1 ELSE 0 END) as closed_items
+                            ');
+                            $this->db->from('supply_materials a');
+                            $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+                            $this->db->join('(
+                                SELECT request_no, item_rm_id, COALESCE(SUM(qty), 0) as qty_actual 
+                                FROM issued_material_details 
+                                GROUP BY request_no, item_rm_id
+                            ) d', 'a.request_no = d.request_no AND a.item_rm_id = d.item_rm_id', 'left');
+    
+                            $this->db->where('a.deleted', 0);
+                            $this->db->where('a.request_no', $request_no);
+                            $this->db->where('a.item_rm_id', $item_rm_id);
+    
+                            $checkSt = $this->db->get()->row();
+    
+                            if ($checkSt && isset($checkSt->total_items) && isset($checkSt->closed_items)) {
+                                $status = ($checkSt->total_items == $checkSt->closed_items) ? "1" : "0";
+                                if ($status === "0") {
+                                    if (!empty($purchase_order_labels->lot_no)) {
+                                        $this->crud->update('supply_materials', [
+                                            "request_no" => $request_no,
+                                            "item_rm_id" => $item_rm_id
+                                        ], ['lot_no' => $purchase_order_labels->lot_no]);
+                                    }
+                                } else {
+                                    throw new Exception(json_encode([
+                                        "title" => "Label Already Scan",
+                                        "message" => "The label has already been scanned"
+                                    ]));
+                                }
+                            }
+    
+                            $this->crud->update('purchase_order_labels', [
+                                "label_no" => $post['label_no'], 
+                                "status" => 1
+                            ], ['status_out'=> 1]);
+    
+                            // Valid -> simpan
+                            $this->crud->create('issued_material_details', $post);
+                            $this->update_wip_balances($request_no, $item_rm_id, $post['qty'], $eq_item_rm_id);
 
-                        // Valid -> simpan
-                        $this->crud->create('issued_material_details', $post);
-                        $this->update_wip_balances($request_no, $item_rm_id, $post['qty'], $eq_item_rm_id);
-                        echo json_encode([
-                            "title" => "Success",
-                            "message" => "Label processed successfully",
-                            "theme" => "success"
-                        ]);
-                    } else {
-                        echo json_encode(array("title" => "Not Registered", "message" => "This label has not been registered in Supply Sheet", "theme" => "error"));
+                            $response = [
+                                "title" => "Success",
+                                "message" => "Label processed successfully",
+                                "theme" => "success"
+                            ];
+                        } else {
+                            throw new Exception(json_encode([
+                                "title" => "Not Registered",
+                                "message" => "This label has not been registered in Supply Sheet"
+                            ]));
+                        }
                     }
+
                 } elseif ($barcode_divides) {
                     if ($issued_materials) {
                         $purchase_order_receipts = $this->crud->read("purchase_order_receipts", [], ["receipt_id" => $barcode_divides->reff]);
@@ -645,28 +714,35 @@ class Issued_materials extends CI_Controller
                         WHERE a.item_rm_id = '$purchase_order_receipts->item_rm_id' and a.receipt_date < '$purchase_order_receipts->receipt_date' AND c.status = 0 AND d.label_no is null
                         ORDER BY receipt_date ASC");
 
-                        if (count($checkItems) <= 0) {
+                        if (count($checkItems) <= 0) { 
+                            
+                            $post['transaction_type'] = $transaction_type;
                             $send = $this->crud->create('issued_material_details', $post);
                             $update = $this->crud->update('barcode_divides', ["label_divided" => $post['label_no']], ["status" => 1]);
+
                             // Update wip_balances table
                             $this->update_wip_balances($request_no, $item_rm_id, $post['qty'], $eq_item_rm_id);
                             echo $send;
                         } else {
-                            echo json_encode(array("title" => "FIFO violations", "message" => "Please Scan Sequentially", "theme" => "error"));
+                            throw new Exception(json_encode([
+                                "title" => "FIFO violations",
+                                "message" => "Please Scan Sequentially"
+                            ]));
                         }
                     } else {
-                        echo json_encode(array("title" => "Not Registered", "message" => "This label has not been registered in Supply Sheet", "theme" => "error"));
+                        throw new Exception(json_encode([
+                            "title" => "Not Registered",
+                            "message" => "This label has not been registered in Supply Sheet"
+                        ]));
                     }
                 } elseif ($new_barcode) {
-                        // Tidak perlu cek FIFO karena new_barcode tidak terkait dengan receipt_date
-                        // if (($totalSupply[0]->qty + $post['qty']) <= $issued_materials->qty || $issued_materials->qty == "0") {
-                            // Tambahkan data ke issued_materials jika belum ada
+                            // Tidak perlu cek FIFO karena new_barcode tidak terkait dengan receipt_date
                             if (!$issued_materials) {
                                 $issued_material_data = [
                                     'request_no' => $request_no,
                                     'item_rm_id' => $item_rm_id,
                                     'qty' => $post['qty'],
-                                    'transaction_type' => $post['transaction_type']
+                                    'transaction_type' => $transaction_type
                                 ];
                                 $this->crud->create('issued_materials', $issued_material_data);
                             }
@@ -676,10 +752,12 @@ class Issued_materials extends CI_Controller
                                 'request_no' => $request_no,
                                 'item_rm_id' => $item_rm_id,
                                 'label_no' => $label_no,
-                                'qty' => $post['qty']
+                                'qty' => $post['qty'],
+                                'transaction_type' => $transaction_type
                             ];
+                            
                             $this->crud->create('issued_material_details', $issued_detail_data);
-
+                            
                             // Update status di new_barcode
                             $this->crud->update('new_barcode', ["label_no" => $post['label_no']], ["status" => 1]);
 
@@ -689,19 +767,41 @@ class Issued_materials extends CI_Controller
                             // Update wip_balances table
                             $this->update_wip_balances($request_no, $item_rm_id, $post['qty'], $eq_item_rm_id);
 
-                            echo json_encode(array("title" => "Success", "message" => "Label processed and details created successfully", "theme" => "success"));
-                        // } else {
-                        //     // echo json_encode(array("title" => "More Than Qty", "message" => "Qty Issued <= Qty Supply", "theme" => "error"));
-                        // }
+                            $response = [
+                                "title" => "Success",
+                                "message" => "Label processed and details created successfully",
+                                "theme" => "success"
+                            ];
+
                 } else {
-                    echo json_encode(array("title" => "Not Scanned In", "message" => "This label has not been scanned in", "theme" => "error"));
+                    throw new Exception(json_encode([
+                        "title" => "Not Scanned In",
+                        "message" => "This label has not been scanned in"
+                    ]));
                 }
             } else {
-                echo json_encode(array("title" => "Available", "message" => "Data label has been Scanning", "theme" => "error"));
+                throw new Exception(json_encode([
+                    "title" => "Available",
+                    "message" => "Data label has been Scanning"
+                ]));
             }
-        } else {
-            show_error("Cannot Process your request");
+
+            if ($this->db->trans_status() === FALSE) {
+                throw new Exception(json_encode(["title" => "Error", "message" => "Transaction failed"]));
+            }
+
+            $this->db->trans_commit();
+        } catch (Exception $e) {
+            $this->db->trans_rollback();
+            $errData = json_decode($e->getMessage(), true);
+            $response = [
+                "title" => $errData['title'] ?? "Error",
+                "message" => $errData['message'] ?? $e->getMessage(),
+                "theme" => "error"
+            ];
         }
+
+        echo json_encode($response);
     }
 
     public function get_equivalents()
@@ -890,99 +990,120 @@ class Issued_materials extends CI_Controller
         }
 
         $post = $this->input->post();
-        $post['transaction_type'] = 'IS-0001';
         $request_no = $post['request_no'];
         $item_rm_id = $post['item_rm_id'];
         $eq_item_rm_id = $post['eq_item_rm_id'];
         $qty_po = floatval($post['qty_po']);
 
-        if($item_rm_id != $eq_item_rm_id){
-            $this->db->select('*');
-            $this->db->from('issued_materials');
-            $this->db->where('item_rm_id', $eq_item_rm_id); // item rm id
-            $this->db->where('request_no', $request_no); 
-            $queryIM = $this->db->get();
-            $resultIM = $queryIM->row();
+        $this->db->trans_begin();
 
-            $this->db->select('*');
-            $this->db->from('supply_sheets');
-            $this->db->where('item_rm_id', $eq_item_rm_id);
-            $this->db->where('request_no', $request_no); 
-            $querySup = $this->db->get();
-            $resultSup = $querySup->row();
+        try {
+            if($item_rm_id != $eq_item_rm_id){
+                $this->db->select('*');
+                $this->db->from('issued_materials');
+                $this->db->where('item_rm_id', $eq_item_rm_id); // item rm id
+                $this->db->where('request_no', $request_no); 
+                $queryIM = $this->db->get();
+                $resultIM = $queryIM->row();
 
-            $this->db->select('*');
-            $this->db->from('supplier_items');
-            $this->db->where('item_rm_id', $item_rm_id);
-            $querySI = $this->db->get();
-            $resultSI = $querySI->row();
-            // $qty_supply=$resultSI->mpq;
+                $this->db->select('*');
+                $this->db->from('supply_sheets');
+                $this->db->where('item_rm_id', $eq_item_rm_id);
+                $this->db->where('request_no', $request_no); 
+                $querySup = $this->db->get();
+                $resultSup = $querySup->row();
 
-            // if(floatval($qty_po) > floatval($resultSI->mpq)){
-            //     $roundingUpResult = ceil(floatval($qty_po) / floatval($resultSI->mpq));
-            //     $qty_supply=floatval($resultSI->mpq) * $roundingUpResult;
-            // }
+                $this->db->select('*');
+                $this->db->from('supplier_items');
+                $this->db->where('item_rm_id', $item_rm_id);
+                $querySI = $this->db->get();
+                $resultSI = $querySI->row();
+                // $qty_supply=$resultSI->mpq;
 
-            $this->crud->update('issued_materials',[
-                "request_no" => $request_no,
-                "item_rm_id" => $eq_item_rm_id
-            ], ['eq_from'=>'-']);
+                // if(floatval($qty_po) > floatval($resultSI->mpq)){
+                //     $roundingUpResult = ceil(floatval($qty_po) / floatval($resultSI->mpq));
+                //     $qty_supply=floatval($resultSI->mpq) * $roundingUpResult;
+                // }
 
-            $this->crud->create('issued_materials', [
-                "request_no" => $request_no, 
-                "item_fg_id"=>$resultSup->item_fg_id, 
-                "item_rm_id" => $item_rm_id, 
-                "period"=> $resultIM->period, 
-                "wp"=> $resultIM->wp,
-                "workorder"=>$resultIM->workorder,
-                "qty"=>$qty_po, 
-                // "transaction_type"=>$post['transaction_type'], 
-                "eq_from"=>$eq_item_rm_id
-            ]);
+                $this->crud->update('issued_materials',[
+                    "request_no" => $request_no,
+                    "item_rm_id" => $eq_item_rm_id
+                ], ['eq_from'=>'-']);
 
-            // $this->crud->create('supply_sheets', [
-            //     "request_no" => $request_no, 
-            //     "item_fg_id"=>$resultSup->item_fg_id, 
-            //     "item_rm_id" => $item_rm_id, 
-            //     "request_date"=> $resultSup->request_date, 
-            //     "request_name"=> $resultSup->request_name,
-            //     "workorder"=>$resultSup->workorder, 
-            //     "mpq"=>$resultSI->mpq, 
-            //     "qty_req"=>$qty_supply, 
-            //     "qty_act"=> $resultSup->qty_act, 
-            //     "qty_issued"=>$resultSup->qty_issued, 
-            //     "qty_bal"=>$resultSup->qty_bal
-            // ]);
-
-            // Cek apakah data sudah ada
-            $exists = $this->db->get_where('supply_sheets', [
-                'request_no' => $request_no,
-                'item_rm_id' => $item_rm_id
-            ])->row();
-
-            if (!$exists) {
-                $this->crud->create('supply_sheets', [
+                $this->crud->create('issued_materials', [
                     "request_no" => $request_no, 
                     "item_fg_id"=>$resultSup->item_fg_id, 
                     "item_rm_id" => $item_rm_id, 
-                    "request_date"=> $resultSup->request_date, 
-                    "request_name"=> $resultSup->request_name,
-                    "workorder"=>$resultSup->workorder, 
-                    "mpq"=>$resultSI->mpq, 
-                    "qty_req"=>$qty_po, 
-                    "qty_act"=> $resultSup->qty_act, 
-                    "qty_issued"=>$resultSup->qty_issued, 
-                    "qty_bal"=>$resultSup->qty_bal
+                    "period"=> $resultIM->period, 
+                    "wp"=> $resultIM->wp,
+                    "workorder"=>$resultIM->workorder,
+                    "qty"=>$qty_po, 
+                    "transaction_type"=>"IS-0001", 
+                    "eq_from"=>$eq_item_rm_id
                 ]);
+
+                // $this->crud->create('supply_sheets', [
+                //     "request_no" => $request_no, 
+                //     "item_fg_id"=>$resultSup->item_fg_id, 
+                //     "item_rm_id" => $item_rm_id, 
+                //     "request_date"=> $resultSup->request_date, 
+                //     "request_name"=> $resultSup->request_name,
+                //     "workorder"=>$resultSup->workorder, 
+                //     "mpq"=>$resultSI->mpq, 
+                //     "qty_req"=>$qty_supply, 
+                //     "qty_act"=> $resultSup->qty_act, 
+                //     "qty_issued"=>$resultSup->qty_issued, 
+                //     "qty_bal"=>$resultSup->qty_bal
+                // ]);
+
+                // Cek apakah data sudah ada
+                $exists = $this->db->get_where('supply_sheets', [
+                    'request_no' => $request_no,
+                    'item_rm_id' => $item_rm_id
+                ])->row();
+
+                if (!$exists) {
+                    $this->crud->create('supply_sheets', [
+                        "request_no" => $request_no, 
+                        "item_fg_id"=>$resultSup->item_fg_id, 
+                        "item_rm_id" => $item_rm_id, 
+                        "request_date"=> $resultSup->request_date, 
+                        "request_name"=> $resultSup->request_name,
+                        "workorder"=>$resultSup->workorder, 
+                        "mpq"=>$resultSI->mpq, 
+                        "qty_req"=>$qty_po, 
+                        "qty_act"=> $resultSup->qty_act, 
+                        "qty_issued"=>$resultSup->qty_issued, 
+                        "qty_bal"=>$resultSup->qty_bal
+                    ]);
+                }
+
+                $this->create_wip_balance($request_no, $item_rm_id, $resultSup->qty_act, $resultSI->mpq);
+            
+                $this->crud->update('wip_balances',["request_no" => $request_no,"item_rm_id" => $eq_item_rm_id],['balance'=> 0]);
+
+                $this->crud->update('supply_sheets', ["request_no" => $request_no, "item_rm_id" => $eq_item_rm_id], ["qty_bal" => 0]);
             }
 
-            $this->create_wip_balance($request_no, $item_rm_id, $resultSup->qty_act, $resultSI->mpq);
-        
-            $this->crud->update('wip_balances',["request_no" => $request_no,"item_rm_id" => $eq_item_rm_id],['balance'=> 0]);
+            if ($this->db->trans_status() === FALSE) {
+                throw new Exception("Transaction failed");
+            }
 
-            $this->crud->update('supply_sheets', ["request_no" => $request_no, "item_rm_id" => $eq_item_rm_id], ["qty_bal" => 0]);
+            $this->db->trans_commit();
 
-            echo json_encode(array("title" => "Success", "message" => "Created successfully", "theme" => "success"));
+            echo json_encode([
+                "title" => "Success",
+                "message" => "Equivalent part issued successfully",
+                "theme" => "success"
+            ]);
+        } catch (Exception $e) {
+            $this->db->trans_rollback();
+
+            echo json_encode([
+                "title" => "Error",
+                "message" => $e->getMessage(),
+                "theme" => "error"
+            ]);
         }
     }
 
@@ -1083,12 +1204,18 @@ class Issued_materials extends CI_Controller
 
         if(count($supply_sheetsRM) > 0){
 
-            if(floatval($wip_balances->balance)<floatval($qty_need)){
+            if ($wip_balances && isset($wip_balances->balance)) {
+                $w_balance = $wip_balances->balance;
+            } else {
+                $w_balance = 0;
+            }
+
+            if(floatval($w_balance)<floatval($qty_need)){
                 $roundingUpResult = ceil(floatval($qty_need) / floatval($mpq));
                 $qty_supply=floatval($mpq) * $roundingUpResult;
             }
 
-            $begin = floatval($wip_balances->balance);
+            $begin = floatval($w_balance);
             $issued = (floatval($qty_supply) == 0) ? 0 : $issued;
             
             if ($queryPOLabels->num_rows() > 0) {

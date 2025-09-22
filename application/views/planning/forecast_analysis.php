@@ -14,8 +14,7 @@
     #p {
       display: flex;
       flex-direction: column;
-      /* height: calc(100vh - 200px); */
-      height: 90vh;
+      height: 83vh;
       overflow: hidden !important;
     }
     #p #printout {
@@ -70,6 +69,10 @@
             <legend><b>Form Filter Data</b></legend>
             <div style="float: left; width: 50%;">
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Plant</span>
+                    <input style="width:60%;" name="filter_division" id="filter_division" class="easyui-combobox">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Period</span>
                     <input style="width:60%;" id="filter_period_year" value="<?= date("Y") ?>" class="easyui-combobox">
                     <!-- <input style="width:29.6%;" id="filter_period_month" value="<?= date("m") ?>" class="easyui-combobox"> -->
@@ -82,12 +85,12 @@
                     <input style="width:26.62%;" id="filter_period_month_to" class="easyui-combobox" value="<?= date("m") ?>">
 
                 </div>
+            </div>
+            <div style="float: left; width: 50%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Customer Name</span>
                     <input style="width:60%;" id="filter_customer_name" class="easyui-combogrid">
                 </div>
-            </div>
-            <div style="float: left; width: 50%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Family</span>
                     <input style="width:60%;" id="filter_product_family" class="easyui-combogrid">
@@ -120,6 +123,7 @@
         var filter_period_month_to = $("#filter_period_month_to").datebox("getValue");
         var filter_customer_name = $("#filter_customer_name").combobox("getValue");
         var filter_item_fg = $("#filter_item_fg").combobox("getValue");
+        var filter_division = $("#filter_division").textbox("getValue");
         var filter_product_family = $("#filter_product_family").combogrid('getValue');
 
         var url = "?filter_period_year=" + window.btoa(filter_period_year) +
@@ -127,6 +131,7 @@
             "&filter_period_month_to=" + window.btoa(filter_period_month_to) +
             "&filter_customer_name=" + filter_customer_name +
             "&filter_item_fg=" + filter_item_fg +
+            "&filter_division=" + window.btoa(filter_division) +
             "&filter_product_family=" + window.btoa(filter_product_family);
 
         if (filter_period_year == "" && filter_period_month_from == "" && filter_period_month_to == "") {
@@ -143,6 +148,7 @@
         var filter_period_month_to = $("#filter_period_month_to").datebox("getValue");
         var filter_customer_name = $("#filter_customer_name").combobox("getValue");
         var filter_item_fg = $("#filter_item_fg").combogrid("getValue");
+        var filter_division = $("#filter_division").textbox("getValue");
         var filter_product_family = $("#filter_product_family").combogrid('getValue');
 
         var url = "?filter_period_year=" + window.btoa(filter_period_year) +
@@ -150,6 +156,7 @@
             "&filter_period_month_to=" + window.btoa(filter_period_month_to) +
             "&filter_customer_name=" + filter_customer_name +
             "&filter_item_fg=" + filter_item_fg +
+            "&filter_division=" + window.btoa(filter_division) +
             "&filter_product_family=" + window.btoa(filter_product_family);
 
         if (filter_period_year == "" && filter_period_month_from == "" && filter_period_month_to == "") {
@@ -211,6 +218,20 @@
         valueField: 'id',
         textField: 'name',
         prompt: 'Choose Months',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_division').combobox({
+        url: '<?= base_url('master/divisions/reads'); ?>',
+        valueField: 'number',
+        textField: 'name',
+        panelHeight: 'panelHeight',
+        prompt: 'Choose Plant',
         icons: [{
             iconCls: 'icon-clear',
             handler: function(e) {

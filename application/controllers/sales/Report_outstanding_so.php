@@ -31,14 +31,43 @@ class Report_outstanding_so extends CI_Controller
 
     public function readCustomerOrder()
     {
+        $filter_type = base64_decode($this->input->get("filter_type"));
         $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));
         $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
+        $filter_d_date_from = base64_decode($this->input->get("filter_d_date_from"));
+        $filter_d_date_to = base64_decode($this->input->get("filter_d_date_to"));
         $customer_id = $this->input->get("customer_id");
 
+        $where_date = '';
+        if($filter_type == "SO_DATE") {
+            if (!empty($filter_so_date_from) && !empty($filter_so_date_to)) {
+                $where_date = "AND (
+                a.sales_order_date BETWEEN '$filter_so_date_from' and '$filter_so_date_to'
+            )";
+            }
+        } elseif ($filter_type == "D_DATE") {
+            if (!empty($filter_d_date_from) && !empty($filter_d_date_to)) {
+                $where_date = "AND (
+                    a.delivery_date BETWEEN '$filter_d_date_from' and '$filter_d_date_to'
+                )";
+            }
+        } else {
+            if (!empty($filter_so_date_from) && !empty($filter_so_date_to)) {
+                $where_date = "AND (
+                    a.sales_order_date BETWEEN '$filter_so_date_from' and '$filter_so_date_to'
+                )";
+            }
+            if (!empty($filter_d_date_from) && !empty($filter_d_date_to)) {
+                $where_date .= " AND (
+                    a.delivery_date BETWEEN '$filter_d_date_from' and '$filter_d_date_to'
+                )";
+            }
+        }
+
         $customer_orders = $this->crud->query("SELECT customer_order_no, sales_order_no
-            FROM sales_orders
-            WHERE sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'
-            AND customer_id = '$customer_id'
+            FROM sales_orders a
+            WHERE customer_id = '$customer_id'
+            $where_date
             GROUP BY sales_order_no
             ORDER BY sales_order_no ASC");
         echo json_encode($customer_orders);
@@ -85,6 +114,9 @@ class Report_outstanding_so extends CI_Controller
             header("Content-Disposition: attachment; filename=report_outstanding_so_$format.xls");
         }
 
+        $filter_type  = base64_decode($this->input->get('filter_type'));
+        $filter_d_date_from = base64_decode($this->input->get("filter_d_date_from"));
+        $filter_d_date_to = base64_decode($this->input->get("filter_d_date_to"));
         $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));
         $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
         $filter_customer_name = base64_decode($this->input->get("filter_customer_name"));
@@ -152,13 +184,28 @@ class Report_outstanding_so extends CI_Controller
                 <br>';
 
         if ($filter_display == "RECAP") {
-            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, SUM(a.qty) as qty_order, SUM(a.delivery) as qty_delivery, SUM(a.outstanding) as qty_outstanding, b.name as customer_name, a.closing_reason, a.type_closing');
+            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, SUM(a.qty) as qty_order, SUM(a.delivery) as qty_delivery, SUM(a.outstanding) as qty_outstanding, b.name as customer_name, a.closing_reason, a.type_closing, a.delivery_date');
             $this->db->from('sales_orders a');
             $this->db->join('customers b', 'a.customer_id = b.id');
-            $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
-            $this->db->order_by('a.customer_order_no', 'ASC');
-            $this->db->order_by('b.name', 'ASC');
-            $this->db->order_by('a.sales_order_date', 'ASC');
+            // $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
+
+            if($filter_type == "SO_DATE") {
+                if(!empty($filter_so_date_from) && !empty($filter_so_date_to)) {
+                    $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
+                }
+            } elseif($filter_type == "D_DATE") {
+                if(!empty($filter_d_date_from) && !empty($filter_d_date_to)) {
+                    $this->db->where("a.delivery_date between '$filter_d_date_from' and '$filter_d_date_to'");
+                }
+            } else {
+                if(!empty($filter_so_date_from) && !empty($filter_so_date_to)) {
+                    $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
+                }
+                if(!empty($filter_d_date_from) && !empty($filter_d_date_to)) {
+                    $this->db->where("a.delivery_date between '$filter_d_date_from' and '$filter_d_date_to'");
+                }
+            }
+
 
             // Filter by customer name
             if (!empty($filter_customer_name)) {
@@ -181,7 +228,9 @@ class Report_outstanding_so extends CI_Controller
             }
 
             $this->db->group_by('a.sales_order_no');
-            $this->db->order_by('a.status', 'ASC');
+            $this->db->order_by('a.sales_order_date', 'ASC');
+            $this->db->order_by('b.name', 'ASC');
+            $this->db->order_by('a.customer_order_no', 'ASC');
             $records = $this->db->get()->result_array();
 
             if (!empty($filter_status)) {
@@ -206,9 +255,9 @@ class Report_outstanding_so extends CI_Controller
                         <tr>
                             <th width="20">No</th>
                             <th>SO Date</th>
-                            <th>Sales Order No.</th>
-                            <th>Customer Order No.</th>
+                            <th>Delivery Date</th>
                             <th>Customer Name</th>
+                            <th>Customer Order No.</th>
                             <th>Qty Order</th>
                             <th>Qty Delivery</th>
                             <th>Outstanding</th>
@@ -238,9 +287,9 @@ class Report_outstanding_so extends CI_Controller
                 $html .= '<tr>
                             <td>' . $no . '</td>
                             <td>' . $data['sales_order_date'] . '</td>
-                            <td style="mso-number-format:\@">' . $data['sales_order_no'] . '</td>
-                            <td style="mso-number-format:\@">' . $data['customer_order_no'] . '</td>
+                            <td>' . $data['delivery_date'] . '</td>
                             <td>' . $data['customer_name'] . '</td>
+                            <td style="mso-number-format:\@">' . $data['customer_order_no'] . '</td>
                             <td style="text-align:right;">' . number_format($data['qty_order'], 0, '.', '.') . '</td>
                             <td style="text-align:right;">' . number_format($data['qty_delivery'], 0, '.', '.') . '</td>
                             <td style="text-align:right;">' . number_format($data['qty_outstanding'], 0, '.', '.') . '</td>
@@ -257,14 +306,34 @@ class Report_outstanding_so extends CI_Controller
                         <th>' . $status . '</th>
                     </tr>';
         } else {
-            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, a.qty, a.delivery, a.outstanding, b.name as customer_name, c.number as item_fg_number, c.name as item_fg_name, a.closing_reason, a.type_closing');
+            $this->db->select('a.sales_order_no, a.item_fg_id, a.sales_order_date, a.customer_order_no, a.qty, a.delivery, a.outstanding, b.name as customer_name, c.number as item_fg_number, c.name as item_fg_name, a.closing_reason, a.type_closing, a.delivery_date');
             $this->db->from('sales_orders a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
-            $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
-            $this->db->order_by('a.customer_order_no', 'ASC');
-            $this->db->order_by('b.name', 'ASC');
+            // $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
             $this->db->order_by('a.sales_order_date', 'ASC');
+            $this->db->order_by('b.name', 'ASC');
+            $this->db->order_by('a.customer_order_no', 'ASC');
+            $this->db->order_by('c.name', 'ASC');
+
+
+            if($filter_type == "SO_DATE") {
+                if(!empty($filter_so_date_from) && !empty($filter_so_date_to)) {
+                    $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
+                }
+            } elseif($filter_type == "D_DATE") {
+                if(!empty($filter_d_date_from) && !empty($filter_d_date_to)) {
+                    $this->db->where("a.delivery_date between '$filter_d_date_from' and '$filter_d_date_to'");
+                }
+            } else {
+                if(!empty($filter_so_date_from) && !empty($filter_so_date_to)) {
+                    $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
+                }
+                if(!empty($filter_d_date_from) && !empty($filter_d_date_to)) {
+                    $this->db->where("a.delivery_date between '$filter_d_date_from' and '$filter_d_date_to'");
+                }
+            }
+
 
             // Filter by customer name
             if (!empty($filter_customer_name)) {
@@ -311,11 +380,11 @@ class Report_outstanding_so extends CI_Controller
                         <tr>
                             <th width="20">No</th>
                             <th>SO Date</th>
+                            <th>Delivery Date</th>
+                            <th>Customer Name</th>
+                            <th>Customer Order No</th>
                             <th>Product No</th>
                             <th>Product Name</th>
-                            <th>Sales Order No</th>
-                            <th>Customer Order No</th>
-                            <th>Customer Name</th>
                             <th>Qty Order</th>
                             <th>Qty Delivery</th>
                             <th>Outstanding</th>
@@ -333,11 +402,11 @@ class Report_outstanding_so extends CI_Controller
                 $html .= '<tr>
                             <td>' . $no . '</td>
                             <td>' . $data['sales_order_date'] . '</td>
+                            <td>' . $data['delivery_date'] . '</td>
+                            <td style="mso-number-format:\@">' . $data['customer_name'] . '</td>
+                            <td style="mso-number-format:\@">' . $data['customer_order_no'] . '</td>
                             <td style="mso-number-format:\@">' . $data['item_fg_number'] . '</td>
                             <td style="mso-number-format:\@">' . $data['item_fg_name'] . '</td>
-                            <td style="mso-number-format:\@">' . $data['sales_order_no'] . '</td>
-                            <td style="mso-number-format:\@">' . $data['customer_order_no'] . '</td>
-                            <td style="mso-number-format:\@">' . $data['customer_name'] . '</td>
                             <td style="text-align:right;">' . number_format($data['qty'], 0, '.', '.') . '</td>
                             <td style="text-align:right;">' . number_format($data['delivery'], 0, '.', '.') . '</td>
                             <td style="text-align:right;">' . number_format($data['outstanding'], 0, '.', '.') . '</td>
