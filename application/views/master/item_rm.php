@@ -15,7 +15,9 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'attachment',width:100,align:'center',formatter: btnDetails,sortable:true">Attachment</th>
+            <th rowspan="2" data-options="field:'attachment',width:100,align:'center',formatter: btnDetails,sortable:true">Attachment 1</th>
+            <th rowspan="2" data-options="field:'attachment_2',width:100,align:'center',formatter: btnDetails2,sortable:true">Attachment 2</th>
+            <th rowspan="2" data-options="field:'attachment_3',width:100,align:'center',formatter: btnDetails3,sortable:true">Attachment 3</th>
             <th rowspan="2" data-options="field:'id',width:150,align:'center',sortable:true">Part ID</th>
             <th rowspan="2" data-options="field:'number',width:150,halign:'center',sortable:true">Part No External</th>
             <th rowspan="2" data-options="field:'number_internal',width:150,halign:'center',sortable:true">Part No Internal</th>
@@ -132,12 +134,28 @@
                     <input style="width:60%;" name="safety_stock" class="easyui-numberbox">
                 </div>
                 <div class="fitem" hidden>
-                    <span style="width:35%; display:inline-block;">Attachment</span>
+                    <span style="width:35%; display:inline-block;">Attachment 1</span>
                     <input style="width:60%;" name="attachment" id="attachment" class="easyui-textbox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Attachment</span>
+                    <span style="width:35%; display:inline-block;">Attachment 1</span>
                     <input style="width:60%;" name="attachment_upload" id="attachment_upload" class="easyui-filebox" accept=".jpg, .png, .jpeg, .pdf">
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Attachment 2</span>
+                    <input style="width:60%;" name="attachment_2" id="attachment_2" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Attachment 2</span>
+                    <input style="width:60%;" name="attachment_upload_2" id="attachment_upload_2" class="easyui-filebox" accept=".jpg, .png, .jpeg, .pdf">
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Attachment 3</span>
+                    <input style="width:60%;" name="attachment_3" id="attachment_3" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Attachment 3</span>
+                    <input style="width:60%;" name="attachment_upload_3" id="attachment_upload_3" class="easyui-filebox" accept=".jpg, .png, .jpeg, .pdf">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Supply</span>
@@ -204,6 +222,7 @@
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
+        console.log('Row : ', row);
 
         setTimeout(function() {
             $('#id').textbox('setValue', row.id);
@@ -214,6 +233,24 @@
             $('#item_family_id').combobox('disable');
             $('#item_sub_family_id').combobox('disable'); 
             $('#number_internal').textbox('setValue', row.number_internal);
+        
+            // $('#division_id').combobox('setText', row.division_name);
+
+            $('#division_id').combobox({
+                url: '<?= base_url('master/divisions/reads'); ?>',
+                valueField: 'number',
+                textField: 'name',
+                panelHeight: 'auto',
+                prompt: 'Choose Plant',
+                onLoadSuccess: function(data) {
+                    if (row && row.division) {
+                        $('#division_id').combobox('setValue', row.division_number);
+                        $('#division_id').combobox('setText', row.division);
+                    }
+                }
+            });
+
+
 
             var famId = String(row.item_family_id || '').toUpperCase();
             var isP03 = (famId === 'P03');
@@ -233,6 +270,8 @@
         }, 300);
 
         $('#attachment_upload').filebox('clear');
+        $('#attachment_upload_2').filebox('clear');
+        $('#attachment_upload_3').filebox('clear');
         if (row) {
             $('#dlg_insert').dialog('open');
 
@@ -305,6 +344,24 @@
 
         if (attachment != null && attachment != '') {
             return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/item_rm/') ?>' + row.attachment + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+        } else {
+            return '-';
+        }
+    }
+    function btnDetails2(val, row, index) {
+        var attachment_2 = row.attachment_2;
+
+        if (attachment_2 != null && attachment_2 != '') {
+            return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/item_rm/') ?>' + row.attachment_2 + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+        } else {
+            return '-';
+        }
+    }
+    function btnDetails3(val, row, index) {
+        var attachment_3 = row.attachment_3;
+
+        if (attachment_3 != null && attachment_3 != '') {
+            return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/item_rm/') ?>' + row.attachment_3 + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
         } else {
             return '-';
         }
@@ -460,7 +517,69 @@
                     success: function(data) {
                         if (data.success == true) {
                             toastr.success(data.message);
-                            $('#attachment').textbox('setValue', data.filename); // Mengatur nilai pada textbox
+                            $('#attachment').textbox('setValue', data.filename);
+                        } else {
+                            toastr.error(data.message);
+                        }
+                    }
+                });
+            }
+        });
+
+        $('#attachment_upload_2').filebox({
+            buttonText: 'Browse File',
+            accept: '.jpg, .png, .pdf',
+            onChange: function() {
+                var files = $(this).filebox('files');
+                var formData = new FormData();
+
+                for (var i = 0; i < files.length; i++) {
+                    var file = files[i];
+                    formData.append('file', file, file.name);
+                }
+
+                $.ajax({
+                    url: '<?= base_url('master/item_rm/uploadatt') ?>',
+                    type: 'post',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.success == true) {
+                            toastr.success(data.message);
+                            $('#attachment_2').textbox('setValue', data.filename);
+                        } else {
+                            toastr.error(data.message);
+                        }
+                    }
+                });
+            }
+        });
+
+        $('#attachment_upload_3').filebox({
+            buttonText: 'Browse File',
+            accept: '.jpg, .png, .pdf',
+            onChange: function() {
+                var files = $(this).filebox('files');
+                var formData = new FormData();
+
+                for (var i = 0; i < files.length; i++) {
+                    var file = files[i];
+                    formData.append('file', file, file.name);
+                }
+
+                $.ajax({
+                    url: '<?= base_url('master/item_rm/uploadatt') ?>',
+                    type: 'post',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.success == true) {
+                            toastr.success(data.message);
+                            $('#attachment_3').textbox('setValue', data.filename);
                         } else {
                             toastr.error(data.message);
                         }

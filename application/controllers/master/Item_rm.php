@@ -69,7 +69,7 @@ class Item_rm extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.name as item_category_name, c.name as item_family_name, d.number as item_sub_family_number, d.name as item_sub_family_name, e.name as division');
+            $this->db->select('a.*, b.name as item_category_name, c.name as item_family_name, d.number as item_sub_family_number, d.name as item_sub_family_name, e.name as division, e.number as division_number');
             $this->db->from('item_rm a');
             $this->db->join('item_categories b', 'a.item_category_id = b.id');
             $this->db->join('item_familys c', 'a.item_family_id = c.id');
@@ -184,9 +184,9 @@ class Item_rm extends CI_Controller
                 }
 
                 // Validasi ukuran file yang diunggah (maksimal 5MB)
-                $maxFileSize = 2 * 1024 * 1024; // 5MB dalam bytes
+                $maxFileSize = 2 * 1024 * 1024; // 2MB dalam bytes
                 if ($file['size'] > $maxFileSize) {
-                    echo json_encode(['success' => false, 'message' => 'Ukuran file terlalu besar. Maksimal 2MB yang diperbolehkan.']);
+                    echo json_encode(['success' => false, 'message' => 'The file size is too large, maximum 2MB']);
                     exit; // Menghentikan proses lebih lanjut jika ukuran terlalu besar
                 }
 

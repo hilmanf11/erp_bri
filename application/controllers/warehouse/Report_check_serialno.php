@@ -115,6 +115,8 @@ class Report_check_serialno extends CI_Controller
         $filter_status_out = $this->input->get("filter_status_out");
         $filter_lot_no_bri = $this->input->get("filter_lot_no_bri");
         $filter_lot_no_supplier = $this->input->get("filter_lot_no_supplier");
+        $filter_plant = $this->input->get("filter_plant");
+
         $this->db->select('a.*, b.number as item_number, b.number_internal as item_number_internal, b.name as item_name, c.label_no, c.lot_no, c.status as status_label, c.qty, IF(d.id IS NOT NULL OR c.status_out = 1, 1, 0) AS status_out');
         //* Old code : IF(d.id IS NULL, 0, 1) as status_out
         $this->db->from('purchase_order_receipts a');
@@ -143,9 +145,11 @@ class Report_check_serialno extends CI_Controller
         if ($filter_lot_no_bri != "") {
             $this->db->where('a.lot_no_internal', $filter_lot_no_bri);
         }
-
         if ($filter_lot_no_supplier != "") {
             $this->db->where('c.lot_no', $filter_lot_no_supplier);
+        }
+        if ($filter_plant != "") {
+            $this->db->where('b.division', $filter_plant);
         }
         $this->db->order_by('a.receipt_no', 'ASC');
         $this->db->order_by('c.label_no', 'ASC');
@@ -188,12 +192,17 @@ class Report_check_serialno extends CI_Controller
         $filter_from = base64_decode($this->input->get("filter_from"));
         $filter_to = base64_decode($this->input->get("filter_to"));
         $filter_status_out = $this->input->get("filter_status_out");
+        $filter_plant = $this->input->get("filter_plant");
+
         $this->db->select('a.*, b.number as item_number, b.number_internal as item_number_internal, b.name as item_name');
         $this->db->from('new_barcode a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->where('a.deleted', 0);
         if (!empty($filter_product_no)) {
             $this->db->where('a.item_rm_id', $filter_product_no);
+        }
+        if ($filter_plant != "") {
+            $this->db->where('b.division', $filter_plant);
         }
         if (!empty($filter_from) && !empty($filter_to)) {
             $this->db->where('a.cut_off_date >=', $filter_from);
