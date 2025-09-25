@@ -33,6 +33,10 @@
                 </div>
             </div>
             <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Plant</span>
+                    <input style="width:60%;" id="filter_plant" class="easyui-combobox">
+                </div>
                 <div class="fitem filter-nbc-hide">
                     <span style="width:35%; display:inline-block;">Receipt No</span>
                     <input style="width:60%;" id="filter_receipt" class="easyui-combobox">
@@ -85,6 +89,8 @@
         var filter_status_in = $("#filter_status_in").combobox("getValue");
         var filter_status_out = $("#filter_status_out").combobox("getValue");
         var filter_display_by = $("#filter_display_by").combobox("getValue");
+        var filter_plant = $("#filter_plant").combobox('getValue');
+
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_serial_no=" + window.btoa(filter_serial_no) +
@@ -95,7 +101,8 @@
             "&filter_status_out=" + filter_status_out +
             "&filter_display_by=" + filter_display_by +
             "&filter_lot_no_bri=" + filter_lot_no_bri +
-            "&filter_lot_no_supplier=" + filter_lot_no_supplier;
+            "&filter_lot_no_supplier=" + filter_lot_no_supplier + 
+            "&filter_plant=" + filter_plant;
         if (filter_display_by === "nbc") {
             if (filter_from == "" || filter_to == "") {
                 toastr.warning("Please select Trans Date!");
@@ -125,6 +132,8 @@
         var filter_status_in = $("#filter_status_in").combobox("getValue");
         var filter_status_out = $("#filter_status_out").combobox("getValue");
         var filter_display_by = $("#filter_display_by").combobox("getValue");
+        var filter_plant = $("#filter_plant").combobox('getValue');
+
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_serial_no=" + window.btoa(filter_serial_no) +
@@ -133,7 +142,8 @@
             "&filter_product_no=" + filter_product_no +
             "&filter_status_in=" + filter_status_in +
             "&filter_status_out=" + filter_status_out +
-            "&filter_display_by=" + filter_display_by;
+            "&filter_display_by=" + filter_display_by + 
+            "&filter_plant=" + filter_plant;
         if (filter_from == "" || filter_to == "" || (filter_supplier == "" && filter_serial_no == "")) {
             toastr.warning("Please select Trans Date & Supplier!");
         } else {
@@ -297,4 +307,19 @@
             });
         }
     }
+
+    $('#filter_plant').combobox({
+        url: '<?= base_url('master/divisions/reads'); ?>',
+        valueField: 'number',
+        textField: 'name',
+        panelHeight: 'panelHeight',
+        prompt: 'Choose Plant',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
 </script>
