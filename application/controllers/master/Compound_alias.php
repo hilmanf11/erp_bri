@@ -37,6 +37,22 @@ class Compound_alias extends CI_Controller
          echo json_encode($send);
      }
 
+    //GET DATA
+    public function readsFGCompounds()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT * FROM item_fg WHERE item_family_number='CD' AND (number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%') AND status = 0");
+        echo json_encode($send);
+    }
+
+    //GET DATA
+    public function readsRMCompounds()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT * FROM item_rm WHERE item_family_id='P03' AND (number like '%$post%' or name like '%$post%' or id like '%$post%' or item_family_id like '%$post%')");
+        echo json_encode($send);
+    }
+
      //GET DATATABLES
      public function datatables()
      {
@@ -114,7 +130,7 @@ class Compound_alias extends CI_Controller
                 $compound_alias = $this->crud->read('compound_alias', [], ["item_fg_id" => @$post['item_fg_id'],"item_rm_id" => @$post['item_rm_id']]);
                 
                 if (!empty($compound_alias->item_fg_id)) {
-                    echo json_encode(array("title" => "Duplicated", "message" => "Product No " . @$data['item_fg_id'] . " & Part Id " . @$data['item_rm_id'] . " Duplicate Data", "theme" => "error"));
+                    echo json_encode(array("title" => "Duplicated", "message" => "Product No " . @$post['item_fg_id'] . " & Part Id " . @$post['item_rm_id'] . " Duplicate Data", "theme" => "error"));
                 }else{  
                     $send = $this->crud->update('compound_alias', ["id" => $id], $post);
                   echo $send;

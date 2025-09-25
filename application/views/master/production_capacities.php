@@ -1,3 +1,11 @@
+<style>
+    .window-shadow{
+        background: none !important;
+        box-shadow: none !important;
+        -webkit-box-shadow: none !important;
+    }
+</style>
+
 <div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
     <div class="easyui-accordion" style="width:100%; height: 100%;">
         <div title="RELATIONS" style="padding: 20px;">
@@ -30,7 +38,7 @@
             <th rowspan="2" data-options="field:'machine_number',width:150,align:'center',sortable:true">Machine No.</th>
             <th rowspan="2" data-options="field:'item_fg_name',width:150,halign:'center',sortable:true">Product Name</th>
             <th rowspan="2" data-options="field:'cycle_time',width:120,halign:'center',sortable:true">Cycle Time <br>(Second)</th>
-            <th rowspan="2" data-options="field:'productcivity',width:120,halign:'center',sortable:true">Productivity <br>Factor (%)</th>
+            <th rowspan="2" data-options="field:'productcivity',width:120,halign:'center',sortable:true">Efficiency (%)</th>
             <th rowspan="2" data-options="field:'cavity_actual',width:120,halign:'center',sortable:true">Cavity Actual</th>
             <th rowspan="2" data-options="field:'capacity_hour',width:120,halign:'center',sortable:true">Capacity/Hour</th>
             <th rowspan="2" data-options="field:'capacity_shift',width:120,halign:'center',sortable:true">Capacity/Shift</th>
@@ -63,30 +71,30 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Machine No.</span>
-                <input style="width:60%;" name="machine_id" id="machine_id" required="" class="easyui-textbox">
+                <input style="width:60%;" name="machine_id" id="machine_id" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Cycle Time</span>
                 <input style="width:60%;" id="cycle_time" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Productivity Factor %</span>
+                <span style="width:35%; display:inline-block;">Efficiency %</span>
                 <input style="width:60%;" id="productcivity" required="" class="easyui-textbox" readonly>
             </div>
-            <div class="fitem">
+            <div class="fitem" id="cavity_wrapper">
                 <span style="width:35%; display:inline-block;">Cavity Actual</span>
                 <input style="width:60%;" id="cavity_actual" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Cavity/Hour</span>
+                <span style="width:35%; display:inline-block;">Capacity/Hour</span>
                 <input style="width:60%;" name="capacity_hour" id="capacity_hour" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Cavity/Shift</span>
+                <span style="width:35%; display:inline-block;">Capacity/Shift</span>
                 <input style="width:60%;" name="capacity_shift" id="capacity_shift" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Cavity/Day</span>
+                <span style="width:35%; display:inline-block;">Capacity/Day</span>
                 <input style="width:60%;" name="capacity_day" id="capacity_day" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
@@ -254,38 +262,56 @@
             }]
         ],
         onSelect: function(val, rows) {
-            $("#machine_id").textbox('setValue', rows.machine_id);
-            $("#cycle_time").textbox('setValue', rows.cycle_time);
-            $("#productcivity").textbox('setValue', rows.productcivity);
-            $("#cavity_actual").textbox('setValue', rows.cavity_actual); // mengambil dari molds
 
-            var capacity_hour = (3600 / rows.cycle_time) * rows.cavity_actual * (rows.productcivity / 100);
-            var capacity_shift = (capacity_hour * capacity_hour);
-            var capacity_day = (capacity_hour * capacity_hour * rows.shift_hour * rows.shift);
+            let { item_family_number } = rows;
 
-            $("#capacity_hour").textbox('setValue', capacity_hour);
-            $("#capacity_shift").textbox('setValue', capacity_shift);
-            $("#capacity_day").textbox('setValue', capacity_day);
+            console.log(rows);
 
-            // $('#machine_id').combobox({
-            //     url: '<?php echo base_url('master/production_capacities/readMachines/'); ?>' + btoa(rows.item_fg_id),
-            //     valueField: 'machine_id',
-            //     textField: 'machine_number',
-            //     prompt: "Choose Machine No",
-            //     onSelect: function(menu_loadings){
-            //         $("#cycle_time").textbox('setValue', menu_loadings.cycle_time);
-            //         $("#productcivity").textbox('setValue', menu_loadings.productcivity);
-            //         $("#cavity_actual").textbox('setValue', menu_loadings.cavity_actual); // mengambil dari molds
+            if(item_family_number === "CD") {
 
-            //         var capacity_hour = (3600 / menu_loadings.cycle_time) * menu_loadings.cavity_actual * (menu_loadings.productcivity / 100);
-            //         var capacity_shift = (capacity_hour * capacity_hour);
-            //         var capacity_day = (capacity_hour *  capacity_hour * menu_loadings.shift_hour * menu_loadings.shift);
+                $('#cavity_actual').textbox('clear');
+                $('#cavity_actual').textbox('disableValidation');
+                $('#cavity_wrapper').hide();
 
-            //         $("#capacity_hour").textbox('setValue', capacity_hour);
-            //         $("#capacity_shift").textbox('setValue', capacity_shift);
-            //         $("#capacity_day").textbox('setValue', capacity_day);
-            //     }
-            // });
+                $("#machine_id").textbox('setValue', rows.machine_id);
+                $("#cycle_time").textbox('setValue', rows.cycle_time);
+                $("#productcivity").textbox('setValue', rows.productcivity);
+    
+                // var capacity_hour = Math.ceil((rows.shift_hour * 3600) / rows.cycle_time);
+                // var capacity_hour = Math.ceil((3600 / rows.cycle_time) * rows.mpq * (rows.productcivity / 100));
+                // var capacity_shift = Math.ceil((capacity_hour * rows.shift_hour));
+                // var capacity_day = Math.ceil((capacity_shift * rows.shift));
+
+                var cycle_per_hour = 3600 / rows.cycle_time; 
+                var capacity_hour = cycle_per_hour * rows.mpq * (rows.productcivity / 100);
+
+                capacity_hour = Math.ceil(capacity_hour / rows.mpq) * rows.mpq;
+                var capacity_shift = Math.ceil(capacity_hour * rows.shift_hour);
+                var capacity_day   = Math.ceil(capacity_shift * rows.shift);
+
+    
+                $("#capacity_hour").textbox('setValue', capacity_hour);
+                $("#capacity_shift").textbox('setValue', capacity_shift);
+                $("#capacity_day").textbox('setValue', capacity_day);
+            }else{
+                $('#cavity_actual').textbox('enableValidation');
+                $('#cavity_wrapper').show();
+
+                $("#machine_id").textbox('setValue', rows.machine_id);
+                $("#cycle_time").textbox('setValue', rows.cycle_time);
+                $("#productcivity").textbox('setValue', rows.productcivity);
+                $("#cavity_actual").textbox('setValue', rows.cavity_actual);
+    
+                // var capacity_hour = Math.ceil((rows.shift_hour * 3600) / rows.cycle_time);
+                var capacity_hour = Math.ceil((3600 / rows.cycle_time) * rows.cavity_actual * (rows.productcivity / 100));
+                var capacity_shift = Math.ceil(capacity_hour * rows.shift_hour);
+                var capacity_day = Math.ceil(capacity_shift * rows.shift);
+    
+                $("#capacity_hour").textbox('setValue', capacity_hour);
+                $("#capacity_shift").textbox('setValue', capacity_shift);
+                $("#capacity_day").textbox('setValue', capacity_day);
+            }
+
         }
     });
 
@@ -293,76 +319,105 @@
     $('#dlg_upload').dialog({
         buttons: [{
             text: 'List Failed',
-            handler: function() {
+            handler: function () {
                 window.open('<?= base_url('master/production_capacities/uploadDownloadFailed') ?>', '_blank');
             }
         }, {
             text: 'Upload',
             iconCls: 'icon-ok',
-            handler: function() {
+            handler: function () {
                 $('#frm_upload').form('submit', {
                     url: '<?= base_url('master/production_capacities/upload') ?>',
-                    onSubmit: function() {
-                        if ($(this).form('validate') == false) {
-                            return $(this).form('validate');
-                        } else {
-                            $.messager.progress({
-                                title: 'Please Wait',
-                                msg: 'Importing Excel to Database'
-                            });
-                        }
-                    },
-                    success: function(result) {
-                        $.messager.progress('close');
-                        //Clear File
-                        $.ajax({
-                            url: "<?= base_url('master/production_capacities/uploadclearFailed') ?>"
+                    onSubmit: function () {
+                        if (!$(this).form('validate')) return false;
+
+                        $.messager.progress({
+                            title: 'Please Wait',
+                            msg: 'Importing Excel to Database'
                         });
-                        var json = eval('(' + result + ')');
-                        requestData(json.total, json);
+                    },
+                    success: function (result) {
+                        $.messager.progress('close');
+                        // Clear File
+                        $.ajax({ 
+                            url: "<?= base_url('master/production_capacities/uploadclearFailed') ?>" 
+                        });
 
-                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                            if (value < 100) {
-                                value = Math.floor((number / total) * 100);
-                                $('#p_upload').progressbar('setValue', value);
-                                $('#p_start').html(number);
-                                $('#p_finish').html(total);
+                        let res = JSON.parse(result);
+                        let dataList = res.data ?? [];
 
-                                $.ajax({
-                                    type: "POST",
-                                    async: true,
-                                    url: "<?= base_url('master/production_capacities/uploadCreate') ?>",
-                                    data: {
-                                        "data": json[number - 1]
-                                    },
-                                    cache: false,
-                                    dataType: "json",
-                                    success: function(result) {
-                                        if (result.theme == "success") {
-                                            $('#p_success').html(success);
-                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                        } else {
-                                            $('#p_failed').html(failed);
-                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                            //Json Failed
-                                            $.ajax({
-                                                type: "POST",
-                                                async: true,
-                                                url: "<?= base_url('master/production_capacities/uploadcreateFailed') ?>",
-                                                data: {
-                                                    data: json[number - 1],
-                                                    message: result.message
-                                                },
-                                                cache: false
-                                            });
-                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                        }
-                                        $("#p_remarks").append(title + "<br>");
-                                    }
-                                });
-                            }
+                        console.log(dataList);
+
+                        if (dataList.length === 0) {
+                            $.messager.alert("Upload Failed", "Data not found from Excel file", "error");
+                            return;
                         }
+
+                        // Reset UI
+                        $('#p_upload').progressbar('setValue', 0);
+                        $('#p_start').html(0);
+                        $('#p_finish').html(dataList.length);
+                        $('#p_success').html(0);
+                        $('#p_failed').html(0);
+                        $('#p_remarks').html('');
+
+                        let totalExpected = dataList.length;
+
+                        // Kirim semua data
+                        $.ajax({
+                            type: "POST",
+                            url: "<?= base_url('master/production_capacities/uploadCreate') ?>",
+                            data: JSON.stringify({ data: dataList }),
+                            dataType: "json",
+                            success: function (response) {
+
+                                $('#p_upload').progressbar('setValue', 0);
+                                let successCount = 0;
+                                let failedCount = 0;
+                                let progressCount = 0;
+                                let total = response.total_expected ?? response.results.length;
+                                
+                                function updateProgress() {
+                                    let percent = Math.floor((progressCount / total) * 100);
+                                    $('#p_upload').progressbar('setValue', percent);
+                                    $('#p_start').html(progressCount);
+                                    $('#p_success').html(successCount);
+                                    $('#p_failed').html(failedCount);
+                                }
+
+                                if (response.results && response.results.length > 0) {
+                                    let delayPerItem = 50;
+                                    response.results.forEach(function (r, i) {
+                                        setTimeout(function () {
+                                            let color = r.status === "success" ? "green" : "red";
+
+                                            if (r.status === "success") successCount++;
+                                            else failedCount++;
+
+                                            $('#p_remarks').append(
+                                                `<b style="color: ${color};">${r.item}</b> | ${r.message}<br>`
+                                            );
+
+                                            progressCount++;
+                                            updateProgress();
+
+                                            if(progressCount == total) {
+                                                if (response.theme === 'error') {
+                                                    $.messager.alert(response.title ?? "Upload Failed", response.message ?? "Some data failed to save", "error");
+                                                }
+                                            }
+
+                                        }, i * delayPerItem);
+                                    });
+                                }
+
+                                $('#dg').datagrid('reload');
+                            },
+
+                            error: function (xhr, status, error) {
+                                $.messager.alert("Upload Error", "An error occurred while saving the data", "error");
+                            }
+                        });
                     }
                 });
             }

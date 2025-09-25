@@ -455,7 +455,165 @@ class Issued_materials extends CI_Controller
 
                 if (empty($post['item_fg_id'])) {
                     $post['item_fg_id'] = null;
+                }else if(empty($post['qty_act'])) {
+                    $post['qty_act'] = 0;
+                }else if(empty($post['mpq'])) {
+                    $post['mpq'] = 0;
                 }
+
+                $filter_from="2025-01-01";
+                $filter_to = date('Y-m-d');
+                $item_rm_id = $post['item_rm_id'];
+                $request_no = $post['request_no'];
+
+                if (strpos($request_no, 'SH') === 0) {
+
+                    // $item_fg_id = $post['item_fg_id'];
+                    $qty_need = floatval($post['qty_act']);
+                    // $supply_sheets = $this->crud->reads("supply_sheets", [], ["request_no" => $request_no, "item_fg_id" => $item_fg_id, "item_rm_id" => $item_rm_id]);
+                    $supply_sheetsRM = $this->crud->reads("supply_sheets", [], ["item_rm_id" => $item_rm_id]);
+                    $wip_balances = $this->crud->read("wip_balances", [], ["item_rm_id" => $item_rm_id], "", "id", "desc");
+
+                    $this->db->select('SUM(qty) as issued_qty');
+                    $this->db->from('issued_material_details');
+                    $this->db->where('request_no', $request_no);
+                    $this->db->where('item_rm_id', $item_rm_id);
+                    $this->db->group_by('request_no');
+                    $this->db->group_by('item_rm_id');
+                    $queryPOLabels = $this->db->get();
+                    $resultPOLabels = $queryPOLabels->row();
+
+                    $this->db->select("(
+                                        COALESCE(SUM(e.qty),0) +
+                                        COALESCE(g.return_qty, 0) +
+                                        COALESCE(h.qty_stock_rm, 0) +
+                                        COALESCE(i.qty_in, 0)
+                                    ) - (
+                                        
+                                        COALESCE(f.qty, 0) +
+                                        COALESCE(j.qty_out, 0)
+                                    ) as begin_stock");
+                    $this->db->from('item_rm a');
+                    $this->db->join("purchase_order_receipts d","a.id = d.item_rm_id and d.receipt_date < '$filter_from'","left");
+                    $this->db->join("scan_item_receipts e","d.receipt_id = e.receipt_id","left");
+                    $this->db->join("(SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty
+                                        FROM issued_material_details
+                                        WHERE DATE_FORMAT(created_date, '%Y-%m-%d') < '$filter_from'
+                                        GROUP BY item_rm_id) f","a.id = f.item_rm_id","left");
+                    $this->db->join("(SELECT a.item_rm_id, SUM(c.qty) as return_qty
+                                        FROM return_materials a 
+                                        JOIN return_material_labels b ON a.return_id = b.return_id
+                                        JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
+                                        WHERE a.return_date < '$filter_from'
+                                        GROUP BY a.item_rm_id) g","a.id = g.item_rm_id","left");
+                    $this->db->join("(SELECT a.item_rm_id, SUM(a.qty) as qty_stock_rm
+                                        FROM os_rm a
+                                        JOIN item_rm b ON a.item_rm_id = b.id
+                                        WHERE a.trans_date < '$filter_from'
+                                        GROUP BY a.item_rm_id) h","a.id = h.item_rm_id","left");
+                    $this->db->join("(SELECT item_rm_id, SUM(qty) as qty_in 
+                                        FROM transaction_rm 
+                                        WHERE transaction_type LIKE 'RE%' 
+                                        AND request_date < '$filter_from'
+                                        GROUP BY item_rm_id) i","a.id = i.item_rm_id","left");
+                    $this->db->join("(SELECT item_rm_id, SUM(qty) as qty_out 
+                                        FROM transaction_rm 
+                                        WHERE transaction_type LIKE 'IS%' 
+                                        AND request_date < '$filter_from'
+                                        GROUP BY item_rm_id) j","a.id = j.item_rm_id","left");
+                    $this->db->where('a.id', $item_rm_id);
+                    $this->db->group_by('a.id');
+                    $queryBegin = $this->db->get();
+                    $resultBeginStock = $queryBegin->row();
+
+                    $this->db->select("(COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty, 0) + COALESCE(h.qty_stock_rm, 0) + COALESCE(i.qty_in, 0)) as qty_in,
+                                        (COALESCE(f.qty, 0) + COALESCE(j.qty_out, 0)) as qty_out");
+                    $this->db->from('item_rm a');
+                    $this->db->join("purchase_order_receipts d","a.id = d.item_rm_id and d.receipt_date between '$filter_from' and '$filter_to'","left");
+                    $this->db->join("scan_item_receipts e","d.receipt_id = e.receipt_id","left");
+                    $this->db->join("(SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty
+                                        FROM issued_material_details
+                                        WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
+                                        GROUP BY item_rm_id) f","a.id = f.item_rm_id","left");
+                    $this->db->join("(SELECT a.item_rm_id, SUM(c.qty) as return_qty
+                                        FROM return_materials a 
+                                        JOIN return_material_labels b ON a.return_id = b.return_id
+                                        JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
+                                        WHERE a.return_date between '$filter_from' and '$filter_to'
+                                        GROUP BY a.item_rm_id) g","a.id = g.item_rm_id","left");
+                    $this->db->join("(SELECT a.item_rm_id, SUM(a.qty) as qty_stock_rm
+                                        FROM os_rm a
+                                        JOIN item_rm b ON a.item_rm_id = b.id
+                                        WHERE a.trans_date between '$filter_from' and '$filter_to'
+                                        GROUP BY a.item_rm_id) h","a.id = h.item_rm_id","left");
+                    $this->db->join("(SELECT item_rm_id, SUM(qty) as qty_in 
+                                        FROM transaction_rm 
+                                        WHERE transaction_type LIKE 'RE%' 
+                                        AND request_date between '$filter_from' and '$filter_to'
+                                        GROUP BY item_rm_id) i","a.id = i.item_rm_id","left");
+                    $this->db->join("(SELECT item_rm_id, SUM(qty) as qty_out 
+                                        FROM transaction_rm 
+                                        WHERE transaction_type LIKE 'IS%' 
+                                        AND request_date between '$filter_from' and '$filter_to'
+                                        GROUP BY item_rm_id) j","a.id = j.item_rm_id","left");
+                    $this->db->where('a.id', $item_rm_id);
+                    $this->db->group_by('a.id');
+                    $queryInOut = $this->db->get();
+                    $resultInOut = $queryInOut->row();
+
+                    $EndingStock = (floatval($resultBeginStock->begin_stock) + floatval($resultInOut->qty_in)) - floatval($resultInOut->qty_out);
+
+                    $begin = 0;
+                    $issued = 0;
+                    $balance = 0;
+                    $need = floatval($qty_need);
+                    $qty_supply = 0;
+                    if ($queryPOLabels->num_rows() > 0) {
+                        $issued= $resultPOLabels->issued_qty;
+                    }
+
+                    if(count($supply_sheetsRM) > 0){
+                        $mpq = isset($post["mpq"]) ? floatval($post["mpq"]) : 0;
+                            if(floatval($wip_balances->balance)<floatval($qty_need)){
+
+                                if($mpq > 0) {
+                                    $roundingUpResult = ceil(floatval($qty_need) / floatval($mpq));
+                                    $qty_supply=floatval($mpq) * $roundingUpResult;
+                                }else{
+                                    $qty_supply = 0;
+                                }
+                            }
+                            $begin = floatval($wip_balances->balance);
+                            $issued = (floatval($qty_supply) == 0) ? 0 : $issued;
+
+                    }
+
+                    $balance = ($begin + $issued) - $need;
+
+                    $wip_balance_exists = $this->crud->read("wip_balances", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']]);
+
+                    if(!$wip_balance_exists) {
+                        $this->crud->create("wip_balances", [
+                            "item_rm_id" => $item_rm_id,
+                            "request_no" => $request_no,
+                            "begin" => $begin,
+                            "need" => $need,
+                            "issued" => $issued,
+                            "balance" => $balance,
+                            "warehouse" => $EndingStock
+                        ]);
+                    }
+
+                    if($begin >= $need){                        
+                        $this->crud->update('supply_sheets',[
+                            "request_no" => $request_no,
+                            "item_rm_id" => $item_rm_id
+                        ],["qty_req" => $need, 'qty_bal'=> $balance]);
+                    }
+
+                }
+
+                unset($post['mpq'], $post['qty_act']);
 
                 $issued_materials = $this->crud->read("issued_materials", [], ["request_no" => $post['request_no'], "workorder" => $post['workorder'], "item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']]);
                 if (!$issued_materials) {
