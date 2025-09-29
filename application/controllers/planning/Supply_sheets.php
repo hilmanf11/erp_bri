@@ -171,13 +171,14 @@ class Supply_sheets extends CI_Controller
 
             $this->db->where('a.deleted', 0);
             
-            if ($filter_supply_type == "OPEN") {
-                $this->db->having('open_items >', 0);
-            } elseif ($filter_supply_type == "CLOSE") {
-                $this->db->having('open_items', 0);
-            }elseif ($filter_supply_type == "ALL STATUS") {
-                $this->db->having('open_items >=', 0);
-            }
+            // if ($filter_supply_type == "OPEN") {
+            //     $this->db->having('open_items >', 0);
+            // } elseif ($filter_supply_type == "CLOSE") {
+            //     $this->db->having('open_items', 0);
+            // }elseif ($filter_supply_type == "ALL STATUS") {
+            //     $this->db->having('open_items >=', 0);
+            // }
+
             if ($filter_period != "") {
                 $this->db->where('e.period', $filter_period);
             } else {
@@ -327,6 +328,45 @@ class Supply_sheets extends CI_Controller
                     "supply_type" => $supply_type,
                     "state" => "closed"
                 );
+
+                // if ($filter_supply_type == "OPEN") {
+                //     $arr = array_filter($arr, function($row) {
+                //         return $row['supply_type'] === "OPEN";
+                //     });
+                // } elseif ($filter_supply_type == "CLOSE") {
+                //     $arr = array_filter($arr, function($row) {
+                //         return $row['supply_type'] === "CLOSE";
+                //     });
+                // }
+
+                if ($filter_supply_type == "OPEN") {
+                    $arr = array_filter($arr, function($row) {
+                        return $row['supply_type'] === "OPEN";
+                    });
+                } elseif ($filter_supply_type == "CLOSE") {
+                    // parent boleh OPEN asalkan punya minimal 1 child CLOSE
+                    $parentsWithClose = [];
+                    foreach ($arr as $row) {
+                        $hasCloseChild = $this->db->select('1')
+                            ->from('supply_sheets a')
+                            ->join("(SELECT request_no, item_rm_id, SUM(qty) as qty_issued 
+                                        FROM issued_material_details 
+                                        GROUP BY request_no, item_rm_id) i", 
+                                "i.request_no = a.request_no and i.item_rm_id = a.item_rm_id", "LEFT")
+                            ->where('a.workorder', $row['id'])
+                            ->where('a.deleted', 0)
+                            ->where('(COALESCE(i.qty_issued,0) - a.qty_req) >= 0') // close condition
+                            ->limit(1)
+                            ->get()->row();
+                        if ($hasCloseChild) {
+                            $parentsWithClose[] = $row['id'];
+                        }
+                    }
+                    $arr = array_filter($arr, function($row) use ($parentsWithClose) {
+                        return in_array($row['id'], $parentsWithClose);
+                    });
+                }
+
             }
 
             $result['total'] = $totalRows;
@@ -492,36 +532,76 @@ class Supply_sheets extends CI_Controller
                     }
                 }
 
+                // $arr[] = array(
+                //     "id" => $record['id'],
+                //     "request_no" => $record['request_no'],
+                //     "request_date" => $record['request_date'],
+                //     "request_name" => $record['request_name'],
+                //     "period" => $record['period'],
+                //     "wp" => $record['wp'],
+                //     "workorder" => $record['workorder'],
+                //     "item_fg_id" => $record['item_fg_id'],
+                //     "item_rm_id" => $record['item_rm_id'],
+                //     "item_number" => $record['item_rm_no'],
+                //     "item_name" => $record['item_rm_name'],
+                //     "mpq" => $record['mpq'],
+                //     "qpa" => $record['qpa'],
+                //     "qty_req" => $record['qty_req'],
+                //     "qty_act" => $record['qty_act'],
+                //     "qty_bal" => $record['qty_bal'],
+                //     "qty_issued" => $record['qty_issued'],
+                //     "qty_issued_bal" => $record['qty_issued_bal'],
+                //     "composition" => $record['composition'],
+                //     "qty" => $record['qty'],
+                //     "uom" => $record['uom'],
+                //     "supply_type" => $supply_type,
+                //     "created_by" => $record['created_by'],
+                //     "created_date" => $record['created_date'],
+                //     "updated_by" => $record['updated_by'],
+                //     "updated_date" => $record['updated_date']
+                // );
 
-                $arr[] = array(
-                    "id" => $record['id'],
-                    "request_no" => $record['request_no'],
-                    "request_date" => $record['request_date'],
-                    "request_name" => $record['request_name'],
-                    "period" => $record['period'],
-                    "wp" => $record['wp'],
-                    "workorder" => $record['workorder'],
-                    "item_fg_id" => $record['item_fg_id'],
-                    "item_rm_id" => $record['item_rm_id'],
-                    "item_number" => $record['item_rm_no'],
-                    "item_name" => $record['item_rm_name'],
-                    "mpq" => $record['mpq'],
-                    "qpa" => $record['qpa'],
-                    "qty_req" => $record['qty_req'],
-                    "qty_act" => $record['qty_act'],
-                    "qty_bal" => $record['qty_bal'],
-                    "qty_issued" => $record['qty_issued'],
-                    "qty_issued_bal" => $record['qty_issued_bal'],
-                    "composition" => $record['composition'],
-                    "qty" => $record['qty'],
-                    "uom" => $record['uom'],
-                    "supply_type" => $supply_type,
-                    "created_by" => $record['created_by'],
-                    "created_date" => $record['created_date'],
-                    "updated_by" => $record['updated_by'],
-                    "updated_date" => $record['updated_date']
-                );
+                $add_child = false;
+                if ($filter_supply_type == "OPEN" && $supply_type == "OPEN") {
+                    $add_child = true;
+                } elseif ($filter_supply_type == "CLOSE" && $supply_type == "CLOSE") {
+                    $add_child = true;
+                } elseif ($filter_supply_type == "ALL STATUS" || $filter_supply_type == "") {
+                    $add_child = true;
+                }
+
+                if ($add_child) {
+                    $arr[] = array(
+                        "id" => $record['id'],
+                        "request_no" => $record['request_no'],
+                        "request_date" => $record['request_date'],
+                        "request_name" => $record['request_name'],
+                        "period" => $record['period'],
+                        "wp" => $record['wp'],
+                        "workorder" => $record['workorder'],
+                        "item_fg_id" => $record['item_fg_id'],
+                        "item_rm_id" => $record['item_rm_id'],
+                        "item_number" => $record['item_rm_no'],
+                        "item_name" => $record['item_rm_name'],
+                        "mpq" => $record['mpq'],
+                        "qpa" => $record['qpa'],
+                        "qty_req" => $record['qty_req'],
+                        "qty_act" => $record['qty_act'],
+                        "qty_bal" => $record['qty_bal'],
+                        "qty_issued" => $record['qty_issued'],
+                        "qty_issued_bal" => $record['qty_issued_bal'],
+                        "composition" => $record['composition'],
+                        "qty" => $record['qty'],
+                        "uom" => $record['uom'],
+                        "supply_type" => $supply_type,
+                        "created_by" => $record['created_by'],
+                        "created_date" => $record['created_date'],
+                        "updated_by" => $record['updated_by'],
+                        "updated_date" => $record['updated_date']
+                    );
+                }
             }
+
             $result = !empty($arr) ? $arr : [];
             echo json_encode($result);
         }

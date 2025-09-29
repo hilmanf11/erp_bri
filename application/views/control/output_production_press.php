@@ -104,7 +104,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1220px; height: 70%; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="padding:10px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -174,7 +174,17 @@
 <script>
     //ADD DATA
     function add() {
-        $('#dlg_insert').dialog('open');
+        // $('#dlg_insert').dialog('open');
+
+        $('#dlg_insert').dialog({
+            title: 'Add New',
+            modal: true,
+            closed: false,
+            maximized: true,
+            resizable: true,
+        }).dialog('open');
+
+
         $('#dg2').datagrid('loadData', []);
         url_save = '<?= base_url('control/output_production_press/create') ?>';
         $('#frm_insert').form('clear');
@@ -238,6 +248,8 @@
         $('#dg2').datagrid({
             url: link,
             singleSelect: true,
+            // fit: true,
+            // fitColumns: true,
             columns: [
                 [{
                     field: 'id',
@@ -251,7 +263,7 @@
                     hidden: true
                 }, {
                     field: 'machine_number',
-                    width: 150,
+                    width: 100,
                     rowspan: 2,
                     halign: 'center',
                     align: 'center',
@@ -480,7 +492,7 @@
                     }
                 }, {
                     field: 'item_fg_name',
-                    width: 150,
+                    width: 100,
                     rowspan: 2,
                     halign: 'center',
                     title: "Product Name",
@@ -492,10 +504,10 @@
                     }
                 }, {
                     field: 'planning_qty',
-                    width: 130,
+                    width: 100,
                     rowspan: 2,
                     halign: 'center',
-                    title: "Planning/day (pcs)",
+                    title: "Planning/day <br> (pcs)",
                     formatter: numberFormatField,
                     editor: {
                         type: 'numberbox',
@@ -506,10 +518,10 @@
                     }
                 }, {
                     field: 'planning_qty_shift',
-                    width: 130,
+                    width: 100,
                     rowspan: 2,
                     halign: 'center',
-                    title: "Planning/shift (pcs)",
+                    title: "Planning/shift <br> (pcs)",
                     editor: {
                         type: 'numberbox',
                         options: {
@@ -518,7 +530,7 @@
                     }
                 }, {
                     field: 'workorder',
-                    width: 150,
+                    width: 110,
                     rowspan: 2,
                     halign: 'center',
                     align: 'center',
@@ -531,10 +543,10 @@
                     }
                 }, {
                     field: 'operator',
-                    width: 150,
+                    width: 60,
                     rowspan: 2,
                     halign: 'center',
-                    title: "Operator Name",
+                    title: "Operator <br>Name",
                     editor: {
                         type: 'textbox',
                         options : {
@@ -548,10 +560,10 @@
                     align: 'center' 
                 }, {
                     field: 'actual_cavity',
-                    width: 100,
+                    width: 60,
                     rowspan: 2,
                     align: 'center',
-                    title: "Actual Cavity",
+                    title: "Actual <br>Cavity",
                     formatter: numberFormatField,
                     editor: {
                         type: 'numberbox',
@@ -562,10 +574,10 @@
                     }
                 }, {
                     field: 'standard_curing_time',
-                    width: 140,
+                    width: 110,
                     rowspan: 2,
                     align: 'center',
-                    title: "Standard Curing Time <br>(second)",
+                    title: "Standard Curing <br> Time (second)",
                     formatter: numberFormatField,
                     editor: {
                         type: 'numberbox',
@@ -576,10 +588,10 @@
                     }
                 }, {
                     field: 'actual_curing_time',
-                    width: 120,
+                    width: 100,
                     rowspan: 2,
                     align: 'center',
-                    title: "Act Curing Time <br>(second)",
+                    title: "Act Curing <br> Time (second)",
                     formatter: numberFormatField,
                     editor: {
                         type: 'numberbox',
@@ -590,7 +602,7 @@
                     }
                 }, {
                     field: 'shift_hour',
-                    width: 100,
+                    width: 65,
                     rowspan: 2,
                     align: 'center',
                     title: "Hour/Shift",
@@ -604,10 +616,10 @@
                     }
                 }, {
                     field: 'target_shoot',
-                    width: 100,
+                    width: 60,
                     rowspan: 2,
                     align: 'center',
-                    title: "Target Shoot",
+                    title: "Target <br>Shoot",
                     formatter: numberFormatField,
                     editor: {
                         type: 'numberbox',
@@ -618,10 +630,10 @@
                     }
                 }, {
                     field: 'actual_shoot',
-                    width: 100,
+                    width: 60,
                     rowspan: 2,
                     align: 'center',
-                    title: "Actual Shoot",
+                    title: "Actual <br>Shoot",
                     formatter: numberFormatField,
                     editor: {
                         type: 'numberbox',
@@ -632,29 +644,29 @@
                     }
                 }, {
                     field: 'total_compound_used',
-                    width: 120,
+                    width: 110,
                     rowspan: 2,
                     align: 'center',
-                    title: "Total Compound <br>Used",
+                    title: "Total Compound <br>Used (kg)",
                     formatter: numberFormatField,
                     editor: {
                         type: 'numberbox',
                         options: {
-                            precision: 0,
+                            precision: 2,
                             required: true,
                         }
                     }
                 }, {
                     field: 'waste',
-                    width: 100,
+                    width: 60,
                     rowspan: 2,
                     align: 'center',
-                    title: "Waste",
+                    title: "Waste <br> (kg)",
                     formatter: numberFormatField,
                     editor: {
                         type: 'numberbox',
                         options: {
-                            precision: 0,
+                            precision: 2,
                             // required: true,
                         }
                     }
@@ -665,7 +677,7 @@
                     align: 'center',
                 }, {
                     field: 'remarks',
-                    width: 200,
+                    width: 80,
                     rowspan: 2,
                     align: 'center',
                     halign: 'center',
@@ -678,7 +690,7 @@
                 [{
                     
                     field: 'qty_ok',
-                    width: 100,
+                    width: 50,
                     align: 'center',
                     title: "OK",
                     formatter: numberFormatField,
@@ -713,7 +725,7 @@
                     }
                 }, {
                     field: 'qty_ng',
-                    width: 100,
+                    width: 90,
                     align: 'center',
                     title: "NG Produksi",
                     formatter: numberFormatField,
@@ -748,7 +760,7 @@
                     }
                 }, {
                     field: 'qty_ng_mold',
-                    width: 100,
+                    width: 70,
                     align: 'center',
                     title: "NG Mold",
                     formatter: numberFormatField,
@@ -764,7 +776,7 @@
                     }
                 }, {
                     field: 'total_qty',
-                    width: 100,
+                    width: 65,
                     align: 'center',
                     title: "Total",
                     editor: {
@@ -776,7 +788,7 @@
                     }
                 }, {
                     field: 'mold_cleaning',
-                    width: 110,
+                    width: 95,
                     align: 'center',
                     title: "Mold Cleaning",
                     formatter: numberFormatField,
@@ -788,7 +800,7 @@
                     }
                 }, {
                     field: 'trial',
-                    width: 100,
+                    width: 50,
                     align: 'center',
                     title: "Trial",
                     formatter: numberFormatField,
@@ -800,7 +812,7 @@
                     }
                 }, {
                     field: 'mold_changing',
-                    width: 120,
+                    width: 100,
                     align: 'center',
                     title: "Mold Changing",
                     formatter: numberFormatField,
@@ -812,7 +824,7 @@
                     }
                 }, {
                     field: 'machine_repair',
-                    width: 120,
+                    width: 100,
                     align: 'center',
                     title: "Machine Repair",
                     formatter: numberFormatField,
@@ -824,7 +836,7 @@
                     }
                 }, {
                     field: 'mold_repair',
-                    width: 100,
+                    width: 80,
                     align: 'center',
                     title: "Mold Repair",
                     formatter: numberFormatField,
@@ -836,7 +848,7 @@
                     }
                 }, {
                     field: 'others',
-                    width: 100,
+                    width: 80,
                     align: 'center',
                     title: "Others",
                     formatter: numberFormatField,
@@ -1352,20 +1364,20 @@
                             formatter: numberformat
                         }, {
                             field: 'total_compound_used',
-                            title: 'Total Compound Used',
+                            title: 'Total Compound Used <br> (kg)',
                             rowspan: 2,
                             halign: 'center',
                             align: 'center',
                             width: 150,
-                            formatter: numberformat
+                            formatter: numberformatPrecision
                         }, {
                             field: 'waste',
-                            title: 'Waste',
+                            title: 'Waste <br> (kg)',
                             rowspan: 2,
                             halign: 'center',
                             align: 'center',
                             width: 80,
-                            formatter: numberformat
+                            formatter: numberformatPrecision
                         }, {
                             field: 'waste_percen',
                             title: '% Waste',
@@ -1376,20 +1388,20 @@
                             formatter: numberformat
                         }, {
                             field: 'total_used_shoot',
-                            title: '% Total Used/shoot (gr)',
+                            title: 'Total Used/shoot (gr)',
                             rowspan: 2,
                             halign: 'center',
                             align: 'center',
                             width: 160,
-                            formatter: numberformat
+                            formatter: numberformatPrecision
                         }, {
                             field: 'total_waste_shoot',
-                            title: '% Total Waste/shoot (gr)',
+                            title: 'Total Waste/shoot (gr)',
                             rowspan: 2,
                             halign: 'center',
                             align: 'center',
                             width: 160,
-                            formatter: numberformat
+                            formatter: numberformatPrecision
                         }, {   
                             title: 'Downtime',
                             colspan: 6,
@@ -1553,6 +1565,7 @@
                                 waste: rows[i].waste,
                                 mold_cleaning: rows[i].mold_cleaning,
                                 trial: rows[i].trial,
+                                mold_changing: rows[i].mold_changing,
                                 machine_repair: rows[i].machine_repair,
                                 mold_repair: rows[i].mold_repair,
                                 others: rows[i].others,
@@ -1902,6 +1915,14 @@
     function numberformat(value, row) {
         const formatter = new Intl.NumberFormat('id-ID', {
             minimumFractionDigits: 0
+        });
+        return "<b>" + formatter.format(value) + "</b>";
+    }
+
+    function numberformatPrecision(value, row) {
+        const formatter = new Intl.NumberFormat('id-ID', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         });
         return "<b>" + formatter.format(value) + "</b>";
     }

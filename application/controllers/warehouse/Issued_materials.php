@@ -258,14 +258,17 @@ class Issued_materials extends CI_Controller
                 h.qty_issued, 
                 h.qty_act, 
                 h.qty_req as qty_supply,
-                (
-                    COALESCE(esr.qty_receipt, 0)
-                    - COALESCE(esm.qty_issued, 0)
-                    + COALESCE(esrtn.return_qty, 0)
-                    + COALESCE(esos.qty_stock_rm, 0)
-                    + COALESCE(estr.qty_in, 0)
-                    - COALESCE(estw.qty_out, 0)
-                ) AS stock
+                CASE 
+                    WHEN hold.status_hold = 1 THEN 0
+                    ELSE (
+                        COALESCE(esr.qty_receipt, 0)
+                        - COALESCE(esm.qty_issued, 0)
+                        + COALESCE(esrtn.return_qty, 0)
+                        + COALESCE(esos.qty_stock_rm, 0)
+                        + COALESCE(estr.qty_in, 0)
+                        - COALESCE(estw.qty_out, 0)
+                    )
+                END AS stock
             ');
 
             // $this->db->from("(select *, (CASE WHEN eq_from <> '' AND eq_from <> '-' THEN eq_from ELSE item_rm_id END) AS final_item_rm_id from issued_materials where request_no='$request_no' and eq_from != '-' and qty > 0 and deleted = 0 and status = 0 group by request_no,item_rm_id) a");
@@ -341,6 +344,12 @@ class Issued_materials extends CI_Controller
                 WHERE transaction_type LIKE "IS%"
                 GROUP BY item_rm_id
             ) estw', 'a.item_rm_id = estw.item_rm_id', 'left');
+
+            $this->db->join('(
+                SELECT item_rm_id, MAX(status_hold) as status_hold
+                FROM purchase_order_receipts
+                GROUP BY item_rm_id
+            ) hold', 'a.item_rm_id = hold.item_rm_id', 'left');
 
             if ($request_no != "") {
                 if (strpos($request_no, 'SH') === 0) {
@@ -631,7 +640,7 @@ class Issued_materials extends CI_Controller
         // }
     }
 
-    
+
     public function create_label()
     {
         if (!$this->input->post()) {
@@ -769,6 +778,34 @@ class Issued_materials extends CI_Controller
 
             if (!$issued_material_details) {
                 if ($purchase_order_labels) {
+
+                    // Ambil data receipt dari label
+                    // $purchase_order_receipts = $this->crud->read("purchase_order_receipts", [],
+                    //     ["receipt_id" => $purchase_order_labels->receipt_id]
+                    // );
+
+                    $checkHold = $this->crud->query("
+                        SELECT 1 
+                        FROM purchase_order_receipts 
+                        WHERE item_rm_id = '$item_rm_id' 
+                        AND status_hold = 1 
+                        LIMIT 1
+                    ");
+
+                    if ($checkHold && count($checkHold) > 0) {
+                        throw new Exception(json_encode([
+                            "title"   => "Lock Item",
+                            "message" => "This item is locked and cannot be issued"
+                        ]));
+                    }
+
+                    // Tambahkan pengecekan status_hold
+                    // if ($purchase_order_receipts && $purchase_order_receipts->status_hold == 1) {
+                    //     throw new Exception(json_encode([
+                    //         "title"   => "Lock Label",
+                    //         "message" => "This label is locked and cannot be issued."
+                    //     ]));
+                    // }
 
                     if($purchase_order_labels->status_out == "1") {
                         throw new Exception(json_encode([

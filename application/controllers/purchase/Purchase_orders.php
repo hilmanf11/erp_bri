@@ -464,7 +464,18 @@ class Purchase_orders extends CI_Controller
                         $autoID = "0001";
                         $po_no = "PO" . $datenow2 . "-" . $autoID;
                     } else {
-                        $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id']]);
+                        // $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id']]);
+
+                        $purchaseOrder = $this->db
+                            ->select('po.*')
+                            ->from('purchase_orders po')
+                            ->join('item_rm ir', 'ir.id = po.item_rm_id')
+                            ->where('po.request_no', $post['request_no'])
+                            ->where('po.supplier_id', $post['supplier_id'])
+                            ->where('ir.item_category_id', $items->item_category_id)
+                            ->get()
+                            ->row();
+
                         if ($purchaseOrder) {
                             $po_no = $purchaseOrder->po_no;
                         } else {

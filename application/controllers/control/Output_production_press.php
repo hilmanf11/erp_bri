@@ -305,9 +305,9 @@ class Output_production_press extends CI_Controller
 
                 COALESCE(ROUND((COALESCE(a.waste,0) / NULLIF(COALESCE(a.total_compound_used,0),0)) * 100, 2),0) as waste_percen,
 
-                COALESCE(ROUND((COALESCE(a.total_compound_used,0) / NULLIF(COALESCE(a.actual_shoot,0),0)) * 100, 2),0) as total_used_shoot,
+                COALESCE(ROUND((COALESCE(a.total_compound_used,0) * 1000 / NULLIF(COALESCE(a.actual_shoot,0),0)), 2),0) as total_used_shoot,
 
-                COALESCE(ROUND((COALESCE(a.waste,0) / NULLIF(COALESCE(a.actual_shoot,0),0)) * 100, 2),0) as total_waste_shoot
+                COALESCE(ROUND((COALESCE(a.waste,0) * 1000 / NULLIF(COALESCE(a.actual_shoot,0),0)), 2),0) as total_waste_shoot
             ");
 
             $this->db->from('output_production_press a');
@@ -362,12 +362,11 @@ class Output_production_press extends CI_Controller
 
             $dataFinal = array(
                 //field
-                "trans_date" => $post['trans_date'],
-                "number" => $post['number'],
-                "period" => $post['period'],
-                "wp" => $post['wp'],
-                "shift" => $post['shift'],
-                "pic" => $post['pic'],
+                // "trans_date" => $post['trans_date'],
+                // "number" => $post['number'],
+                // "period" => $post['period'],
+                // "wp" => $post['wp'],
+                // "shift" => $post['shift'],
                 "item_fg_id" => $post['item_fg_id'],
                 "machine_id" => $post['machine_id'],
                 "planning_qty" => $post['planning_qty'],
@@ -377,6 +376,20 @@ class Output_production_press extends CI_Controller
                 "workorder" => $post['workorder'],
                 "actual_cavity" => $post['actual_cavity'],
                 "operator" => $post['operator'],
+                "pic" => $post['pic'],
+                "standard_curing_time" => $post['standard_curing_time'],
+                "actual_curing_time" => $post['actual_curing_time'],
+                "shift_hour" => $post['shift_hour'],
+                "target_shoot" => $post['target_shoot'],
+                "actual_shoot" => $post['actual_shoot'],
+                "total_compound_used" => $post['total_compound_used'],
+                "waste" => $post['waste'],
+                "mold_cleaning" => $post['mold_cleaning'],
+                "trial" => $post['trial'],
+                "mold_changing" => $post['mold_changing'],
+                "machine_repair" => $post['machine_repair'],
+                "mold_repair" => $post['mold_repair'],
+                "others" => $post['others'],
                 "remarks" => $post['remarks'],
             );
 
@@ -1196,9 +1209,9 @@ class Output_production_press extends CI_Controller
 
             COALESCE(ROUND((COALESCE(a.waste,0) / NULLIF(COALESCE(a.total_compound_used,0),0)) * 100, 2),0) as waste_percen,
 
-            COALESCE(ROUND((COALESCE(a.total_compound_used,0) / NULLIF(COALESCE(a.actual_shoot,0),0)) * 100, 2),0) as total_used_shoot,
+            COALESCE(ROUND((COALESCE(a.total_compound_used,0) * 1000 / NULLIF(COALESCE(a.actual_shoot,0),0)), 2),0) as total_used_shoot,
 
-            COALESCE(ROUND((COALESCE(a.waste,0) / NULLIF(COALESCE(a.actual_shoot,0),0)) * 100, 2),0) as total_waste_shoot
+            COALESCE(ROUND((COALESCE(a.waste,0) * 1000 / NULLIF(COALESCE(a.actual_shoot,0),0)), 2),0) as total_waste_shoot
         ");
 
         $this->db->from('output_production_press a');
@@ -1296,11 +1309,11 @@ class Output_production_press extends CI_Controller
                 <th rowspan="2" >% Achievment</th>
                 <th rowspan="2" >% NG Production</th>
                 <th rowspan="2" >% NG Mold</th>
-                <th rowspan="2" >Total Compound Used</th>
-                <th rowspan="2" >Waste</th>
+                <th rowspan="2" >Total Compound Used <br> (kg)</th>
+                <th rowspan="2" >Waste <br> (kg)</th>
                 <th rowspan="2" >% Waste</th>
-                <th rowspan="2" >% Total Used/shoot (gr)</th>
-                <th rowspan="2" >% Total Waste/shoot (gr)</th>
+                <th rowspan="2" >Total Used/shoot (gr)</th>
+                <th rowspan="2" >Total Waste/shoot (gr)</th>
                 <th colspan="6" style="text-align: center;">Downtime</th>
                 <th rowspan="2" >Remarks</th>
             </tr>
@@ -1351,11 +1364,11 @@ class Output_production_press extends CI_Controller
                     <td>' . $data['achievment'] . '</td>
                     <td>' . $data['ng_prod'] . '</td>
                     <td>' . $data['ng_mold'] . '</td>
-                    <td>' . format_number($data['total_compound_used']) . '</td>
-                    <td>' . format_number($data['waste']) . '</td>
+                    <td>' . number_format($data['total_compound_used'], 2, '.', '.') . '</td>
+                    <td>' . number_format($data['waste'], 2, '.', '.') . '</td>
                     <td>' . $data['waste_percen'] . '</td>
-                    <td>' . format_number($data['total_used_shoot']) . '</td>
-                    <td>' . format_number($data['total_waste_shoot']) . '</td>
+                    <td>' . number_format($data['total_used_shoot'], 2, '.', '.') . '</td>
+                    <td>' . number_format($data['total_waste_shoot'], 2, '.', '.') . '</td>
                     <td>' . format_number($data['mold_cleaning']) . '</td>
                     <td>' . format_number($data['trial']) . '</td>
                     <td>' . format_number($data['mold_changing']) . '</td>
