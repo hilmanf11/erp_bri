@@ -128,6 +128,9 @@
 <audio id="labelAlreadyScan">
     <source src="<?= base_url('assets/audio/label_already.mp3') ?>" type="audio/mp3">
 </audio>
+<audio id="lockItem">
+    <source src="<?= base_url('assets/audio/lock_item.mp3') ?>" type="audio/mp3">
+</audio>
 <script>
     let globalNeed = 0;
     let globalSelectedRow = null; 
@@ -143,6 +146,7 @@
         var moreThanQty = document.getElementById("moreThanQty");
         var FIFOValidation = document.getElementById("FIFOValidation");
         var labelAlreadyScan = document.getElementById("labelAlreadyScan");
+        var lockItem = document.getElementById("lockItem");
 
         // Variabel untuk menyimpan item_rm_id yang diharapkan
         var expected_item_rm_ids = [];
@@ -272,8 +276,10 @@
                                             //     // moreThanQty.play();
                                             } else if(result.title == "FIFO Violation") {
                                                 FIFOValidation.play();
-                                            }else if (result.title == "Label Already Scan"){
+                                            } else if (result.title == "Label Already Scan"){
                                                 labelAlreadyScan.play();
+                                            } else if (result.title == "Lock Item"){
+                                                lockItem.play();
                                             } else {
                                                 serialDuplicate.play();
                                             }

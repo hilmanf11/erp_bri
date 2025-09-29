@@ -173,6 +173,71 @@ class Purchase_order_receipts extends CI_Controller
         echo json_encode(["qty_label" => $rowReceipt->qty_label, "label_no" => $label_no]);
     }
 
+    public function checkPassword()
+    {
+        $inputPassword = base64_decode($this->input->post('password'));
+        $sessionPassword = $this->session->password;
+
+        if ($inputPassword === $sessionPassword) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false]);
+        }
+    }
+
+    // public function updateStatusHold()
+    // {
+    //     $receiptId  = $this->input->post('receipt_id');
+    //     $statusHold = $this->input->post('status_hold');
+
+    //     if (!$receiptId) {
+    //         echo json_encode(['success' => false, 'message' => 'Receipt ID not found']);
+    //         return;
+    //     }
+
+    //     $this->db->where('id', $receiptId);
+    //     $update = $this->db->update('purchase_order_receipts', ['status_hold' => $statusHold]);
+
+    //     if ($update) {
+    //         echo json_encode(['success' => true]);
+    //     } else {
+    //         echo json_encode(['success' => false, 'message' => 'Failed to update status']);
+    //     }
+    // }
+
+    public function updateStatusHold()
+    {
+        $receiptId = $this->input->post('receipt_id');
+        if (!$receiptId) {
+            echo json_encode(['success' => false, 'message' => 'Receipt ID not found']);
+            return;
+        }
+
+        // ambil status sekarang
+        $row = $this->db->get_where('purchase_order_receipts', ['receipt_id' => $receiptId])->row();
+
+        if (!$row) {
+            echo json_encode(['success' => false, 'message' => 'Receipt not found']);
+            return;
+        }
+
+        // toggle status_hold
+        $newStatus = ($row->status_hold == 1) ? 0 : 1;
+
+        $this->db->where('receipt_id', $receiptId);
+        $update = $this->db->update('purchase_order_receipts', ['status_hold' => $newStatus]);
+
+        if ($update) {
+            $msg = $newStatus == 1 
+                ? "Stock for this part no is locked, you can’t supply this part to production!!"
+                : "Stock for this part no is unlocked, you can now supply this part to production!!";
+
+            echo json_encode(['success' => true, 'message' => $msg, 'status_hold' => $newStatus]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to update status']);
+        }
+    }
+
     //Read Items per Po_no
     public function readItems()
     {
@@ -271,7 +336,7 @@ class Purchase_order_receipts extends CI_Controller
             $result = array();
             $id = $_POST['id'];
             if ($id === "0") {
-                $this->db->select('a.po_no, a.receipt_no, a.receipt_date, a.awb_no, a.awb_date, a.bc_kind, a.bc_document, a.bc_aju, a.bc_date, b.number as supplier_id, b.name as supplier_name, a.total_receipt as qty_receipt_dt, a.total_label as qty_label, a.status');
+                $this->db->select('a.po_no, a.receipt_no, a.receipt_date, a.awb_no, a.awb_date, a.bc_kind, a.bc_document, a.bc_aju, a.bc_date, b.number as supplier_id, b.name as supplier_name, a.total_receipt as qty_receipt_dt, a.total_label as qty_label, a.status, a.status_hold');
                 $this->db->from('(SELECT *, sum(qty_label) as total_label, sum(qty_receipt) as total_receipt FROM purchase_order_receipts GROUP BY receipt_no ORDER BY status asc) a');
                 $this->db->join('suppliers b', 'a.supplier_id = b.id', 'left');
                 $this->db->join('purchase_orders c', 'a.po_no = c.po_no and a.item_rm_id = c.item_rm_id', 'left');
@@ -323,6 +388,7 @@ class Purchase_order_receipts extends CI_Controller
                         "total_scan" => $purchase_order_label[0]->total_scan,
                         "status" => $record['status'],
                         "state" => "closed",
+                        "locked" => "closed",
                     );
                 }
                 //Mapping Data
@@ -347,7 +413,8 @@ class Purchase_order_receipts extends CI_Controller
                     g.lot_no as label_lot_no,
                     a.lot_no as por_lot_no,
                     a.lot_no_internal as por_lot_no_bri,
-                    h.name as transaction_type');
+                    h.name as transaction_type,
+                    a.status_hold as locked');
                 $this->db->from('purchase_order_receipts a');
                 $this->db->join('suppliers b', 'a.supplier_id = b.id');
                 $this->db->join('item_rm c', 'a.item_rm_id = c.id');

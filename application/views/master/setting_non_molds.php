@@ -124,7 +124,7 @@
     }
 
     $('#item_fg_id').combogrid({
-        url: '<?= base_url('master/item_fg/reads') ?>',
+        url: '<?= base_url('master/item_fg/readCompounds') ?>',
         panelWidth: 420,
         idField: 'id',
         textField: 'number',
@@ -145,7 +145,7 @@
     });
 
     $('#machine_id').combogrid({
-        url: '<?= base_url('master/machines/reads') ?>',
+        url: '<?= base_url('master/machines/readMachineMixings') ?>',
         panelWidth: 420,
         idField: 'id',
         textField: 'number',

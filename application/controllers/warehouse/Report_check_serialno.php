@@ -158,7 +158,7 @@ class Report_check_serialno extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body><center><div style="float: left; font-size: 12px; text-align: left;"><table style="width: 100%;"><tr><td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;"><img src="' . $config->favicon . '" width="30"></td><td style="font-size: 14px; text-align: left; margin:2px;"><b>' . $config->name . '</b><br><small>' . $config->description . '</small></td></tr></table></div><div style="float: right; font-size: 12px; text-align: right;">Print Date ' . date("d M Y H:i:s") . ' <br>Print By ' . $this->session->username . '  </div><br><br><br><h3 style="margin:0;">CHECK SERIAL NO (RM)</h3><small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small></center><br><table id="customers" border="1"><tr><th width="20">No</th><th>Receipt No</th><th>Receipt Date</th><th>Label No</th><th>Lot No BRI</th><th>Lot No Supplier</th><th>Part No Internal</th><th>Part Name</th><th>Quantity</th><th>Status IN</th><th>Status OUT</th><th>Created By</th></tr>';
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body><center><div style="float: left; font-size: 12px; text-align: left;"><table style="width: 100%;"><tr><td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;"><img src="' . $config->favicon . '" width="30"></td><td style="font-size: 14px; text-align: left; margin:2px;"><b>' . $config->name . '</b><br><small>' . $config->description . '</small></td></tr></table></div><div style="float: right; font-size: 12px; text-align: right;">Print Date ' . date("d M Y H:i:s") . ' <br>Print By ' . $this->session->username . '  </div><br><br><br><h3 style="margin:0;">CHECK SERIAL NO (RM)</h3><small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small></center><br><table id="customers" border="1"><tr><th width="20">No</th><th>Receipt No</th><th>Receipt Date</th><th>Label No</th><th>Lot No BRI</th><th>Lot No Supplier</th><th>Part No Internal</th><th>Part Name</th><th>Quantity</th><th>Status IN</th><th>Status OUT</th><th>Status Stock</th><th>Created By</th></tr>';
         $no = 1;
         foreach ($records as $data) {
             if ($data['status_label'] == 0) {
@@ -171,10 +171,15 @@ class Report_check_serialno extends CI_Controller
             } else {
                 $status_out = "<b style='color:red;'>CLOSE</b>";
             }
+            if ($data['status_hold'] == 1) {
+                $status_hold = "<b style='color:red;'>LOCK</b>";
+            } else {
+                $status_hold = "<b style='color:green;'>UNLOCK</b>";
+            }
 
             $lot_no_internal = isset($data['lot_no_internal']) ? $data['lot_no_internal'] : '';
 
-            $html .= '  <tr><td style="text-align:center">' . $no . '</td><td>' . $data['receipt_no'] . '</td><td>' . $data['receipt_date'] . '</td><td>' . $data['label_no'] . '</td><td>' . $lot_no_internal . '</td><td>' . $data['lot_no'] . '</td><td>' . $data['item_number_internal'] . '</td><td>' . $data['item_name'] . '</td><td style="text-align:right">' . number_format($data['qty'], 2) . '</td><td>' . $status_in . '</td><td>' . $status_out . '</td><td>' . $data['created_by'] . '</td></tr>';
+            $html .= '  <tr><td style="text-align:center">' . $no . '</td><td>' . $data['receipt_no'] . '</td><td>' . $data['receipt_date'] . '</td><td>' . $data['label_no'] . '</td><td>' . $lot_no_internal . '</td><td>' . $data['lot_no'] . '</td><td>' . $data['item_number_internal'] . '</td><td>' . $data['item_name'] . '</td><td style="text-align:right">' . number_format($data['qty'], 2) . '</td><td>' . $status_in . '</td><td>' . $status_out . '</td><td>' . $status_hold . '</td><td>' . $data['created_by'] . '</td></tr>';
             $no++;
         }
         $html .= '</table></body></html>';

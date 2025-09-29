@@ -73,6 +73,7 @@ class Wip_balances extends CI_Controller
                 }
             }
 
+            $this->db->order_by('a.created_date', 'ASC');
             $this->db->order_by('a.request_no', 'ASC');
             $this->db->order_by('a.item_rm_id', 'ASC');
 
@@ -124,6 +125,88 @@ class Wip_balances extends CI_Controller
         $send = $this->crud->delete('wip_balances', $data);
         echo $send;
     }
+
+    //UPLOAD DATA
+    public function upload()
+    {
+        error_reporting(0);
+        require_once 'assets/vendors/excel_reader2.php';
+        $target = basename($_FILES['file_upload']['name']);
+        move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
+        chmod($_FILES['file_upload']['name'], 0777);
+        $file = $_FILES['file_upload']['name'];
+        $data = new Spreadsheet_Excel_Reader($file, false);
+        $total_row = $data->rowcount($sheet_index = 0);
+
+        for ($i = 3; $i <= $total_row; $i++) {
+            $datas[] = array(
+                'request_no' => $data->val($i, 2),
+                'item_rm_id' => $data->val($i, 3),
+                'begin' => $data->val($i, 4)
+            );
+        }
+
+        $datas['total'] = count($datas);
+        echo json_encode($datas);
+        unlink($_FILES['file_upload']['name']);
+    }
+
+    public function uploadclearFailed()
+    {
+        @unlink('failed/wip_balances.txt');
+    }
+
+    public function uploadcreateFailed()
+    {
+        if ($this->input->post()) {
+            $message = $this->input->post('message');
+            $textFailed = fopen('failed/wip_balances.txt', 'a');
+            fwrite($textFailed, $message . "\n");
+            fclose($textFailed);
+        }
+    }
+
+    //UPLOAD DOWNLOAD FAILED
+    public function uploadDownloadFailed()
+    {
+        $file = "failed/wip_balances.txt";
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
+    }
+
+    //UPLOAD CREATE DATA
+    public function uploadcreate()
+    {
+        if ($this->input->post()) {
+            $data = $this->input->post('data');
+            $data['balance'] = $data['begin'];
+            
+            $item_rm = $this->crud->read('item_rm', [], [
+                "id" => $data['item_rm_id'],
+            ]);
+
+            $wip_balance = $this->crud->read('wip_balances', [], [
+                "request_no" => $data['request_no'],
+                "item_rm_id" => $data['item_rm_id'],
+            ]);
+
+            if (empty($item_rm->id)) {
+                echo json_encode(array("title" => "Not found", "message" => " Part ID. " . $data['item_rm_id'] . " is Not Found!", "theme" => "error"));
+            } elseif (!empty($wip_balance)) {
+                echo json_encode(array("title" => "Duplicated", "message" => " Supply Sheet No. ". $data['request_no'] ." and Part ID. " . $data['item_rm_id'] . " is Duplicate Data", "theme" => "error"));
+            } else {
+                $send   = $this->crud->create('wip_balances', $data);
+                echo $send;
+            }
+        }
+    }
+
     //PRINT & EXCEL DATA
     public function print($option = "")
     {

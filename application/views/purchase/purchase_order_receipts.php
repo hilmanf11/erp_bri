@@ -57,6 +57,7 @@
             <th rowspan="2" data-options="field:'por_lot_no',width:200,halign:'center',align:'right'">Lot No Supplier</th>
             <th rowspan="2" data-options="field:'transaction_type',width:80,halign:'center',align:'right'">Trans Type</th>
             <th rowspan="2" data-options="field:'state',width:80,align:'center',formatter:BtnPrintLabel">Label</th>
+            <th rowspan="2" data-options="field:'locked',width:80,align:'center',formatter:BtnLockAction">Lock Action</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -1376,6 +1377,30 @@
         }
     }
 
+    function BtnLockAction(val, row) {
+        if (val === "closed") {
+            return '';
+        }
+        console.log(row);
+        if (row.locked == 1) {
+            return `
+                <a class="btn btn-warning w-100" 
+                href="javascript:void(0)" 
+                style="pointer-events:visible; opacity: 1; cursor:pointer;" 
+                onclick="showLockActions('${row.id}', 0)">
+                    <i class="fa fa-unlock"></i> Unlock
+                </a>`;
+        } else {
+            return `
+                <a class="btn btn-primary w-100" 
+                href="javascript:void(0)" 
+                style="pointer-events:visible; opacity: 1; cursor:pointer;" 
+                onclick="showLockActions('${row.id}', 1)">
+                    <i class="fa fa-lock"></i> Lock
+                </a>`;
+        }
+    }
+
     function showPrintOptions(receiptId) {
         Swal.fire({
             title: 'Print Options',
@@ -1394,6 +1419,85 @@
             }
         });
     }
+
+    function showLockActions(receiptId) {
+        $.messager.prompt('Lock or Unlock Item', 'Please insert Password to Lock or Unlock Stock!', function(r) {
+            if (r) {
+                var encodedPassword = window.btoa(r);
+                $.ajax({
+                    type: 'POST',
+                    url: '<?= base_url('purchase/purchase_order_receipts/checkPassword') ?>',
+                    data: {
+                        password: encodedPassword
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            $.ajax({
+                                type: 'POST',
+                                url: '<?= base_url('purchase/purchase_order_receipts/updateStatusHold') ?>',
+                                data: { receipt_id: receiptId },
+                                dataType: 'json',
+                                success: function(res) {
+                                    Swal.close();
+                                    if (res.success) {
+                                        Swal.fire({
+                                            title: 'Success!',
+                                            text: res.message,
+                                            icon: 'success',
+                                            confirmButtonText: 'OK',
+                                            allowOutsideClick: false
+                                        }).then(() => {
+                                            window.location.reload();
+                                        });
+                                    } else {
+                                        Swal.fire({
+                                            title: 'Failed!',
+                                            text: res.message,
+                                            icon: 'error',
+                                            confirmButtonText: 'OK',
+                                            allowOutsideClick: false
+                                        });
+                                    }
+                                },
+                                error: function() {
+                                    Swal.close();
+                                    Swal.fire({
+                                        title: 'Error!',
+                                        text: 'There was an error processing your request.',
+                                        icon: 'error',
+                                        confirmButtonText: 'OK'
+                                    });
+                                }
+                            });
+
+
+
+                        } else {
+                            // toastr.warning("Please Input Correct Password!", "Information");
+
+                            Swal.fire({
+                                title: 'Wrong!',
+                                text: 'Password do not match!',
+                                icon: 'error',
+                                confirmButtonText: 'OK',
+                                allowOutsideClick: false
+                            });
+                        }
+                    },
+                    error: function() {
+                        toastr.error("There was an error processing your request.", "Error");
+                    }
+                });
+            }
+        });
+
+        setTimeout(function() {
+            var inputField = $('.messager-input');
+            inputField.attr('type', 'password');
+        }, 100);
+    }
+
 
     function print_po(po) {
         console.log(po);

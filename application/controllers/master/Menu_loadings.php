@@ -199,7 +199,8 @@ class Menu_loadings extends CI_Controller
                 'cycle_time' => $data->val($i, 8),
                 'manpower' => $data->val($i, 9),
                 'runner' => $data->val($i, 10),
-                'priority' => $data->val($i, 11)
+                'priority' => $data->val($i, 11),
+                'remarks' => $data->val($i, 12),
             );
         }
 
@@ -260,7 +261,7 @@ class Menu_loadings extends CI_Controller
                     empty($data['productcivity']) ||
                     empty($data['cycle_time']) ||
                     empty($data['manpower']) ||
-                    empty($data['priority']) ||
+                    $data['priority'] == "" || $data['priority'] == null ||
                     !is_numeric($data['shift']) ||
                     !is_numeric($data['shift_hour']) ||
                     !is_numeric($data['productcivity']) ||
@@ -273,6 +274,117 @@ class Menu_loadings extends CI_Controller
                         ];
                         continue;
                 }
+
+                // $line = $index + 1;
+
+                // if (empty($data['item_fg_id'])) {
+                //     $results[] = [
+                //         "status"  => "failed",
+                //         "item"    => "Line $line",
+                //         "message" => "item_fg_id kosong"
+                //     ];
+                //     continue;
+                // }
+
+                // if (empty($data['machine_id'])) {
+                //     $results[] = [
+                //         "status"  => "failed",
+                //         "item"    => "Line $line",
+                //         "message" => "machine_id kosong"
+                //     ];
+                //     continue;
+                // }
+
+                // if (empty($data['shift'])) {
+                //     $results[] = [
+                //         "status"  => "failed",
+                //         "item"    => "Line $line",
+                //         "message" => "shift kosong"
+                //     ];
+                //     continue;
+                // }
+
+                // if (!is_numeric($data['shift'])) {
+                //     $results[] = [
+                //         "status"  => "failed",
+                //         "item"    => "Line $line",
+                //         "message" => "shift harus angka"
+                //     ];
+                //     continue;
+                // }
+
+                // if (empty($data['shift_hour'])) {
+                //     $results[] = [
+                //         "status"  => "failed",
+                //         "item"    => "Line $line",
+                //         "message" => "shift_hour kosong"
+                //     ];
+                //     continue;
+                // }
+
+                // if (!is_numeric($data['shift_hour'])) {
+                //     $results[] = [
+                //         "status"  => "failed",
+                //         "item"    => "Line $line",
+                //         "message" => "shift_hour harus angka"
+                //     ];
+                //     continue;
+                // }
+
+                // if (empty($data['productcivity'])) {
+                //     $results[] = [
+                //         "status"  => "failed",
+                //         "item"    => "Line $line",
+                //         "message" => "productcivity kosong"
+                //     ];
+                //     continue;
+                // }
+
+                // if (!is_numeric($data['productcivity'])) {
+                //     $results[] = [
+                //         "status"  => "failed",
+                //         "item"    => "Line $line",
+                //         "message" => "productcivity harus angka"
+                //     ];
+                //     continue;
+                // }
+
+                // if (empty($data['cycle_time'])) {
+                //     $results[] = [
+                //         "status"  => "failed",
+                //         "item"    => "Line $line",
+                //         "message" => "cycle_time kosong"
+                //     ];
+                //     continue;
+                // }
+
+                // if (!is_numeric($data['cycle_time'])) {
+                //     $results[] = [
+                //         "status"  => "failed",
+                //         "item"    => "Line $line",
+                //         "message" => "cycle_time harus angka"
+                //     ];
+                //     continue;
+                // }
+
+                // if (empty($data['manpower'])) {
+                //     $results[] = [
+                //         "status"  => "failed",
+                //         "item"    => "Line $line",
+                //         "message" => "manpower kosong"
+                //     ];
+                //     continue;
+                // }
+
+                // if (empty($data['priority'])) {
+                //     $results[] = [
+                //         "status"  => "failed",
+                //         "item"    => "Line $line",
+                //         "message" => "priority kosong"
+                //     ];
+                //     continue;
+                // }
+
 
                 $item_fg_id = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
                 if (empty($item_fg_id)) {
@@ -324,7 +436,8 @@ class Menu_loadings extends CI_Controller
                     // "cycle_time_process" => $data['cycle_time_process'],
                     "manpower" => $data['manpower'],
                     "runner" => $data['runner'],
-                    "priority" => $data['priority']
+                    "priority" => $data['priority'],
+                    "remarks" => $data['remarks'],
                 );
 
                 try {
@@ -338,7 +451,8 @@ class Menu_loadings extends CI_Controller
                             "cycle_time_process" => $data['cycle_time_process'],
                             "manpower" => $data['manpower'],
                             "runner" => $data['runner'],
-                            "priority" => $data['priority']
+                            "priority" => $data['priority'],
+                            "remarks" => $data['remarks'],
                         ], [
                             "item_fg_id" => $data['item_fg_id'],
                             "mold_id" => $rubberOrCD,
