@@ -672,12 +672,13 @@ class Report_history_transactions extends CI_Controller
         $filter_qty_in = $this->input->get("filter_qty_in");
         $filter_qty_out = $this->input->get("filter_qty_out");
         $filter_plant = $this->input->get("filter_plant");
-        // $filter_display = $this->input->get("filter_display");
+        $filter_display = $this->input->get("filter_display");
+        $filter_trans_type = $this->input->get("filter_trans_type");
 
-        $filter_trans_type = '';
+        // $filter_trans_type = '';
 
-        $start = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        // $start = strtotime($filter_from);
+        // $finish = strtotime($filter_to);
 
         //Config
         $this->db->select('*');
@@ -894,240 +895,475 @@ class Report_history_transactions extends CI_Controller
             $totalOut += $record->qty_out;
             $totalEndingStock += @(@$itemReceipts[0]->begin_stock + $record->qty_in) - $record->qty_out;
 
-            // if ($filter_display == "DETAIL") {
-            $begin = @$itemReceipts[0]->begin_stock;
-            $in_qty = 0;
-            $end_qty = 0;
-            $balance = 0;
+            if ($filter_display == "DETAIL" || $filter_display == "RECAP") {
+                $begin = @$itemReceipts[0]->begin_stock;
+                $in_qty = 0;
+                $end_qty = 0;
+                $balance = 0;
 
-            if ($filter_trans_type == '' ) {
-                // $receipts = $this->crud->query("SELECT
-                //     a.receipt_date, 
-                //     a.bc_kind, 
-                //     a.bc_aju, 
-                //     a.bc_document, 
-                //     a.bc_date, 
-                //     (SUM(b.qty) + COALESCE(SUM(d.qty), 0)) as qty_receipt,
-                //     c.name as username
-                // FROM purchase_order_receipts a 
-                // JOIN scan_item_receipts b ON a.receipt_id = b.receipt_id
-                // JOIN users c ON a.created_by = c.username
-                // LEFT JOIN os_rm d ON a.item_rm_id = d.item_rm_id AND d.trans_date = a.receipt_date
-                // WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$filter_from' and '$filter_to'
-                // GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date, a.receipt_id");
+                if ($filter_trans_type == '') {
 
-                //RECEIPT
-                $receipts = $this->crud->query("SELECT
-                    a.receipt_date, 
-                    a.bc_kind, 
-                    a.bc_aju, 
-                    a.bc_document, 
-                    a.bc_date, 
-                    SUM(b.qty) as qty_receipt,
-                    c.name as username
-                FROM purchase_order_receipts a 
-                JOIN scan_item_receipts b ON a.receipt_id = b.receipt_id
-                JOIN users c ON a.created_by = c.username
-                WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$filter_from' and '$filter_to'
-                GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date, a.receipt_id");
-                
+                    // $receipts = $this->crud->query("SELECT
+                    //     a.receipt_date, 
+                    //     a.bc_kind, 
+                    //     a.bc_aju, 
+                    //     a.bc_document, 
+                    //     a.bc_date, 
+                    //     (SUM(b.qty) + COALESCE(SUM(d.qty), 0)) as qty_receipt,
+                    //     c.name as username
+                    // FROM purchase_order_receipts a 
+                    // JOIN scan_item_receipts b ON a.receipt_id = b.receipt_id
+                    // JOIN users c ON a.created_by = c.username
+                    // LEFT JOIN os_rm d ON a.item_rm_id = d.item_rm_id AND d.trans_date = a.receipt_date
+                    // WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$filter_from' and '$filter_to'
+                    // GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date, a.receipt_id");
 
-                //ISSUED
-                $issueds = $this->crud->query("SELECT created_by, qty, created_date, label_no, request_no FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+                    //RECEIPT
+                    $receipts = $this->crud->query("SELECT
+                        a.receipt_date, 
+                        a.bc_kind, 
+                        a.bc_aju, 
+                        a.bc_document, 
+                        a.bc_date, 
+                        SUM(b.qty) as qty_receipt,
+                        c.name as username
+                    FROM purchase_order_receipts a 
+                    JOIN scan_item_receipts b ON a.receipt_id = b.receipt_id
+                    JOIN users c ON a.created_by = c.username
+                    WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$filter_from' and '$filter_to'
+                    GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date, a.receipt_id");
+                    
 
-                //RETURN
-                $returns = $this->crud->query("SELECT
-                    a.return_no,
-                    a.return_id,
-                    a.return_name,
-                    a.return_date,
-                    b.label_no,
-                    b.qty,
-                    d.name as username
-                FROM return_materials a 
-                JOIN return_material_labels b ON a.return_id = b.return_id
-                JOIN scan_item_receipts c ON a.return_id = c.receipt_id
-                JOIN users d ON a.created_by = d.username
-                WHERE a.item_rm_id = '$item_rm_id' and a.return_date between '$filter_from' and '$filter_to'
-                GROUP BY b.label_no");
+                    //ISSUED
+                    $issueds = $this->crud->query("SELECT created_by, qty, created_date, label_no, request_no FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
 
-                //OS RM
-                $os_rms = $this->crud->query("SELECT os_rm.*, transaction_type.name as transaction_name
-                    FROM os_rm
-                    LEFT JOIN transaction_type ON os_rm.transaction_type = transaction_type.type
-                    WHERE os_rm.item_rm_id = '$item_rm_id' 
-                    AND DATE_FORMAT(os_rm.trans_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'");
+                    //RETURN
+                    $returns = $this->crud->query("SELECT
+                        a.return_no,
+                        a.return_id,
+                        a.return_name,
+                        a.return_date,
+                        b.label_no,
+                        b.qty,
+                        d.name as username
+                    FROM return_materials a 
+                    JOIN return_material_labels b ON a.return_id = b.return_id
+                    JOIN scan_item_receipts c ON a.return_id = c.receipt_id
+                    JOIN users d ON a.created_by = d.username
+                    WHERE a.item_rm_id = '$item_rm_id' and a.return_date between '$filter_from' and '$filter_to'
+                    GROUP BY b.label_no");
 
-                //SCAN BPM
-                // $bpm_scans = $this->crud->query("SELECT 
-                // created_by, 
-                // qty, 
-                // created_date, 
-                // label, 
-                // request_date, 
-                // request_id 
-                // FROM scan_item_bpm 
-                // WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(request_date, '%Y-%m-%d') between '$working_date' and '$working_date'");
+                    //OS RM
+                    $os_rms = $this->crud->query("SELECT os_rm.*, transaction_type.name as transaction_name
+                        FROM os_rm
+                        LEFT JOIN transaction_type ON os_rm.transaction_type = transaction_type.type
+                        WHERE os_rm.item_rm_id = '$item_rm_id' 
+                        AND DATE_FORMAT(os_rm.trans_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'");
 
-                //TRANSACTION RM
-                $transactions = $this->crud->query("SELECT 
-                    a.*,
-                    b.name as username,
-                    c.name as transaction_name
-                FROM transaction_rm a
-                LEFT JOIN users b ON a.created_by = b.username
-                LEFT JOIN transaction_type c ON a.transaction_type = c.type
-                WHERE a.item_rm_id = '$item_rm_id' 
-                AND DATE_FORMAT(a.request_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+                    //SCAN BPM
+                    // $bpm_scans = $this->crud->query("SELECT 
+                    // created_by, 
+                    // qty, 
+                    // created_date, 
+                    // label, 
+                    // request_date, 
+                    // request_id 
+                    // FROM scan_item_bpm 
+                    // WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(request_date, '%Y-%m-%d') between '$working_date' and '$working_date'");
 
-                //-------------- Akhir query disini----------------------------------//
+                    //TRANSACTION RM
+                    $transactions = $this->crud->query("SELECT 
+                        a.*,
+                        b.name as username,
+                        c.name as transaction_name
+                    FROM transaction_rm a
+                    LEFT JOIN users b ON a.created_by = b.username
+                    LEFT JOIN transaction_type c ON a.transaction_type = c.type
+                    WHERE a.item_rm_id = '$item_rm_id' 
+                    AND DATE_FORMAT(a.request_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
 
-                $all_data = [];
+                    $all_data = [];
 
-                //Purchase Order Receipt
-                foreach ($receipts as $receipt) {
-                    $balance = ($begin + ($receipt->qty_receipt - $end_qty));
+                    //Purchase Order Receipt
+                    foreach ($receipts as $receipt) {
+                        $balance = ($begin + ($receipt->qty_receipt - $end_qty));
 
-                    $all_data[] = [
-                        'trans_date'  => $receipt->receipt_date,
-                        'trans_type'  => 'RECEIVE',
-                        'created_by'  => $receipt->username,
-                        'begin'       => $begin,
-                        'qty_in'      => $receipt->qty_receipt,
-                        'qty_out'      => 0,
-                        'balance'      => $balance,
-                    ];
+                        $all_data[] = [
+                            'trans_date'  => $receipt->receipt_date,
+                            'trans_type'  => 'RECEIVE',
+                            'created_by'  => $receipt->username,
+                            'begin'       => $begin,
+                            'qty_in'      => $receipt->qty_receipt,
+                            'qty_out'      => 0,
+                            'balance'      => $balance,
+                        ];
 
-                    $begin += $receipt->qty_receipt;
-                }
-
-                //Issued Material
-                foreach ($issueds as $issued) {
-                    $user = $this->crud->read("users", [], ["username" => $issued->created_by]);
-                    $balance = ($begin - $issued->qty);
-
-                    $all_data[] = [
-                        'trans_date'  => $issued->created_date,
-                        'trans_type'  => 'ISSUED',
-                        'created_by'  => $user->name,
-                        'begin'       => $begin,
-                        'qty_in'      => 0,
-                        'qty_out'      => $issued->qty,
-                        'balance'      => $balance,
-                    ];
-
-                    $begin -= $issued->qty;
-                }
-
-
-                //Return Material
-                foreach ($returns as $return) {
-                    $balance = ($begin + $return->qty);
-
-                    $all_data[] = [
-                        'trans_date'  => $return->return_date,
-                        'trans_type'  => 'RETURN',
-                        'created_by'  => $return->username,
-                        'begin'       => $begin,
-                        'qty_in'      => $return->qty,
-                        'qty_out'      => 0,
-                        'balance'      => $balance,
-                    ];
-
-                    $begin += $return->qty;
-                }
-
-                //OS RM
-                foreach ($os_rms as $os_rm) {
-                    $user = $this->crud->read("users", [], ["username" => $os_rm->created_by]);
-                    $balance = ($begin + $os_rm->qty);
-
-                    $all_data[] = [
-                        'trans_date'  => $os_rm->created_date,
-                        'trans_type'  => $os_rm->transaction_name,
-                        'created_by'  => $user->name,
-                        'begin'       => $begin,
-                        'qty_in'      => $os_rm->qty,
-                        'qty_out'      => 0,
-                        'balance'      => $balance,
-                    ];
-
-                    $begin += $os_rm->qty;
-                }
-
-                //SCAN BPM
-                // foreach ($bpm_scans as $bpm_scan) {
-                //     $user = $this->crud->read("users", [], ["username" => $bpm_scan->created_by]);
-                //     $balance = ($begin + $bpm_scan->qty);
-                //     $html .= '  <tr>
-                //                      <td style="text-align:center">' . $no . '</td>
-                //                     <td>' . $record->number . '</td>
-                //                     <td>' . $record->category_name . '</td>
-                //                     <td>' . $record->prodfam . '</td>
-                //                     <td>' . $record->sub_prodfam . '</td>
-                //                     <td>' . $record->uom . '</td>
-                //                     <td>BPM</td>
-                //                     <td>' . $user->name . '</td>
-                //                     <td>' . date("Y-m-d", strtotime($bpm_scan->request_date)) . '</td>
-                //                     <td>-</td>
-                //                     <td>-</td>
-                //                     <td>-</td>
-                //                     <td>' . date("Y-m-d", strtotime($bpm_scan->request_date)) . '</td>
-                //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                //                     <td style="text-align:right;">' . number_format($bpm_scan->qty, 2)  . '</td>
-                //                     <td style="text-align:right;">' . number_format(0, 2) . '</td>
-                //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                //                 </tr>';
-                //     $begin += $bpm_scan->qty;
-                //     $no++;
-                // }
-
-                foreach ($transactions as $transaction) {
-                    if (strpos($transaction->transaction_type, 'RE') === 0) {
-                        $balance = $begin + $transaction->qty;
-                        $qty_in = $transaction->qty;
-                        $qty_out = 0;
-                    } else if (strpos($transaction->transaction_type, 'IS') === 0) {
-                        $balance = $begin - $transaction->qty;
-                        $qty_in = 0;
-                        $qty_out = $transaction->qty;
+                        $begin += $receipt->qty_receipt;
                     }
 
-                    $all_data[] = [
-                        'trans_date'  => $transaction->request_date,
-                        'trans_type'  => $transaction->transaction_name,
-                        'created_by'  => $transaction->username,
-                        'begin'       => $begin,
-                        'qty_in'      => $qty_in,
-                        'qty_out'      => $qty_out,
-                        'balance'      => $balance,
-                    ];
+                    //Issued Material
+                    foreach ($issueds as $issued) {
+                        $user = $this->crud->read("users", [], ["username" => $issued->created_by]);
+                        $balance = ($begin - $issued->qty);
 
-                    $begin = $balance;
+                        $all_data[] = [
+                            'trans_date'  => $issued->created_date,
+                            'trans_type'  => 'ISSUED',
+                            'created_by'  => $user->name,
+                            'begin'       => $begin,
+                            'qty_in'      => 0,
+                            'qty_out'      => $issued->qty,
+                            'balance'      => $balance,
+                        ];
+
+                        $begin -= $issued->qty;
+                    }
+
+
+                    //Return Material
+                    foreach ($returns as $return) {
+                        $balance = ($begin + $return->qty);
+
+                        $all_data[] = [
+                            'trans_date'  => $return->return_date,
+                            'trans_type'  => 'RETURN',
+                            'created_by'  => $return->username,
+                            'begin'       => $begin,
+                            'qty_in'      => $return->qty,
+                            'qty_out'      => 0,
+                            'balance'      => $balance,
+                        ];
+
+                        $begin += $return->qty;
+                    }
+
+                    //OS RM
+                    foreach ($os_rms as $os_rm) {
+                        $user = $this->crud->read("users", [], ["username" => $os_rm->created_by]);
+                        $balance = ($begin + $os_rm->qty);
+
+                        $all_data[] = [
+                            'trans_date'  => $os_rm->created_date,
+                            'trans_type'  => $os_rm->transaction_name,
+                            'created_by'  => $user->name,
+                            'begin'       => $begin,
+                            'qty_in'      => $os_rm->qty,
+                            'qty_out'      => 0,
+                            'balance'      => $balance,
+                        ];
+
+                        $begin += $os_rm->qty;
+                    }
+
+                    //SCAN BPM
+                    // foreach ($bpm_scans as $bpm_scan) {
+                    //     $user = $this->crud->read("users", [], ["username" => $bpm_scan->created_by]);
+                    //     $balance = ($begin + $bpm_scan->qty);
+                    //     $html .= '  <tr>
+                    //                      <td style="text-align:center">' . $no . '</td>
+                    //                     <td>' . $record->number . '</td>
+                    //                     <td>' . $record->category_name . '</td>
+                    //                     <td>' . $record->prodfam . '</td>
+                    //                     <td>' . $record->sub_prodfam . '</td>
+                    //                     <td>' . $record->uom . '</td>
+                    //                     <td>BPM</td>
+                    //                     <td>' . $user->name . '</td>
+                    //                     <td>' . date("Y-m-d", strtotime($bpm_scan->request_date)) . '</td>
+                    //                     <td>-</td>
+                    //                     <td>-</td>
+                    //                     <td>-</td>
+                    //                     <td>' . date("Y-m-d", strtotime($bpm_scan->request_date)) . '</td>
+                    //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                    //                     <td style="text-align:right;">' . number_format($bpm_scan->qty, 2)  . '</td>
+                    //                     <td style="text-align:right;">' . number_format(0, 2) . '</td>
+                    //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                    //                 </tr>';
+                    //     $begin += $bpm_scan->qty;
+                    //     $no++;
+                    // }
+
+                    foreach ($transactions as $transaction) {
+                        if (strpos($transaction->transaction_type, 'RE') === 0) {
+                            $balance = $begin + $transaction->qty;
+                            $qty_in = $transaction->qty;
+                            $qty_out = 0;
+                        } else if (strpos($transaction->transaction_type, 'IS') === 0) {
+                            $balance = $begin - $transaction->qty;
+                            $qty_in = 0;
+                            $qty_out = $transaction->qty;
+                        }
+
+                        $all_data[] = [
+                            'trans_date'  => $transaction->request_date,
+                            'trans_type'  => $transaction->transaction_name,
+                            'created_by'  => $transaction->username,
+                            'begin'       => $begin,
+                            'qty_in'      => $qty_in,
+                            'qty_out'      => $qty_out,
+                            'balance'      => $balance,
+                        ];
+
+                        $begin = $balance;
+                    }
+
+                    usort($all_data, function($a, $b) {
+                        return strtotime($a['trans_date']) - strtotime($b['trans_date']);
+                    });
+
+                    foreach ($all_data as $data) {
+                        $html .= '  <tr>
+                                        <td style="text-align:center">' . $nod . '</td>
+                                        <td>' . date("Y-m-d", strtotime($data['trans_date'])) . '</td>
+                                        <td>' . $record->number . '</td>
+                                        <td>' . $record->number_internal . '</td>
+                                        <td>' . $record->name . '</td>
+                                        <td>' . $record->uom . '</td>
+                                        <td>' . $record->division_number . '</td>
+                                        <td>' . $record->prodfam . '</td>
+                                        <td>' . $data['trans_type'] . '</td>
+                                        <td>' . $data['created_by'] . '</td>
+                                        <td style="text-align:right;">' . number_format($data['begin'], 2, ',', '.') . '</td>
+                                        <td style="text-align:right;">' . number_format($data['qty_in'], 2, ',', '.') . '</td>
+                                        <td style="text-align:right;">' . number_format($data['qty_out'], 2, ',', '.') . '</td>
+                                        <td style="text-align:right;">' . number_format($data['balance'], 2, ',', '.') . '</td>
+                                    </tr>';
+                        $nod++;
+                    }
+
                 }
 
+                if ($filter_trans_type == 'ISSUED' ) {
 
-                foreach ($all_data as $data) {
-                    $html .= '  <tr>
-                                    <td style="text-align:center">' . $nod . '</td>
-                                    <td>' . date("Y-m-d", strtotime($data['trans_date'])) . '</td>
-                                    <td>' . $record->number . '</td>
-                                    <td>' . $record->number_internal . '</td>
-                                    <td>' . $record->name . '</td>
-                                    <td>' . $record->uom . '</td>
-                                    <td>' . $record->division_number . '</td>
-                                    <td>' . $record->prodfam . '</td>
-                                    <td>' . $data['trans_type'] . '</td>
-                                    <td>' . $data['created_by'] . '</td>
-                                    <td style="text-align:right;">' . number_format($data['begin'], 2, ',', '.') . '</td>
-                                    <td style="text-align:right;">' . number_format($data['qty_in'], 2, ',', '.') . '</td>
-                                    <td style="text-align:right;">' . number_format($data['qty_out'], 2, ',', '.') . '</td>
-                                    <td style="text-align:right;">' . number_format($data['balance'], 2, ',', '.') . '</td>
-                                </tr>';
-                    $nod++;
+                    //ISSUED
+                    $issueds = $this->crud->query("SELECT created_by, qty, created_date, label_no, request_no FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+
+                    //TRANSACTION RM
+                    $transactions = $this->crud->query("SELECT 
+                        a.*,
+                        b.name as username,
+                        c.name as transaction_name
+                    FROM transaction_rm a
+                    LEFT JOIN users b ON a.created_by = b.username
+                    JOIN transaction_type c ON a.transaction_type = c.type
+                    WHERE a.item_rm_id = '$item_rm_id' 
+                    AND c.type LIKE 'IS%'
+                    AND DATE_FORMAT(a.request_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+
+                    $all_data = [];
+
+                    //Issued Material
+                    foreach ($issueds as $issued) {
+                        $user = $this->crud->read("users", [], ["username" => $issued->created_by]);
+                        $balance = ($begin - $issued->qty);
+
+                        $all_data[] = [
+                            'trans_date'  => $issued->created_date,
+                            'trans_type'  => 'ISSUED',
+                            'created_by'  => $user->name,
+                            'begin'       => $begin,
+                            'qty_in'      => 0,
+                            'qty_out'      => $issued->qty,
+                            'balance'      => $balance,
+                        ];
+
+                        $begin -= $issued->qty;
+                    }
+                    
+                    foreach ($transactions as $transaction) {
+                        if (strpos($transaction->transaction_type, 'IS') === 0) {
+                            $balance = $begin - $transaction->qty;
+                            $qty_in = 0;
+                            $qty_out = $transaction->qty;
+                        }
+
+                        $all_data[] = [
+                            'trans_date'  => $transaction->request_date,
+                            'trans_type'  => $transaction->transaction_name,
+                            'created_by'  => $transaction->username,
+                            'begin'       => $begin,
+                            'qty_in'      => $qty_in,
+                            'qty_out'      => $qty_out,
+                            'balance'      => $balance,
+                        ];
+
+                        $begin = $balance;
+                    }
+
+                    usort($all_data, function($a, $b) {
+                        return strtotime($a['trans_date']) - strtotime($b['trans_date']);
+                    });
+
+                    foreach ($all_data as $data) {
+                        $html .= '  <tr>
+                                        <td style="text-align:center">' . $nod . '</td>
+                                        <td>' . date("Y-m-d", strtotime($data['trans_date'])) . '</td>
+                                        <td>' . $record->number . '</td>
+                                        <td>' . $record->number_internal . '</td>
+                                        <td>' . $record->name . '</td>
+                                        <td>' . $record->uom . '</td>
+                                        <td>' . $record->division_number . '</td>
+                                        <td>' . $record->prodfam . '</td>
+                                        <td>' . $data['trans_type'] . '</td>
+                                        <td>' . $data['created_by'] . '</td>
+                                        <td style="text-align:right;">' . number_format($data['begin'], 2, ',', '.') . '</td>
+                                        <td style="text-align:right;">' . number_format($data['qty_in'], 2, ',', '.') . '</td>
+                                        <td style="text-align:right;">' . number_format($data['qty_out'], 2, ',', '.') . '</td>
+                                        <td style="text-align:right;">' . number_format($data['balance'], 2, ',', '.') . '</td>
+                                    </tr>';
+                        $nod++;
+                    }
                 }
 
-            // }
+                if ($filter_trans_type == 'RECEIVE' ) {
+                    //RECEIPT
+                    $receipts = $this->crud->query("SELECT
+                        a.receipt_date, 
+                        a.bc_kind, 
+                        a.bc_aju, 
+                        a.bc_document, 
+                        a.bc_date, 
+                        SUM(b.qty) as qty_receipt,
+                        c.name as username
+                    FROM purchase_order_receipts a 
+                    JOIN scan_item_receipts b ON a.receipt_id = b.receipt_id
+                    JOIN users c ON a.created_by = c.username
+                    WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$filter_from' and '$filter_to'
+                    GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date, a.receipt_id");
+
+                    //RETURN
+                    $returns = $this->crud->query("SELECT
+                        a.return_no,
+                        a.return_id,
+                        a.return_name,
+                        a.return_date,
+                        b.label_no,
+                        b.qty,
+                        d.name as username
+                    FROM return_materials a 
+                    JOIN return_material_labels b ON a.return_id = b.return_id
+                    JOIN scan_item_receipts c ON a.return_id = c.receipt_id
+                    JOIN users d ON a.created_by = d.username
+                    WHERE a.item_rm_id = '$item_rm_id' and a.return_date between '$filter_from' and '$filter_to'
+                    GROUP BY b.label_no");
+
+                    //OS RM
+                    $os_rms = $this->crud->query("SELECT os_rm.*, transaction_type.name as transaction_name
+                        FROM os_rm
+                        LEFT JOIN transaction_type ON os_rm.transaction_type = transaction_type.type
+                        WHERE os_rm.item_rm_id = '$item_rm_id' 
+                        AND DATE_FORMAT(os_rm.trans_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'");
+
+                    //TRANSACTION RM
+                    $transactions = $this->crud->query("SELECT 
+                        a.*,
+                        b.name as username,
+                        c.name as transaction_name
+                    FROM transaction_rm a
+                    LEFT JOIN users b ON a.created_by = b.username
+                    JOIN transaction_type c ON a.transaction_type = c.type
+                    WHERE a.item_rm_id = '$item_rm_id' 
+                    AND c.type LIKE 'RE%'
+                    AND DATE_FORMAT(a.request_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+
+                    $all_data = [];
+
+                    //Purchase Order Receipt
+                    foreach ($receipts as $receipt) {
+                        $balance = ($begin + ($receipt->qty_receipt - $end_qty));
+
+                        $all_data[] = [
+                            'trans_date'  => $receipt->receipt_date,
+                            'trans_type'  => 'RECEIVE',
+                            'created_by'  => $receipt->username,
+                            'begin'       => $begin,
+                            'qty_in'      => $receipt->qty_receipt,
+                            'qty_out'      => 0,
+                            'balance'      => $balance,
+                        ];
+
+                        $begin += $receipt->qty_receipt;
+                    }
+
+                    //Return Material
+                    foreach ($returns as $return) {
+                        $balance = ($begin + $return->qty);
+
+                        $all_data[] = [
+                            'trans_date'  => $return->return_date,
+                            'trans_type'  => 'RETURN',
+                            'created_by'  => $return->username,
+                            'begin'       => $begin,
+                            'qty_in'      => $return->qty,
+                            'qty_out'      => 0,
+                            'balance'      => $balance,
+                        ];
+
+                        $begin += $return->qty;
+                    }
+
+                    //OS RM
+                    foreach ($os_rms as $os_rm) {
+                        $user = $this->crud->read("users", [], ["username" => $os_rm->created_by]);
+                        $balance = ($begin + $os_rm->qty);
+
+                        $all_data[] = [
+                            'trans_date'  => $os_rm->created_date,
+                            'trans_type'  => $os_rm->transaction_name,
+                            'created_by'  => $user->name,
+                            'begin'       => $begin,
+                            'qty_in'      => $os_rm->qty,
+                            'qty_out'      => 0,
+                            'balance'      => $balance,
+                        ];
+
+                        $begin += $os_rm->qty;
+                    }
+
+                    foreach ($transactions as $transaction) {
+                        if (strpos($transaction->transaction_type, 'RE') === 0) {
+                            $balance = $begin + $transaction->qty;
+                            $qty_in = $transaction->qty;
+                            $qty_out = 0;
+                        }
+
+                        $all_data[] = [
+                            'trans_date'  => $transaction->request_date,
+                            'trans_type'  => $transaction->transaction_name,
+                            'created_by'  => $transaction->username,
+                            'begin'       => $begin,
+                            'qty_in'      => $qty_in,
+                            'qty_out'      => $qty_out,
+                            'balance'      => $balance,
+                        ];
+
+                        $begin = $balance;
+                    }
+
+                    usort($all_data, function($a, $b) {
+                        return strtotime($a['trans_date']) - strtotime($b['trans_date']);
+                    });
+
+                    foreach ($all_data as $data) {
+                        $html .= '  <tr>
+                                        <td style="text-align:center">' . $nod . '</td>
+                                        <td>' . date("Y-m-d", strtotime($data['trans_date'])) . '</td>
+                                        <td>' . $record->number . '</td>
+                                        <td>' . $record->number_internal . '</td>
+                                        <td>' . $record->name . '</td>
+                                        <td>' . $record->uom . '</td>
+                                        <td>' . $record->division_number . '</td>
+                                        <td>' . $record->prodfam . '</td>
+                                        <td>' . $data['trans_type'] . '</td>
+                                        <td>' . $data['created_by'] . '</td>
+                                        <td style="text-align:right;">' . number_format($data['begin'], 2, ',', '.') . '</td>
+                                        <td style="text-align:right;">' . number_format($data['qty_in'], 2, ',', '.') . '</td>
+                                        <td style="text-align:right;">' . number_format($data['qty_out'], 2, ',', '.') . '</td>
+                                        <td style="text-align:right;">' . number_format($data['balance'], 2, ',', '.') . '</td>
+                                    </tr>';
+                        $nod++;
+                    }
+
+                }
             }
             // }
 
@@ -1135,7 +1371,7 @@ class Report_history_transactions extends CI_Controller
         }
 
         $html .= '<tr>
-            <td colspan="9" style="text-align:right;"><b>GRAND TOTAL</b></td>
+            <td colspan="10" style="text-align:right;"><b>GRAND TOTAL</b></td>
             <td style="text-align:right;">' . number_format($totalBeginStock, 2, ',', '.') . '</td>
             <td style="text-align:right;">' . number_format($totalIn, 2, ',', '.') . '</td>
             <td style="text-align:right;">' . number_format($totalOut, 2, ',', '.') . '</td>

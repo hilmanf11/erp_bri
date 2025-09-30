@@ -40,7 +40,7 @@ class item_fg extends CI_Controller
     public function readItemFG()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT id, number as item_number, name as item_name, box_sub FROM item_fg WHERE (number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%') AND status = 0");
+        $send = $this->crud->query("SELECT id, number as item_number, name as item_name, box_sub, specification FROM item_fg WHERE (number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%') AND status = 0");
         echo json_encode($send);
     }
 
