@@ -106,7 +106,16 @@
 
     //Add Data
     function add() {
-        $('#dlg_insert').dialog('open');
+        // $('#dlg_insert').dialog('open');
+
+        $('#dlg_insert').dialog({
+            title: 'Add New',
+            modal: true,
+            closed: false,
+            maximized: true,
+            resizable: true,
+        }).dialog('open');
+
         $('#dg2').datagrid('loadData', []);
         $('#transaction_date').datebox('setValue', '<?= date("Y-m-d") ?>');
         url_save = '<?= base_url('control/label_packing/create') ?>';
@@ -153,7 +162,7 @@
                         editor: {
                             type: 'combogrid',
                             options: {
-                                url: '<?= base_url('control/label_packing/readitemsFG/') ?>',
+                                url: '<?= base_url('master/item_fg/readItemFG/') ?>',
                                 required: true,
                                 panelWidth: 320,
                                 idField: 'item_number',
