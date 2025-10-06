@@ -331,7 +331,6 @@ class Setting_molds extends CI_Controller
                  <th>Cavity Actual</th>
                  <th>cavity Standard</th>
                  <th>Cycle Time (Shot/Second)</th>
-                 <th>Curing Time Standard</th>
                  <th>Lot Size</th>
                  <th>Effiency (%)</th>
                  <th>Priority</th>
@@ -350,7 +349,6 @@ class Setting_molds extends CI_Controller
                          <td>' . $data['mold_actual'] . '</td>
                          <td>' . $data['mold_standard'] . '</td>
                          <td>' . $data['cycle_time'] . '</td>
-                         <td>' . $data['curing_time_standard'] . '</td>
                          <td>' . $data['lot_size'] . '</td>
                          <td>' . $data['efficiency'] . '</td>
                          <td>' . $data['priority'] . '</td>

@@ -47,24 +47,28 @@
 </table>
 
 <div id="toolbar" style="height: 200px; padding:10px;">
-    <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+    <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
         <legend><b>Form Filter Data</b></legend>
-        <div style="width: 30%; float: left;">
+        <div style="width: 50%; float: left;">
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Period</span>
+                <input style="width:60%;" name="filter_period" id="filter_period" class="easyui-combobox" required>
+            </div>
+            <!-- <div class="fitem">
                 <span style="width:35%; display:inline-block;">Period</span>
                 <input style="width:30%;" id="filter_month" value="<?= date("m") ?>" class="easyui-combobox" data-options="prompt:'Select Month'">
                 <input style="width:30%;" id="filter_year" value="<?= date("Y") ?>" class="easyui-combobox" data-options="prompt:'Select Year'" panelHeight="auto">
-            </div>
+            </div> -->
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Machine No</span>
                 <input style="width:60%;" id="filter_machine_no" class="easyui-combogrid">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;"></span>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                <span style="width:35%; display:inline-block;">Product No</span>
+                <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
             </div>
         </div>
-        <div style="width: 30%; float: left;">
+        <div style="width: 50%; float: left;">
             <div class="fitem" hidden>
                 <span style="width:35%; display:inline-block;">Customer</span>
                 <input style="width:60%;" id="filter_customers" class="easyui-combogrid">
@@ -74,10 +78,10 @@
                 <input style="width:60%;" id="filter_sales_order" class="easyui-combobox">
             </div>
         </div>
-        <div style="width: 30%; float: left;">
+        <div style="width: 50%; float: left;">
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product No</span>
-                <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
+                <span style="width:35%; display:inline-block;">WP No</span>
+                <input style="width:60%;" id="filter_wp" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Status WO</span>
@@ -87,6 +91,10 @@
                     <option value="1">SUPPLY</option>
                     <option value="2">CLOSED</option>
                 </select>
+            </div>
+            <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
+                <span style="width:35%; display:inline-block;"></span>
+                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
             </div>
         </div>
     </fieldset>
@@ -270,15 +278,17 @@
     }
 
     function filter() {
-        var filter_month = $("#filter_month").combobox('getValue');
-        var filter_year = $("#filter_year").combobox('getValue');
+        // var filter_month = $("#filter_month").combobox('getValue');
+        // var filter_year = $("#filter_year").combobox('getValue');
+        var filter_period = $("#filter_period").combobox('getValue');
         var filter_machine_no = $("#filter_machine_no").combogrid('getValue');
         // var filter_customers = $("#filter_customers").combogrid('getValue');
         // var filter_sales_order = $("#filter_sales_order").combobox('getValue');
+        var filter_wp = $("#filter_wp").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?filter_month=" + filter_month + "&filter_year=" + filter_year + "&filter_machine_no=" + filter_machine_no + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
+        url = "?filter_period=" + filter_period + "&filter_machine_no=" + filter_machine_no + "&filter_wp=" + filter_wp +  "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
 
         $('#dg').datagrid({
             url: '<?= base_url('planning/production_schedule_press/datatables') ?>' + url,
@@ -297,15 +307,18 @@
     }
 
     function excel() {
-        var filter_month = $("#filter_month").combobox('getValue');
-        var filter_year = $("#filter_year").combobox('getValue');
+        // var filter_month = $("#filter_month").combobox('getValue');
+        // var filter_year = $("#filter_year").combobox('getValue');
+        var filter_period = $("#filter_period").combobox('getValue');
         var filter_machine_no = $("#filter_machine_no").combogrid('getValue');
         // var filter_customers = $("#filter_customers").combogrid('getValue');
         // var filter_sales_order = $("#filter_sales_order").combobox('getValue');
+        var filter_wp = $("#filter_wp").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?filter_month=" + filter_month + "&filter_year=" + filter_year + "&filter_machine_no=" + filter_machine_no + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
+
+        url = "?filter_period=" + filter_period + "&filter_machine_no=" + filter_machine_no + "&filter_wp=" + filter_wp +  "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
 
         window.location.assign('<?= base_url('planning/production_schedule_press/print/excel') ?>' + url);
     }
@@ -377,27 +390,55 @@
                 }, ]
             ],
         });
-        $("#filter_month").combobox({
-            url: '<?= base_url('planning/production_schedule_press/readMonth') ?>',
-            valueField: 'number',
-            textField: 'name',
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }],
-        });
-        $("#filter_year").combobox({
-            url: '<?= base_url('planning/production_schedule_press/readYear') ?>',
-            valueField: 'number',
-            textField: 'number',
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }],
+        // $("#filter_month").combobox({
+        //     url: '<?= base_url('planning/production_schedule_press/readMonth') ?>',
+        //     valueField: 'number',
+        //     textField: 'name',
+        //     icons: [{
+        //         iconCls: 'icon-clear',
+        //         handler: function(e) {
+        //             $(e.data.target).combobox('clear').combobox('textbox').focus();
+        //         }
+        //     }],
+        // });
+        // $("#filter_year").combobox({
+        //     url: '<?= base_url('planning/production_schedule_press/readYear') ?>',
+        //     valueField: 'number',
+        //     textField: 'number',
+        //     icons: [{
+        //         iconCls: 'icon-clear',
+        //         handler: function(e) {
+        //             $(e.data.target).combobox('clear').combobox('textbox').focus();
+        //         }
+        //     }],
+        // });
+
+        $("#filter_period").combobox({
+            url: '<?= base_url('planning/production_schedule_press/readPeriod') ?>',
+            valueField: 'period',
+            textField: 'period',
+            prompt: "Select Period",
+            onLoadSuccess: function(data) {
+                var defaultVal = "<?= date("Ym") ?>";
+                $("#filter_period").combobox('setValue', defaultVal);
+                $("#filter_period").combobox('select', defaultVal);
+            },
+            onSelect: function (data) {
+                var period = data.period;
+
+                $("#filter_wp").combobox({
+                    url: '<?= base_url('planning/production_schedule_press/readWp?period=') ?>' + btoa(period),
+                    valueField: 'wp',
+                    textField: 'wp',
+                    prompt: "Select WP",
+                    icons: [{
+                        iconCls: 'icon-clear',
+                        handler: function(e) {
+                            $(e.data.target).combobox('clear').combobox('textbox').focus();
+                        }
+                    }],
+                });
+            }
         });
         
         // $('#filter_customers').combogrid({

@@ -340,9 +340,11 @@ class Production_schedule_press extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filter_month = $this->input->get('filter_month');
-            $filter_year = $this->input->get('filter_year');
+            // $filter_month = $this->input->get('filter_month');
+            // $filter_year = $this->input->get('filter_year');
+            $filter_period = $this->input->get('filter_period');
             $filter_machine_no = $this->input->get('filter_machine_no');
+            $filter_wp = $this->input->get('filter_wp');
             $filter_item_fg_id = $this->input->get('filter_item_fg_id');
             $filter_status = $this->input->get('filter_status');
 
@@ -379,9 +381,11 @@ class Production_schedule_press extends CI_Controller
             }
 
             // Filter berdasarkan inputan
-            $this->db->like('a.month', $filter_month);
-            $this->db->like('a.year', $filter_year);
+            // $this->db->like('a.month', $filter_month);
+            // $this->db->like('a.year', $filter_year);
+            $this->db->like('a.period', $filter_period);
             $this->db->like('a.machine_id', $filter_machine_no);
+            $this->db->like('a.wp', $filter_wp);
             $this->db->like('a.item_fg_id', $filter_item_fg_id);
 
             $this->db->order_by('a.workorder', 'ASC');
@@ -1091,11 +1095,13 @@ class Production_schedule_press extends CI_Controller
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=production_schedule_press_$format.xls");
         }
-        $filter_month = $this->input->get('filter_month');
-        $filter_year = $this->input->get('filter_year');
+        // $filter_month = $this->input->get('filter_month');
+        // $filter_year = $this->input->get('filter_year');
+        $filter_period = $this->input->get('filter_period');
         $filter_machine_no = $this->input->get('filter_machine_no');
         // $filter_customers = $this->input->get('filter_customers');
         // $filter_sales_order = $this->input->get('filter_sales_order');
+        $filter_wp = $this->input->get('filter_wp');
         $filter_item_fg_id = $this->input->get('filter_item_fg_id');
 
         //Config
@@ -1108,9 +1114,11 @@ class Production_schedule_press extends CI_Controller
         $this->db->join('item_fg c', 'a.item_fg_id = c.id');
         $this->db->join('machines d', 'a.machine_id = d.id');
         $this->db->where('a.deleted', 0);
-        $this->db->like('a.month', $filter_month);
-        $this->db->like('a.year', $filter_year);
+        // $this->db->like('a.month', $filter_month);
+        // $this->db->like('a.year', $filter_year);
+        $this->db->like('a.period', $filter_period);
         $this->db->like('a.machine_id', $filter_machine_no);
+        $this->db->like('a.wp', $filter_wp);
         // $this->db->like('a.customer_id', $filter_customers);
         // $this->db->like('a.so_number', $filter_sales_order);
         $this->db->like('a.item_fg_id', $filter_item_fg_id);

@@ -279,10 +279,12 @@ class Molds extends CI_Controller
                 <th>Mold No</th>
                 <th>Mold Year</th>
                 <th>Mold Size</th>
+                <th>Standard Curing Time</th>
                 <th>Standard Cavity</th>
                 <th>Actual Cavity</th>
                 <th>Standard Shoot</th>
                 <th>Actual Shoot</th>
+                <th>Target Shoot</th>
                 <th>Mold Type</th>
                 <th>Remarks</th>
                 <th>Status</th>
@@ -300,10 +302,12 @@ class Molds extends CI_Controller
                     <td>' . $data['mold_no'] . '</td>
                     <td>' . $data['mold_year'] . '</td>
                     <td>' . $data['mold_size'] . '</td>
+                    <td>' . $data['standard_curing_time'] . '</td>
                     <td>' . $data['cavity_standard'] . '</td>
                     <td>' . $data['cavity_actual'] . '</td>
                     <td>' . $data['shoot_standard'] . '</td>
                     <td>' . $data['shoot_actual'] . '</td>
+                    <td>' . $data['target_shoot'] . '</td>
                     <td>' . $data['mold_type'] . '</td>
                     <td>' . $data['remark'] . '</td>
                     <td>' . $data['status'] . '</td>';
