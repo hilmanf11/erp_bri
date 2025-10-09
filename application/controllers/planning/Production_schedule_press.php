@@ -348,6 +348,10 @@ class Production_schedule_press extends CI_Controller
             $filter_item_fg_id = $this->input->get('filter_item_fg_id');
             $filter_status = $this->input->get('filter_status');
 
+            if (empty($filter_period)) {
+                $filter_period = date('Ym');
+            }
+
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             // Pagination 1-10
@@ -1103,6 +1107,10 @@ class Production_schedule_press extends CI_Controller
         // $filter_sales_order = $this->input->get('filter_sales_order');
         $filter_wp = $this->input->get('filter_wp');
         $filter_item_fg_id = $this->input->get('filter_item_fg_id');
+
+        if (empty($filter_period)) {
+            $filter_period = date('Ym');
+        }
 
         //Config
         $this->db->select('*');

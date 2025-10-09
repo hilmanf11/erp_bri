@@ -20,11 +20,12 @@
             <th rowspan="2" data-options="field:'customer_id',align:'center',width:100,sortable:true">Customer ID</th>
             <th rowspan="2" data-options="field:'customer_number',width:120,align:'center',sortable:true">Customer Code</th>
             <th rowspan="2" data-options="field:'customer_name',width:150,halign:'center',sortable:true">Customer Name</th>
-            <th rowspan="2" data-options="field:'item_fg_id',align:'center',width:100,sortable:true">Part ID</th>
-            <th rowspan="2" data-options="field:'item_fg_number',align:'center',width:100,sortable:true">Part No.</th>
-            <th rowspan="2" data-options="field:'item_fg_name',align:'center',width:150,sortable:true">Part Name</th>
-            <th rowspan="2" data-options="field:'item_fg_customer',align:'center',width:150,sortable:true">Part Customer</th>
-            <th rowspan="2" data-options="field:'type',width:100,align:'center',sortable:true">Type</th>
+            <th rowspan="2" data-options="field:'item_fg_id',align:'center',width:100,sortable:true">Product ID</th>
+            <th rowspan="2" data-options="field:'item_fg_number',align:'center',width:100,sortable:true">Product No.</th>
+            <th rowspan="2" data-options="field:'item_fg_name',align:'center',width:150,sortable:true">Product Name</th>
+            <th rowspan="2" data-options="field:'type_item',align:'center',width:150,sortable:true">Product Type</th>
+            <th rowspan="2" data-options="field:'item_fg_customer',align:'center',width:150,sortable:true">Product Customer</th>
+            <th rowspan="2" data-options="field:'type',width:100,align:'center',sortable:true">Sales Type</th>
             <th rowspan="2" data-options="field:'currency',align:'center',width:100,sortable:true">Currency</th>
             <th rowspan="2" data-options="field:'price',align:'center',width:100,sortable:true">Price</th>
             <th rowspan="2" data-options="field:'valid_from',align:'center',width:100,sortable:true">Valid From</th>
@@ -46,22 +47,34 @@
 
 
 <!-- TOOLBAR DATAGRID -->
-<div id="toolbar" style="height: 200px; padding: 10px;">
+<div id="toolbar" style="height: 160px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-        <fieldset style="width: 45%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+        <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Customer</span>
-                <input style="width:60%;" id="filter_customer_id" class="easyui-combogrid">
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Customer</span>
+                    <input style="width:60%;" id="filter_customer_id" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Part No</span>
+                    <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
+                </div>
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Part No</span>
-                <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;"></span>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product Type</span>
+                    <select style="width:60%;" id="filter_type_item" class="easyui-combobox" panelHeight="auto">
+                        <option value="">Select Product Type</option>
+                        <option value="Spare Part">Spare Part</option>
+                        <option value="Original">Original</option>
+                    </select>
+                </div>
+                <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
+                    <span style="width:35%; display:inline-block;"></span>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                </div>
             </div>
         </fieldset>
         <?= $button ?>
@@ -92,11 +105,12 @@
 
 
 <!-- Detail Histories -->
-<div id="dlg_history" class="easyui-dialog" title="Price Histories" data-options="closed: true,modal:true" style="width: 700px; height: 300px; top: 20px;">
+<div id="dlg_history" class="easyui-dialog" title="Price Histories" data-options="closed: true,modal:true" style="width: 900px; height: 300px; top: 20px;">
     <table id="dg_history" class="easyui-datagrid" style="width:100%;">
         <thead>
             <tr>
-                <th data-options="field:'item_fg_number',width:100,halign:'center'">Part No</th>
+                <th data-options="field:'item_fg_number',width:100,halign:'center'">Product No</th>
+                <!-- <th data-options="field:'type_item',width:100,halign:'center'">Product Type</th> -->
                 <th data-options="field:'price',width:100,halign:'center',formatter: priceformat">Price</th>
                 <th data-options="field:'valid_from',width:100,halign:'center'">Valid From</th>
                 <th data-options="field:'valid_to',width:100,halign:'center'">Valid To</th>
@@ -184,7 +198,7 @@
 
                     halign: 'center',
 
-                    title: "Part No.",
+                    title: "Product No.",
 
                     editor: {
 
@@ -206,7 +220,7 @@
 
                             fitColumns: true,
 
-                            prompt: 'Choose Part No.',
+                            prompt: 'Choose Product No.',
 
                             columns: [
 
@@ -214,7 +228,7 @@
 
                                     field: 'id',
 
-                                    title: 'Part ID',
+                                    title: 'Product ID',
 
                                     width: 200
 
@@ -222,7 +236,7 @@
 
                                     field: 'number',
 
-                                    title: 'Part No.',
+                                    title: 'Product No.',
 
                                     width: 200
 
@@ -230,7 +244,7 @@
 
                                     field: 'name',
 
-                                    title: 'Part Name',
+                                    title: 'Product Name',
 
                                     width: 200
 
@@ -296,7 +310,7 @@
 
                     halign: 'center',
 
-                    title: "Part ID",
+                    title: "Product ID",
 
                     editor: {
 
@@ -312,7 +326,7 @@
 
                     halign: 'center',
 
-                    title: "Part Name",
+                    title: "Product Name",
 
                     editor: {
 
@@ -321,6 +335,76 @@
                     }
 
                 }, {
+                    field: 'type_item',
+                    width: 150,
+                    halign: 'center',
+                    title: "Product Type",
+                    editor: {
+                        type: 'combobox',
+                        options: {
+                            valueField: 'name',
+                            textField: 'name',
+                            prompt: 'Choose Product Type',
+                            panelHeight: true,
+                            required: true,
+                            data: [
+                                { name: "Spare Part" },
+                                { name: "Original" }
+                            ],
+                            onChange: function (newValue, oldValue) {
+                                if (!newValue || newValue === oldValue) return;
+
+                                var dg = $('#dg2');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
+
+                                var edItem = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'item_fg_id'
+                                });
+                                var item_fg_id = $(edItem.target).textbox('getValue');
+
+                                if (!item_fg_id) return;
+
+                                var rows = dg.datagrid('getRows');
+                                var duplicate = rows.some(function (r, i) {
+                                    return (
+                                        i !== rowIndex &&
+                                        r.item_fg_id === item_fg_id &&
+                                        r.type_item === newValue
+                                    );
+                                });
+
+                                if (duplicate) {
+                                    toastr.warning(
+                                        "This Product already has the same Type Item! Please choose a different Type.",
+                                        "Warning"
+                                    );
+
+                                    // Reset kolom terkait
+                                    var edType = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'type_item'
+                                    });
+                                    var edNumber = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'item_fg_number'
+                                    });
+                                    var edName = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'item_name'
+                                    });
+
+                                    // Kosongkan nilai editor
+                                    $(edType.target).combobox('clear');
+                                    $(edItem.target).textbox('clear');
+                                    $(edNumber.target).textbox('clear');
+                                    $(edName.target).textbox('clear');
+                                }
+                            }
+                        }
+                    }
+                }, {
 
                     field: 'item_fg_customer',
 
@@ -328,7 +412,7 @@
 
                     halign: 'center',
 
-                    title: "Part Customer",
+                    title: "Product Customer",
 
                     editor: {
 
@@ -839,10 +923,12 @@
     function filter() {
         var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
+        var filter_type_item = $("#filter_type_item").combobox('getValue');
 
 
         var url = "?filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id);
+            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
+            "&filter_type_item=" + window.btoa(filter_type_item);
 
 
         $('#dg').datagrid({
@@ -866,10 +952,12 @@
     function excel() {
         var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
+        var filter_type_item = $("#filter_type_item").combobox('getValue');
 
 
         var url = "?filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id);
+            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
+            "&filter_type_item=" + window.btoa(filter_type_item);
 
 
         window.location.assign('<?= base_url('master/customer_items/print/excel') ?>' + url);
@@ -960,6 +1048,8 @@
                                     customer_id: customer_id,
 
                                     item_fg_id: rows[i].item_fg_id,
+
+                                    type_item: rows[i].type_item,
 
                                     item_fg_customer: rows[i].item_fg_customer,
 
@@ -1137,7 +1227,7 @@
 
                 field: 'type',
 
-                title: 'Type',
+                title: 'Sales Type',
 
                 width: 100
 
@@ -1352,15 +1442,16 @@
 
 
     function btnHistories(val, row) {
-        var history = "viewHistories('" + row.customer_id + "','" + row.item_fg_id + "')";
+        let typeItem = row.type_item ? row.type_item : null;
+        var history = "viewHistories('" + row.customer_id + "','" + row.item_fg_id + "','"+ typeItem +"')";
         return '<a class="btn btn-primary w-100" onClick="' + history + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
     }
 
 
-    function viewHistories(customer_id, item_fg_id) {
+    function viewHistories(customer_id, item_fg_id, type_item) {
         $("#dlg_history").dialog('open');
         $('#dg_history').datagrid({
-            url: '<?= base_url('master/customer_items/datatableHistories?customer_id=') ?>' + btoa(customer_id) + "&item_fg_id=" + btoa(item_fg_id),
+            url: '<?= base_url('master/customer_items/datatableHistories?customer_id=') ?>' + btoa(customer_id) + "&item_fg_id=" + btoa(item_fg_id) + "&type_item=" + btoa(type_item),
             pagination: false,
             rownumbers: true,
         });

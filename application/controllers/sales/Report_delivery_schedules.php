@@ -136,6 +136,7 @@ class Report_delivery_schedules extends CI_Controller
         $filter_display = base64_decode($this->input->get("filter_display"));
         $filter_division = base64_decode($this->input->get("filter_division"));
         $filter_status = base64_decode($this->input->get("filter_status"));
+        $filter_product_family = base64_decode($this->input->get("filter_product_family"));
 
         $customer = $this->crud->read("customers", [], ["id" => $filter_customer_name]);
         $customer_name = empty($filter_customer_name)?"ALL":@$customer->name;
@@ -331,7 +332,11 @@ class Report_delivery_schedules extends CI_Controller
             $this->db->like('a.item_fg_id', $filter_item_fg);
             $this->db->like('c.customer_order_no', $filter_customer_order_no);
             $this->db->like('c.division', $filter_division);
-            
+
+            if ($filter_product_family != "") {
+                $this->db->where('d.item_family_number', $filter_product_family);
+            }
+
             // $this->db->group_by('a.trans_date');
             $this->db->group_by('a.customer_id');
             $this->db->group_by('a.customer_order_no');
@@ -476,6 +481,10 @@ class Report_delivery_schedules extends CI_Controller
 
             if($filter_division != "") {
                 $this->db->where('c.division', $filter_division);
+            }
+
+            if ($filter_product_family != "") {
+                $this->db->where('d.item_family_number', $filter_product_family);
             }
 
             $this->db->group_by('a.customer_id, a.item_fg_id');

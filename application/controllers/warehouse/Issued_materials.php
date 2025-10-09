@@ -112,53 +112,112 @@ class Issued_materials extends CI_Controller
                     //$rows = $query->result();
                      $rowspo = $querypo->row();
 
-                    if (strpos($request_no, 'SH') === 0) {
+                    // if (strpos($request_no, 'SH') === 0) {
     
+                    //     $this->db->select('item_rm_id');
+                    //     $this->db->where('eq_1', $rowspo->item_rm_id); // where item rm id = RMPLNA-0031
+                    //     $this->db->or_where('eq_2', $rowspo->item_rm_id);
+                    //     $this->db->or_where('eq_3', $rowspo->item_rm_id);
+                    //     $this->db->or_where('eq_4', $rowspo->item_rm_id);
+                    //     $this->db->or_where('eq_5', $rowspo->item_rm_id);
+                    //     $queryEq = $this->db->get('equivalents');
+                    //     $resultEq = $queryEq->row();
+    
+    
+    
+                    //     $this->db->select('item_rm_id');
+                    //     $this->db->where('item_rm_id', $resultEq->item_rm_id);  // $resultEq->item_rm_id = RMPLNA-0027
+                    //     $this->db->where('request_no', $request_no);
+                    //     $querySS = $this->db->get('supply_sheets');
+                    //     $supplySheets = $querySS->result();
+                    //     if ($querySS->num_rows() > 0) {
+                    //         $this->db->select("a.label_no, b.item_rm_id, a.qty, '$resultEq->item_rm_id' as eq_item_rm_id, '$rowspo->qty' as qty_po");
+                    //         $this->db->from('purchase_order_labels a');
+                    //         $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
+                    //         $this->db->where('a.label_no', $receipt_id);
+                    //         $this->db->where('a.status', 1);
+                    //         $totalRows = $this->db->count_all_results('', false);
+                    //         $records = $this->db->get()->result_array();
+    
+                    //         if (!$records) {
+                    //             $this->db->select("a.label_divided as label_no, b.item_rm_id, a.qty, '$resultEq->item_rm_id' as eq_item_rm_id, '$rowspo->qty' as qty_po");
+                    //             $this->db->from('barcode_divides a');
+                    //             $this->db->join('purchase_order_receipts b', 'a.reff = b.receipt_id');
+                    //             $this->db->where('a.label_divided', $receipt_id);
+                    //             $totalRows = $this->db->count_all_results('', false);
+                    //             $records = $this->db->get()->result_array();
+                    //         }
+            
+                    //         if (!$records) {
+                    //             $this->db->select("label_no, item_rm_id, qty, '$resultEq->item_rm_id' as eq_item_rm_id, '$rowspo->qty' as qty_po");
+                    //             $this->db->from('new_barcode');
+                    //             $this->db->where('label_no', $receipt_id);
+                    //             $totalRows = $this->db->count_all_results('', false);
+                    //             $records = $this->db->get()->result_array();
+                    //         }
+    
+                    //     }
+    
+                    // }
+
+
+                    if (strpos($request_no, 'SH') === 0) {
+
+                        // ambil semua kemungkinan eq item
                         $this->db->select('item_rm_id');
-                        $this->db->where('eq_1', $rowspo->item_rm_id); // where item rm id = RMPLNA-0031
+                        $this->db->group_start();
+                        $this->db->where('eq_1', $rowspo->item_rm_id);
                         $this->db->or_where('eq_2', $rowspo->item_rm_id);
                         $this->db->or_where('eq_3', $rowspo->item_rm_id);
                         $this->db->or_where('eq_4', $rowspo->item_rm_id);
                         $this->db->or_where('eq_5', $rowspo->item_rm_id);
+                        $this->db->group_end();
                         $queryEq = $this->db->get('equivalents');
-                        $resultEq = $queryEq->row();
-    
-    
-    
-                        $this->db->select('item_rm_id');
-                        $this->db->where('item_rm_id', $resultEq->item_rm_id);  // $resultEq->item_rm_id = RMPLNA-0027
-                        $this->db->where('request_no', $request_no);
-                        $querySS = $this->db->get('supply_sheets');
-                        $supplySheets = $querySS->result();
-                        if ($querySS->num_rows() > 0) {
-                            $this->db->select("a.label_no, b.item_rm_id, a.qty, '$resultEq->item_rm_id' as eq_item_rm_id, '$rowspo->qty' as qty_po");
-                            $this->db->from('purchase_order_labels a');
-                            $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
-                            $this->db->where('a.label_no', $receipt_id);
-                            $this->db->where('a.status', 1);
-                            $totalRows = $this->db->count_all_results('', false);
-                            $records = $this->db->get()->result_array();
-    
-                            if (!$records) {
-                                $this->db->select("a.label_divided as label_no, b.item_rm_id, a.qty, '$resultEq->item_rm_id' as eq_item_rm_id, '$rowspo->qty' as qty_po");
-                                $this->db->from('barcode_divides a');
-                                $this->db->join('purchase_order_receipts b', 'a.reff = b.receipt_id');
-                                $this->db->where('a.label_divided', $receipt_id);
-                                $totalRows = $this->db->count_all_results('', false);
-                                $records = $this->db->get()->result_array();
+                        $resultEq = $queryEq->result_array();
+
+                        if ($resultEq) {
+                            $eqItemIds = array_column($resultEq, 'item_rm_id');
+
+                            $this->db->where_in('item_rm_id', $eqItemIds);
+                            $this->db->where('request_no', $request_no);
+                            $querySS = $this->db->get('supply_sheets');
+
+                            if ($querySS->num_rows() > 0) {
+                                foreach ($querySS->result() as $ss) {
+                                    $eqItemId = $ss->item_rm_id;
+
+                                    $this->db->select("a.label_no, b.item_rm_id, a.qty, '$eqItemId' as eq_item_rm_id, '$rowspo->qty' as qty_po");
+                                    $this->db->from('purchase_order_labels a');
+                                    $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
+                                    $this->db->where('a.label_no', $receipt_id);
+                                    $this->db->where('a.status', 1);
+                                    $totalRows = $this->db->count_all_results('', false);
+                                    $records = $this->db->get()->result_array();
+
+                                    if (!$records) {
+                                        $this->db->select("a.label_divided as label_no, b.item_rm_id, a.qty, '$eqItemId' as eq_item_rm_id, '$rowspo->qty' as qty_po");
+                                        $this->db->from('barcode_divides a');
+                                        $this->db->join('purchase_order_receipts b', 'a.reff = b.receipt_id');
+                                        $this->db->where('a.label_divided', $receipt_id);
+                                        $totalRows = $this->db->count_all_results('', false);
+                                        $records = $this->db->get()->result_array();
+                                    }
+
+                                    if (!$records) {
+                                        $this->db->select("label_no, item_rm_id, qty, '$eqItemId' as eq_item_rm_id, '$rowspo->qty' as qty_po");
+                                        $this->db->from('new_barcode');
+                                        $this->db->where('label_no', $receipt_id);
+                                        $totalRows = $this->db->count_all_results('', false);
+                                        $records = $this->db->get()->result_array();
+                                    }
+
+                                }
                             }
-            
-                            if (!$records) {
-                                $this->db->select("label_no, item_rm_id, qty, '$resultEq->item_rm_id' as eq_item_rm_id, '$rowspo->qty' as qty_po");
-                                $this->db->from('new_barcode');
-                                $this->db->where('label_no', $receipt_id);
-                                $totalRows = $this->db->count_all_results('', false);
-                                $records = $this->db->get()->result_array();
-                            }
-    
                         }
-    
-                    }else{
+
+                    }
+
+                    else{
                         
                         $this->db->select("a.label_no, b.item_rm_id, a.qty, '$rowspo->item_rm_id' as eq_item_rm_id, '$rowspo->qty' as qty_po");
                         $this->db->from('purchase_order_labels a');
@@ -350,6 +409,7 @@ class Issued_materials extends CI_Controller
                 FROM purchase_order_receipts
                 GROUP BY item_rm_id
             ) hold', 'a.item_rm_id = hold.item_rm_id', 'left');
+
 
             if ($request_no != "") {
                 if (strpos($request_no, 'SH') === 0) {

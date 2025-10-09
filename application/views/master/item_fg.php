@@ -31,7 +31,7 @@
             <th rowspan="2" data-options="field:'specification',width:100,align:'center',sortable:true">Specification</th>
             <th rowspan="2" data-options="field:'total_mold',width:50,align:'center',sortable:true">Total <br>Mold</th>
             <th rowspan="2" data-options="field:'process',width:80,align:'center',sortable:true">Flow <br>Type</th>
-            <th rowspan="2" data-options="field:'product_type',width:80,align:'center',sortable:true">Product <br>Type</th>
+            <th rowspan="2" data-options="field:'product_type',width:80,align:'center',sortable:true">Sales <br>Type</th>
             <th rowspan="2" data-options="field:'item_category_name',width:100,align:'center',sortable:true">Category</th>
             <th rowspan="2" data-options="field:'item_family_name',width:150,align:'center',sortable:true">Product Family</th>
             <th rowspan="2" data-options="field:'item_family_sub_name',width:150,align:'center'" hidden>Sub Product Family</th>
@@ -95,7 +95,7 @@
                     <input style="width:60%;" name="process" id="process" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product Type</span>
+                    <span style="width:35%; display:inline-block;">Sales Type</span>
                     <select style="width:60%;" name="product_type" class="easyui-combobox" panelHeight="auto">
                         <option value="EXPORT">EXPORT</option>
                         <!-- <option value="IMPORT">IMPORT</option> -->
@@ -364,7 +364,7 @@
                     },
                     {
                         field: 'product_type',
-                        title: 'Product Type',
+                        title: 'Sales Type',
                         width: 100,
                         align: 'center',
                         sortable: true,

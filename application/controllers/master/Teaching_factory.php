@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Subconts extends CI_Controller
+class Teaching_factory extends CI_Controller
 {
     public function __construct()
     {
@@ -12,7 +12,7 @@ class Subconts extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Subcont Code', 'required|min_length[1]|max_length[20]|is_unique[subconts.number]');
+        $this->form_validation->set_rules('number', 'Subcont Code', 'required|min_length[1]|max_length[20]|is_unique[teaching_factory.number]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -22,7 +22,7 @@ class Subconts extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('master/subconts');
+            $this->load->view('master/teaching_factory');
         } else {
             redirect('error_access');
         }
@@ -31,9 +31,9 @@ class Subconts extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        // $send = $this->crud->reads('subconts', ["name" => $post]);
-        
-        $send = $this->crud->query("SELECT * FROM subconts WHERE (number like '%$post%' or name like '%$post%' or id like '%$post%') AND status = 0");
+        // $send = $this->crud->reads('teaching_factory', ["name" => $post]);
+
+        $send = $this->crud->query("SELECT * FROM teaching_factory WHERE (number like '%$post%' or name like '%$post%' or id like '%$post%') AND status = 0");
 
         echo json_encode($send);
     }
@@ -52,7 +52,7 @@ class Subconts extends CI_Controller
             $result = array();
             //Select Query
             $this->db->select('a.*, b.name as subcont_type_name, c.name as delivery_area_name');
-            $this->db->from('subconts a');
+            $this->db->from('teaching_factory a');
             $this->db->join('subcont_types b', 'a.subcont_type_id = b.id');
             $this->db->join('delivery_areas c', 'a.delivery_area_id = c.id');
             $this->db->where('a.deleted', 0);
@@ -82,10 +82,10 @@ class Subconts extends CI_Controller
     }
     //AUTO ID
     public function autoid(){
-        $sql = $this->db->query("SELECT max(id) as kode FROM subconts");
+        $sql = $this->db->query("SELECT max(id) as kode FROM teaching_factory");
         $row = $sql->row();
         $kode = substr($row->kode,3);
-        $autoid ="S". sprintf("%03s", $kode + 1);
+        $autoid ="TF". sprintf("%03s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA
@@ -94,7 +94,7 @@ class Subconts extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
-                $send   = $this->crud->create('subconts', $post);
+                $send   = $this->crud->create('teaching_factory', $post);
                 echo $send;
             } else {
                 show_error(validation_errors());
@@ -109,7 +109,7 @@ class Subconts extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('subconts', ["id" => $id], $post);
+            $send = $this->crud->update('teaching_factory', ["id" => $id], $post);
             echo $send;
         } else {
             show_error("Cannot Process your request");
@@ -119,7 +119,7 @@ class Subconts extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('subconts', $data);
+        $send = $this->crud->delete('teaching_factory', $data);
         echo $send;
     }
     //UPLOAD DATA
@@ -155,13 +155,13 @@ class Subconts extends CI_Controller
     }
     public function uploadclearFailed()
     {
-        @unlink('failed/subconts.txt');
+        @unlink('failed/teaching_factory.txt');
     }
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('failed/subconts.txt', 'a');
+            $textFailed = fopen('failed/teaching_factory.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -169,7 +169,7 @@ class Subconts extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "failed/subconts.txt";
+        $file = "failed/teaching_factory.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -186,12 +186,12 @@ class Subconts extends CI_Controller
             $data = $this->input->post('data');
 
             //Cek Process Number          //table       //field        //field excel
-            $subcont = $this->crud->read('subconts', [], ["number" => $data['number']]);
+            $subcont = $this->crud->read('teaching_factory', [], ["number" => $data['number']]);
             $subcont_type = $this->crud->read('subcont_types', [], ["id" => $data['subcont_type_id']]);
             $delivery_area = $this->crud->read('delivery_areas', [], ["id" => $data['delivery_area_id']]);
 
             //AUTOID
-            $sql = $this->db->query("SELECT max(id) as kode FROM subconts");
+            $sql = $this->db->query("SELECT max(id) as kode FROM teaching_factory");
             $row = $sql->row();
             $kode = substr($row->kode,3);
             $autoid ="S". sprintf("%03s", $kode + 1);
@@ -218,7 +218,7 @@ class Subconts extends CI_Controller
                     "website" => $data['website'],
                     "status" => $data['status'],
                 );
-                $send   = $this->crud->create('subconts', $dataFinal);
+                $send   = $this->crud->create('teaching_factory', $dataFinal);
                 echo $send;
             }
         }
@@ -229,7 +229,7 @@ class Subconts extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=subconts_$format.xls");
+            header("Content-Disposition: attachment; filename=teaching_factory_$format.xls");
         }
         //Config
         $this->db->select('*');
@@ -237,13 +237,13 @@ class Subconts extends CI_Controller
         $config = $this->db->get()->row();
 
         $this->db->select('a.*, b.name as subcont_type_name, c.name as delivery_area_name');
-        $this->db->from('subconts a');
+        $this->db->from('teaching_factory a');  
         $this->db->join('subcont_types b', 'a.subcont_type_id = b.id');
         $this->db->join('delivery_areas c', 'a.delivery_area_id = c.id');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#subconts {border-collapse: collapse;width: 100%;font-size: 12px;}#subconts td, #subconts th {border: 1px solid #ddd;padding: 2px;}#subconts tr:nth-child(even){background-color: #f2f2f2;}#subconts tr:hover {background-color: #ddd;}#subconts th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#teaching_factory {border-collapse: collapse;width: 100%;font-size: 12px;}#teaching_factory td, #teaching_factory th {border: 1px solid #ddd;padding: 2px;}#teaching_factory tr:nth-child(even){background-color: #f2f2f2;}#teaching_factory tr:hover {background-color: #ddd;}#teaching_factory th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">
                 <table style="width: 100%;">
@@ -266,25 +266,29 @@ class Subconts extends CI_Controller
                 <h3>MASTER SUBCONT</h3>
             </div>
         </center>
-        
-        <table id="subconts" border="1">
+
+        <table id="teaching_factory" border="1">
             <tr>
-                <th width="20">No</th>
-                <th>Subcont ID</th>
-                <th>Subcont Name</th>
-                <th>Subcont Code</th>
-                <th>Type</th>
-                <th>Address</th>
-                <th>Area</th>
-                <th>Contact Person</th>
-                <th>Telepon</th>
-                <th>Status</th>
+                <th style="text-align: center;" width="20">No</th>
+                <th style="text-align: center;">TF ID</th>
+                <th style="text-align: center;">TF Name</th>
+                <th style="text-align: center;">TF Code</th>
+                <th style="text-align: center;">Type</th>
+                <th style="text-align: center;">Address</th>
+                <th style="text-align: center;">Area</th>
+                <th style="text-align: center">Contact Person</th>
+                <th style="text-align: center;">Telepon</th>
+                <th style="text-align: center;">Status</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
+
             $status = $data['status'] == 1 ? "Active" : "Not Active";
+
+            // $status = $data['status'] == 1 ? "<span style='color:green;font-weight:bold;'>Active</span>" : "<span style='color:red;font-weight:bold;'>Not Active</span>";
+
             $html .= '<tr>
-                    <td>' . $no . '</td>
+                    <td style="text-align: center;">' . $no . '</td>
                     <td>' . $data['id'] . '</td>
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['number'] . '</td>

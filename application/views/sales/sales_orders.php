@@ -46,6 +46,7 @@
             <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th>
             <th rowspan="2" data-options="field:'division_name',width:100,halign:'center',sortable:true">Plant</th>
             <th rowspan="2" data-options="field:'so_type',width:100,halign:'center',sortable:true">SO Type</th>
+            <th rowspan="2" data-options="field:'type_item',width:100,halign:'center',sortable:true">Product Type</th>
             <th rowspan="2" data-options="field:'sales_order_no',width:150,halign:'center',sortable:true">Sales Order No</th>
             <th rowspan="2" data-options="field:'customer_order_no',width:150,halign:'center',sortable:true">Customer Order No</th>
             <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center',sortable:true">Customer Name</th>
@@ -194,10 +195,20 @@
                     <span style="width:35%; display:inline-block;">Taxes</span>
                     <input style="width:60%;" name="taxes" id="taxes" disabled class="easyui-numberbox">
                 </div>
-                <div class="fitem">
+                <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Remarks</span>
                     <input style="width:60%;" name="remarks" id="remarks" class="easyui-textbox">
                 </div>
+
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product Type</span>
+                    <select style="width:60%;" name="type_item" id="type_item" class="easyui-combobox" panelHeight="auto" required="">
+                        <!-- <option value="">Select Product Type</option> -->
+                        <option value="Spare Part">Spare Part</option>
+                        <option value="Original">Original</option>
+                    </select>
+                </div>
+
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Attachment</span>
                     <input style="width:60%;" name="attachment_upload" id="attachment_upload" class="easyui-filebox">
@@ -429,6 +440,8 @@
 
     function addTable(customer_id, link = "") {
         var customerOrderNo = $('#customer_order_no').textbox('getValue');
+        var typeItem = $('#type_item').combobox('getValue');
+
         // console.log(customerOrderNo);
         $('#dg2').datagrid({
             url: link,
@@ -450,7 +463,10 @@
                             mode: 'remote',
                             fitColumns: true,
                             prompt: 'Choose Product ID',
-                            queryParams: { customer_order_no: customerOrderNo },
+                            queryParams: { 
+                                customer_order_no: customerOrderNo,
+                                type_item: typeItem,
+                            },
                             columns: [
                                 [{
                                     field: 'id',
@@ -1124,6 +1140,7 @@
                     var sales_order_date = $("#sales_order_date").datebox('getValue');
                     var sales_order_no = $("#sales_order_no").textbox('getValue');
                      var division = $("#division").combobox('getValue');
+                    var type_item = $("#type_item").combobox('getValue');
                     var attachment = $("#attachment").textbox('getValue');
                     var delivery_date = $("#delivery_date").datebox('getValue');
                     var customer_address_id = $("#customer_address_id").textbox('getValue');
@@ -1160,6 +1177,7 @@
                                         sales_order_date: sales_order_date,
                                         sales_order_no: sales_order_no,
                                         division: division,
+                                        type_item: type_item,
                                         delivery_date: delivery_date,
                                         customer_address_id: customer_address_id,
                                         plant: plant,
@@ -1317,6 +1335,23 @@
             {field: 'name', title: 'Product Family', width: 200}
         ]]
     });
+
+    $('#type_item').combobox({
+        onChange: function(newValue, oldValue) {
+            // Ambil customer_id dan sales_order_date
+            var customer_id = $("#customer_id").combobox('getValue');
+            var sales_order_date = $("#sales_order_date").datebox('getValue');
+
+            // Hapus data lama di datagrid
+            $('#dg2').datagrid('loadData', []);
+
+            if (customer_id && sales_order_date) {
+                // Jika sudah ada customer dan tanggal order, reload tabel dengan type_item baru
+                addTable(customer_id);
+            }
+        }
+    });
+
 
     //CELLSTYLE STATUS
     function cellStyler(value, row, index) {

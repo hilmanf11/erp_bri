@@ -89,6 +89,7 @@ class Customer_items extends CI_Controller
 
             $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
 
+            $filter_type_item = @base64_decode($get['filter_type_item']);
 
 
             $page = $this->input->post('page');
@@ -101,7 +102,7 @@ class Customer_items extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.item_fg_id, a.item_fg_customer, c.number as item_fg_number, c.name as item_fg_name, a.valid_to, a.valid_from, a.price, a.remark, b.id as customer_id, b.currency, b.number as customer_number, b.name as customer_name, b.type, b.status, a.created_by, a.created_date, a.updated_by, a.updated_date');
+            $this->db->select('a.item_fg_id, a.item_fg_customer, c.number as item_fg_number, c.name as item_fg_name, a.type_item, a.valid_to, a.valid_from, a.price, a.remark, b.id as customer_id, b.currency, b.number as customer_number, b.name as customer_name, b.type, b.status, a.created_by, a.created_date, a.updated_by, a.updated_date');
             $this->db->from('customer_items a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
@@ -111,7 +112,12 @@ class Customer_items extends CI_Controller
             if (!empty($filter_item_fg_id)) {
                 $this->db->where('a.item_fg_id', $filter_item_fg_id);
             }
-            $this->db->order_by('a.id', 'ASC');
+            if (!empty($filter_type_item)) {
+                $this->db->where('a.type_item', $filter_type_item);
+            }
+            $this->db->order_by('a.customer_id', 'ASC');
+            $this->db->order_by('c.number', 'ASC');
+            $this->db->order_by('a.type_item', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -124,7 +130,6 @@ class Customer_items extends CI_Controller
             echo json_encode($result);
         }
     }
-
 
 
     //GET DATATABLES DETAILS
@@ -217,9 +222,10 @@ class Customer_items extends CI_Controller
 
             $item_fg_id = base64_decode($this->input->get('item_fg_id'));
 
+            $type_item = base64_decode($this->input->get('type_item'));
 
 
-            $this->db->select('a.*,  c.number as item_fg_number');
+            $this->db->select('a.*, COALESCE(a.type_item, ""),  c.number as item_fg_number');
 
             $this->db->from('customer_item_histories a');
 
@@ -228,6 +234,8 @@ class Customer_items extends CI_Controller
             $this->db->where('a.customer_id', $customer_id);
 
             $this->db->where('a.item_fg_id', $item_fg_id);
+
+            $this->db->where('a.type_item', $type_item);
 
             $this->db->order_by('a.valid_to, a.valid_from', 'DESC');
 
@@ -342,40 +350,111 @@ class Customer_items extends CI_Controller
 
     //CREATE DATA
 
+    // public function create()
+
+    // {
+
+    //     if ($this->input->post()) {
+
+    //         $post = $this->input->post();
+
+
+
+    //         $customer_items = $this->crud->read("customer_items", [], ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id']]);
+
+    //         $customer_item_histories = $this->crud->read("customer_item_histories", [], ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id'], "price" => $post['price']]);
+
+    //         if (@$customer_items->customer_id != "") {
+
+    //             $send = $this->crud->update('customer_items', ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id']], $post);
+
+    //             if (@$customer_item_histories->customer_id == "") {
+
+    //                 $send2 = $this->crud->create('customer_item_histories', $post);
+    //             }
+    //         } else {
+
+    //             $send = $this->crud->create('customer_items', $post);
+
+    //             $send2 = $this->crud->create('customer_item_histories', $post);
+    //         }
+
+    //         echo $send;
+    //     } else {
+
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+
     public function create()
-
     {
+        if (! $this->input->post()) {
+            show_error("Cannot Process your request");
+            return;
+        }
 
-        if ($this->input->post()) {
+        $post = $this->input->post();
+        $type_item = isset($post['type_item']) ? trim($post['type_item']) : '';
 
-            $post = $this->input->post();
+        $found = $this->crud->read(
+            "customer_items",
+            [],
+            [
+                "customer_id" => $post['customer_id'],
+                "item_fg_id"  => $post['item_fg_id'],
+                "type_item"   => $type_item
+            ]
+        );
 
+        $row = null;
+        if ($found) {
+            if (is_array($found)) $row = reset($found);
+            elseif (is_object($found)) $row = $found;
+        }
 
+        if (!$row) {
+            $row = $this->db
+                ->where('customer_id', $post['customer_id'])
+                ->where('item_fg_id', $post['item_fg_id'])
+                ->group_start()
+                    ->where('type_item', '')
+                    ->or_where('type_item IS NULL', null, false)
+                ->group_end()
+                ->get('customer_items')
+                ->row();
+        }
 
-            $customer_items = $this->crud->read("customer_items", [], ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id']]);
-
-            $customer_item_histories = $this->crud->read("customer_item_histories", [], ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id'], "price" => $post['price']]);
-
-            if (@$customer_items->customer_id != "") {
-
-                $send = $this->crud->update('customer_items', ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id']], $post);
-
-                if (@$customer_item_histories->customer_id == "") {
-
-                    $send2 = $this->crud->create('customer_item_histories', $post);
-                }
+        if ($row) {
+            if (!empty($row->id)) {
+                $where = ['id' => $row->id];
             } else {
-
-                $send = $this->crud->create('customer_items', $post);
-
-                $send2 = $this->crud->create('customer_item_histories', $post);
+                $where = [
+                    'customer_id' => $post['customer_id'],
+                    'item_fg_id'  => $post['item_fg_id']
+                ];
             }
 
-            echo $send;
-        } else {
+            $send = $this->crud->update('customer_items', $where, $post);
 
-            show_error("Cannot Process your request");
+            $history = $this->crud->read(
+                "customer_item_histories",
+                [],
+                [
+                    "customer_id" => $post['customer_id'],
+                    "item_fg_id"  => $post['item_fg_id'],
+                    "type_item"   => $type_item,
+                    "price"       => $post['price']
+                ]
+            );
+            if (empty($history)) {
+                $send2 = $this->crud->create('customer_item_histories', $post);
+            }
+        } else {
+            $send  = $this->crud->create('customer_items', $post);
+            $send2 = $this->crud->create('customer_item_histories', $post);
         }
+
+        echo $send;
     }
 
     //DELETE DATA
@@ -511,6 +590,7 @@ class Customer_items extends CI_Controller
         $get = $this->input->get();
         $filter_customer_id = @base64_decode($get['filter_customer_id']);
         $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
+        $filter_type_item = @base64_decode($get['filter_type_item']);
 
         //Config
         $this->db->select('*');
@@ -527,6 +607,9 @@ class Customer_items extends CI_Controller
         }
         if (!empty($filter_item_fg_id)) {
             $this->db->where('a.item_fg_id', $filter_item_fg_id);
+        }
+        if (!empty($filter_type_item)) {
+            $this->db->where('a.type_item', $filter_type_item);
         }
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();

@@ -43,6 +43,8 @@ class Setting_subconts extends CI_Controller
             $get = $this->input->get();
             $filter_subcont_id = @base64_decode($get['filter_subcont_id']);
             $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
+            $deliveryTo = @base64_decode($get['delivery_to']);
+            $filter_teaching_factory_id = @base64_decode($get['filter_teaching_factory_id']);
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -51,14 +53,106 @@ class Setting_subconts extends CI_Controller
             $rows   = isset($rows) ? intval($rows) : 10;
             $offset = ($page - 1) * $rows;
             $result = array();
-            //Select Query
-            $this->db->select('b.id as subcont_id, b.number as subcont_number, b.name as subcont_name, b.status, a.created_by, a.created_date, a.updated_by, a.updated_date');
+
+
             $this->db->from('setting_subconts a');
-            $this->db->join('subconts b', 'a.subcont_id = b.id');
-            $this->db->like('a.subcont_id', $filter_subcont_id);
-            $this->db->like('a.item_fg_id', $filter_item_fg_id);
-            $this->db->group_by('b.name');
-            $this->db->order_by('b.id', 'ASC');
+
+            if($deliveryTo == "") {
+                $this->db->select('
+                    b.id as subcont_id,
+                    b.number as subcont_number,
+                    b.name as subcont_name,
+                    b.status,
+                    a.created_by,
+                    a.created_date,
+                    a.updated_by,
+                    a.updated_date
+                ');
+                $this->db->join('subconts b', 'a.subcont_id = b.id');
+
+                if (!empty($filter_subcont_id)) {
+                    $this->db->like('a.subcont_id', $filter_subcont_id);
+                }
+
+                if (!empty($filter_item_fg_id)) {
+                    $this->db->like('a.item_fg_id', $filter_item_fg_id);
+                }
+
+                $this->db->group_by('b.name');
+                $this->db->order_by('b.id', 'ASC');
+            }
+
+
+            if ($deliveryTo === 'SUBCONT') {
+                $this->db->select('
+                    b.id as subcont_id,
+                    b.number as subcont_number,
+                    b.name as subcont_name,
+                    b.status,
+                    a.created_by,
+                    a.created_date,
+                    a.updated_by,
+                    a.updated_date
+                ');
+                $this->db->join('subconts b', 'a.subcont_id = b.id');
+
+                if (!empty($filter_subcont_id)) {
+                    $this->db->like('a.subcont_id', $filter_subcont_id);
+                }
+
+                if (!empty($filter_item_fg_id)) {
+                    $this->db->like('a.item_fg_id', $filter_item_fg_id);
+                }
+
+                $this->db->group_by('b.name');
+                $this->db->order_by('b.id', 'ASC');
+
+            } elseif ($deliveryTo === 'TEFA') {
+                $this->db->select('
+                    c.id as tf_id,
+                    c.number as tf_number,
+                    c.name as tf_name,
+                    c.status,
+                    a.created_by,
+                    a.created_date,
+                    a.updated_by,
+                    a.updated_date
+                ');
+                $this->db->join('teaching_factory c', 'a.teaching_factory_id = c.id');
+
+                if (!empty($filter_teaching_factory_id)) {
+                    $this->db->like('a.teaching_factory_id', $filter_teaching_factory_id);
+                }
+
+                if (!empty($filter_item_fg_id)) {
+                    $this->db->like('a.item_fg_id', $filter_item_fg_id);
+                }
+
+                $this->db->group_by('c.name');
+                $this->db->order_by('c.id', 'ASC');
+            }
+
+            // //Select Query
+            // $this->db->select('
+            //     b.id as subcont_id,
+            //     b.number as subcont_number,
+            //     b.name as subcont_name,
+            //     b.status,
+            //     a.created_by,
+            //     a.created_date,
+            //     a.updated_by,
+            //     a.updated_date
+            // ');
+            // $this->db->from('setting_subconts a');
+            // $this->db->join('subconts b', 'a.subcont_id = b.id', 'left');
+            // $this->db->join('teaching_factory c', 'a.teaching_factory_id = c.id', 'left');
+            // $this->db->like('a.subcont_id', $filter_subcont_id);
+            // $this->db->like('a.item_fg_id', $filter_item_fg_id);
+            // $this->db->group_by('b.name');
+            // $this->db->order_by('b.id', 'ASC');
+
+
+
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -77,17 +171,68 @@ class Setting_subconts extends CI_Controller
     {
         if ($this->input->get()) {
             $number = base64_decode($this->input->get('number'));
-            $filter_subcont_id = base64_decode($this->input->get('filter_subcont_id'));
+            // $filter_subcont_id = base64_decode($this->input->get('filter_subcont_id'));
+            $delivery_to = base64_decode($this->input->get('delivery_to'));
 
-            $this->db->select('a.*, b.number as subcont_number, b.name as subcont_name, b.status, c.number as item_fg_number, c.name as item_fg_name');
-            $this->db->from('setting_subconts a');
-            $this->db->join('subconts b', 'a.subcont_id = b.id');
-            $this->db->join('item_fg c', 'a.item_fg_id = c.id');
-            $this->db->where('b.number', $number);
-            $this->db->like('a.subcont_id', $filter_subcont_id);
-            $this->db->group_by('a.id');
-            $this->db->order_by('a.id', 'ASC');
-            $records = $this->db->get()->result_array();
+            if($delivery_to == "") {
+
+                $this->db->select('
+                    a.*, 
+                    b.number as subcont_number, 
+                    b.name as subcont_name, 
+                    b.status, 
+                    c.number as item_fg_number, 
+                    c.name as item_fg_name
+                ');
+                $this->db->from('setting_subconts a');
+                $this->db->join('subconts b', 'a.subcont_id = b.id');
+                $this->db->join('item_fg c', 'a.item_fg_id = c.id');
+                $this->db->where('b.number', $number);
+                // $this->db->like('a.subcont_id', $filter_subcont_id);
+                $this->db->group_by('a.id');
+                $this->db->order_by('a.id', 'ASC');
+                $records = $this->db->get()->result_array();
+            }
+
+            if($delivery_to == 'SUBCONT') {
+
+                $this->db->select('
+                    a.*, 
+                    b.number as subcont_number, 
+                    b.name as subcont_name, 
+                    b.status, 
+                    c.number as item_fg_number, 
+                    c.name as item_fg_name
+                ');
+                $this->db->from('setting_subconts a');
+                $this->db->join('subconts b', 'a.subcont_id = b.id');
+                $this->db->join('item_fg c', 'a.item_fg_id = c.id');
+                $this->db->where('b.number', $number);
+                // $this->db->like('a.subcont_id', $filter_subcont_id);
+                $this->db->group_by('a.id');
+                $this->db->order_by('a.id', 'ASC');
+                $records = $this->db->get()->result_array();
+
+            } elseif($delivery_to == 'TEFA') {
+
+                $this->db->select('
+                    a.*, 
+                    b.number as tf_number, 
+                    b.name as tf_name, 
+                    b.status, 
+                    c.number as item_fg_number, 
+                    c.name as item_fg_name
+                ');
+                $this->db->from('setting_subconts a');
+                // $this->db->join('subconts b', 'a.subcont_id = b.id');
+                $this->db->join('teaching_factory b', 'a.teaching_factory_id = b.id');
+                $this->db->join('item_fg c', 'a.item_fg_id = c.id');
+                $this->db->where('b.number', $number);
+                // $this->db->like('a.teaching_factory_id', $filter_subcont_id);
+                $this->db->group_by('a.id');
+                $this->db->order_by('a.id', 'ASC');
+                $records = $this->db->get()->result_array();
+            }
 
             echo json_encode($records);
         }
@@ -98,18 +243,55 @@ class Setting_subconts extends CI_Controller
     {
         if ($this->input->get()) {
             $subcont_id = base64_decode($this->input->get('subcont_id'));
+            $teaching_factory_id = base64_decode($this->input->get('teaching_factory_id'));
 
-            $this->db->select('a.*, b.number as subcont_number, b.name as subcont_name, b.status, c.number as item_fg_number, c.name as item_fg_name');
-            $this->db->from('setting_subconts a');
-            $this->db->join('subconts b', 'a.subcont_id = b.id');
-            $this->db->join('item_fg c', 'a.item_fg_id = c.id');
-            $this->db->where('a.subcont_id', $subcont_id);
-            $this->db->order_by('a.id', 'ASC');
-            $records = $this->db->get()->result_array();
+            if($subcont_id) {
+                $this->db->select('
+                    a.*, 
+                    b.number as subcont_number, 
+                    b.name as subcont_name, 
+                    b.status, 
+                    c.number as item_fg_number, 
+                    c.name as item_fg_name
+                ');
+                $this->db->from('setting_subconts a');
+                $this->db->join('subconts b', 'a.subcont_id = b.id');
+                $this->db->join('item_fg c', 'a.item_fg_id = c.id');
+
+                if(!empty($subcont_id)) {
+                    $this->db->where('a.subcont_id', $subcont_id);
+                }
+
+                $this->db->order_by('a.id', 'ASC');
+                $records = $this->db->get()->result_array();
+                
+            } elseif($teaching_factory_id) {
+
+                $this->db->select('
+                    a.*, 
+                    b.number as tf_number, 
+                    b.name as tf_name, 
+                    b.status, 
+                    c.number as item_fg_number, 
+                    c.name as item_fg_name
+                ');
+                $this->db->from('setting_subconts a');
+                $this->db->join('teaching_factory b', 'a.teaching_factory_id = b.id');
+                $this->db->join('item_fg c', 'a.item_fg_id = c.id');
+
+                if(!empty($teaching_factory_id)) {
+                    $this->db->where('a.teaching_factory_id', $teaching_factory_id);
+                }
+
+                $this->db->order_by('a.id', 'ASC');
+                $records = $this->db->get()->result_array();
+            
+            }
 
             echo json_encode($records);
         }
     }
+
 
     // UPDATE DATA HISTORIES
     // public function datatableHistories()
@@ -135,18 +317,47 @@ class Setting_subconts extends CI_Controller
         if ($this->input->post()) {
             $post = $this->input->post();
 
-            $setting_subconts = $this->crud->read("setting_subconts", [], ["subcont_id" => $post['subcont_id'], "item_fg_id" => $post['item_fg_id']]);
-            // $subcont_item_histories = $this->crud->read("subcont_item_histories", [], ["subcont_id" => $post['subcont_id'], "item_fg_id" => $post['item_fg_id'], "price" => $post['price']]);
-            if (@$setting_subconts->subcont_id != "") {
-                $send = $this->crud->update('setting_subconts', ["subcont_id" => $post['subcont_id'], "item_fg_id" => $post['item_fg_id']], $post);
-                // if (@$subcont_item_histories->subcont_id == "") {
-                //     $send2 = $this->crud->create('subcont_item_histories', $post);
-                // }
-            } else {
-                $send = $this->crud->create('setting_subconts', $post);
-                // $send2 = $this->crud->create('subcont_item_histories', $post);
+            // $subcont_id = $post['subcont_id'] ? $post['subcont_id'] : null;
+            // $teaching_factory_id = $post['teaching_factory_id'] ? $post['teaching_factory_id'] : null;
+
+            $subcont_id = !empty($post['subcont_id']) ? $post['subcont_id'] : null;
+            $teaching_factory_id = !empty($post['teaching_factory_id']) ? $post['teaching_factory_id'] : null;
+
+            if ($subcont_id === null) {
+                unset($post['subcont_id']);
             }
-            echo $send;
+            if ($teaching_factory_id === null) {
+                unset($post['teaching_factory_id']);
+            }
+
+            if($subcont_id) {
+                
+                $setting_subconts = $this->crud->read("setting_subconts", [], ["subcont_id" => $post['subcont_id'], "item_fg_id" => $post['item_fg_id']]);
+                // $subcont_item_histories = $this->crud->read("subcont_item_histories", [], ["subcont_id" => $post['subcont_id'], "item_fg_id" => $post['item_fg_id'], "price" => $post['price']]);
+                if (@$setting_subconts->subcont_id != "") {
+                    $send = $this->crud->update('setting_subconts', ["subcont_id" => $post['subcont_id'], "item_fg_id" => $post['item_fg_id']], $post);
+                    // if (@$subcont_item_histories->subcont_id == "") {
+                    //     $send2 = $this->crud->create('subcont_item_histories', $post);
+                    // }
+                } else {
+                    $send = $this->crud->create('setting_subconts', $post);
+                    // $send2 = $this->crud->create('subcont_item_histories', $post);
+                }
+                echo $send;
+            } else if($teaching_factory_id) {
+                
+                $setting_subconts = $this->crud->read("setting_subconts", [], ["teaching_factory_id" => $post['teaching_factory_id'], "item_fg_id" => $post['item_fg_id']]);
+                if (@$setting_subconts->teaching_factory_id != "") {
+                    $send = $this->crud->update('setting_subconts', ["teaching_factory_id" => $post['teaching_factory_id'], "item_fg_id" => $post['item_fg_id']], $post);
+                } else {
+                    $send = $this->crud->create('setting_subconts', $post);
+                }
+                echo $send;
+
+            } else {
+                echo json_encode(array("title" => "Error", "message" => " Please select Subcont or Teaching Factory", "theme" => "error"));
+            }
+
         } else {
             show_error("Cannot Process your request");
         }
@@ -156,6 +367,17 @@ class Setting_subconts extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
+
+        $subcont_id = !empty($data['subcont_id']) ? $data['subcont_id'] : null;
+        $teaching_factory_id = !empty($data['teaching_factory_id']) ? $data['teaching_factory_id'] : null;
+
+        if ($subcont_id === null) {
+            unset($data['subcont_id']);
+        }
+        if ($teaching_factory_id === null) {
+            unset($data['teaching_factory_id']);
+        }
+
         $send = $this->crud->delete('setting_subconts', $data);
         echo $send;
     }
@@ -165,91 +387,288 @@ class Setting_subconts extends CI_Controller
     {
         error_reporting(0);
         require_once 'assets/vendors/excel_reader2.php';
+
         $target = basename($_FILES['file_upload']['name']);
         move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
-        chmod($_FILES['file_upload']['name'], 0777);
-        $file = $_FILES['file_upload']['name'];
-        $data = new Spreadsheet_Excel_Reader($file, false);
+        chmod($target, 0777);
+
+        $data = new Spreadsheet_Excel_Reader($target, false);
         $total_row = $data->rowcount($sheet_index = 0);
+        $datas = [];
+
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
                 //excel
-                'subcont_id' => $data->val($i, 2),
-                'item_fg_id' => $data->val($i, 3),
-                'share_order' => $data->val($i, 4),
+                'subcont_code' => $data->val($i, 2),
+                'teaching_factory_code' => $data->val($i, 3),
+                'item_fg_id' => $data->val($i, 4),
+                // 'share_order' => $data->val($i, 4),
                 'type' => $data->val($i, 5),
                 'currency' => $data->val($i, 6),
                 'price' => $data->val($i, 7),
                 'valid_date' => $data->val($i, 8),
-                'capacity' => $data->val($i, 9),
-                'leadtime' => $data->val($i, 10),
-                'status' => $data->val($i, 11)
+                // 'capacity' => $data->val($i, 9),
+                // 'leadtime' => $data->val($i, 10),
+                // 'status' => $data->val($i, 11)
             );
         }
-        $datas['total'] = count($datas);
-        echo json_encode($datas);
-        unlink($_FILES['file_upload']['name']);
+
+        echo json_encode([
+            "total" => count($datas),
+            "data" => $datas
+        ]);
+
+        unlink($target);
     }
 
     public function uploadclearFailed()
     {
-        @unlink('failed/setting_subconts.txt');
+        @unlink('failed/setting_products.xls');
     }
 
-    public function uploadcreateFailed()
-    {
-        if ($this->input->post()) {
-            $message = $this->input->post('message');
-            $textFailed = fopen('failed/setting_subconts.txt', 'a');
-            fwrite($textFailed, $message . "\n");
-            fclose($textFailed);
-        }
-    }
-
-    //UPLOAD DOWNLOAD FAILED
+    // public function uploadcreateFailed()
+    // {
+    //     if ($this->input->post()) {
+    //         $message = $this->input->post('message');
+    //         $textFailed = fopen('failed/setting_subconts.txt', 'a');
+    //         fwrite($textFailed, $message . "\n");
+    //         fclose($textFailed);
+    //     }
+    // }
     public function uploadDownloadFailed()
     {
-        $file = "failed/setting_subconts.txt";
-        header('Content-Description: File Failed');
-        header('Content-Disposition: attachment; filename=' . basename($file));
-        header('Expires: 0');
-        header('Cache-Control: must-revalidate');
-        header('Pragma: public');
-        header('Content-Length: ' . @filesize($file));
-        header("Content-Type: text/plain");
-        @readfile($file);
+        $file = "failed/setting_products.xls";
+
+        if (!file_exists($file)) {
+            echo "No failed data to download";
+            return;
+        }
+
+        $filename = "upload_failed_setting_products_" . date("Ymd_s") . ".xls";
+
+        header("Content-Description: File Upload Failed");
+        header("Content-type: application/vnd.ms-excel");
+        header("Content-Disposition: attachment; filename={$filename}");
+        header("Pragma: no-cache");
+        header("Expires: 0");
+
+        readfile($file);
     }
 
-    //UPLOAD CREATE DATA
     public function uploadcreate()
     {
         if ($this->input->post()) {
-            $data = $this->input->post('data');
+            $raw = file_get_contents("php://input");
+            $postData = json_decode($raw, true);
 
-            //Cek Process Number          //table       //field        //field excel
-            $setting_subconts = $this->crud->read('setting_subconts', [], ["subcont_id" => $data['subcont_id'], "item_fg_id" => $data['item_fg_id']]);
+            $data_list = $postData['data'];
+            
+            $total_expected = count($data_list);
+            $processed_count = 0;
 
-            if (!empty($setting_subconts->subcont_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['subcont_id'] . " is Duplicate Data", "theme" => "error"));
-            } elseif (!empty($setting_subconts->item_fg_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Part No. " . $data['item_fg_id'] . " is Duplicate Data", "theme" => "error"));
-            } else {
+            $this->db->trans_begin();
+            $results = [];
+
+            foreach ($data_list as $index => $data) {
+                $processed_count++;
+
+                $hasSubcont   = !empty($data['subcont_code']);
+                $hasTefa      = !empty($data['teaching_factory_code']);
+
+                if (($hasSubcont && $hasTefa) || (!$hasSubcont && !$hasTefa)) {
+                    $results[] = [
+                        "status"  => "failed",
+                        "item"    => "Line " . ($index + 1),
+                        "message" => "Subcont Code or Teaching Factory Code, both fields cannot be filled in, and neither can be left empty"
+                    ];
+                    continue;
+                }
+
+                if (
+                    empty($data['item_fg_id']) || 
+                    empty($data['type']) ||
+                    empty($data['currency']) ||
+                    empty($data['price']) ||
+                    empty($data['valid_date']) || 
+                    $data['price'] == "" || 
+                    !strtotime($data['valid_date']) ||
+                    !is_numeric($data['price'])
+                   ) {
+                        $results[] = [
+                            "status" => "failed",
+                            "item" => "Line " . ($index + 1),
+                            "message" => "Invalid or missing data"
+                        ];
+                        continue;
+                }
+
+                if ($hasSubcont) {
+                    $subcont = $this->crud->read('subconts', [], ["number" => $data['subcont_code']]);
+                    if (empty($subcont)) {
+                        $results[] = [
+                            "status" => "failed",
+                            "item" => "Line " . ($index + 1),
+                            "message" => "Subcont Code " . $data['subcont_code'] . " Not Found"
+                        ];
+                        continue;
+                    }
+                }
+
+                if ($hasTefa) {
+                    $teaching_factory = $this->crud->read('teaching_factory', [], ["number" => $data['teaching_factory_code']]);
+                    if (empty($teaching_factory)) {
+                        $results[] = [
+                            "status" => "failed",
+                            "item" => "Line " . ($index + 1),
+                            "message" => "Teaching Factory Code " . $data['teaching_factory_code'] . " Not Found"
+                        ];
+                        continue;
+                    }
+                }
+
+                $item_fg = $this->crud->read('item_fg', [], ["number" => $data['item_fg_id']]);
+                if (empty($item_fg)) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Product No. " . $data['item_fg_id'] . " Not Found"
+                    ];
+                    continue;
+                }
+
+                $checkBase = $this->crud->read('setting_subconts', [], [
+                    "subcont_id"          => $hasSubcont ? $subcont->id : null,
+                    "teaching_factory_id" => $hasTefa ? $teaching_factory->id : null,
+                ]);
+
                 $dataFinal = array(
-                    //field
-                    "subcont_id" => $data['subcont_id'],
-                    "item_fg_id" => $data['item_fg_id'],
-                    "share_order" => $data['share_order'],
-                    "type" => $data['type'],
-                    "currency" => $data['currency'],
-                    "price" => $data['price'],
-                    "valid_date" => $data['valid_date'],
-                    "capacity" => $data['capacity'],
-                    "leadtime" => $data['leadtime'],
-                    "status" => $data['status'],
+                    "subcont_id"            => $hasSubcont ? $subcont->id : null,
+                    "teaching_factory_id"   => $hasTefa ? $teaching_factory->id : null,
+                    "item_fg_id"            => $item_fg->id,
+                    "type"                  => $data['type'],
+                    "currency"              => $data['currency'],
+                    "price"                 => $data['price'],
+                    "valid_date"            => $data['valid_date'],
                 );
-                $send   = $this->crud->create('setting_subconts', $dataFinal);
-                echo $send;
+
+                try {
+
+                    if (!empty($checkBase)) {
+                        $checkExact = $this->crud->read('setting_subconts', [], [
+                            "subcont_id"          => $hasSubcont ? $subcont->id : null,
+                            "teaching_factory_id" => $hasTefa ? $teaching_factory->id : null,
+                            "item_fg_id"          => $item_fg->id
+                        ]);
+
+                        if (!empty($checkExact)) {
+                            $this->db->update('setting_subconts', [
+                                "type"       => $data['type'],
+                                "currency"   => $data['currency'],
+                                "price"      => $data['price'],
+                                "valid_date" => $data['valid_date'],
+                            ], [
+                                "id" => $checkExact->id
+                            ]);
+
+                                $status = "update";
+                            } else {
+                                $this->crud->create('setting_subconts', $dataFinal);
+                                $status = "insert";
+                            }
+                    } else {
+                        // Insert
+                        $this->crud->create('setting_subconts', $dataFinal);
+
+                        $status = "insert";
+                    }
+
+                    $res_title_msg = $hasSubcont ? "Subcont ID : {$subcont->id}" : "Teaching Factory ID : {$teaching_factory->id}";
+                    $res_item = ($status === "insert" ? "Create" : "Update");
+                    $res_msg  = ($status === "insert" ? "Data Saved Successfully" : "{$res_title_msg} for Product {$item_fg->number} updated");
+
+                    $results[] = [
+                        "status" => "success",
+                        "item" => $res_item,
+                        "message" => $res_msg
+                    ];
+                } catch (Exception $e) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => $item_fg->name,
+                        "message" => $e->getMessage()
+                    ];
+                    continue;
+                }
             }
+
+            $failed = array_filter($results, fn($r) => $r['status'] === 'failed');
+            $hasDbError = ($this->db->trans_status() === FALSE);
+
+            if (count($failed) > 0 || $hasDbError) {
+                $filePath = 'failed/setting_products.xls';
+
+                $html = '
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body>
+                    <table border="1" cellspacing="0" cellpadding="5" style="border-collapse: collapse; font-family: Arial, sans-serif;">
+                        <thead style="background-color: #f2f2f2;">
+                            <tr>
+                                <th style="width: 40px; text-align: center;">No</th>
+                                <th style="width: 100px; text-align: left;">Line</th>
+                                <th style="width: 450px; text-align: left;">Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                ';
+
+                $no = 1;
+                foreach ($failed as $row) {
+                    $line = htmlspecialchars($row['item']);
+                    $msg  = htmlspecialchars($row['message']);
+                    $html .= "
+                        <tr>
+                            <td style='text-align: center;'>{$no}</td>
+                            <td style='text-align: left;'>{$line}</td>
+                            <td style='text-align: left;'>{$msg}</td>
+                        </tr>";
+                    $no++;
+                }
+
+                $html .= '
+                        </tbody>
+                    </table>
+                </body>
+                </html>';
+
+                file_put_contents($filePath, $html);
+
+                echo json_encode([
+                    "theme" => "error",
+                    "title" => "Upload Failed",
+                    "message" => "Data failed to save",
+                    "results" => $results,
+                    "total_expected" => $total_expected,
+                    "processed_count" => $processed_count,
+                    "stopped_at" => $index + 1
+                ]);
+            } else {
+                @unlink('failed/setting_products.xls');
+
+                $this->db->trans_commit();
+                echo json_encode([
+                    "theme" => "success",
+                    "title" => "Upload Successfully",
+                    "message" => "Data uploaded successfully",
+                    "results" => $results,
+                    "total_expected" => $total_expected,
+                    "processed_count" => $processed_count,
+                    "stopped_at" => $index + 1
+                ]);
+            }
+
         }
     }
 
@@ -265,83 +684,151 @@ class Setting_subconts extends CI_Controller
         $get = $this->input->get();
         $filter_subcont_id = @base64_decode($get['filter_subcont_id']);
         $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
+        $delivery_to = @base64_decode($get['delivery_to']);
+        $filter_teaching_factory_id = @base64_decode($get['filter_teaching_factory_id']);
 
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-
-        $this->db->select('a.*, b.number as subcont_number, b.name as subcont_name, b.status, c.number as item_fg_number, c.name as item_fg_name');
-        $this->db->from('setting_subconts a');
-        $this->db->join('subconts b', 'a.subcont_id = b.id');
-        $this->db->join('item_fg c', 'a.item_fg_id = c.id');
-        $this->db->like('a.subcont_id', $filter_subcont_id);
-        $this->db->like('a.item_fg_id', $filter_item_fg_id);
-        $this->db->order_by('a.id', 'ASC');
-        $records = $this->db->get()->result_array();
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#setting_subconts {border-collapse: collapse;width: 100%;font-size: 12px;}#setting_subconts td, #setting_subconts th {border: 1px solid #ddd;padding: 2px;}#setting_subconts tr:nth-child(even){background-color: #f2f2f2;}#setting_subconts tr:hover {background-color: #ddd;}#setting_subconts th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
-        <center>
-            <div style="float: left; font-size: 12px; text-align: left;">
-                <table style="width: 100%;">
-                    <tr>
-                        <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
-                            <img src="' . $config->favicon . '" width="30">
-                        </td>
-                        <td style="font-size: 14px; text-align: left; margin:2px;">
-                            <b>' . $config->name . '</b>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-            <div style="float: right; font-size: 12px; text-align: right;">
-                Print Date ' . date("d M Y H:m:s") . ' <br>
-                Print By ' . $this->session->username . '  
-            </div>
-            <br><br>
-            <div style="float: centet; font-size: 16px; text-align: center;">
-                <h3>MASTER SETTING SUBCONT</h3>
-            </div>
-        </center>
         
-        <table id="setting_subconts" border="1">
-            <tr>
-                <th width="20">No</th>
-                <th>subcont ID</th>
-                <th>subcont Code</th>
-                <th>subcont Name</th>
-                <th>Product ID</th>
-                <th>Product No.</th>
-                <th>Product Name</th>
-                <th>Share Job Order %</th>
-                <th>Type</th>
-                <th>Currency</th>
-                <th>Price</th>
-                <th>Valid Date Until</th>
-                <th>Capacity/Day (Pcs)</th>
-                <th>Lead Time (Days)</th>
-                <th>Status</th>
-            </tr>';
-        $no = 1;
-        foreach ($records as $data) {
-            $html .= '<tr>
-                    <td>' . $no . '</td>
-                    <td>' . $data['subcont_id'] . '</td>
-                    <td>' . $data['subcont_number'] . '</td>
-                    <td>' . $data['subcont_name'] . '</td>
-                    <td>' . $data['item_fg_id'] . '</td>
-                    <td>' . $data['item_fg_number'] . '</td>
-                    <td>' . $data['item_fg_name'] . '</td>
-                    <td>' . $data['share_order'] . '</td>
-                    <td>' . $data['type'] . '</td>
-                    <td>' . $data['currency'] . '</td>
-                    <td>' . $data['price'] . '</td>
-                    <td>' . $data['valid_date'] . '</td>
-                    <td>' . $data['capacity'] . '</td>
-                    <td>' . $data['leadtime'] . '</td>
-                    <td>' . $data['status'] . '</td>';
-            $no++;
+        if($delivery_to == "" || $delivery_to == "SUBCONT") {
+
+            $this->db->select('a.*, b.number as subcont_number, b.name as subcont_name, b.status, c.number as item_fg_number, c.name as item_fg_name');
+            $this->db->from('setting_subconts a');
+            $this->db->join('subconts b', 'a.subcont_id = b.id');
+            $this->db->join('item_fg c', 'a.item_fg_id = c.id');
+            $this->db->like('a.subcont_id', $filter_subcont_id);
+            $this->db->like('a.item_fg_id', $filter_item_fg_id);
+            $this->db->order_by('a.id', 'ASC');
+            $records = $this->db->get()->result_array();
+            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#setting_subconts {border-collapse: collapse;width: 100%;font-size: 12px;}#setting_subconts td, #setting_subconts th {border: 1px solid #ddd;padding: 2px;}#setting_subconts tr:nth-child(even){background-color: #f2f2f2;}#setting_subconts tr:hover {background-color: #ddd;}#setting_subconts th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:m:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br>
+                <div style="float: centet; font-size: 16px; text-align: center;">
+                    <h3>SETTING PRODUCT</h3>
+                </div>
+            </center>
+            
+            <table id="setting_subconts" border="1">
+                <tr>
+                    <th width="20">No</th>
+                    <th>subcont ID</th>
+                    <th>subcont Code</th>
+                    <th>subcont Name</th>
+                    <th>Product ID</th>
+                    <th>Product No.</th>
+                    <th>Product Name</th>
+                    <th>Type</th>
+                    <th>Currency</th>
+                    <th>Price</th>
+                    <th>Valid Date Until</th>
+                    <th>Status</th>
+                </tr>';
+            $no = 1;
+            foreach ($records as $data) {
+                $html .= '<tr>
+                        <td>' . $no . '</td>
+                        <td>' . $data['subcont_id'] . '</td>
+                        <td>' . $data['subcont_number'] . '</td>
+                        <td>' . $data['subcont_name'] . '</td>
+                        <td>' . $data['item_fg_id'] . '</td>
+                        <td>' . $data['item_fg_number'] . '</td>
+                        <td>' . $data['item_fg_name'] . '</td>
+                        <td>' . $data['type'] . '</td>
+                        <td>' . $data['currency'] . '</td>
+                        <td>' . $data['price'] . '</td>
+                        <td>' . $data['valid_date'] . '</td>
+                        <td>' . $data['status'] . '</td>';
+                $no++;
+            }
+            $html .= '</table></body></html>';
+
+        } else if($delivery_to == "TEFA") {
+
+            $this->db->select('a.*, b.number as tf_number, b.name as tf_name, b.status, c.number as item_fg_number, c.name as item_fg_name');
+            $this->db->from('setting_subconts a');
+            $this->db->join('teaching_factory b', 'a.teaching_factory_id = b.id');
+            $this->db->join('item_fg c', 'a.item_fg_id = c.id');
+            $this->db->like('a.teaching_factory_id', $filter_teaching_factory_id);
+            $this->db->like('a.item_fg_id', $filter_item_fg_id);
+            $this->db->order_by('a.id', 'ASC');
+            $records = $this->db->get()->result_array();
+            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#setting_subconts {border-collapse: collapse;width: 100%;font-size: 12px;}#setting_subconts td, #setting_subconts th {border: 1px solid #ddd;padding: 2px;}#setting_subconts tr:nth-child(even){background-color: #f2f2f2;}#setting_subconts tr:hover {background-color: #ddd;}#setting_subconts th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:m:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br>
+                <div style="float: centet; font-size: 16px; text-align: center;">
+                    <h3>SETTING PRODUCT</h3>
+                </div>
+            </center>
+            
+            <table id="setting_subconts" border="1">
+                <tr>
+                    <th width="20">No</th>
+                    <th>TF ID</th>
+                    <th>TF Code</th>
+                    <th>TF Name</th>
+                    <th>Product ID</th>
+                    <th>Product No.</th>
+                    <th>Product Name</th>
+                    <th>Type</th>
+                    <th>Currency</th>
+                    <th>Price</th>
+                    <th>Valid Date Until</th>
+                    <th>Status</th>
+                </tr>';
+            $no = 1;
+            foreach ($records as $data) {
+                $html .= '<tr>
+                        <td>' . $no . '</td>
+                        <td>' . $data['teaching_factory_id'] . '</td>
+                        <td>' . $data['tf_number'] . '</td>
+                        <td>' . $data['tf_name'] . '</td>
+                        <td>' . $data['item_fg_id'] . '</td>
+                        <td>' . $data['item_fg_number'] . '</td>
+                        <td>' . $data['item_fg_name'] . '</td>
+                        <td>' . $data['type'] . '</td>
+                        <td>' . $data['currency'] . '</td>
+                        <td>' . $data['price'] . '</td>
+                        <td>' . $data['valid_date'] . '</td>
+                        <td>' . $data['status'] . '</td>';
+                $no++;
+            }
+            $html .= '</table></body></html>';
+
         }
-        $html .= '</table></body></html>';
         echo $html;
     }
 }
