@@ -527,7 +527,7 @@
             treeField: 'request_no',
             fit: true,
             pageList: [10, 50, 100, 500, 1000],
-            pageSize: 10,
+            pageSize: 500,
             singleSelect: false,
             onBeforeLoad: function(row, param) {
                 if (!row) {

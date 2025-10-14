@@ -22,10 +22,12 @@
             <th rowspan="2" data-options="field:'mold_no',width:150,halign:'center',sortable:true">Mold No</th>
             <th rowspan="2" data-options="field:'mold_year',width:150,halign:'center',sortable:true,formatter:formatYear">Mold Year</th>
             <th rowspan="2" data-options="field:'mold_size',width:150,halign:'center',sortable:true">Mold Size</th>
+            <th rowspan="2" data-options="field:'standard_curing_time',width:150,halign:'center',sortable:true">Standard Curing <br>Time</th>
             <th rowspan="2" data-options="field:'cavity_standard',width:150,halign:'center',sortable:true">Standard Cavity</th>
             <th rowspan="2" data-options="field:'cavity_actual',width:150,halign:'center',sortable:true">Actual Cavity</th>
             <th rowspan="2" data-options="field:'shoot_standard',width:150,halign:'center',sortable:true">Standard Shoot</th>
             <th rowspan="2" data-options="field:'shoot_actual',width:150,halign:'center',sortable:true">Actual Shoot</th>
+            <th rowspan="2" data-options="field:'target_shoot',width:150,halign:'center',sortable:true">Target Shoot</th>
             <th rowspan="2" data-options="field:'model',width:150,halign:'center',sortable:true">Mold Model</th>
             <th rowspan="2" data-options="field:'mold_type',width:80,halign:'center',sortable:true">Mold Type</th>
             <th rowspan="2" data-options="field:'remark',width:150,halign:'center',sortable:true">Remarks</th>
@@ -91,6 +93,10 @@
                     <span style="width:35%; display:inline-block;">Mold Size</span>
                     <input style="width:60%;" name="mold_size" id="mold_size" class="easyui-textbox">
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Standard Curing Time</span>
+                    <input style="width:60%;" name="standard_curing_time" class="easyui-numberbox">
+                </div>
             </div>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
@@ -108,6 +114,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Actual Shoot</span>
                     <input style="width:60%;" name="shoot_actual" id="shoot_actual" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Target Shoot</span>
+                    <input style="width:60%;" name="target_shoot" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Mold Model</span>

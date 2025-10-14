@@ -31,7 +31,10 @@ class Subconts extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('subconts', ["name" => $post]);
+        // $send = $this->crud->reads('subconts', ["name" => $post]);
+        
+        $send = $this->crud->query("SELECT * FROM subconts WHERE (number like '%$post%' or name like '%$post%' or id like '%$post%') AND status = 0");
+
         echo json_encode($send);
     }
 
@@ -275,13 +278,11 @@ class Subconts extends CI_Controller
                 <th>Area</th>
                 <th>Contact Person</th>
                 <th>Telepon</th>
-                <th>Fax</th>
-                <th>Email</th>
-                <th>Website</th>
                 <th>Status</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
+            $status = $data['status'] == 1 ? "Active" : "Not Active";
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['id'] . '</td>
@@ -292,10 +293,7 @@ class Subconts extends CI_Controller
                     <td>' . $data['delivery_area_name'] . '</td>
                     <td>' . $data['contact_person'] . '</td>
                     <td>' . $data['telp'] . '</td>
-                    <td>' . $data['fax'] . '</td>
-                    <td>' . $data['email'] . '</td>
-                    <td>' . $data['website'] . '</td>
-                    <td>' . $data['status'] . '</td>';
+                    <td>' . $status . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';

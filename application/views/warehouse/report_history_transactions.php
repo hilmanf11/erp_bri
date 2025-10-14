@@ -144,8 +144,9 @@
         var filter_qty_out = $("#filter_qty_out").combobox('getValue');
         var filter_plant = $("#filter_plant").combobox('getValue');
         var filter_display = $("#filter_display").combobox('getValue');
+        var filter_trans_type = $("#filter_trans_type").combobox('getValue');
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_product_family=" + filter_product_family + "&filter_qty_in=" + filter_qty_in + "&filter_qty_out=" + filter_qty_out + "&filter_plant=" + filter_plant + "&filter_display=" + filter_display;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_product_family=" + filter_product_family + "&filter_qty_in=" + filter_qty_in + "&filter_qty_out=" + filter_qty_out + "&filter_plant=" + filter_plant + "&filter_display=" + filter_display+ "&filter_trans_type=" + filter_trans_type;
 
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
         $("#printout").attr('src', '<?= base_url('warehouse/report_history_transactions/detail_transaction') ?>' + url);

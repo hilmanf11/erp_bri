@@ -13,6 +13,7 @@
             <th rowspan="2" data-options="field:'mold_actual',halign:'center',width:100,sortable:true">Cavity Actual</th>
             <th rowspan="2" data-options="field:'mold_standard',halign:'center',width:100,sortable:true">Cavity <br>Standard</th>
             <th rowspan="2" data-options="field:'cycle_time',align:'center',width:100,sortable:true">Cycle Time <br>(shot/second)</th>
+            <!-- <th rowspan="2" data-options="field:'curing_time_standard',align:'center',width:100,sortable:true">Curing Time <br>Standard</th> -->
             <th rowspan="2" data-options="field:'lot_size',align:'center',width:80,sortable:true">Lot Size</th>
             <!-- <th rowspan="2" data-options="field:'efficiency',align:'center',width:100,sortable:true">Eficiency (%)</th> -->
             <th rowspan="2" data-options="field:'priority',align:'center',width:100,sortable:true">Priority</th>
@@ -32,7 +33,7 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -57,8 +58,8 @@
                 <input style="width:60%;" name="lot_size" class="easyui-numberbox">
             </div>
             <!-- <div class="fitem">
-                <span style="width:35%; display:inline-block;">Efficiency (%)</span>
-                <input style="width:60%;" name="efficiency" class="easyui-numberbox">
+                <span style="width:35%; display:inline-block;">Curing Time Standard</span>
+                <input style="width:60%;" name="curing_time_standard" class="easyui-numberbox">
             </div> -->
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Priority</span>

@@ -32,6 +32,7 @@
             <th rowspan="2" data-options="field:'process_name',width:100,align:'center'">Process</th>
             <th rowspan="2" data-options="field:'item_number',width:150">Product No</th>
             <th rowspan="2" data-options="field:'item_name',width:200">Product Name</th>
+            <th rowspan="2" data-options="field:'mold_id',width:200">Mold ID</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformat">Qty</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">Uom</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -47,24 +48,28 @@
 </table>
 
 <div id="toolbar" style="height: 200px; padding:10px;">
-    <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+    <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
         <legend><b>Form Filter Data</b></legend>
-        <div style="width: 30%; float: left;">
+        <div style="width: 50%; float: left;">
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Period</span>
+                <input style="width:60%;" name="filter_period" id="filter_period" class="easyui-combobox" required>
+            </div>
+            <!-- <div class="fitem">
                 <span style="width:35%; display:inline-block;">Period</span>
                 <input style="width:30%;" id="filter_month" value="<?= date("m") ?>" class="easyui-combobox" data-options="prompt:'Select Month'">
                 <input style="width:30%;" id="filter_year" value="<?= date("Y") ?>" class="easyui-combobox" data-options="prompt:'Select Year'" panelHeight="auto">
-            </div>
+            </div> -->
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Machine No</span>
                 <input style="width:60%;" id="filter_machine_no" class="easyui-combogrid">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;"></span>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                <span style="width:35%; display:inline-block;">Product No</span>
+                <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
             </div>
         </div>
-        <div style="width: 30%; float: left;">
+        <div style="width: 50%; float: left;">
             <div class="fitem" hidden>
                 <span style="width:35%; display:inline-block;">Customer</span>
                 <input style="width:60%;" id="filter_customers" class="easyui-combogrid">
@@ -74,10 +79,10 @@
                 <input style="width:60%;" id="filter_sales_order" class="easyui-combobox">
             </div>
         </div>
-        <div style="width: 30%; float: left;">
+        <div style="width: 50%; float: left;">
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product No</span>
-                <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
+                <span style="width:35%; display:inline-block;">WP No</span>
+                <input style="width:60%;" id="filter_wp" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Status WO</span>
@@ -87,6 +92,10 @@
                     <option value="1">SUPPLY</option>
                     <option value="2">CLOSED</option>
                 </select>
+            </div>
+            <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
+                <span style="width:35%; display:inline-block;"></span>
+                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
             </div>
         </div>
     </fieldset>
@@ -111,6 +120,10 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
                 <input style="width:60%;" name="item_fg_id" required="" id="item_fg_id" class="easyui-combogrid">
+            </div>
+            <div class="fitem" id="mold_wrapper">
+                <span style="width:35%; display:inline-block;">Mold ID</span>
+                <input style="width:60%;" name="mold_id" id="mold_id" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">WP Date</span>
@@ -197,6 +210,29 @@
     });
 
     //Edit Data
+    // function update() {
+    //     var row = $('#dg').datagrid('getSelected');
+    //     if (row) {
+    //         suppressMonthYearChange = true;
+    //         $('#dlg_insert').dialog('open');
+    //         $('#frm_insert').form('load', row);
+
+    //         $('#machine_id').combogrid('setValue', row.machine_id);
+    //         $('#machine_id').combogrid('setText', row.machine_number);
+
+    //         $('#item_fg_id').combogrid('setValue', row.item_fg_id);
+    //         $('#item_fg_id').combogrid('setText', row.item_number);
+
+    //         url_save = '<?= base_url('planning/production_schedule_press/update') ?>?id=' + btoa(row.id);
+
+    //         setTimeout(function(){
+    //             suppressMonthYearChange = false;
+    //         }, 200);
+    //     } else {
+    //         toastr.warning("Please select one of the data in the table first!", "Information");
+    //     }
+    // }
+
     function update() {
         var row = $('#dg').datagrid('getSelected');
         if (row) {
@@ -204,21 +240,78 @@
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
 
+            // Set URL untuk update
+            url_save = '<?= base_url('planning/production_schedule_press/update') ?>?id=' + btoa(row.id);
+
+            // =========================
+            // SET MACHINE
+            // =========================
             $('#machine_id').combogrid('setValue', row.machine_id);
             $('#machine_id').combogrid('setText', row.machine_number);
 
-            $('#item_fg_id').combogrid('setValue', row.item_fg_id);
-            $('#item_fg_id').combogrid('setText', row.item_number);
+            // Reload item_fg_id berdasarkan machine_id
+            $('#item_fg_id').combogrid({
+                url: '<?= base_url("planning/production_schedule_press/readItemPressMolds/") ?>' + btoa(row.machine_id),
+                panelWidth: 420,
+                idField: 'id',
+                textField: 'number',
+                mode: 'remote',
+                fitColumns: true,
+                prompt: "Select Product No",
+                columns: [[
+                    { field: 'number', title: 'Product No', width: 100 },
+                    { field: 'name', title: 'Product Name', width: 200 }
+                ]],
+                onSelect: function(index, row_fg) {
+                    // ketika pilih item_fg → load mold
+                    $("#process_id").combogrid("setValue", "PC006");
 
-            url_save = '<?= base_url('planning/production_schedule_press/update') ?>?id=' + btoa(row.id);
+                    $('#mold_id').combobox({
+                        url: '<?= base_url('planning/production_schedule_press/readSettingMolds/'); ?>' + window.btoa(row_fg.id),
+                        valueField: 'mold_id',
+                        textField: 'mold_id',
+                        prompt: 'Choose Mold ID',
+                        onLoadSuccess: function(data) {
+                            if (data.length === 1) {
+                                $('#mold_id').combobox('setValue', data[0].mold_id);
+                            }
+                        }
+                    });
+                },
+                onLoadSuccess: function(data) {
+                    // setelah item_fg_id terload → set value dari data lama
+                    if (row.item_fg_id) {
+                        $('#item_fg_id').combogrid('setValue', row.item_fg_id);
+                        $('#item_fg_id').combogrid('setText', row.item_number);
 
-            setTimeout(function(){
+                        // =========================
+                        // LOAD MOLD BERDASARKAN ITEM_FG_ID
+                        // =========================
+                        $('#mold_id').combobox({
+                            url: '<?= base_url('planning/production_schedule_press/readSettingMolds/'); ?>' + window.btoa(row.item_fg_id),
+                            valueField: 'mold_id',
+                            textField: 'mold_id',
+                            prompt: 'Choose Mold ID',
+                            onLoadSuccess: function(data) {
+                                if (data.length === 1) {
+                                    $('#mold_id').combobox('setValue', data[0].mold_id);
+                                } else if (row.mold_id) {
+                                    $('#mold_id').combobox('setValue', row.mold_id);
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+
+            setTimeout(function() {
                 suppressMonthYearChange = false;
             }, 200);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
+
     //Delete Data
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
@@ -270,15 +363,17 @@
     }
 
     function filter() {
-        var filter_month = $("#filter_month").combobox('getValue');
-        var filter_year = $("#filter_year").combobox('getValue');
+        // var filter_month = $("#filter_month").combobox('getValue');
+        // var filter_year = $("#filter_year").combobox('getValue');
+        var filter_period = $("#filter_period").combobox('getValue');
         var filter_machine_no = $("#filter_machine_no").combogrid('getValue');
         // var filter_customers = $("#filter_customers").combogrid('getValue');
         // var filter_sales_order = $("#filter_sales_order").combobox('getValue');
+        var filter_wp = $("#filter_wp").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?filter_month=" + filter_month + "&filter_year=" + filter_year + "&filter_machine_no=" + filter_machine_no + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
+        url = "?filter_period=" + filter_period + "&filter_machine_no=" + filter_machine_no + "&filter_wp=" + filter_wp +  "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
 
         $('#dg').datagrid({
             url: '<?= base_url('planning/production_schedule_press/datatables') ?>' + url,
@@ -297,15 +392,18 @@
     }
 
     function excel() {
-        var filter_month = $("#filter_month").combobox('getValue');
-        var filter_year = $("#filter_year").combobox('getValue');
+        // var filter_month = $("#filter_month").combobox('getValue');
+        // var filter_year = $("#filter_year").combobox('getValue');
+        var filter_period = $("#filter_period").combobox('getValue');
         var filter_machine_no = $("#filter_machine_no").combogrid('getValue');
         // var filter_customers = $("#filter_customers").combogrid('getValue');
         // var filter_sales_order = $("#filter_sales_order").combobox('getValue');
+        var filter_wp = $("#filter_wp").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?filter_month=" + filter_month + "&filter_year=" + filter_year + "&filter_machine_no=" + filter_machine_no + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
+
+        url = "?filter_period=" + filter_period + "&filter_machine_no=" + filter_machine_no + "&filter_wp=" + filter_wp +  "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
 
         window.location.assign('<?= base_url('planning/production_schedule_press/print/excel') ?>' + url);
     }
@@ -377,27 +475,55 @@
                 }, ]
             ],
         });
-        $("#filter_month").combobox({
-            url: '<?= base_url('planning/production_schedule_press/readMonth') ?>',
-            valueField: 'number',
-            textField: 'name',
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }],
-        });
-        $("#filter_year").combobox({
-            url: '<?= base_url('planning/production_schedule_press/readYear') ?>',
-            valueField: 'number',
-            textField: 'number',
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }],
+        // $("#filter_month").combobox({
+        //     url: '<?= base_url('planning/production_schedule_press/readMonth') ?>',
+        //     valueField: 'number',
+        //     textField: 'name',
+        //     icons: [{
+        //         iconCls: 'icon-clear',
+        //         handler: function(e) {
+        //             $(e.data.target).combobox('clear').combobox('textbox').focus();
+        //         }
+        //     }],
+        // });
+        // $("#filter_year").combobox({
+        //     url: '<?= base_url('planning/production_schedule_press/readYear') ?>',
+        //     valueField: 'number',
+        //     textField: 'number',
+        //     icons: [{
+        //         iconCls: 'icon-clear',
+        //         handler: function(e) {
+        //             $(e.data.target).combobox('clear').combobox('textbox').focus();
+        //         }
+        //     }],
+        // });
+
+        $("#filter_period").combobox({
+            url: '<?= base_url('planning/production_schedule_press/readPeriod') ?>',
+            valueField: 'period',
+            textField: 'period',
+            prompt: "Select Period",
+            onLoadSuccess: function(data) {
+                var defaultVal = "<?= date("Ym") ?>";
+                $("#filter_period").combobox('setValue', defaultVal);
+                $("#filter_period").combobox('select', defaultVal);
+            },
+            onSelect: function (data) {
+                var period = data.period;
+
+                $("#filter_wp").combobox({
+                    url: '<?= base_url('planning/production_schedule_press/readWp?period=') ?>' + btoa(period),
+                    valueField: 'wp',
+                    textField: 'wp',
+                    prompt: "Select WP",
+                    icons: [{
+                        iconCls: 'icon-clear',
+                        handler: function(e) {
+                            $(e.data.target).combobox('clear').combobox('textbox').focus();
+                        }
+                    }],
+                });
+            }
         });
         
         // $('#filter_customers').combogrid({
@@ -522,8 +648,21 @@
                         ]
                     ],
                     onSelect: function (index, row) {
-                        console.log(row);
+                        console.log('Row PSS: ', row);
                         $("#process_id").combogrid("setValue", "PC006");
+
+                        $('#mold_id').combobox({
+                            url: '<?= base_url('planning/production_schedule_press/readSettingMolds/'); ?>' + window.btoa(row.id),
+                            valueField: 'mold_id',
+                            textField: 'mold_id',
+                            prompt: 'Choose Mold ID',
+                            onLoadSuccess: function(data) {
+                                if (data.length === 1) {
+                                    $('#mold_id').combobox('setValue', data[0].mold_id);
+                                }
+                            }
+                        });
+
                     }
                 });
 
@@ -589,86 +728,6 @@
         //     ]
         // });
     });
-
-    // UPLOAD DATA
-    // $('#dlg_upload').dialog({
-    //     buttons: [{
-    //         text: 'List Failed',
-    //         handler: function() {
-    //             window.open('<?= base_url('planning/production_schedule_press/uploadDownloadFailed') ?>', '_blank');
-    //         }
-    //     }, {
-    //         text: 'Upload',
-    //         iconCls: 'icon-ok',
-    //         handler: function() {
-    //             $('#frm_upload').form('submit', {
-    //                 url: '<?= base_url('planning/production_schedule_press/upload') ?>',
-    //                 onSubmit: function() {
-    //                     if ($(this).form('validate') == false) {
-    //                         return $(this).form('validate');
-    //                     } else {
-    //                         $.messager.progress({
-    //                             title: 'Please Wait',
-    //                             msg: 'Importing Excel to Database'
-    //                         });
-    //                     }
-    //                 },
-    //                 success: function(result) {
-    //                     $.messager.progress('close');
-    //                     //Clear File
-    //                     $.ajax({
-    //                         url: "<?= base_url('planning/production_schedule_press/uploadclearFailed') ?>"
-    //                     });
-    //                     var json = eval('(' + result + ')');
-    //                     requestData(json.total, json);
-
-    //                     function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-    //                         if (value < 100) {
-    //                             value = Math.floor((number / total) * 100);
-    //                             $('#p_upload').progressbar('setValue', value);
-    //                             $('#p_start').html(number);
-    //                             $('#p_finish').html(total);
-
-    //                             $.ajax({
-    //                                 type: "POST",
-    //                                 async: true,
-    //                                 url: "<?= base_url('planning/production_schedule_press/uploadCreate') ?>",
-    //                                 data: {
-    //                                     "data": json[number - 1]
-    //                                 },
-    //                                 cache: false,
-    //                                 dataType: "json",
-    //                                 success: function(result) {
-    //                                     if (result.theme == "success") {
-    //                                         $('#p_success').html(success);
-    //                                         var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-    //                                         requestData(total, json, number + 1, value, success + 1, failed + 0);
-    //                                     } else {
-    //                                         $('#p_failed').html(failed);
-    //                                         var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-    //                                         //Json Failed
-    //                                         $.ajax({
-    //                                             type: "POST",
-    //                                             async: true,
-    //                                             url: "<?= base_url('planning/production_schedule_press/uploadcreateFailed') ?>",
-    //                                             data: {
-    //                                                 data: json[number - 1],
-    //                                                 message: result.message
-    //                                             },
-    //                                             cache: false
-    //                                         });
-    //                                         requestData(total, json, number + 1, value, success + 0, failed + 1);
-    //                                     }
-    //                                     $("#p_remarks").append(title + "<br>");
-    //                                 }
-    //                             });
-    //                         }
-    //                     }
-    //                 }
-    //             });
-    //         }
-    //     }]
-    // });
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({

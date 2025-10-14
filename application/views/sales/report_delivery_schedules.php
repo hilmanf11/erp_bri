@@ -36,6 +36,10 @@
             </div>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product Family</span>
+                    <input style="width:60%;" id="filter_product_family" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No</span>
                     <input style="width:60%;" id="filter_item_fg" class="easyui-combobox">
                 </div>
@@ -99,6 +103,7 @@
         var filter_display = $("#filter_display").combobox("getValue");
         var filter_division = $("#filter_division").combobox('getValue');
         var filter_status = $("#filter_status").combobox("getValue");
+        var filter_product_family = $("#filter_product_family").combogrid('getValue');
 
         var url = "?filter_type=" + window.btoa(filter_type) + 
             "&filter_so_date_from=" + window.btoa(filter_so_date_from) +
@@ -110,7 +115,8 @@
             "&filter_item_fg_name=" + window.btoa(filter_item_fg_name) +
             "&filter_display=" + window.btoa(filter_display) +
             "&filter_division=" + window.btoa(filter_division) +
-            "&filter_status=" + window.btoa(filter_status);
+            "&filter_status=" + window.btoa(filter_status) +
+            "&filter_product_family=" + window.btoa(filter_product_family);
 
         // if(filter_type == "") {
         //     if (filter_so_date_from == "" && filter_so_date_to == "") {
@@ -160,6 +166,7 @@
         var filter_display = $("#filter_display").combobox("getValue");
         var filter_division = $("#filter_division").combobox('getValue');
         var filter_status = $("#filter_status").combobox("getValue");
+        var filter_product_family = $("#filter_product_family").combogrid('getValue');
 
         var url = "?filter_type=" + window.btoa(filter_type) +
             "&filter_so_date_from=" + window.btoa(filter_so_date_from) +
@@ -171,7 +178,8 @@
             "&filter_item_fg_name=" + window.btoa(filter_item_fg_name) +
             "&filter_display=" + window.btoa(filter_display) +
             "&filter_division=" + window.btoa(filter_division) +
-            "&filter_status=" + window.btoa(filter_status);
+            "&filter_status=" + window.btoa(filter_status) +
+            "&filter_product_family=" + window.btoa(filter_product_family);
 
         // if (filter_so_date_from == "" && filter_so_date_to == "") {
         //     toastr.warning("Please Select Trans Date");
@@ -351,6 +359,26 @@
                     $(e.data.target).combobox('clear').combobox('textbox').focus();
                 }
             }],
+        });
+
+        $('#filter_product_family').combogrid({
+            url: '<?= base_url('planning/forecasts/readsProductFamily') ?>',
+            panelWidth: 420,
+            idField: 'number',
+            textField: 'name',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Select Product Family",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                }
+            }],
+            columns: [[
+                {field: 'number', title: 'Code', width: 100},
+                {field: 'name', title: 'Product Family', width: 200}
+            ]]
         });
 
     });

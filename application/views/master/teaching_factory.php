@@ -14,20 +14,24 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:100,align:'center',sortable:true">Subcont ID</th>
-            <th rowspan="2" data-options="field:'name',width:200,halign:'center',sortable:true">Subcont Name</th>
-            <th rowspan="2" data-options="field:'number',width:100,halign:'center',sortable:true">Subcont Code</th>
-            <th rowspan="2" data-options="field:'subcont_type_name',width:250,halign:'center',sortable:true">Type</th>
-            <th rowspan="2" data-options="field:'address',width:150,halign:'center',sortable:true">Address</th>
-            <th rowspan="2" data-options="field:'delivery_area_name',width:150,halign:'center',sortable:true">Area</th>
+            <th rowspan="2" data-options="field:'id',width:150,align:'center',sortable:true">TF ID</th>
+            <th rowspan="2" data-options="field:'name',width:200,halign:'center',sortable:true">TF Name</th>
+            <th rowspan="2" data-options="field:'number',width:150,halign:'center',sortable:true">TF Code</th>
+            <th rowspan="2" data-options="field:'subcont_type_name',width:150,halign:'center',sortable:true">Type</th>
+            <th rowspan="2" data-options="field:'address',width:250,halign:'center',sortable:true">Address</th>
+            <th rowspan="2" data-options="field:'delivery_area_name',width:200,halign:'center',sortable:true">Area</th>
             <th rowspan="2" data-options="field:'contact_person',width:150,halign:'center',sortable:true">Contact Person</th>
             <th rowspan="2" data-options="field:'telp',width:150,halign:'center',sortable:true">Telepon</th>
+
             <!-- <th rowspan="2" data-options="field:'fax',width:150,halign:'center',sortable:true">Fax</th>
             <th rowspan="2" data-options="field:'email',width:150,halign:'center',sortable:true">Email</th>
             <th rowspan="2" data-options="field:'website',width:150,halign:'center',sortable:true">Website</th> -->
+
             <th rowspan="2" data-options="field:'status',width:150,halign:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th>
+
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
+
         </tr>
         <tr>
             <th data-options="field:'created_by',width:100,align:'center',sortable:true"> By</th>
@@ -48,15 +52,15 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Subcont ID</span>
+                <span style="width:35%; display:inline-block;">TF ID</span>
                 <input style="width:30%;" name="id" id="id" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Subcont Name</span>
+                <span style="width:35%; display:inline-block;">TF Name</span>
                 <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Subcont Code</span>
+                <span style="width:35%; display:inline-block;">TF Code</span>
                 <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
@@ -79,6 +83,7 @@
                 <span style="width:35%; display:inline-block;">Telepon</span>
                 <input style="width:60%;" name="telp" id="telp" class="easyui-textbox">
             </div>
+
             <!-- <div class="fitem">
                 <span style="width:35%; display:inline-block;">Fax</span>
                 <input style="width:60%;" name="fax" id="fax" class="easyui-textbox">
@@ -91,6 +96,7 @@
                 <span style="width:35%; display:inline-block;">Website</span>
                 <input style="width:60%;" name="website" id="website" class="easyui-textbox">
             </div> -->
+
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Status</span>
                 <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
@@ -123,19 +129,19 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/subconts/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/teaching_factory/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/subconts/create') ?>';
+        url_save = '<?= base_url('master/teaching_factory/create') ?>';
         $('#frm_insert').form('clear');
 
         $('#status').combobox('setValue', '0');
 
         $.ajax({
             type: "post",
-            url: "<?= base_url('master/subconts/autoid') ?>",
+            url: "<?= base_url('master/teaching_factory/autoid') ?>",
             dataType: "html",
             success: function(response) {
                 $('#id').textbox('setValue', response);
@@ -148,7 +154,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/subconts/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('master/teaching_factory/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -163,7 +169,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/subconts/delete') ?>',
+                            url: '<?= base_url('master/teaching_factory/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -191,7 +197,7 @@
     }
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_subconts.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_teaching_factory.xls') ?>');
     }
     //PRINT PDF
     function pdf() {
@@ -199,7 +205,7 @@
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/subconts/print/excel') ?>');
+        window.location.assign('<?= base_url('master/teaching_factory/print/excel') ?>');
     }
     //RELOAD
     function reload() {
@@ -208,7 +214,7 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/subconts/datatables') ?>',
+            url: '<?= base_url('master/teaching_factory/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
@@ -251,8 +257,15 @@
         url: '<?= base_url('master/subcont_types/reads'); ?>',
         valueField: 'id',
         textField: 'name',
-        prompt: 'Choose Type of Subcont',
+        prompt: 'Choose Type of Teaching Factory',
     });
+
+    // $('#tefa_type_id').combobox({
+    //     url: '<?= base_url('master/subcont_types/reads'); ?>',
+    //     valueField: 'id',
+    //     textField: 'name',
+    //     prompt: 'Choose Type of Subcont',
+    // });
 
     $('#delivery_area_id').combobox({
         url: '<?= base_url('master/delivery_areas/reads'); ?>',
@@ -283,14 +296,14 @@
         buttons: [{
             text: 'List Failed',
             handler: function() {
-                window.open('<?= base_url('master/subconts/uploadDownloadFailed') ?>', '_blank');
+                window.open('<?= base_url('master/teaching_factory/uploadDownloadFailed') ?>', '_blank');
             }
         }, {
             text: 'Upload',
             iconCls: 'icon-ok',
             handler: function() {
                 $('#frm_upload').form('submit', {
-                    url: '<?= base_url('master/subconts/upload') ?>',
+                    url: '<?= base_url('master/teaching_factory/upload') ?>',
                     onSubmit: function() {
                         if ($(this).form('validate') == false) {
                             return $(this).form('validate');
@@ -305,7 +318,7 @@
                         $.messager.progress('close');
                         //Clear File
                         $.ajax({
-                            url: "<?= base_url('master/subconts/uploadclearFailed') ?>"
+                            url: "<?= base_url('master/teaching_factory/uploadclearFailed') ?>"
                         });
                         var json = eval('(' + result + ')');
                         requestData(json.total, json);
@@ -320,7 +333,7 @@
                                 $.ajax({
                                     type: "POST",
                                     async: true,
-                                    url: "<?= base_url('master/subconts/uploadCreate') ?>",
+                                    url: "<?= base_url('master/teaching_factory/uploadCreate') ?>",
                                     data: {
                                         "data": json[number - 1]
                                     },
@@ -338,7 +351,7 @@
                                             $.ajax({
                                                 type: "POST",
                                                 async: true,
-                                                url: "<?= base_url('master/subconts/uploadcreateFailed') ?>",
+                                                url: "<?= base_url('master/teaching_factory/uploadcreateFailed') ?>",
                                                 data: {
                                                     data: json[number - 1],
                                                     message: result.message

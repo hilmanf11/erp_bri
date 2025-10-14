@@ -1134,7 +1134,7 @@ class Sales_invoices extends CI_Controller
                         </tr>
                         <tr>
                             <th style="height:20px; text-align:center;">' . $records[0]['customer_name'] . '</th>
-                            <th style="height:20px; text-align:center;">H. Abdul Rachman, S.E.</th>
+                            <th style="height:20px; text-align:center;">Kinenta Harsono</th>
                         </tr>
                     </table>
                 </div>';
@@ -1543,7 +1543,7 @@ class Sales_invoices extends CI_Controller
                         </tr>
                         <tr>
                             <th style="height:20px; text-align:center;">' . $records[0]['customer_name'] . '</th>
-                            <th style="height:20px; text-align:center;">H. Abdul Rachman, S.E.</th>
+                            <th style="height:20px; text-align:center;">Kinenta Harsono</th>
                         </tr>
                     </table>
                 </div>';

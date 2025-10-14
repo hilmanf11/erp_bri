@@ -30,6 +30,7 @@
 </table>
 <!-- FORM FILTER DATAGRID -->
 <div id="toolbar" style="height: 270px; padding:10px;">
+
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
 
     <fieldset style="width: 99%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
@@ -37,15 +38,15 @@
         <div style="width: 60%; float: left;">
             <div class="fitem">
                 <span style="width:30%; display:inline-block;">Type Date</span>
-                <select style="width:60%;" id="filter_type" class="easyui-combobox" panelHeight="auto">
+                <select style="width:60%;" id="filter_type" class="easyui-combobox" panelHeight="auto" data-options="editable:false">
                     <option value="">Select All</option>
-                    <option value="PID">Sales Invoice Date</option>
+                    <option value="PID" selected>Sales Invoice Date</option>
                     <option value="PAY">Payment Due</option>
                 </select>
             </div>
             <div class="fitem">
                 <span style="width:30%; display:inline-block;">Sales Invoice Date</span>
-                <input style="width:30%;" id="filter_trans_date_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="prompt:'Start Date',formatter:myformatter,parser:myparser, editable:false">
+                <input style="width:30%;" id="filter_trans_date_from" value="<?= date("Y-m-01", strtotime("first day of -1 month")) ?>" class="easyui-datebox" data-options="prompt:'Start Date',formatter:myformatter,parser:myparser, editable:false">
                 <input style="width:30%;" id="filter_trans_date_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="prompt:'Finish Date',formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
@@ -2713,6 +2714,10 @@
                 }
             }]
         });
+
+
+        $("#filter_due_date_from").datebox('disable');
+        $("#filter_due_date_to").datebox('disable');
 
         $("#filter_type").combobox({
             onChange: function(val) {
