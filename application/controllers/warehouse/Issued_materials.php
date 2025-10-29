@@ -301,7 +301,6 @@ class Issued_materials extends CI_Controller
             $request_no = base64_decode($this->input->get('request_no'));
 
             //Select Query
-            
             $this->db->select('
                 a.*, 
                 c.number as item_number, 
@@ -310,9 +309,18 @@ class Issued_materials extends CI_Controller
                 c.uom, 
                 COALESCE(d.qty_req, 0) as qty_req, 
                 0 as qty_req_crusher, 
-                f.warehouse, 
-                /* (COALESCE(d.qty_req,0) - h.qty_act) as balance, */
-                IF(d.qty_req IS NULL, f.balance, d.qty_req - h.qty_act) AS balance,
+                f.warehouse,
+
+                CASE
+                    WHEN d.qty_req IS NOT NULL THEN
+                        (COALESCE(f.begin, 0) + COALESCE(d.qty_req, 0)) - COALESCE(h.qty_act, 0)
+                    ELSE
+                        CASE
+                            WHEN f.balance IS NOT NULL THEN f.balance
+                            ELSE -COALESCE(h.qty_act, 0)
+                        END
+                END AS balance,
+
                 g.mpq, 
                 h.qty_issued, 
                 h.qty_act, 
@@ -329,6 +337,36 @@ class Issued_materials extends CI_Controller
                     )
                 END AS stock
             ');
+
+            /* (COALESCE(d.qty_req,0) - h.qty_act) as balance, */
+            /* IF(d.qty_req IS NULL, f.balance, d.qty_req - h.qty_act) AS balance, */
+
+            // Latest
+            // CASE 
+            //     WHEN d.qty_req IS NULL THEN 
+            //         CASE 
+            //             WHEN f.balance IS NOT NULL THEN f.balance
+            //             ELSE -COALESCE(h.qty_act, 0)
+            //         END
+            //     ELSE (d.qty_req - COALESCE(h.qty_act, 0))
+            // END AS balance,
+
+            // CASE
+            //     WHEN d.qty_req IS NOT NULL THEN
+            //         CASE
+            //             WHEN (COALESCE(d.qty_req, 0) + COALESCE(f.balance, 0)) >= COALESCE(h.qty_act, 0)
+
+            //             THEN 
+            //                 (COALESCE(f.begin, 0) + COALESCE(d.qty_req, 0)) - COALESCE(h.qty_act, 0)
+
+            //             ELSE (d.qty_req - COALESCE(h.qty_act, 0))
+            //         END
+            //     ELSE
+            //         CASE
+            //             WHEN f.balance IS NOT NULL THEN f.balance
+            //             ELSE -COALESCE(h.qty_act, 0)
+            //         END
+            // END AS balance,
 
             // $this->db->from("(select *, (CASE WHEN eq_from <> '' AND eq_from <> '-' THEN eq_from ELSE item_rm_id END) AS final_item_rm_id from issued_materials where request_no='$request_no' and eq_from != '-' and qty > 0 and deleted = 0 and status = 0 group by request_no,item_rm_id) a");
             $this->db->from("(
@@ -417,83 +455,6 @@ class Issued_materials extends CI_Controller
                 }
             }
             $this->db->order_by('a.item_rm_id', 'ASC');
-            // $records = $this->crud->query("
-            //     SELECT
-            //         a.id AS item_rm_id,
-            //         (
-            //             COALESCE(SUM(e.qty), 0) -- dari scan_item_receipts
-            //             - COALESCE(f.qty, 0) -- dari issued_material_details
-            //             + COALESCE(g.return_qty, 0) -- dari return_materials
-            //             + COALESCE(h.qty_stock_rm, 0) -- dari os_rm
-            //             + COALESCE(i.qty_in, 0) -- dari transaction_rm RE
-            //             - COALESCE(j.qty_out, 0) -- dari transaction_rm IS
-            //         ) AS end_stock
-            //     FROM item_rm a
-            //     LEFT JOIN purchase_order_receipts d ON a.id = d.item_rm_id
-            //     LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
-
-            //     LEFT JOIN (
-            //         SELECT item_rm_id, SUM(qty) AS qty
-            //         FROM issued_material_details
-            //         GROUP BY item_rm_id
-            //     ) f ON a.id = f.item_rm_id
-
-            //     LEFT JOIN (
-            //         SELECT a.item_rm_id, SUM(c.qty) AS return_qty
-            //         FROM return_materials a 
-            //         JOIN return_material_labels b ON a.return_id = b.return_id
-            //         JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no
-            //         GROUP BY a.item_rm_id
-            //     ) g ON a.id = g.item_rm_id
-
-            //     LEFT JOIN (
-            //         SELECT item_rm_id, SUM(qty) AS qty_stock_rm
-            //         FROM os_rm
-            //         GROUP BY item_rm_id
-            //     ) h ON a.id = h.item_rm_id
-
-            //     LEFT JOIN (
-            //         SELECT item_rm_id, SUM(qty) AS qty_in
-            //         FROM transaction_rm
-            //         WHERE transaction_type LIKE 'RE%'
-            //         GROUP BY item_rm_id
-            //     ) i ON a.id = i.item_rm_id
-
-            //     LEFT JOIN (
-            //         SELECT item_rm_id, SUM(qty) AS qty_out
-            //         FROM transaction_rm
-            //         WHERE transaction_type LIKE 'IS%'
-            //         GROUP BY item_rm_id
-            //     ) j ON a.id = j.item_rm_id
-
-            //     WHERE a.id = ''
-            //     GROUP BY a.id
-            // ");
-
-
-
-            //$this->db->select('a.*, c.number as item_number, c.number as item_rm_no, c.name as item_rm_name, c.uom, COALESCE(d.qty_req, 0) as qty_req, 0 as qty_req_crusher, f.warehouse, (COALESCE(d.qty_req,0) - h.qty_act) as balance, g.mpq, h.qty_issued, h.qty_act, h.qty_req as qty_supply');
-            //$this->db->from('issued_materials a');
-            //$this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
-            //$this->db->join('item_rm c', 'a.item_rm_id = c.id');
-            //$this->db->join('(SELECT item_rm_id, request_no, SUM(qty) as qty_req FROM issued_material_details GROUP BY request_no, item_rm_id) d', 'd.request_no = a.request_no and d.item_rm_id = a.item_rm_id', 'left');
-            //$this->db->join('wip_balances f', 'a.item_rm_id = f.item_rm_id and a.request_no = f.request_no', 'left');
-            //$this->db->join('supplier_items g', 'a.item_rm_id = g.item_rm_id', 'left');
-            //$this->db->join('supply_sheets h', 'a.item_rm_id = h.item_rm_id and a.request_no=h.request_no', 'left');
-            //$this->db->where('a.eq_from !=', '-');
-            //$this->db->where('a.qty >', 0);
-            //$this->db->where('a.deleted', 0);
-            //$this->db->where('a.status', 0);
-            //if ($request_no != "") {
-            //    $this->db->where('a.request_no', $request_no);
-            //    if (strpos($request_no, 'SH') === 0) {
-            //        $this->db->not_like('a.item_rm_id', 'RMCH', 'after');
-            //    }
-            //}
-            //$this->db->group_by('a.request_no');
-            //$this->db->group_by('a.item_rm_id');
-            //$this->db->order_by('a.item_rm_id', 'ASC');
-
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Get Data Array
@@ -518,150 +479,139 @@ class Issued_materials extends CI_Controller
     public function create()
     {
         if ($this->input->post()) {
-            // if ($this->form_validation->run() == TRUE) {
-                $post   = $this->input->post();
-                $post['transaction_type'] = 'IS-0001';
+            $post   = $this->input->post();
+            $post['transaction_type'] = 'IS-0001';
 
-                if (empty($post['item_fg_id'])) {
-                    $post['item_fg_id'] = null;
-                }else if(empty($post['qty_act'])) {
-                    $post['qty_act'] = 0;
-                }else if(empty($post['mpq'])) {
-                    $post['mpq'] = 0;
+            if (empty($post['item_fg_id'])) {
+                $post['item_fg_id'] = null;
+            }
+
+            $item_rm_id = $post['item_rm_id'];
+            $request_no = $post['request_no'];
+
+            if (strpos($request_no, 'SH') === 0) {
+                // $qty_need = floatval($post['qty_act']);
+                
+                $wip_balances = $this->crud->read("wip_balances", [], ["item_rm_id" => $item_rm_id], "", "id", "desc");
+
+                // $this->db->select('
+                //     (
+                //         COALESCE(stock_receipt.qty_receipt, 0)
+                //         - COALESCE(stock_issued.qty_issued, 0)
+                //         + COALESCE(stock_return.return_qty, 0)
+                //         + COALESCE(stock_rm.qty_stock_rm, 0)
+                //         + COALESCE(stock_in.qty_in, 0)
+                //         - COALESCE(stock_out.qty_out, 0)
+                //     ) AS end_stock
+                // ', false);
+                // $this->db->from('item_rm b');
+
+                // $this->db->join('(
+                //     SELECT item_rm_id, SUM(e.qty) AS qty_receipt 
+                //     FROM purchase_order_receipts d 
+                //     LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id 
+                //     GROUP BY d.item_rm_id
+                // ) stock_receipt', 'b.id = stock_receipt.item_rm_id', 'left');
+
+                // $this->db->join('(
+                //     SELECT item_rm_id, SUM(qty) AS qty_issued 
+                //     FROM issued_material_details 
+                //     GROUP BY item_rm_id
+                // ) stock_issued', 'b.id = stock_issued.item_rm_id', 'left');
+
+                // $this->db->join('(
+                //     SELECT a.item_rm_id, SUM(c.qty) AS return_qty
+                //     FROM return_materials a 
+                //     JOIN return_material_labels b ON a.return_id = b.return_id
+                //     JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no
+                //     GROUP BY a.item_rm_id
+                // ) stock_return', 'b.id = stock_return.item_rm_id', 'left');
+
+                // $this->db->join('(
+                //     SELECT item_rm_id, SUM(qty) AS qty_stock_rm
+                //     FROM os_rm
+                //     GROUP BY item_rm_id
+                // ) stock_rm', 'b.id = stock_rm.item_rm_id', 'left');
+
+                // $this->db->join('(
+                //     SELECT item_rm_id, SUM(qty) AS qty_in
+                //     FROM transaction_rm
+                //     WHERE transaction_type LIKE "RE%"
+                //     GROUP BY item_rm_id
+                // ) stock_in', 'b.id = stock_in.item_rm_id', 'left');
+
+                // $this->db->join('(
+                //     SELECT item_rm_id, SUM(qty) AS qty_out
+                //     FROM transaction_rm
+                //     WHERE transaction_type LIKE "IS%"
+                //     GROUP BY item_rm_id
+                // ) stock_out', 'b.id = stock_out.item_rm_id', 'left');
+
+                // $this->db->where('b.id', $item_rm_id);
+                // $query = $this->db->get();
+
+                $this->db->select("
+                    (
+                        (SELECT COALESCE(SUM(e.qty),0)
+                        FROM purchase_order_receipts d
+                        LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
+                        WHERE d.item_rm_id = b.id)
+                        -
+                        (SELECT COALESCE(SUM(qty),0)
+                        FROM issued_material_details
+                        WHERE item_rm_id = b.id)
+                        +
+                        (SELECT COALESCE(SUM(c.qty),0)
+                        FROM return_materials a 
+                        JOIN return_material_labels b2 ON a.return_id = b2.return_id
+                        JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b2.label_no = c.label_no
+                        WHERE a.item_rm_id = b.id)
+                        +
+                        (SELECT COALESCE(SUM(qty),0)
+                        FROM os_rm WHERE item_rm_id = b.id)
+                        +
+                        (SELECT COALESCE(SUM(qty),0)
+                        FROM transaction_rm
+                        WHERE transaction_type LIKE 'RE%' AND item_rm_id = b.id)
+                        -
+                        (SELECT COALESCE(SUM(qty),0)
+                        FROM transaction_rm
+                        WHERE transaction_type LIKE 'IS%' AND item_rm_id = b.id)
+                    ) AS end_stock
+                ", false);
+
+                $this->db->from('item_rm b');
+                $this->db->where('b.id', $item_rm_id);
+                $query = $this->db->get();
+
+                $EndingStock = 0;
+                if ($query->num_rows() > 0) {
+                    $EndingStock = floatval($query->row()->end_stock);
                 }
 
-                $filter_from="2025-01-01";
-                $filter_to = date('Y-m-d');
-                $item_rm_id = $post['item_rm_id'];
-                $request_no = $post['request_no'];
-
-                if (strpos($request_no, 'SH') === 0) {
-
-                    // $item_fg_id = $post['item_fg_id'];
+                $qty_need = 0;
+                if (isset($post['qty_act'])) {
                     $qty_need = floatval($post['qty_act']);
-                    // $supply_sheets = $this->crud->reads("supply_sheets", [], ["request_no" => $request_no, "item_fg_id" => $item_fg_id, "item_rm_id" => $item_rm_id]);
-                    $supply_sheetsRM = $this->crud->reads("supply_sheets", [], ["item_rm_id" => $item_rm_id]);
-                    $wip_balances = $this->crud->read("wip_balances", [], ["item_rm_id" => $item_rm_id], "", "id", "desc");
+                }
 
-                    $this->db->select('SUM(qty) as issued_qty');
-                    $this->db->from('issued_material_details');
-                    $this->db->where('request_no', $request_no);
-                    $this->db->where('item_rm_id', $item_rm_id);
-                    $this->db->group_by('request_no');
-                    $this->db->group_by('item_rm_id');
-                    $queryPOLabels = $this->db->get();
-                    $resultPOLabels = $queryPOLabels->row();
+                $begin = 0;
+                $issued = 0;
+                $need = floatval($qty_need);
+                $balance = 0;
 
-                    $this->db->select("(
-                                        COALESCE(SUM(e.qty),0) +
-                                        COALESCE(g.return_qty, 0) +
-                                        COALESCE(h.qty_stock_rm, 0) +
-                                        COALESCE(i.qty_in, 0)
-                                    ) - (
-                                        
-                                        COALESCE(f.qty, 0) +
-                                        COALESCE(j.qty_out, 0)
-                                    ) as begin_stock");
-                    $this->db->from('item_rm a');
-                    $this->db->join("purchase_order_receipts d","a.id = d.item_rm_id and d.receipt_date < '$filter_from'","left");
-                    $this->db->join("scan_item_receipts e","d.receipt_id = e.receipt_id","left");
-                    $this->db->join("(SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty
-                                        FROM issued_material_details
-                                        WHERE DATE_FORMAT(created_date, '%Y-%m-%d') < '$filter_from'
-                                        GROUP BY item_rm_id) f","a.id = f.item_rm_id","left");
-                    $this->db->join("(SELECT a.item_rm_id, SUM(c.qty) as return_qty
-                                        FROM return_materials a 
-                                        JOIN return_material_labels b ON a.return_id = b.return_id
-                                        JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
-                                        WHERE a.return_date < '$filter_from'
-                                        GROUP BY a.item_rm_id) g","a.id = g.item_rm_id","left");
-                    $this->db->join("(SELECT a.item_rm_id, SUM(a.qty) as qty_stock_rm
-                                        FROM os_rm a
-                                        JOIN item_rm b ON a.item_rm_id = b.id
-                                        WHERE a.trans_date < '$filter_from'
-                                        GROUP BY a.item_rm_id) h","a.id = h.item_rm_id","left");
-                    $this->db->join("(SELECT item_rm_id, SUM(qty) as qty_in 
-                                        FROM transaction_rm 
-                                        WHERE transaction_type LIKE 'RE%' 
-                                        AND request_date < '$filter_from'
-                                        GROUP BY item_rm_id) i","a.id = i.item_rm_id","left");
-                    $this->db->join("(SELECT item_rm_id, SUM(qty) as qty_out 
-                                        FROM transaction_rm 
-                                        WHERE transaction_type LIKE 'IS%' 
-                                        AND request_date < '$filter_from'
-                                        GROUP BY item_rm_id) j","a.id = j.item_rm_id","left");
-                    $this->db->where('a.id', $item_rm_id);
-                    $this->db->group_by('a.id');
-                    $queryBegin = $this->db->get();
-                    $resultBeginStock = $queryBegin->row();
+                if ($wip_balances) {
+                    $begin = floatval($wip_balances->balance);
+                }
 
-                    $this->db->select("(COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty, 0) + COALESCE(h.qty_stock_rm, 0) + COALESCE(i.qty_in, 0)) as qty_in,
-                                        (COALESCE(f.qty, 0) + COALESCE(j.qty_out, 0)) as qty_out");
-                    $this->db->from('item_rm a');
-                    $this->db->join("purchase_order_receipts d","a.id = d.item_rm_id and d.receipt_date between '$filter_from' and '$filter_to'","left");
-                    $this->db->join("scan_item_receipts e","d.receipt_id = e.receipt_id","left");
-                    $this->db->join("(SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty
-                                        FROM issued_material_details
-                                        WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
-                                        GROUP BY item_rm_id) f","a.id = f.item_rm_id","left");
-                    $this->db->join("(SELECT a.item_rm_id, SUM(c.qty) as return_qty
-                                        FROM return_materials a 
-                                        JOIN return_material_labels b ON a.return_id = b.return_id
-                                        JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
-                                        WHERE a.return_date between '$filter_from' and '$filter_to'
-                                        GROUP BY a.item_rm_id) g","a.id = g.item_rm_id","left");
-                    $this->db->join("(SELECT a.item_rm_id, SUM(a.qty) as qty_stock_rm
-                                        FROM os_rm a
-                                        JOIN item_rm b ON a.item_rm_id = b.id
-                                        WHERE a.trans_date between '$filter_from' and '$filter_to'
-                                        GROUP BY a.item_rm_id) h","a.id = h.item_rm_id","left");
-                    $this->db->join("(SELECT item_rm_id, SUM(qty) as qty_in 
-                                        FROM transaction_rm 
-                                        WHERE transaction_type LIKE 'RE%' 
-                                        AND request_date between '$filter_from' and '$filter_to'
-                                        GROUP BY item_rm_id) i","a.id = i.item_rm_id","left");
-                    $this->db->join("(SELECT item_rm_id, SUM(qty) as qty_out 
-                                        FROM transaction_rm 
-                                        WHERE transaction_type LIKE 'IS%' 
-                                        AND request_date between '$filter_from' and '$filter_to'
-                                        GROUP BY item_rm_id) j","a.id = j.item_rm_id","left");
-                    $this->db->where('a.id', $item_rm_id);
-                    $this->db->group_by('a.id');
-                    $queryInOut = $this->db->get();
-                    $resultInOut = $queryInOut->row();
-
-                    $EndingStock = (floatval($resultBeginStock->begin_stock) + floatval($resultInOut->qty_in)) - floatval($resultInOut->qty_out);
-
-                    $begin = 0;
-                    $issued = 0;
-                    $balance = 0;
-                    $need = floatval($qty_need);
-                    $qty_supply = 0;
-                    if ($queryPOLabels->num_rows() > 0) {
-                        $issued= $resultPOLabels->issued_qty;
-                    }
-
-                    if(count($supply_sheetsRM) > 0){
-                        $mpq = isset($post["mpq"]) ? floatval($post["mpq"]) : 0;
-                            if(floatval($wip_balances->balance)<floatval($qty_need)){
-
-                                if($mpq > 0) {
-                                    $roundingUpResult = ceil(floatval($qty_need) / floatval($mpq));
-                                    $qty_supply=floatval($mpq) * $roundingUpResult;
-                                }else{
-                                    $qty_supply = 0;
-                                }
-                            }
-                            $begin = floatval($wip_balances->balance);
-                            $issued = (floatval($qty_supply) == 0) ? 0 : $issued;
-
-                    }
-
+                if ($begin >= $need && $need > 0) {
                     $balance = ($begin + $issued) - $need;
 
-                    $wip_balance_exists = $this->crud->read("wip_balances", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']]);
+                    $wip_balance_exists = $this->crud->read("wip_balances", [], [
+                        "request_no" => $request_no,
+                        "item_rm_id" => $item_rm_id
+                    ]);
 
-                    if(!$wip_balance_exists) {
+                    if (!$wip_balance_exists) {
                         $this->crud->create("wip_balances", [
                             "item_rm_id" => $item_rm_id,
                             "request_no" => $request_no,
@@ -673,33 +623,41 @@ class Issued_materials extends CI_Controller
                         ]);
                     }
 
-                    if($begin >= $need){                        
-                        $this->crud->update('supply_sheets',[
-                            "request_no" => $request_no,
-                            "item_rm_id" => $item_rm_id
-                        ],["qty_req" => $need, 'qty_bal'=> $balance]);
+                    $supply_sheet_exists = $this->crud->read("supply_sheets", [], [
+                        "request_no" => $request_no,
+                        "item_rm_id" => $item_rm_id
+                    ]);
+
+                    if ($supply_sheet_exists) {
+                        if (floatval($supply_sheet_exists->qty_bal) < 0) {
+                            $this->crud->update('supply_sheets', [
+                                "request_no" => $request_no,
+                                "item_rm_id" => $item_rm_id
+                            ], [
+                                "qty_req" => $need,
+                                "qty_bal" => $balance
+                            ]);
+                        }
                     }
 
                 }
 
-                unset($post['mpq'], $post['qty_act']);
-
-                $issued_materials = $this->crud->read("issued_materials", [], ["request_no" => $post['request_no'], "workorder" => $post['workorder'], "item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']]);
-                if (!$issued_materials) {
-                    $send   = $this->crud->create('issued_materials', $post);
-                    echo $send;
-                } else {
-                    $send   = $this->crud->update('issued_materials', ["request_no" => $post['request_no'], "workorder" => $post['workorder'], "item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']], $post);
-                    echo $send;
-                }
-            } else {
-                show_error(validation_errors());
             }
-        // } else {
-        //     show_error("Cannot Process your request");
-        // }
-    }
 
+            unset($post['mpq'], $post['qty_act']);
+
+            $issued_materials = $this->crud->read("issued_materials", [], ["request_no" => $post['request_no'], "workorder" => $post['workorder'], "item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']]);
+            if (!$issued_materials) {
+                $send   = $this->crud->create('issued_materials', $post);
+                echo $send;
+            } else {
+                $send   = $this->crud->update('issued_materials', ["request_no" => $post['request_no'], "workorder" => $post['workorder'], "item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']], $post);
+                echo $send;
+            }
+        } else {
+            show_error(validation_errors());
+        }
+    }
 
     public function create_label()
     {
@@ -790,17 +748,17 @@ class Issued_materials extends CI_Controller
                     "qty_bal" => 0
                 ]);
 
-                $this->crud->update('supply_sheets',[
-                    "request_no" => $request_no,
-                    "item_rm_id" => $eq_item_rm_id
-                ],['qty_bal'=> 0]);
-                
-                $this->create_wip_balance($request_no, $item_rm_id, $resultSup->qty_act, $resultSI->mpq);
-                
+                $this->create_wip_balance($request_no, $eq_item_rm_id, $resultSup->qty_act, $resultSI->mpq);
+
                 $this->crud->update('wip_balances',[
                     "request_no" => $request_no,
                     "item_rm_id" => $eq_item_rm_id
                 ],['balance'=> 0]);
+
+                $this->crud->update('supply_sheets',[
+                    "request_no" => $request_no,
+                    "item_rm_id" => $eq_item_rm_id
+                ],['qty_bal'=> 0]);
             }
 
             $post = [
@@ -810,7 +768,6 @@ class Issued_materials extends CI_Controller
                 "qty" => $post['qty'],
                 "transaction_type" => $transaction_type,
             ];
-
 
             // $totalSupply = $this->crud->query("SELECT SUM(qty) as qty 
             //     FROM issued_material_details 
@@ -1334,8 +1291,24 @@ class Issued_materials extends CI_Controller
                 }
 
                 $this->create_wip_balance($request_no, $item_rm_id, $resultSup->qty_act, $resultSI->mpq);
+
+                $this->create_wip_balance($request_no, $eq_item_rm_id, $resultSup->qty_act, $resultSI->mpq);
             
-                $this->crud->update('wip_balances',["request_no" => $request_no,"item_rm_id" => $eq_item_rm_id],['balance'=> 0]);
+                // $this->crud->update('wip_balances',["request_no" => $request_no,"item_rm_id" => $eq_item_rm_id],['balance'=> 0]);
+
+                $existing_eq = $this->db
+                    ->where(['request_no' => $request_no, 'item_rm_id' => $eq_item_rm_id])
+                    ->get('wip_balances')
+                    ->row();
+
+                if ($existing_eq) {
+                    $this->crud->update('wip_balances', [
+                        "request_no" => $request_no,
+                        "item_rm_id" => $eq_item_rm_id
+                    ], [
+                        'balance' => 0
+                    ]);
+                }
 
                 $this->crud->update('supply_sheets', ["request_no" => $request_no, "item_rm_id" => $eq_item_rm_id], ["qty_bal" => 0]);
             }
@@ -1364,14 +1337,74 @@ class Issued_materials extends CI_Controller
 
     private function update_wip_balances($request_no, $item_rm_id, $qty, $eq_item_rm_id)
     {
-        $wip_balance = $this->crud->read("wip_balances", [], ["request_no" => $request_no, "item_rm_id" => $item_rm_id]);
+        $wip_balance = $this->crud->read("wip_balances", [], [
+            "request_no" => $request_no, 
+            "item_rm_id" => $item_rm_id
+        ]);
+
+        $this->db->select("
+            (
+                (SELECT COALESCE(SUM(e.qty),0)
+                FROM purchase_order_receipts d
+                LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
+                WHERE d.item_rm_id = b.id)
+                -
+                (SELECT COALESCE(SUM(qty),0)
+                FROM issued_material_details
+                WHERE item_rm_id = b.id)
+                +
+                (SELECT COALESCE(SUM(c.qty),0)
+                FROM return_materials a 
+                JOIN return_material_labels b2 ON a.return_id = b2.return_id
+                JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b2.label_no = c.label_no
+                WHERE a.item_rm_id = b.id)
+                +
+                (SELECT COALESCE(SUM(qty),0)
+                FROM os_rm WHERE item_rm_id = b.id)
+                +
+                (SELECT COALESCE(SUM(qty),0)
+                FROM transaction_rm
+                WHERE transaction_type LIKE 'RE%' AND item_rm_id = b.id)
+                -
+                (SELECT COALESCE(SUM(qty),0)
+                FROM transaction_rm
+                WHERE transaction_type LIKE 'IS%' AND item_rm_id = b.id)
+            ) AS end_stock
+        ", false);
+
+        $this->db->from('item_rm b');
+        $this->db->where('b.id', $item_rm_id);
+        $query = $this->db->get();
+
+        $EndingStock = 0;
+        if ($query->num_rows() > 0) {
+            $EndingStock = floatval($query->row()->end_stock);
+        }
+
         if ($wip_balance) {
             $new_issued = $wip_balance->issued + $qty;
             $new_balance = $new_issued + $wip_balance->begin - $wip_balance->need;
-            $new_warehouse = $wip_balance->warehouse - $qty; // Update warehouse column
-            $this->crud->update('wip_balances', ["request_no" => $request_no, "item_rm_id" => $item_rm_id], ["issued" => $new_issued, "balance" => $new_balance, "warehouse" => $new_warehouse]);
+            $new_warehouse = $EndingStock;
 
             $this->crud->update('supply_sheets', ["request_no" => $request_no, "item_rm_id" => $item_rm_id], ["qty_bal" => $new_balance]);
+
+            $this->crud->update('wip_balances', ["request_no" => $request_no, "item_rm_id" => $item_rm_id], ["issued" => $new_issued, "balance" => $new_balance, "warehouse" => $new_warehouse]);
+
+        } else {
+                $this->db->select('*');
+                $this->db->from('supply_sheets');
+                $this->db->where('item_rm_id', $eq_item_rm_id);
+                $this->db->where('request_no', $request_no); 
+                $querySup = $this->db->get();
+                $resultSup = $querySup->row();
+
+                $this->db->select('*');
+                $this->db->from('supplier_items');
+                $this->db->where('item_rm_id', $item_rm_id);
+                $querySI = $this->db->get();
+                $resultSI = $querySI->row();
+
+            $this->create_wip_balance($request_no, $item_rm_id, $resultSup->qty_act, $resultSI->mpq);
         }
     }
 

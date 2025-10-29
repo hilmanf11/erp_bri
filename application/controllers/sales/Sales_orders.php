@@ -117,6 +117,7 @@ class Sales_orders extends CI_Controller
                 AND d.customer_id = so.customer_id 
                 AND d.item_fg_id = so.item_fg_id
             WHERE a.customer_id = '$customer_id' 
+            AND b.status = 0
             AND a.type_item = '$type_item'
             AND (b.number LIKE '%$post%' OR b.name LIKE '%$post%')
             GROUP BY b.id, b.number, b.name, b.number_customer, a.price, c.currency, b.uom, a.valid_from, a.valid_to

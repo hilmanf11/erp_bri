@@ -530,7 +530,7 @@
         var url = "?filter_subcont_id=" + window.btoa(filter_subcont_id) +
             "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
             "&delivery_to=" + window.btoa(deliveryTo) +
-            "&filter_teaching_factory_id=" + window.btoa(filter_teaching_factory_id) ;        
+            "&filter_teaching_factory_id=" + window.btoa(filter_teaching_factory_id);
 
         // if(deliveryTo === ""){
         //     toastr.warning("Please select Delivery To first!", "Information");

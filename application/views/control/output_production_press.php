@@ -1,3 +1,26 @@
+<style>
+    .datagrid-wrap {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .datagrid-view {
+        overflow-y: auto !important;
+        max-height: 500px;
+    }
+
+    .datagrid-header {
+        position: sticky !important;
+        top: 0;
+        z-index: 20;
+        background: #f4f4f4;
+    }
+
+    .datagrid-header-inner {
+        border-bottom: 1px solid #d0d0d0;
+    }
+</style>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar">
     <thead>
@@ -28,24 +51,23 @@
 <div id="toolbar" style="height: 265px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-        <fieldset style="width: 70%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+        <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Period</span>
                     <input style="width:60%;" name="filter_period" id="filter_period" class="easyui-combobox" required>
                 </div>
-
-                <!-- <div class="fitem">
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Production Date</span>
                     <input style="width:30%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                     <input style="width:30%;" id="filter_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
-                </div> -->
+                </div>
 
-                <div class="fitem">
+                <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">Production Date</span>
                     <input style="width:60%;" id="filter_trans_date" value="<?= date("Y-m-d") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
-                </div>
+                </div> -->
 
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Doc No</span>
@@ -95,6 +117,9 @@
             </div>
         </fieldset>
         <?= $button ?>
+
+        <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="updateMachineOnly()"><i class="fa fa-edit"></i> Update by Machine</a>
+
     </div>
 </div>
 
@@ -137,6 +162,11 @@
                     </select>
                 </div>
 
+                <div class="fitem" id="machine_no_insert_wrapper">
+                    <span style="width:35%; display:inline-block;">Unscheduled Machine No</span>
+                    <input style="width:60%;" id="machine_no_insert" class="easyui-combogrid">
+                </div>
+
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">PIC</span>
                     <input style="width:60%;" name="pic" id="pic" class="easyui-textbox">
@@ -172,8 +202,11 @@
 <iframe id="printout" src="<?= base_url('control/output_production_press/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
+    let currentMode = '';
+
     //ADD DATA
     function add() {
+        currentMode = 'add';
         // $('#dlg_insert').dialog('open');
 
         $('#dlg_insert').dialog({
@@ -188,13 +221,30 @@
         $('#dg2').datagrid('loadData', []);
         url_save = '<?= base_url('control/output_production_press/create') ?>';
         $('#frm_insert').form('clear');
-        $("#trans_date").datebox('setValue', "<?= date("Y-m-d") ?>");
+        $("#machine_no_insert").combogrid('clear');
+        $('#machine_no_insert_wrapper').show();
         $("#trans_date").datebox('enable');
         $("#number").textbox('enable');
         $("#period").combobox('enable');
         $("#wp").combobox('enable');
         $("#shift").combobox('enable');
-        autonumber();
+        // $("#trans_date").datebox('setValue', "<?= date("Y-m-d") ?>");
+        // autonumber();
+
+        $("#trans_date").datebox({
+            formatter: myformatter,
+            parser: myparser,
+            editable: false,
+            onSelect: function(date){
+                var d = $.fn.datebox.defaults.formatter(date);
+                autonumber(d);
+            }
+        });
+
+        var today = "<?= date('Y-m-d') ?>";
+        $("#trans_date").datebox('setValue', today);
+
+        autonumber(today);
 
         $("#period").combobox({
             url: '<?= base_url('planning/production_schedule_press/readPeriod') ?>',
@@ -233,10 +283,11 @@
         // });
     }
 
-    function autonumber() {
+    function autonumber(trans_date) {
         $.ajax({
             type: "post",
             url: "<?= base_url('control/output_production_press/autonumber') ?>",
+            data: { trans_date: trans_date },
             dataType: "html",
             success: function(result) {
                 $("#number").textbox('setValue', result);
@@ -249,7 +300,8 @@
             url: link,
             singleSelect: true,
             // fit: true,
-            // fitColumns: true,
+            height: 480,
+            fitColumns: true,
             columns: [
                 [{
                     field: 'id',
@@ -353,10 +405,10 @@
                         options: {
                             url: '<?= base_url('control/output_production_press/readItemFg/'); ?>',
                             required: true,
-                            panelWidth: 650,
-                            idField: 'number',
+                            panelWidth: 750,
+                            idField: 'item_fg_id',
                             textField: 'number',
-                            valueField: 'item_fg_id',
+                            // valueField: 'item_fg_id',
                             mode: 'remote',
                             fitColumns: true,
                             prompt: 'Choose Product No',
@@ -377,32 +429,12 @@
                                     field: 'workorder',
                                     title: 'Workorder',
                                     width: 150
+                                }, {
+                                    field: 'mold_id',
+                                    title: 'Mold ID',
+                                    width: 150
                                 }]
                             ],
-
-                            // onLoadSuccess: function(data) {
-                            //     var dg = $('#dg2');
-                            //     var row = dg.datagrid('getSelected');
-                            //     if (!row) return;
-                            //     var idx = dg.datagrid('getRowIndex', row);
-
-                            //     var edId = dg.datagrid('getEditor', { index: idx, field: 'item_fg_id' });
-                            //     var edNo = dg.datagrid('getEditor', { index: idx, field: 'item_fg_number' });
-                            //     var edName = dg.datagrid('getEditor', { index: idx, field: 'item_fg_name' });
-                            //     var edPlanning_qty = dg.datagrid('getEditor', { index: idx, field: 'planning_qty' });
-                            //     var edWorkorder = dg.datagrid('getEditor', { index: idx, field: 'workorder' });
-
-                            //     if (edId && edNo) {
-                            //         if (row.item_fg_id) {
-                            //             $(edId.target).textbox('setValue', row.item_fg_id);
-                            //             $(edNo.target).combogrid('setValue', row.item_fg_number);
-                            //             $(edName.target).textbox('setValue', row.item_fg_name);
-                            //             $(edPlanning_qty.target).numberbox('setValue', row.planning_qty);
-                            //             $(edWorkorder.target).numberbox('setValue', row.workorder);
-                            //         }
-                            //     }
-                            // },
-
                             onLoadSuccess: function(data) {
                                 var dg = $('#dg2');
                                 var row = dg.datagrid('getSelected');
@@ -415,9 +447,15 @@
                                 var edPlan = dg.datagrid('getEditor', { index: idx, field: 'planning_qty' });
                                 var edPlnShift = dg.datagrid('getEditor', { index: idx, field: 'planning_qty_shift' });
                                 var edWO   = dg.datagrid('getEditor', { index: idx, field: 'workorder' });
+                                var edMold   = dg.datagrid('getEditor', { index: idx, field: 'mold_id' });
+
+                                if (data.rows && data.rows.length === 1) {
+                                    var item = data.rows[0];
+                                    $(edNo.target).combogrid('grid').datagrid('selectRecord', item.item_fg_id);
+                                }
 
                                 let pln_qty = row.planning_qty ? Math.ceil(row.planning_qty / 3) : 0
-                                let planning_qty = rows.planning_qty ? Math.round(rows.planning_qty) : 0;
+                                let planning_qty = row.planning_qty ? Math.round(row.planning_qty) : 0;
 
                                 if (row.item_fg_id) {
                                     if (edId) $(edId.target).textbox('setValue', row.item_fg_id);
@@ -426,9 +464,9 @@
                                     if (edPlan) $(edPlan.target).numberbox('setValue', row.planning_qty);
                                     if (edPlnShift) $(edPlnShift.target).numberbox('setValue', pln_qty);
                                     if (edWO)   $(edWO.target).textbox('setValue', row.workorder);
+                                    if (edMold)   $(edMold.target).textbox('setValue', row.mold_id);
                                 }
                             },
-
                             onSelect: function(value, rows) {
                                 var dg = $('#dg2');
                                 var row = dg.datagrid('getSelected');
@@ -457,6 +495,10 @@
                                     index: rowIndex,
                                     field: 'planning_qty_shift'
                                 });
+                                var ed7 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'mold_id'
+                                });
 
                                 let pln_qty = rows.planning_qty ? Math.ceil(rows.planning_qty / 3) : 0;
                                 let planning_qty = rows.planning_qty ? Math.round(rows.planning_qty) : 0;
@@ -467,6 +509,7 @@
                                 $(ed4.target).textbox('setValue', planning_qty);
                                 $(ed5.target).textbox('setValue', rows.workorder);
                                 $(ed6.target).textbox('setValue', pln_qty);
+                                $(ed7.target).textbox('setValue', rows.mold_id);
                             },
                         }
                     }
@@ -542,18 +585,56 @@
                         }
                     }
                 }, {
+                    field: 'mold_id',
+                    width: 150,
+                    rowspan: 2,
+                    halign: 'center',
+                    align: 'center',
+                    title: "Mold ID",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
                     field: 'operator',
-                    width: 60,
+                    width: 130,
                     rowspan: 2,
                     halign: 'center',
                     title: "Operator <br>Name",
                     editor: {
-                        type: 'textbox',
-                        options : {
-                            // required: true,
+                        type: 'combogrid',
+                        options: {
+                            url: '<?= base_url('api/hris_bri/getOperatorName') ?>',
+                            method: 'get',
+                            mode: 'remote',
+                            idField: 'name',
+                            textField: 'name',
+                            valueField: 'name',
+                            prompt: 'Choose Operator Name',
+                            panelWidth: 265,
+                            // panelHeight: 300,
+                            fitColumns: true,
+                            required: true,
+                            // delay: 500,
+                            queryParams: {},
+                            onShowPanel: function() {
+                                var grid = $(this).combogrid('grid');
+                                if (!grid.data('loaded')) {
+                                    grid.datagrid('load', {});
+                                    grid.data('loaded', true);
+                                }
+                            },
+                            columns: [[
+                                { field: 'name', title: 'Operator Name', width: 250 },
+                            ]],
+                            loadFilter: function(data){
+                                return Array.isArray(data) ? data : [];
+                            }
                         }
                     }
-                }, {   
+                }, {
                     title: 'Output', 
                     colspan: 4,
                     halign: 'center', 
@@ -572,21 +653,25 @@
                             required: true,
                         }
                     }
-                }, {
-                    field: 'standard_curing_time',
-                    width: 110,
-                    rowspan: 2,
-                    align: 'center',
-                    title: "Standard Curing <br> Time (second)",
-                    formatter: numberFormatField,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 0,
-                            required: true,
-                        }
-                    }
-                }, {
+                }, 
+
+                // {
+                //     field: 'standard_curing_time',
+                //     width: 110,
+                //     rowspan: 2,
+                //     align: 'center',
+                //     title: "Standard Curing <br> Time (second)",
+                //     formatter: numberFormatField,
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             precision: 0,
+                //             required: true,
+                //         }
+                //     }
+                // }, 
+
+                {
                     field: 'actual_curing_time',
                     width: 100,
                     rowspan: 2,
@@ -614,21 +699,25 @@
                             required: true,
                         }
                     }
-                }, {
-                    field: 'target_shoot',
-                    width: 60,
-                    rowspan: 2,
-                    align: 'center',
-                    title: "Target <br>Shoot",
-                    formatter: numberFormatField,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 0,
-                            required: true,
-                        }
-                    }
-                }, {
+                }, 
+                
+                // {
+                //     field: 'target_shoot',
+                //     width: 60,
+                //     rowspan: 2,
+                //     align: 'center',
+                //     title: "Target <br>Shoot",
+                //     formatter: numberFormatField,
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             precision: 0,
+                //             required: true,
+                //         }
+                //     }
+                // }, 
+                
+                {
                     field: 'actual_shoot',
                     width: 60,
                     rowspan: 2,
@@ -670,22 +759,25 @@
                             // required: true,
                         }
                     }
-                }, {   
-                    title: 'Downtime', 
-                    colspan: 6, 
-                    halign: 'center',
-                    align: 'center',
-                }, {
-                    field: 'remarks',
-                    width: 80,
-                    rowspan: 2,
-                    align: 'center',
-                    halign: 'center',
-                    title: "Remarks",
-                    editor: {
-                        type: 'textbox',
-                    }
-                }],
+                }, 
+                
+                // {   
+                //     title: 'Downtime', 
+                //     colspan: 6, 
+                //     halign: 'center',
+                //     align: 'center',
+                // }, {
+                //     field: 'remarks',
+                //     width: 80,
+                //     rowspan: 2,
+                //     align: 'center',
+                //     halign: 'center',
+                //     title: "Remarks",
+                //     editor: {
+                //         type: 'textbox',
+                //     }
+                // }
+                ],
 
                 [{
                     
@@ -786,79 +878,82 @@
                             precision: 0,
                         }
                     }
-                }, {
-                    field: 'mold_cleaning',
-                    width: 95,
-                    align: 'center',
-                    title: "Mold Cleaning",
-                    formatter: numberFormatField,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 0,
-                        }
-                    }
-                }, {
-                    field: 'trial',
-                    width: 50,
-                    align: 'center',
-                    title: "Trial",
-                    formatter: numberFormatField,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 0,
-                        }
-                    }
-                }, {
-                    field: 'mold_changing',
-                    width: 100,
-                    align: 'center',
-                    title: "Mold Changing",
-                    formatter: numberFormatField,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 0,
-                        }
-                    }
-                }, {
-                    field: 'machine_repair',
-                    width: 100,
-                    align: 'center',
-                    title: "Machine Repair",
-                    formatter: numberFormatField,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 0,
-                        }
-                    }
-                }, {
-                    field: 'mold_repair',
-                    width: 80,
-                    align: 'center',
-                    title: "Mold Repair",
-                    formatter: numberFormatField,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 0,
-                        }
-                    }
-                }, {
-                    field: 'others',
-                    width: 80,
-                    align: 'center',
-                    title: "Others",
-                    formatter: numberFormatField,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 0,
-                        }
-                    }
-                }]
+                }, 
+                
+                // {
+                //     field: 'mold_cleaning',
+                //     width: 95,
+                //     align: 'center',
+                //     title: "Mold Cleaning",
+                //     formatter: numberFormatField,
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             precision: 0,
+                //         }
+                //     }
+                // }, {
+                //     field: 'trial',
+                //     width: 50,
+                //     align: 'center',
+                //     title: "Trial",
+                //     formatter: numberFormatField,
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             precision: 0,
+                //         }
+                //     }
+                // }, {
+                //     field: 'mold_changing',
+                //     width: 100,
+                //     align: 'center',
+                //     title: "Mold Changing",
+                //     formatter: numberFormatField,
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             precision: 0,
+                //         }
+                //     }
+                // }, {
+                //     field: 'machine_repair',
+                //     width: 100,
+                //     align: 'center',
+                //     title: "Machine Repair",
+                //     formatter: numberFormatField,
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             precision: 0,
+                //         }
+                //     }
+                // }, {
+                //     field: 'mold_repair',
+                //     width: 80,
+                //     align: 'center',
+                //     title: "Mold Repair",
+                //     formatter: numberFormatField,
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             precision: 0,
+                //         }
+                //     }
+                // }, {
+                //     field: 'others',
+                //     width: 80,
+                //     align: 'center',
+                //     title: "Others",
+                //     formatter: numberFormatField,
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             precision: 0,
+                //         }
+                //     }
+                // }
+            ]
             ],
             onClickCell: onClickCell,
 
@@ -1058,11 +1153,21 @@
 
     //EDIT DATA
     function update() {
+        currentMode = 'update';
         var row = $('#dg').treegrid('getSelected');
         console.log('Row : ', row);
 
         if (row) {
-            $('#dlg_insert').dialog('open');
+            // $('#dlg_insert').dialog('open');
+
+            $('#dlg_insert').dialog({
+                title: 'Edit Data',
+                modal: true,
+                closed: false,
+                maximized: true,
+                resizable: true,
+            }).dialog('open');
+
             $('#frm_insert').form('load', row);
             $("#trans_date").datebox('disable');
             $("#number").textbox('disable');
@@ -1070,10 +1175,141 @@
             $("#wp").combobox('disable');
             $("#shift").combobox('disable');
 
+            $('#machine_no_insert_wrapper').hide();
+            // $("#machine_no_insert").combogrid('disable');
+            $("#machine_no_insert").combogrid('clear');
+
             addTable('<?= base_url('control/output_production_press/datatableUpdates?number=') ?>' + window.btoa(row.number));
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
+    }
+
+    // function updateMachineOnly() {
+    //     currentMode = 'updateMachineOnly';
+    //     var row = $('#dg').treegrid('getSelected');
+
+    //     console.log('Row : ', row);
+    //     if (row) {
+    //         if (row.machine_id) {
+    //             $('#dlg_insert').dialog({
+    //                 title: 'Update by Machine',
+    //                 modal: true,
+    //                 closed: false,
+    //                 maximized: true,
+    //                 resizable: true,
+    //             }).dialog('open');
+
+    //             $('#frm_insert').form('load', row);
+    //             $("#trans_date").datebox('disable');
+    //             $("#number").textbox('disable');
+    //             $("#period").combobox('disable');
+    //             $("#wp").combobox('disable');
+    //             $("#shift").combobox('disable');
+
+    //             $("#machine_no_insert").combogrid('clear');
+    //             $('#machine_no_insert_wrapper').show();
+    //             $("#machine_no_insert").combogrid('disable');
+
+    //             addTable('<?= base_url('control/output_production_press/datatableUpdateByMachines?number=') ?>'
+    //                 + window.btoa(row.number));
+
+    //             var urlMachines = "<?= base_url('control/output_production_press/readMachinesByNumber?number=') ?>" + window.btoa(row.number);
+            
+    //             $.ajax({
+    //                 url: urlMachines,
+    //                 type: "GET",
+    //                 dataType: "json",
+    //                 success: function(res) {
+    //                     console.log("Machines loaded:", res);
+    //                     if (Array.isArray(res) && res.length > 0) {
+    //                         $("#machine_no_insert").combogrid('setValues', res);
+    //                     } else {
+    //                         $("#machine_no_insert").combogrid('clear');
+    //                     }
+    //                 },
+    //                 error: function(xhr, status, error) {
+    //                     console.error("Error loading machine list:", error);
+    //                 }
+    //             });
+    //         } else {
+    //             toastr.warning("Please select one of the data in the table first!", "Information");
+    //         }
+    //     } else {
+    //         toastr.warning("Please select one of the data in the table first!", "Information");
+    //     }
+    // }
+
+    function updateMachineOnly() {
+        currentMode = 'updateMachineOnly';
+        var row = $('#dg').treegrid('getSelected');
+        // console.log('Row:', row);
+
+        if (!row) {
+            toastr.warning("Please select one of the data in the table first!", "Information");
+            return;
+        }
+
+        // Cek global apakah masih ada machine dengan item_fg_id kosong
+        const checkUrl = "<?= base_url('control/output_production_press/checkMachinesWithoutItemFg?number=') ?>" + window.btoa(row.number);
+
+        $.ajax({
+            url: checkUrl,
+            type: "GET",
+            dataType: "json",
+            success: function(res) {
+                // console.log("Check result:", res);
+
+                if (res.has_empty_machines) {
+                    // Masih ada mesin kosong
+                    $('#dlg_insert').dialog({
+                        title: 'Update by Machine',
+                        modal: true,
+                        closed: false,
+                        maximized: true,
+                        resizable: true,
+                    }).dialog('open');
+
+                    $('#frm_insert').form('load', row);
+                    $("#trans_date").datebox('disable');
+                    $("#number").textbox('disable');
+                    $("#period").combobox('disable');
+                    $("#wp").combobox('disable');
+                    $("#shift").combobox('disable');
+
+                    $("#machine_no_insert").combogrid('clear');
+                    $('#machine_no_insert_wrapper').show();
+                    $("#machine_no_insert").combogrid('disable');
+
+                    addTable('<?= base_url('control/output_production_press/datatableUpdateByMachines?number=') ?>' + window.btoa(row.number));
+
+                    const urlMachines = "<?= base_url('control/output_production_press/readMachinesByNumber?number=') ?>" + window.btoa(row.number);
+                    $.ajax({
+                        url: urlMachines,
+                        type: "GET",
+                        dataType: "json",
+                        success: function(res) {
+                            // console.log("Machines loaded:", res);
+                            if (Array.isArray(res) && res.length > 0) {
+                                $("#machine_no_insert").combogrid('setValues', res);
+                            } else {
+                                $("#machine_no_insert").combogrid('clear');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Error loading machine list:", error);
+                        }
+                    });
+                } else {
+                    // Tidak ada mesin kosong
+                    toastr.warning("All machines already have assigned item FG. No data to update!", "Information");
+                }
+            },
+            error: function(xhr, status, error) {
+                // console.error("Error checking machine condition:", error);
+                toastr.error("Failed to check machine condition!", "Error");
+            }
+        });
     }
 
     //DELETE DATA
@@ -1121,9 +1357,11 @@
     function filter() {
         // var filter_from = $("#filter_from").datebox('getValue');
         // var filter_to = $("#filter_to").datebox('getValue');
+        // var filter_trans_date = $("#filter_trans_date").datebox('getValue');
 
         var filter_period = $("#filter_period").datebox('getValue');
-        var filter_trans_date = $("#filter_trans_date").datebox('getValue');
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
         var filter_number = $("#filter_number").combobox('getValue');
         var filter_shift = $("#filter_shift").combobox('getValue');
         var filter_wp = $("#filter_wp").combobox('getValue');
@@ -1131,8 +1369,10 @@
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
-        // var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to +
-        var url = "?filter_period=" + filter_period + "&filter_trans_date=" + filter_trans_date + "&filter_number=" + filter_number + "&filter_shift=" + filter_shift + "&filter_wp=" + filter_wp + "&filter_workorder=" + filter_workorder + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
+        // var url = "?filter_period=" + filter_period + "&filter_trans_date=" + filter_trans_date + 
+
+        var url = "?filter_period=" + filter_period + "&filter_from=" + filter_from + "&filter_to=" + filter_to +
+        "&filter_number=" + filter_number + "&filter_shift=" + filter_shift + "&filter_wp=" + filter_wp + "&filter_workorder=" + filter_workorder + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
 
         $('#dg').datagrid({
             url: '<?= base_url('control/output_production_press/datatables') ?>' + url
@@ -1153,7 +1393,9 @@
         // var filter_to = $("#filter_to").datebox('getValue');
 
         var filter_period = $("#filter_period").datebox('getValue');
-        var filter_trans_date = $("#filter_trans_date").datebox('getValue');
+        // var filter_trans_date = $("#filter_trans_date").datebox('getValue');
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
         var filter_number = $("#filter_number").combobox('getValue');
         var filter_shift = $("#filter_shift").combobox('getValue');
         var filter_wp = $("#filter_wp").combobox('getValue');
@@ -1161,8 +1403,10 @@
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
-        // var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to +
-        var url = "?filter_period=" + filter_period + "&filter_trans_date=" + filter_trans_date + "&filter_number=" + filter_number + "&filter_shift=" + filter_shift + "&filter_wp=" + filter_wp + "&filter_workorder=" + filter_workorder + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
+        // var url = "?filter_period=" + filter_period + "&filter_trans_date=" + filter_trans_date + 
+
+        var url = "?filter_period=" + filter_period + "&filter_from=" + filter_from + "&filter_to=" + filter_to +
+        "&filter_number=" + filter_number + "&filter_shift=" + filter_shift + "&filter_wp=" + filter_wp + "&filter_workorder=" + filter_workorder + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
 
         window.location.assign('<?= base_url('control/output_production_press/print/excel') ?>' + url);
     }
@@ -1250,6 +1494,13 @@
                         }, {
                             field: 'workorder',
                             title: 'Work Order No',
+                            rowspan: 2,
+                            halign: 'center',
+                            align: 'center',
+                            width: 150
+                        }, {
+                            field: 'mold_id',
+                            title: 'Mold ID',
                             rowspan: 2,
                             halign: 'center',
                             align: 'center',
@@ -1402,18 +1653,6 @@
                             align: 'center',
                             width: 160,
                             formatter: numberformatPrecision
-                        }, {   
-                            title: 'Downtime',
-                            colspan: 6,
-                            halign: 'center',
-                            align: 'center'
-                        }, {
-                            field: 'remarks',
-                            title: 'Remarks',
-                            rowspan: 2,
-                            width: 100,
-                            halign: 'center',
-                            align: 'center',
                         }],
 
                         [{
@@ -1452,48 +1691,6 @@
                             editor: {
                                 type: 'numberbox',
                             }
-                        }, {
-                            field: 'mold_cleaning',
-                            title: 'Mold Cleaning',
-                            halign: 'center',
-                            align: 'center',
-                            width: 100,
-                            formatter: numberformat
-                        }, {
-                            field: 'trial',
-                            title: 'Trial',
-                            halign: 'center',
-                            align: 'center',
-                            width: 100,
-                            formatter: numberformat
-                        }, {
-                            field: 'mold_changing',
-                            title: 'Mold Changing',
-                            halign: 'center',
-                            align: 'center',
-                            width: 100,
-                            formatter: numberformat
-                        }, {
-                            field: 'machine_repair',
-                            title: 'Machine Repair',
-                            halign: 'center',
-                            align: 'center',
-                            width: 120,
-                            formatter: numberformat
-                        }, {
-                            field: 'mold_repair',
-                            title: 'Mold Repair',
-                            halign: 'center',
-                            align: 'center',
-                            width: 100,
-                            formatter: numberformat
-                        }, {
-                            field: 'others',
-                            title: 'Others',
-                            halign: 'center',
-                            align: 'center',
-                            width: 100,
-                            formatter: numberformat
                         }]
                     ],
                     onResize: function() {
@@ -1501,9 +1698,17 @@
                     },
                     onLoadSuccess: function(data) {
                         setTimeout(function() {
-                            console.log('Data : ', data.rows);
-
+                            // console.log('Data : ', data.rows);
                             $('#dg').datagrid('fixDetailRowHeight', index);
+
+                            var rows = ddv.datagrid('getRows');
+                            for (var i = 0; i < rows.length; i++) {
+                                var r = rows[i];
+                                if (r.machine_id && (!r.item_fg_id || r.item_fg_id === null || r.item_fg_id === "")) {
+                                    var row = ddv.datagrid('getPanel').find('tr[datagrid-row-index="' + i + '"]');
+                                    row.css('background-color', '#ffcccc');
+                                }
+                            }
                         }, 0);
                     }
                 });
@@ -1511,7 +1716,117 @@
             }
         });
 
+        $('#trans_date').datebox().datebox('calendar').calendar({
+            validator: function(date){
+                var now = new Date();
+                var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                return date <= today;
+            }
+        });
+
         //SAVE DATA
+        // $('#dlg_insert').dialog({
+        //     buttons: [{
+        //         text: 'Save All',
+        //         iconCls: 'icon-ok',
+        //         handler: function() {
+        //             var trans_date = $("#trans_date").datebox('getValue');
+        //             var number = $("#number").textbox('getValue');
+        //             var period = $("#period").combobox('getValue');
+        //             var wp = $("#wp").combobox('getValue');
+        //             var shift = $("#shift").combobox('getValue');
+        //             var pic = $("#pic").textbox('getValue');
+        //             var machine_no_insert = $("#machine_no_insert").combogrid('getValues');
+
+        //             console.log('Machine No Insert : ', machine_no_insert);
+
+        //             if (!trans_date || !number || !period || !wp || !shift) {
+        //                 toastr.error("Please complete all required fields before saving");
+        //                 return;
+        //             }
+
+        //             var rows = $('#dg2').datagrid('getRows');
+        //             var totalrows = rows.length;
+        //             endEditing();
+
+        //             console.log(JSON.stringify(rows));
+                    
+
+        //             for (let i = 0; i < totalrows; i++) {
+        //                 if (rows[i].item_fg_id) {
+
+        //                     var dataFinal = {
+        //                         trans_date: trans_date,
+        //                         number: number,
+        //                         period: period,
+        //                         wp: wp,
+        //                         shift: shift,
+        //                         pic: pic,
+        //                         id: rows[i].id,
+        //                         machine_id: rows[i].machine_id,
+        //                         item_fg_id: rows[i].item_fg_id,
+        //                         planning_qty: rows[i].planning_qty,
+        //                         qty_ok: rows[i].qty_ok,
+        //                         qty_ng: rows[i].qty_ng,
+        //                         qty_ng_mold: rows[i].qty_ng_mold,
+        //                         workorder: rows[i].workorder,
+        //                         actual_cavity: rows[i].actual_cavity,
+        //                         operator: rows[i].operator,
+        //                         // standard_curing_time: rows[i].standard_curing_time,
+        //                         actual_curing_time: rows[i].actual_curing_time,
+        //                         shift_hour: rows[i].shift_hour,
+        //                         // target_shoot: rows[i].target_shoot,
+        //                         actual_shoot: rows[i].actual_shoot,
+        //                         total_compound_used: rows[i].total_compound_used,
+        //                         waste: rows[i].waste,
+        //                         // mold_cleaning: rows[i].mold_cleaning,
+        //                         // trial: rows[i].trial,
+        //                         // mold_changing: rows[i].mold_changing,
+        //                         // machine_repair: rows[i].machine_repair,
+        //                         // mold_repair: rows[i].mold_repair,
+        //                         // others: rows[i].others,
+        //                         // remarks: rows[i].remarks
+        //                     };
+
+        //                     var url_save = "<?= base_url('control/output_production_press/create') ?>";
+
+        //                     $.ajax({
+        //                         type: "post",
+        //                         url: url_save,
+        //                         data: dataFinal,
+        //                         dataType: "json",
+        //                         success: function(result) {
+        //                             if (result.theme === "error") {
+        //                                 toastr.error(result.message);
+        //                             }else{
+        //                                 if (i == (totalrows - 1)) {
+        //                                     Swal.fire({
+        //                                         title: result.message,
+        //                                         icon: result.theme,
+        //                                         confirmButtonText: 'Ok',
+        //                                         allowOutsideClick: false,
+        //                                     }).then((result) => {
+        //                                         if (result.isConfirmed) {
+        //                                             window.location.reload();
+        //                                         }
+        //                                     });
+        //                                 }
+        //                             }
+        //                         },
+        //                         error: function(xhr, status, error) {
+        //                             toastr.error("Server error: " + error);
+        //                         }
+        //                     });
+        //                 }
+        //             }
+
+        //             $('#dg').datagrid('reload');
+        //             $('#dlg_insert').dialog('close');
+        //         }
+        //     }]
+        // });
+
+        // SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
                 text: 'Save All',
@@ -1523,23 +1838,26 @@
                     var wp = $("#wp").combobox('getValue');
                     var shift = $("#shift").combobox('getValue');
                     var pic = $("#pic").textbox('getValue');
+                    var machine_no_insert = $("#machine_no_insert").combogrid('getValues'); // multiple machine id
+
+                    console.log('Machine No Insert : ', machine_no_insert);
 
                     if (!trans_date || !number || !period || !wp || !shift) {
                         toastr.error("Please complete all required fields before saving");
                         return;
                     }
 
-                    var rows = $('#dg2').datagrid('getRows');
-                    var totalrows = rows.length;
                     endEditing();
-
-                    console.log(JSON.stringify(rows));
+                    var rows = $('#dg2').datagrid('getRows') || [];
+                    var totalrows = rows.length;
                     
+
+                    // Array semua data dari datagrid
+                    var dataToSave = [];
 
                     for (let i = 0; i < totalrows; i++) {
                         if (rows[i].item_fg_id) {
-
-                            var dataFinal = {
+                            dataToSave.push({
                                 trans_date: trans_date,
                                 number: number,
                                 period: period,
@@ -1549,6 +1867,7 @@
                                 id: rows[i].id,
                                 machine_id: rows[i].machine_id,
                                 item_fg_id: rows[i].item_fg_id,
+                                mold_id: rows[i].mold_id,
                                 planning_qty: rows[i].planning_qty,
                                 qty_ok: rows[i].qty_ok,
                                 qty_ng: rows[i].qty_ng,
@@ -1556,52 +1875,116 @@
                                 workorder: rows[i].workorder,
                                 actual_cavity: rows[i].actual_cavity,
                                 operator: rows[i].operator,
-                                standard_curing_time: rows[i].standard_curing_time,
                                 actual_curing_time: rows[i].actual_curing_time,
                                 shift_hour: rows[i].shift_hour,
-                                target_shoot: rows[i].target_shoot,
                                 actual_shoot: rows[i].actual_shoot,
                                 total_compound_used: rows[i].total_compound_used,
-                                waste: rows[i].waste,
-                                mold_cleaning: rows[i].mold_cleaning,
-                                trial: rows[i].trial,
-                                mold_changing: rows[i].mold_changing,
-                                machine_repair: rows[i].machine_repair,
-                                mold_repair: rows[i].mold_repair,
-                                others: rows[i].others,
-                                remarks: rows[i].remarks
-                            };
-
-                            var url_save = "<?= base_url('control/output_production_press/create') ?>";
-
-                            $.ajax({
-                                type: "post",
-                                url: url_save,
-                                data: dataFinal,
-                                dataType: "json",
-                                success: function(result) {
-                                    if (result.theme === "error") {
-                                        toastr.error(result.message);
-                                    }else{
-                                        if (i == (totalrows - 1)) {
-                                            Swal.fire({
-                                                title: result.message,
-                                                icon: result.theme,
-                                                confirmButtonText: 'Ok',
-                                                allowOutsideClick: false,
-                                            }).then((result) => {
-                                                if (result.isConfirmed) {
-                                                    window.location.reload();
-                                                }
-                                            });
-                                        }
-                                    }
-                                },
-                                error: function(xhr, status, error) {
-                                    toastr.error("Server error: " + error);
-                                }
+                                waste: rows[i].waste
                             });
                         }
+                    }
+
+                    // Tambahkan machine tambahan
+                    // if (machine_no_insert.length > 0) {
+                    //     for (let j = 0; j < machine_no_insert.length; j++) {
+                    //         dataToSave.push({
+                    //             trans_date: trans_date,
+                    //             number: number,
+                    //             period: period,
+                    //             wp: wp,
+                    //             shift: shift,
+                    //             pic: pic,
+                    //             machine_id: machine_no_insert[j],
+
+                    //             // semua field lain kosong/null
+                    //             item_fg_id: null,
+                    //             planning_qty: null,
+                    //             qty_ok: null,
+                    //             qty_ng: null,
+                    //             qty_ng_mold: null,
+                    //             workorder: null,
+                    //             actual_cavity: null,
+                    //             operator: null,
+                    //             actual_curing_time: null,
+                    //             shift_hour: null,
+                    //             actual_shoot: null,
+                    //             total_compound_used: null,
+                    //             waste: null
+                    //         });
+                    //     }
+                    // }
+
+                    if (currentMode === 'add' && machine_no_insert.length > 0) {
+                        for (let j = 0; j < machine_no_insert.length; j++) {
+                            dataToSave.push({
+                                trans_date: trans_date,
+                                number: number,
+                                period: period,
+                                wp: wp,
+                                shift: shift,
+                                pic: pic,
+                                machine_id: machine_no_insert[j],
+
+                                // semua field lain kosong/null
+                                item_fg_id: null,
+                                mold_id: null,
+                                planning_qty: null,
+                                qty_ok: null,
+                                qty_ng: null,
+                                qty_ng_mold: null,
+                                workorder: null,
+                                actual_cavity: null,
+                                operator: null,
+                                actual_curing_time: null,
+                                shift_hour: null,
+                                actual_shoot: null,
+                                total_compound_used: null,
+                                waste: null
+                            });
+                        }
+                    }
+
+                    console.log('Save Mode:', currentMode);
+                    console.log('Machine No Insert:', machine_no_insert);
+
+                    console.log('Final Data to Save:', dataToSave);
+
+                    // Loop simpan semua ke server
+                    if (dataToSave.length === 0) {
+                        toastr.error("No data to save");
+                        return;
+                    }
+
+                    var url_save = "<?= base_url('control/output_production_press/create') ?>";
+
+                    let successCount = 0;
+                    for (let k = 0; k < dataToSave.length; k++) {
+                        $.ajax({
+                            type: "post",
+                            url: url_save,
+                            data: dataToSave[k],
+                            dataType: "json",
+                            success: function(result) {
+                                if (result.theme === "error") {
+                                    toastr.error(result.message);
+                                } else {
+                                    successCount++;
+                                    if (successCount === dataToSave.length) {
+                                        Swal.fire({
+                                            title: "All data saved successfully",
+                                            icon: "success",
+                                            confirmButtonText: 'Ok',
+                                            allowOutsideClick: false,
+                                        }).then(() => {
+                                            window.location.reload();
+                                        });
+                                    }
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                toastr.error("Server error: " + error);
+                            }
+                        });
                     }
 
                     $('#dg').datagrid('reload');
@@ -1609,6 +1992,7 @@
                 }
             }]
         });
+
     });
 
     // UPLOAD DATA
@@ -1801,7 +2185,6 @@
         }]
     });
 
-
     // $('#filter_division').combobox({
     //     url: '<?= base_url('master/divisions/reads'); ?>',
     //     valueField: 'id',
@@ -1821,7 +2204,23 @@
             $("#filter_period").combobox('select', defaultVal);
         },
         onSelect: function (data) {
-            var period = data.period;
+            var period = data.period; // 202509
+
+            var year = parseInt(period.substring(0, 4));
+            var month = parseInt(period.substring(4, 6));
+
+            var firstDay = new Date(year, month - 1, 1);
+            var lastDay = new Date(year, month, 0);
+
+            function pad(num) {
+                return num < 10 ? '0' + num : num;
+            }
+
+            var filter_from_value = `${year}-${pad(month)}-01`;
+            var filter_to_value = `${year}-${pad(month)}-${pad(lastDay.getDate())}`;
+
+            $("#filter_from").datebox('setValue', filter_from_value);
+            $("#filter_to").datebox('setValue', filter_to_value);
 
             $("#filter_wp").combobox({
                 url: '<?= base_url('planning/production_schedule_press/readWp?period=') ?>' + btoa(period),
@@ -1842,7 +2241,7 @@
         url: '<?= base_url('control/output_production_press/readNumber'); ?>',
         valueField: 'number',
         textField: 'number',
-        prompt: 'Choose Wo No',
+        prompt: 'Choose Doc No',
         icons: [{
             iconCls: 'icon-clear',
             handler: function(e) {
@@ -1889,6 +2288,34 @@
                 $(e.data.target).combogrid('clear').combogrid('textbox').focus();
             }
         }],
+    });
+
+    $("#machine_no_insert").combogrid({
+        url: '<?= base_url('planning/production_schedule_press/readMachinePressMolds') ?>',
+        panelWidth: 420,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        multiple: true,
+        prompt: "Choose Machine No",
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
+        columns: [
+            [{
+                field: 'number',
+                title: 'Machine No',
+                width: 100
+            }, {
+                field: 'name',
+                title: 'Machine Name',
+                width: 100
+            }, ]
+        ],
     });
 
     //Format Datepicker

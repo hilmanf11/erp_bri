@@ -73,7 +73,8 @@ class Output_production_press extends CI_Controller
             b.number, 
             b.name, 
             a.qty as planning_qty,
-            a.workorder
+            a.workorder,
+            a.mold_id
         FROM production_schedule_press a 
         JOIN item_fg b ON a.item_fg_id=b.id
         WHERE a.period='$period' 
@@ -145,7 +146,16 @@ class Output_production_press extends CI_Controller
     //GET DATA
     public function autonumber($type = "")
     {
-        $ymd = date("ymd");
+        $trans_date = $this->input->post('trans_date');
+        // $ymd = date("ymd");
+
+        $trans_date = $this->input->post('trans_date');
+        if ($trans_date) {
+            $ymd = date("ymd", strtotime($trans_date));
+        } else {
+            $ymd = date("ymd");
+        }
+
         $sql = $this->db->query("SELECT max(`number`) as kode FROM output_production_press where `number` like '%$ymd%'");
         $row = $sql->row();
         if ($row->kode == null) {
@@ -160,6 +170,26 @@ class Output_production_press extends CI_Controller
         }
 
         echo $autonumber;
+    }
+
+    public function autonumber_excel($trans_date = "")
+    {
+        if ($trans_date) {
+            $ymd = date("ymd", strtotime($trans_date));
+        } else {
+            $ymd = date("ymd");
+        }
+
+        $sql = $this->db->query("SELECT max(`number`) as kode FROM output_production_press where `number` like '%$ymd%'");
+        $row = $sql->row();
+        if ($row->kode == null) {
+            $autonumber = "PPRS-" . $ymd . "001";
+        } else {
+            $kode = substr($row->kode, -3);
+            $autonumber = "PPRS-" . $ymd . sprintf("%03s", $kode + 1);
+        }
+
+        return $autonumber;
     }
 
     public function readNumber()
@@ -177,18 +207,22 @@ class Output_production_press extends CI_Controller
         if ($this->input->post()) {
             // $get = $this->input->get();
 
-            // $filter_from = $this->input->get('filter_from');
-            // $filter_to = $this->input->get('filter_to');
+            $filter_from = $this->input->get('filter_from');
+            $filter_to = $this->input->get('filter_to');
             // $filter_division = $this->input->get('filter_division');
             
             $filter_period = $this->input->get('filter_period');
-            $filter_trans_date = $this->input->get('filter_trans_date');
+            // $filter_trans_date = $this->input->get('filter_trans_date');
             $filter_number = $this->input->get('filter_number');
             $filter_shift = $this->input->get('filter_shift');
             $filter_wp = $this->input->get('filter_wp');
             $filter_workorder = $this->input->get('filter_workorder');
             $filter_item_fg_id = $this->input->get('filter_item_fg_id');
             $filter_status = $this->input->get('filter_status');
+
+            if (empty($filter_period)) {
+                $filter_period = date('Ym');
+            }
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -203,10 +237,10 @@ class Output_production_press extends CI_Controller
             $this->db->from('output_production_press a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
 
-            // if ($filter_from != "" or $filter_to != "") {
-            //     $this->db->where('a.trans_date >=', $filter_from);
-            //     $this->db->where('a.trans_date <=', $filter_to);
-            // }
+            if ($filter_from != "" or $filter_to != "") {
+                $this->db->where('a.trans_date >=', $filter_from);
+                $this->db->where('a.trans_date <=', $filter_to);
+            }
             // if ($filter_division != "") {
             //     $this->db->where('b.division_id', $filter_division);
             // }
@@ -216,9 +250,9 @@ class Output_production_press extends CI_Controller
             }else{
                 $this->db->where('a.trans_date', date('Y-m-d'));
             }
-            if ($filter_trans_date != "") {
-                $this->db->where('a.trans_date', $filter_trans_date);
-            }
+            // if ($filter_trans_date != "") {
+            //     $this->db->where('a.trans_date', $filter_trans_date);
+            // }
             if ($filter_number != "") {
                 $this->db->where('a.number', $filter_number);
             }
@@ -238,7 +272,11 @@ class Output_production_press extends CI_Controller
                 $this->db->where('a.status', $filter_status);
             }
             $this->db->group_by('a.number,a.period,a.trans_date,a.shift');
-            $this->db->order_by('a.created_date', 'DESC');
+
+            $this->db->order_by('(a.wp + 0)', 'ASC', false);
+            $this->db->order_by('a.wp', 'ASC');
+
+            // $this->db->order_by('a.created_date', 'DESC');
             // $this->db->order_by('b.number', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
@@ -258,8 +296,8 @@ class Output_production_press extends CI_Controller
     {
         if ($this->input->get()) {
             $number = base64_decode($this->input->get('number'));
-            $filter_workorder = base64_decode($this->input->get('workorder'));
-            $filter_item_fg_id = base64_decode($this->input->get('item_fg_id'));
+            $filter_workorder = base64_decode($this->input->get('filter_workorder'));
+            $filter_item_fg_id = base64_decode($this->input->get('filter_item_fg_id'));
 
             // $this->db->select("a.*, 
             //     CEILING(a.planning_qty / 3) as planning_qty_shift, 
@@ -285,7 +323,9 @@ class Output_production_press extends CI_Controller
                 b.name as item_fg_name, 
                 c.number as machine_number, 
                 e.number as item_rm_number,
-                
+                g.standard_curing_time,
+                g.target_shoot,
+
                 CEILING(COALESCE(a.planning_qty,0) / 3) as planning_qty_shift, 
             
                 CEILING(COALESCE(a.qty_ok,0) + COALESCE(a.qty_ng,0) + COALESCE(a.qty_ng_mold,0)) as total_qty,
@@ -295,9 +335,9 @@ class Output_production_press extends CI_Controller
 
                 COALESCE(g.cavity_standard,0) as standard_cavity,
 
-                (COALESCE(a.actual_shoot,0) - COALESCE(a.target_shoot,0)) as shoot_deviation,
+                (COALESCE(a.actual_shoot,0) - COALESCE(g.target_shoot,0)) as shoot_deviation,
 
-                COALESCE(ROUND((COALESCE(a.actual_shoot,0) / NULLIF(COALESCE(a.target_shoot,0),0)) * 100, 2),0) as achievment,
+                COALESCE(ROUND((COALESCE(a.actual_shoot,0) / NULLIF(COALESCE(g.target_shoot,0),0)) * 100, 2),0) as achievment,
 
                 COALESCE(ROUND((COALESCE(a.qty_ng,0) / NULLIF(COALESCE(a.qty_ok,0) + COALESCE(a.qty_ng,0) + COALESCE(a.qty_ng_mold,0),0)) * 100, 2),0) as ng_prod,
 
@@ -332,7 +372,7 @@ class Output_production_press extends CI_Controller
             if ($filter_item_fg_id != "") {
                 $this->db->where('a.item_fg_id', $filter_item_fg_id);
             }
-            $this->db->order_by('a.id', 'ASC');
+            $this->db->order_by('c.id', 'ASC');
             $records = $this->db->get()->result_array();
             echo json_encode($records);
         }
@@ -343,16 +383,81 @@ class Output_production_press extends CI_Controller
     {
         if ($this->input->get()) {
             $number = base64_decode($this->input->get('number'));
+            
             $this->db->select("a.*, b.number as item_fg_number, b.name as item_fg_name,  c.number as machine_number");
             $this->db->from('output_production_press a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
             $this->db->join('machines c', 'a.machine_id = c.id', 'left');
             $this->db->where('a.number', $number);
-            $this->db->order_by('a.id', 'ASC');
+
+            $this->db->where('a.machine_id IS NOT NULL');
+            $this->db->where('a.item_fg_id != ""');
+
+            $this->db->order_by('a.machine_id', 'ASC');
             $records = $this->db->get()->result_array();
 
             echo json_encode($records);
         }
+    }
+
+    // UPDATE DATA
+    public function datatableUpdateByMachines()
+    {
+        if ($this->input->get()) {
+            $number = base64_decode($this->input->get('number'));
+            
+            $this->db->select("a.*, b.number as item_fg_number, b.name as item_fg_name,  c.number as machine_number");
+            $this->db->from('output_production_press a');
+            $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
+            $this->db->join('machines c', 'a.machine_id = c.id', 'left');
+            $this->db->where('a.number', $number);
+
+            $this->db->where('a.machine_id IS NOT NULL');
+            $this->db->where('a.item_fg_id = ""');
+
+            $this->db->order_by('a.machine_id', 'ASC');
+            $records = $this->db->get()->result_array();
+
+            echo json_encode($records);
+        }
+    }
+
+    public function checkMachinesWithoutItemFg()
+    {
+        if ($this->input->get()) {
+            $number = base64_decode($this->input->get('number'));
+
+            $this->db->select('COUNT(*) as cnt');
+            $this->db->from('output_production_press');
+            $this->db->where('number', $number);
+            $this->db->where('machine_id IS NOT NULL', null, false);
+            $this->db->where('(item_fg_id IS NULL OR item_fg_id = "")', null, false);
+
+            $count = $this->db->get()->row()->cnt;
+
+            echo json_encode([
+                'has_empty_machines' => $count > 0
+            ]);
+        }
+    }
+
+    public function readMachinesByNumber()
+    {
+        $number = base64_decode($this->input->get('number', true));
+
+        $data = $this->db
+            ->select('machine_id')
+            ->from('output_production_press')
+            ->where('number', $number)
+            ->where('item_fg_id IS NOT NULL')
+            ->where('item_fg_id = ""')
+            ->order_by('machine_id', 'ASC')
+            ->get()
+            ->result_array();
+
+        $machines = array_column($data, 'machine_id');
+
+        echo json_encode($machines);
     }
 
     public function create()
@@ -369,56 +474,75 @@ class Output_production_press extends CI_Controller
                 // "shift" => $post['shift'],
                 "item_fg_id" => $post['item_fg_id'],
                 "machine_id" => $post['machine_id'],
+                "mold_id" => $post['mold_id'],
                 "planning_qty" => $post['planning_qty'],
                 "qty_ok" => $post['qty_ok'],
                 "qty_ng" => $post['qty_ng'],
                 "qty_ng_mold" => $post['qty_ng_mold'],
-                "workorder" => $post['workorder'],
+                // "workorder" => $post['workorder'],
+                "workorder" => !empty($post['workorder']) ? $post['workorder'] : null,
                 "actual_cavity" => $post['actual_cavity'],
                 "operator" => $post['operator'],
                 "pic" => $post['pic'],
-                "standard_curing_time" => $post['standard_curing_time'],
+                // "standard_curing_time" => $post['standard_curing_time'],
                 "actual_curing_time" => $post['actual_curing_time'],
                 "shift_hour" => $post['shift_hour'],
-                "target_shoot" => $post['target_shoot'],
+                // "target_shoot" => $post['target_shoot'],
                 "actual_shoot" => $post['actual_shoot'],
                 "total_compound_used" => $post['total_compound_used'],
                 "waste" => $post['waste'],
-                "mold_cleaning" => $post['mold_cleaning'],
-                "trial" => $post['trial'],
-                "mold_changing" => $post['mold_changing'],
-                "machine_repair" => $post['machine_repair'],
-                "mold_repair" => $post['mold_repair'],
-                "others" => $post['others'],
-                "remarks" => $post['remarks'],
+                // "mold_cleaning" => $post['mold_cleaning'],
+                // "trial" => $post['trial'],
+                // "mold_changing" => $post['mold_changing'],
+                // "machine_repair" => $post['machine_repair'],
+                // "mold_repair" => $post['mold_repair'],
+                // "others" => $post['others'],
+                // "remarks" => $post['remarks'],
             );
 
+            $dataFinalMold = [
+                "cavity_actual" => $post['actual_cavity'],
+            ];
+
+            if (!isset($post['workorder']) || $post['workorder'] === '' || $post['workorder'] === 'null') {
+                $post['workorder'] = null;
+            }
+
             if (@$post['id'] != "") {
-                $send = $this->crud->update('output_production_press', ["id" => $post['id']], $dataFinal);
-            } else {
-                $checkOutputPress = $this->crud->read('output_production_press', [], [
-                    "period"     => $post['period'],
-                    // "trans_date" => $post['trans_date'],
-                    "wp"         => $post['wp'],
-                    "shift"      => $post['shift'],
-                    "machine_id" => $post['machine_id'],
-                    "item_fg_id" => $post['item_fg_id'],
-                    "workorder"  => $post['workorder'],
-                ]);
 
-                $item_fg = $this->crud->read("item_fg", [], ["id" => $post['item_fg_id']]);
-                $machine = $this->crud->read("machines", [], ["id" => $post['machine_id']]);
-
-                if (!empty($checkOutputPress)) {
-                    echo json_encode(array(
-                        "title"   => "Duplicate Data",
-                        "message" => "Duplicate Data for Product {$item_fg->number} on Machine {$machine->number} (Period: {$post['period']}, WP: {$post['wp']}, Shift: {$post['shift']}, Workorder: {$post['workorder']}).",
-                        "theme"   => "error"
-                    ));
-                    exit;
+                if(!empty($post['mold_id']) || $post['mold_id'] !== '' || $post['mold_id'] !== 'null') {
+                    $this->crud->update("molds", ["id" => $post['mold_id']], $dataFinalMold);
                 }
 
+                $send = $this->crud->update('output_production_press', ["id" => $post['id']], $dataFinal);
+            } else {
+                // $checkOutputPress = $this->crud->read('output_production_press', [], [
+                //     "period"     => $post['period'],
+                //     // "trans_date" => $post['trans_date'],
+                //     "wp"         => $post['wp'],
+                //     "shift"      => $post['shift'],
+                //     "machine_id" => $post['machine_id'],
+                //     "item_fg_id" => $post['item_fg_id'],
+                //     "workorder"  => $post['workorder'],
+                // ]);
+
+                // $item_fg = $this->crud->read("item_fg", [], ["id" => $post['item_fg_id']]);
+                // $machine = $this->crud->read("machines", [], ["id" => $post['machine_id']]);
+
+                // if (!empty($checkOutputPress)) {
+                //     echo json_encode(array(
+                //         "title"   => "Duplicate Data",
+                //         "message" => "Duplicate Data for Product {$item_fg->number} on Machine {$machine->number} (Period: {$post['period']}, WP: {$post['wp']}, Shift: {$post['shift']}, Workorder: {$post['workorder']}).",
+                //         "theme"   => "error"
+                //     ));
+                //     exit;
+                // }
+
                 $send = $this->crud->create('output_production_press', $post);
+
+                if(!empty($post['mold_id']) || $post['mold_id'] !== '' || $post['mold_id'] !== 'null') {
+                    $this->crud->update("molds", ["id" => $post['mold_id']], $dataFinalMold);
+                }
             }
             echo $send;
         } else {
@@ -491,23 +615,23 @@ class Output_production_press extends CI_Controller
                 'qty_ng_mold' => $data->val($i, 11),
                 'actual_cavity' => $data->val($i, 12),
 
-                'standard_curing_time' => $data->val($i, 13),
-                'actual_curing_time' => $data->val($i, 14),
-                'shift_hour' => $data->val($i, 15),
-                'target_shoot' => $data->val($i, 16),
-                'actual_shoot' => $data->val($i, 17),
-                'total_compound_used' => $data->val($i, 18),
-                'waste' => $data->val($i, 19),
-                'mold_cleaning' => $data->val($i, 20),
-                'trial' => $data->val($i, 21),
-                'mold_changing' => $data->val($i, 22),
-                'machine_repair' => $data->val($i, 23),
-                'mold_repair' => $data->val($i, 24),
-                'others' => $data->val($i, 25),
+                // 'standard_curing_time' => $data->val($i, 13),
+                'actual_curing_time' => $data->val($i, 13),
+                'shift_hour' => $data->val($i, 14),
+                // 'target_shoot' => $data->val($i, 16),
+                'actual_shoot' => $data->val($i, 15),
+                'total_compound_used' => $data->val($i, 16),
+                'waste' => $data->val($i, 17),
+                // 'mold_cleaning' => $data->val($i, 18),
+                // 'trial' => $data->val($i, 19),
+                // 'mold_changing' => $data->val($i, 20),
+                // 'machine_repair' => $data->val($i, 21),
+                // 'mold_repair' => $data->val($i, 22),
+                // 'others' => $data->val($i, 23),
 
-                'operator' => $data->val($i, 26),
-                'pic' => $data->val($i, 27),
-                'remarks' => $data->val($i, 28),
+                'operator' => $data->val($i, 18),
+                'pic' => $data->val($i, 19),
+                // 'remarks' => $data->val($i, 26),
             );
         }
 
@@ -545,96 +669,6 @@ class Output_production_press extends CI_Controller
     }
 
     //UPLOAD CREATE DATA
-    // public function uploadCreate()
-    // {
-    //     if ($this->input->post()) {
-    //         $data = $this->input->post('data');
-
-    //         $item_fg = $this->crud->read('item_fg', [], array("number" => $data['item_number']));
-    //         $machines = $this->crud->read('machines', [], array("number" => $data['machine_number']));
-    //         $data_cek = array(
-    //                 "item_fg_id" => $item_fg->id,
-    //                 "trans_date" => $data['trans_date'],
-    //                 "wo_no" => $data['wo_no'],
-    //                 "period" => $data['period'],
-    //                 "qty" => $data['qty'],
-    //                 "qty_wip" => $data['qty_wip'],
-    //                 "shift" => $data['shift'],
-    //                 "remarks" => $data['remarks'],
-    //                 "machine_number" => $data['machine_number'],
-    //             );
-    //         $output_production_press = $this->crud->read('output_production_press', [], $data_cek);
-    //         $send = $this->crud->query("
-    //             SELECT DISTINCT a.item_fg_id, a.workorder AS wo_no, a.period, b.number, b.name, a.lot_no, 'Supply Sheets' AS modul
-    //             FROM supply_sheets a 
-    //             JOIN item_fg b ON a.item_fg_id = b.id 
-    //             WHERE a.period = '{$data['period']}'
-
-    //             UNION
-
-    //             SELECT DISTINCT a.item_fg_id, a.wo_no, a.period, b.number, b.name, a.lot_no, 'Production Schedule' AS modul
-    //             FROM production_schedules a 
-    //             JOIN item_fg b ON a.item_fg_id = b.id 
-    //             WHERE a.period = '{$data['period']}' AND a.status_subcont = 'YES' AND a.subcont_type = 'Jasa'
-
-    //             ORDER BY modul, item_fg_id ASC
-    //         ");
-
-    //         $item_fg_ids = array_column($send, 'item_fg_id');
-
-    //         if (empty($item_fg) || empty($item_fg->id)) {
-    //             echo json_encode(array("title" => "Not Found","message" => "Product number " . $data['item_number'] . " NOT FOUND","theme" => "error"));
-    //             // return;
-    //         } elseif (empty($machines)) {
-    //         echo json_encode(array("title" => "Not Found","message" => "Machine number " . $data['machine_number'] . " NOT FOUND IN MODUL MACHINE","theme" => "error"));
-    //         // return;
-    //         } elseif ($output_production_press) {
-    //         echo json_encode(array("title" => "Duplicate","message" => "Duplicate Product number " . $data['item_number'] . " FOUND","theme" => "error"));
-    //         } elseif (!in_array($item_fg->id, $item_fg_ids)) {
-    //             echo json_encode(array("title" => "Not Found","message" => "Product number " . $data['item_number'] . " NOT FOUND IN PERIOD " . $data['period'],"theme" => "error"));
-    //             // return;
-    //         }else{
-    //             $lot_no = null;
-    //             foreach ($send as $row) {
-    //                 if ($row->item_fg_id == $item_fg->id) {
-    //                     $lot_no = $row->lot_no;
-    //                     break;
-    //                 }
-    //             }
-
-    //             // AUTONUMBER
-    //             $ymd = date("ymd");
-    //             $sql = $this->db->query("SELECT MAX(`number`) AS kode FROM output_production_press WHERE `number` LIKE '%$ymd%'");
-    //             $row = $sql->row();
-    //             if ($row->kode == null) {
-    //                 $autonumber = "PRD-" . $ymd . "0001";
-    //             } else {
-    //                 $kode = substr($row->kode, -4);
-    //                 $autonumber = "PRD-" . $ymd . sprintf("%04s", $kode + 1);
-    //             }
-
-    //             $dataFinal = array(
-    //                 "number" => $autonumber,
-    //                 "item_fg_id" => $item_fg->id,
-    //                 "trans_date" => $data['trans_date'],
-    //                 "wo_no" => $data['wo_no'],
-    //                 "period" => $data['period'],
-    //                 "qty" => $data['qty'],
-    //                 "qty_wip" => $data['qty_wip'],
-    //                 "shift" => $data['shift'],
-    //                 "remarks" => $data['remarks'],
-    //                 "lot_no" => $lot_no,
-    //                 "machine_number" => $data['machine_number'],
-    //                 "type" => "Upload",
-    //             );
-
-    //             $send   = $this->crud->create('output_production_press', $dataFinal);
-    //             echo $send;
-    //         }
-    //     }
-    // }
-
-    //UPLOAD CREATE DATA
     public function uploadcreate()
     {
         if ($this->input->post()) {
@@ -652,40 +686,6 @@ class Output_production_press extends CI_Controller
             $groupNumbers = [];
             foreach ($data_list as $index => $data) {
                 $processed_count++;
-
-                // if (
-                //     empty($data['period']) ||
-                //     empty($data['trans_date']) ||
-                //     empty($data['wp']) ||
-                //     empty($data['shift']) ||
-                //     empty($data['machine_id']) ||
-                //     empty($data['item_fg_id']) || 
-                //     empty($data['workorder']) || 
-                //     $data['qty_ok'] == "" || 
-                //     $data['qty_ng'] == "" || 
-                //     $data['qty_ng_mold'] == "" || 
-                //     $data['actual_cavity'] == "" || 
-
-                //     $data['standard_curing_time'] == "" || 
-                //     $data['actual_curing_time'] == "" || 
-                //     $data['shift_hour'] == "" || 
-                //     $data['target_shoot'] == "" || 
-                //     $data['actual_shoot'] == "" || 
-                //     $data['total_compound_used'] == "" ||
-
-                //     !strtotime($data['trans_date']) ||
-                //     !is_numeric($data['qty_ok']) ||
-                //     !is_numeric($data['qty_ng']) ||
-                //     !is_numeric($data['qty_ng_mold']) ||
-                //     !is_numeric($data['actual_cavity'])
-                //    ) {
-                //         $results[] = [
-                //             "status" => "failed",
-                //             "item" => "Line " . ($index + 1),
-                //             "message" => "Invalid or missing data"
-                //         ];
-                //         continue;
-                // }
 
                 if (empty($data['period'])) {
                     $results[] = [
@@ -807,14 +807,14 @@ class Output_production_press extends CI_Controller
                     ];
                     continue;
                 }
-                if ($data['standard_curing_time'] === "" || !is_numeric($data['standard_curing_time'])) {
-                    $results[] = [
-                        "status"  => "failed",
-                        "item"    => "Line " . ($index + 1),
-                        "message" => "Standard Curing Time must be numeric and not empty"
-                    ];
-                    continue;
-                }
+                // if ($data['standard_curing_time'] === "" || !is_numeric($data['standard_curing_time'])) {
+                //     $results[] = [
+                //         "status"  => "failed",
+                //         "item"    => "Line " . ($index + 1),
+                //         "message" => "Standard Curing Time must be numeric and not empty"
+                //     ];
+                //     continue;
+                // }
                 if ($data['actual_curing_time'] === "" || !is_numeric($data['actual_curing_time'])) {
                     $results[] = [
                         "status"  => "failed",
@@ -831,14 +831,14 @@ class Output_production_press extends CI_Controller
                     ];
                     continue;
                 }
-                if ($data['target_shoot'] === "" || !is_numeric($data['target_shoot'])) {
-                    $results[] = [
-                        "status"  => "failed",
-                        "item"    => "Line " . ($index + 1),
-                        "message" => "Target Shoot must be numeric and not empty"
-                    ];
-                    continue;
-                }
+                // if ($data['target_shoot'] === "" || !is_numeric($data['target_shoot'])) {
+                //     $results[] = [
+                //         "status"  => "failed",
+                //         "item"    => "Line " . ($index + 1),
+                //         "message" => "Target Shoot must be numeric and not empty"
+                //     ];
+                //     continue;
+                // }
                 if ($data['actual_shoot'] === "" || !is_numeric($data['actual_shoot'])) {
                     $results[] = [
                         "status"  => "failed",
@@ -847,7 +847,7 @@ class Output_production_press extends CI_Controller
                     ];
                     continue;
                 }
-                if ($data['total_compound_used'] === "" || !is_numeric($data['total_compound_used'])) {
+                if ($data['total_compound_used'] === "") {
                     $results[] = [
                         "status"  => "failed",
                         "item"    => "Line " . ($index + 1),
@@ -872,7 +872,7 @@ class Output_production_press extends CI_Controller
                 $groupKey = $data['period'] . '|' . $data['trans_date'] . '|' . $data['wp'] . '|' . $data['shift'];
 
                 if (!isset($groupNumbers[$groupKey])) {
-                    $groupNumbers[$groupKey] = $this->autonumber("return");
+                    $groupNumbers[$groupKey] = $this->autonumber_excel($data['trans_date']);
                 }
 
                 $groupNumber = $groupNumbers[$groupKey];
@@ -961,6 +961,7 @@ class Output_production_press extends CI_Controller
                     "shift"      => $data['shift'],
                     "machine_id" => $machine->id,
                     "item_fg_id" => $item_fg->id,
+                    "mold_id"    => $checkWOProdSchPress->mold_id,
                     "workorder"  => $data['workorder'],
                 ]);
 
@@ -993,6 +994,7 @@ class Output_production_press extends CI_Controller
                     "shift"                 => $data['shift'],
                     "machine_id"            => $machine->id,
                     "item_fg_id"            => $item_fg->id,
+                    "mold_id"               => $checkWOProdSchPress->mold_id,
                     "workorder"             => $data['workorder'],
                     "planning_qty"          => $planning_qty,
                     "qty_ok"                => $data['qty_ok'],
@@ -1000,23 +1002,23 @@ class Output_production_press extends CI_Controller
                     "qty_ng_mold"           => $data['qty_ng_mold'],
                     "actual_cavity"         => $data['actual_cavity'],
 
-                    "standard_curing_time"  => $data['standard_curing_time'],
+                    // "standard_curing_time"  => $data['standard_curing_time'],
                     "actual_curing_time"    => $data['actual_curing_time'],
                     "shift_hour"            => $data['shift_hour'],
-                    "target_shoot"          => $data['target_shoot'],
+                    // "target_shoot"          => $data['target_shoot'],
                     "actual_shoot"          => $data['actual_shoot'],
                     "total_compound_used"   => $data['total_compound_used'],
                     "waste"                 => $data['waste'],
-                    "mold_cleaning"         => $data['mold_cleaning'],
-                    "trial"                 => $data['trial'],
-                    "mold_changing"         => $data['mold_changing'],
-                    "machine_repair"        => $data['machine_repair'],
-                    "mold_repair"           => $data['mold_repair'],
-                    "others"                => $data['others'],
+                    // "mold_cleaning"         => $data['mold_cleaning'],
+                    // "trial"                 => $data['trial'],
+                    // "mold_changing"         => $data['mold_changing'],
+                    // "machine_repair"        => $data['machine_repair'],
+                    // "mold_repair"           => $data['mold_repair'],
+                    // "others"                => $data['others'],
 
                     "operator"              => $data['operator'],
                     "pic"                   => $data['pic'],
-                    "remarks"               => $data['remarks'],
+                    // "remarks"               => $data['remarks'],
                 );
 
                 try {
@@ -1027,22 +1029,22 @@ class Output_production_press extends CI_Controller
                             "qty_ng"                => $data['qty_ng'],
                             "qty_ng_mold"           => $data['qty_ng_mold'],
                             "actual_cavity"         => $data['actual_cavity'],
-                            "standard_curing_time"  => $data['standard_curing_time'],
+                            // "standard_curing_time"  => $data['standard_curing_time'],
                             "actual_curing_time"    => $data['actual_curing_time'],
                             "shift_hour"            => $data['shift_hour'],
-                            "target_shoot"          => $data['target_shoot'],
+                            // "target_shoot"          => $data['target_shoot'],
                             "actual_shoot"          => $data['actual_shoot'],
                             "total_compound_used"   => $data['total_compound_used'],
                             "waste"                 => $data['waste'],
-                            "mold_cleaning"         => $data['mold_cleaning'],
-                            "trial"                 => $data['trial'],
-                            "mold_changing"         => $data['mold_changing'],
-                            "machine_repair"        => $data['machine_repair'],
-                            "mold_repair"           => $data['mold_repair'],
-                            "others"                => $data['others'],
+                            // "mold_cleaning"         => $data['mold_cleaning'],
+                            // "trial"                 => $data['trial'],
+                            // "mold_changing"         => $data['mold_changing'],
+                            // "machine_repair"        => $data['machine_repair'],
+                            // "mold_repair"           => $data['mold_repair'],
+                            // "others"                => $data['others'],
                             "operator"              => $data['operator'],
                             "pic"                   => $data['pic'],
-                            "remarks"               => $data['remarks'],
+                            // "remarks"               => $data['remarks'],
                         ], [
                             "period"     => $data['period'],
                             "trans_date" => $data['trans_date'],
@@ -1050,6 +1052,7 @@ class Output_production_press extends CI_Controller
                             "shift"      => $data['shift'],
                             "machine_id" => $machine->id,
                             "item_fg_id" => $item_fg->id,
+                            "mold_id"    => $checkWOProdSchPress->mold_id,
                             "workorder"  => $data['workorder'],
                         ]);
 
@@ -1059,6 +1062,13 @@ class Output_production_press extends CI_Controller
                         $this->crud->create('output_production_press', $dataFinal);
 
                         $status = "insert";
+                    }
+
+                    if(!empty($checkWOProdSchPress->mold_id) || $checkWOProdSchPress->mold_id !== '' || $checkWOProdSchPress->mold_id !== 'null') {
+                        $dataFinalMold = [
+                            "cavity_actual" => $data['actual_cavity'],
+                        ];
+                        $this->crud->update("molds", ["id" => $checkWOProdSchPress->mold_id], $dataFinalMold);
                     }
 
                     $res_item = ($status === "insert" ? "Create" : "Update");
@@ -1160,8 +1170,8 @@ class Output_production_press extends CI_Controller
         }
 
         // $get = $this->input->get();
-        // $filter_from = $this->input->get('filter_from');
-        // $filter_to = $this->input->get('filter_to');
+        $filter_from = $this->input->get('filter_from');
+        $filter_to = $this->input->get('filter_to');
         // $filter_wo_no = $this->input->get('filter_wo_no');
         // $filter_number = $this->input->get('filter_number');
         // $filter_shift = $this->input->get('filter_shift');
@@ -1169,13 +1179,17 @@ class Output_production_press extends CI_Controller
         // $filter_division = $this->input->get('filter_division');
 
         $filter_period = $this->input->get('filter_period');
-        $filter_trans_date = $this->input->get('filter_trans_date');
+        // $filter_trans_date = $this->input->get('filter_trans_date');
         $filter_number = $this->input->get('filter_number');
         $filter_shift = $this->input->get('filter_shift');
         $filter_wp = $this->input->get('filter_wp');
         $filter_workorder = $this->input->get('filter_workorder');
         $filter_item_fg_id = $this->input->get('filter_item_fg_id');
         $filter_status = $this->input->get('filter_status');
+
+        if (empty($filter_period)) {
+            $filter_period = date('Ym');
+        }
 
         //Config
         $this->db->select('*');
@@ -1189,9 +1203,11 @@ class Output_production_press extends CI_Controller
             b.name as item_fg_name,
             c.number as machine_number,
             e.number as item_rm_number,
-            
+            g.standard_curing_time,
+            g.target_shoot,
+
             CEILING(COALESCE(a.planning_qty,0) / 3) as planning_qty_shift, 
-        
+
             CEILING(COALESCE(a.qty_ok,0) + COALESCE(a.qty_ng,0) + COALESCE(a.qty_ng_mold,0)) as total_qty,
 
             (CEILING(COALESCE(a.qty_ok,0) + COALESCE(a.qty_ng,0) + COALESCE(a.qty_ng_mold,0)) 
@@ -1199,9 +1215,9 @@ class Output_production_press extends CI_Controller
 
             COALESCE(g.cavity_standard,0) as standard_cavity,
 
-            (COALESCE(a.actual_shoot,0) - COALESCE(a.target_shoot,0)) as shoot_deviation,
+            (COALESCE(a.actual_shoot,0) - COALESCE(g.target_shoot,0)) as shoot_deviation,
 
-            COALESCE(ROUND((COALESCE(a.actual_shoot,0) / NULLIF(COALESCE(a.target_shoot,0),0)) * 100, 2),0) as achievment,
+            COALESCE(ROUND((COALESCE(a.actual_shoot,0) / NULLIF(COALESCE(g.target_shoot,0),0)) * 100, 2),0) as achievment,
 
             COALESCE(ROUND((COALESCE(a.qty_ng,0) / NULLIF(COALESCE(a.qty_ok,0) + COALESCE(a.qty_ng,0) + COALESCE(a.qty_ng_mold,0),0)) * 100, 2),0) as ng_prod,
 
@@ -1229,12 +1245,17 @@ class Output_production_press extends CI_Controller
         // $this->db->join('setting_molds f', 'a.item_fg_id = f.item_fg_id', 'left');
         $this->db->join('molds g', 'f.mold_id = g.id', 'left');
 
+        if ($filter_from != "" or $filter_to != "") {
+            $this->db->where('a.trans_date >=', $filter_from);
+            $this->db->where('a.trans_date <=', $filter_to);
+        }
+
         if ($filter_period != "") {
             $this->db->where('a.period', $filter_period);
         }
-        if ($filter_trans_date != "") {
-            $this->db->where('a.trans_date', $filter_trans_date);
-        }
+        // if ($filter_trans_date != "") {
+        //     $this->db->where('a.trans_date', $filter_trans_date);
+        // }
         if ($filter_number != "") {
             $this->db->where('a.number', $filter_number);
         }
@@ -1253,6 +1274,10 @@ class Output_production_press extends CI_Controller
         if ($filter_status != "") {
             $this->db->where('a.status', $filter_status);
         }
+
+        $this->db->order_by('(a.wp + 0)', 'ASC', false);
+        $this->db->order_by('a.wp', 'ASC');
+
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#output_production_press {border-collapse: collapse;width: 100%;font-size: 12px;}#output_production_press td, #output_production_press th {border: 1px solid #ddd;padding: 2px;}#output_production_press tr:nth-child(even){background-color: #f2f2f2;}#output_production_press tr:hover {background-color: #ddd;}#output_production_press th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
@@ -1278,7 +1303,7 @@ class Output_production_press extends CI_Controller
                 <h3>OUTPUT PRODUCTION PRESS</h3>
             </div>
         </center>
-        
+
         <table id="output_production_press" border="1">
             <tr>
                 <th rowspan="2" width="20">No</th>
@@ -1287,6 +1312,7 @@ class Output_production_press extends CI_Controller
                 <th rowspan="2" >Document No</th>
                 <th rowspan="2" >Shift</th>
                 <th rowspan="2" >WP No</th>
+                <th rowspan="2" >PIC</th>
                 <th rowspan="2" >Machine No</th>
                 <th rowspan="2" >Product ID</th>
                 <th rowspan="2" >Product No</th>
@@ -1314,8 +1340,6 @@ class Output_production_press extends CI_Controller
                 <th rowspan="2" >% Waste</th>
                 <th rowspan="2" >Total Used/shoot (gr)</th>
                 <th rowspan="2" >Total Waste/shoot (gr)</th>
-                <th colspan="6" style="text-align: center;">Downtime</th>
-                <th rowspan="2" >Remarks</th>
             </tr>
 
             <tr>
@@ -1323,12 +1347,6 @@ class Output_production_press extends CI_Controller
                 <th>NG Produksi</th>
                 <th>NG Mold</th>
                 <th>Total</th>
-                <th>Mold Cleaning</th>
-                <th>Trial</th>
-                <th>Mold Changing</th>
-                <th>Machine Repair</th>
-                <th>Mold Repair</th>
-                <th>Others</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
@@ -1339,6 +1357,7 @@ class Output_production_press extends CI_Controller
                     <td>' . $data['number'] . '</td>
                     <td>' . $data['shift'] . '</td>
                     <td>' . $data['wp'] . '</td>
+                    <td>' . $data['pic'] . '</td>
                     <td>' . $data['machine_number'] . '</td>
                     <td>' . $data['item_fg_id'] . '</td>
                     <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
@@ -1368,14 +1387,7 @@ class Output_production_press extends CI_Controller
                     <td>' . number_format($data['waste'], 2, '.', '.') . '</td>
                     <td>' . $data['waste_percen'] . '</td>
                     <td>' . number_format($data['total_used_shoot'], 2, '.', '.') . '</td>
-                    <td>' . number_format($data['total_waste_shoot'], 2, '.', '.') . '</td>
-                    <td>' . format_number($data['mold_cleaning']) . '</td>
-                    <td>' . format_number($data['trial']) . '</td>
-                    <td>' . format_number($data['mold_changing']) . '</td>
-                    <td>' . format_number($data['machine_repair']) . '</td>
-                    <td>' . format_number($data['mold_repair']) . '</td>
-                    <td>' . format_number($data['others']) . '</td>
-                    <td>' . $data['remarks'] . '</td>';
+                    <td>' . number_format($data['total_waste_shoot'], 2, '.', '.') . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';

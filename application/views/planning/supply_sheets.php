@@ -566,6 +566,7 @@
                             if (r) {
                                 for (var i = 0; i < rows.length; i++) {
                                     var row = rows[i];
+                                    // console.log(row.qty_req);
                                     $.ajax({
                                         type: "post",
                                         url: '<?= base_url('planning/supply_sheets/create') ?>',
@@ -575,7 +576,7 @@
                                             '&request_date=' + request_date +
                                             '&request_no=' + request_no +
                                             '&request_name=' + request_name +
-                                            '&qty_req=' + row.qty_req +
+                                            '&qty_req=' + parseFloat(row.qty_req) +
                                             '&qty_act=' + row.qty_act +
                                             '&mpq=' + row.mpq +
                                             '&qty_bal=' + (parseInt(row.qty_req) - parseInt(row.qty_act)),
@@ -666,6 +667,19 @@
                     }
                 });
             }
+        });
+
+        $("#filter_request_no").combobox({
+            url: '<?= base_url('planning/supply_sheets/readRequestNoAll') ?>',
+            valueField: 'request_no',
+            textField: 'request_no',
+            prompt: "Select Supply No",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }],
         });
 
         // $("#filter_operation").combobox({

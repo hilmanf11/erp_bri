@@ -102,7 +102,7 @@ class Customer_items extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.item_fg_id, a.item_fg_customer, c.number as item_fg_number, c.name as item_fg_name, a.type_item, a.valid_to, a.valid_from, a.price, a.remark, b.id as customer_id, b.currency, b.number as customer_number, b.name as customer_name, b.type, b.status, a.created_by, a.created_date, a.updated_by, a.updated_date');
+            $this->db->select('a.item_fg_id, a.item_fg_customer, c.number as item_fg_number, c.name as item_fg_name, a.type_item, a.valid_to, a.valid_from, a.price, a.remark, b.id as customer_id, b.currency, b.number as customer_number, b.name as customer_name, b.type, b.status, a.created_by, a.created_date, a.updated_by, a.updated_date, c.status as status_product');
             $this->db->from('customer_items a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');

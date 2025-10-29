@@ -34,11 +34,82 @@ class Wip_balances extends CI_Controller
         $send = $this->crud->reads('wip_balances', ["name" => $post]);
         echo json_encode($send);
     }
+
+    public function readRequestNoWP()
+    {
+        $records = $this->crud->query("SELECT a.request_no FROM wip_balances a JOIN supply_sheets b ON a.request_no = b.request_no WHERE a.status = '0' GROUP BY a.request_no");
+        echo json_encode($records);
+    }
+
+    public function calculate_balance()
+    {
+        if ($this->input->post()) {
+            $start_date   = $this->input->post('start_date');
+            $end_date     = $this->input->post('end_date');
+            $item_rm_id   = $this->input->post('cal_item_rm_id');
+
+            if (empty($start_date) || empty($end_date) || empty($item_rm_id)) {
+                echo json_encode(['status' => 'error', 'message' => 'Missing required fields.']);
+                return;
+            }
+
+            $this->db->select('id, item_rm_id, request_no, need, issued, created_date');
+            $this->db->from('wip_balances');
+            $this->db->where('item_rm_id', $item_rm_id);
+            $this->db->where('created_date >=', $start_date);
+            $this->db->where('created_date <=', $end_date);
+            $this->db->where('deleted', 0);
+            $this->db->order_by('created_date', 'ASC');
+
+            $records = $this->db->get()->result();
+
+            if (!$records) {
+                echo json_encode(['status' => 'error', 'message' => 'No records found for selected period.']);
+                return;
+            }
+
+            $this->db->select('balance');
+            $this->db->from('wip_balances');
+            $this->db->where('item_rm_id', $item_rm_id);
+            $this->db->where('created_date <', $start_date);
+            $this->db->where('deleted', 0);
+            $this->db->order_by('created_date', 'DESC');
+            $last_before = $this->db->get()->row();
+
+            $begin_balance = $last_before ? floatval($last_before->balance) : 0;
+            $current_balance = $begin_balance;
+
+            foreach ($records as $r) {
+                $need   = floatval($r->need);
+                $issued = floatval($r->issued);
+
+                $balance = $current_balance + $issued - $need;
+                // if ($balance < 0) $balance = 0;
+
+                $this->db->where('id', $r->id);
+                $this->db->update('wip_balances', [
+                    'begin' => $current_balance,
+                    'balance' => $balance,
+                    'updated_by' => $this->session->userdata('username'),
+                    'updated_date' => date('Y-m-d H:i:s')
+                ]);
+
+                $current_balance = $balance;
+            }
+
+            echo json_encode(['status' => 'success', 'message' => 'Recalculation completed successfully.']);
+        }
+    }
+
+    
     //GET DATATABLES
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+
+            $filter_item_rm_id = $this->input->get('filter_item_rm_id');
+            $filter_request_no = $this->input->get('filter_request_no');
+
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             $page   = isset($page) ? intval($page) : 1;
@@ -58,24 +129,15 @@ class Wip_balances extends CI_Controller
             $this->db->join('supplier_items g', 'a.item_rm_id = g.item_rm_id', 'left');
             $this->db->where('a.deleted', 0);
 
-            // Filter rules jika ada
-            if (!empty($filters)) {
-                foreach ($filters as $filter) {
-                    if ($filter->field == "item_number") {
-                        $this->db->like("b.number", $filter->value);
-                    } elseif ($filter->field == "item_name") {
-                        $this->db->like("b.name", $filter->value);
-                    } elseif ($filter->field == "request_no") {
-                        $this->db->like("a.request_no", $filter->value);
-                    } elseif ($filter->field == "uom") {
-                        $this->db->like("b.uom", $filter->value);
-                    }
-                }
+            if ($filter_request_no != "") {
+                $this->db->where('a.request_no', $filter_request_no);
             }
 
+            $this->db->like('a.item_rm_id', $filter_item_rm_id);
+
             $this->db->order_by('a.created_date', 'ASC');
-            $this->db->order_by('a.request_no', 'ASC');
-            $this->db->order_by('a.item_rm_id', 'ASC');
+            // $this->db->order_by('a.request_no', 'ASC');
+            // $this->db->order_by('a.item_rm_id', 'ASC');
 
             // Hitung total baris sebelum limit
             $totalRows = $this->db->count_all_results('', false);
@@ -94,6 +156,70 @@ class Wip_balances extends CI_Controller
         }
     }
 
+    // public function datatables()
+    // {
+    //     if ($this->input->post()) {
+
+    //         $filter_item_rm_id = $this->input->get('filter_item_rm_id');
+
+    //         $page = $this->input->post('page');
+    //         $rows = $this->input->post('rows');
+    //         $page   = isset($page) ? intval($page) : 1;
+    //         $rows   = isset($rows) ? intval($rows) : 10;
+    //         $offset = ($page - 1) * $rows;
+    //         $result = array();
+
+    //         // Ambil semua data
+    //         $this->db->select("
+    //             a.id, a.request_no, a.item_rm_id, a.need, a.issued,
+    //             a.created_by, a.created_date, a.updated_by, a.updated_date,
+    //             b.number_internal AS item_number, b.name AS item_name, b.uom,
+    //             IFNULL(c.qty_req, 0) AS qty_req,
+    //             g.mpq,
+    //             a.warehouse
+    //         ");
+    //         $this->db->from('wip_balances a');
+    //         $this->db->join('item_rm b', 'a.item_rm_id = b.id', 'LEFT');
+    //         $this->db->join('supply_sheets c', 'a.item_rm_id = c.item_rm_id AND a.request_no = c.request_no', 'LEFT');
+    //         $this->db->join('supplier_items g', 'a.item_rm_id = g.item_rm_id', 'LEFT');
+    //         $this->db->where('a.deleted', 0);
+
+    //         if (!empty($filter_item_rm_id)) {
+    //             $this->db->like('a.item_rm_id', $filter_item_rm_id);
+    //         }
+
+    //         $this->db->order_by('a.created_date', 'ASC');
+    //         // $this->db->order_by('a.item_rm_id', 'ASC');
+    //         // $this->db->order_by('a.request_no', 'ASC');
+
+    //         $records_all = $this->db->get()->result_array();
+    //         $totalRows = count($records_all);
+
+    //         $computed = [];
+    //         $last_balance_per_item = [];
+
+    //         foreach ($records_all as $row) {
+    //             $item_rm_id = $row['item_rm_id'];
+
+    //             $begin = isset($last_balance_per_item[$item_rm_id]) ? $last_balance_per_item[$item_rm_id] : '0.00';
+    //             $balance = $begin + floatval($row['issued']) - floatval($row['need']);
+
+    //             $row['begin'] = $begin;
+    //             $row['balance'] = $balance;
+
+    //             $last_balance_per_item[$item_rm_id] = $balance; // simpan balance terakhir
+    //             $computed[] = $row;
+    //         }
+
+    //         // Pagination manual (karena kita hitung balance di PHP)
+    //         $paged = array_slice($computed, $offset, $rows);
+
+    //         $result['total'] = $totalRows;
+    //         $result['rows'] = $paged;
+
+    //         echo json_encode($result);
+    //     }
+    // }
 
     //CREATE DATA
     public function create()
@@ -215,6 +341,10 @@ class Wip_balances extends CI_Controller
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=wip_balances_$format.xls");
         }
+
+        $filter_item_rm_id = $this->input->get('filter_item_rm_id');
+        $filter_request_no = $this->input->get('filter_request_no');
+
         //Config
         $this->db->select('*');
         $this->db->from('config');
@@ -224,6 +354,13 @@ class Wip_balances extends CI_Controller
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         // $this->db->join('uom c', 'b.uom_id = c.id');
         $this->db->where('a.deleted', 0);
+
+        if ($filter_request_no != "") {
+            $this->db->where('a.request_no', $filter_request_no);
+        }
+        
+        $this->db->like('a.item_rm_id', $filter_item_rm_id);
+        
         $this->db->order_by('b.number', 'ASC');
         $this->db->order_by('a.request_no', 'ASC');
         $this->db->order_by('a.created_date', 'DESC');

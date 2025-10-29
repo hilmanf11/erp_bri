@@ -35,6 +35,7 @@
             <th rowspan="2" data-options="field:'mold_id',width:200">Mold ID</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformat">Qty</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">Uom</th>
+            <th rowspan="2" data-options="field:'status_mold',width:100,align:'center',formatter:statusMoldFormat, styler:statusMoldStyle">Status Mold</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -47,13 +48,18 @@
     </thead>
 </table>
 
-<div id="toolbar" style="height: 200px; padding:10px;">
+<div id="toolbar" style="height: 235px; padding:10px;">
     <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
         <legend><b>Form Filter Data</b></legend>
         <div style="width: 50%; float: left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Period</span>
                 <input style="width:60%;" name="filter_period" id="filter_period" class="easyui-combobox" required>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">WP Date</span>
+                <input style="width:29.8%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                <input style="width:29.8%;" id="filter_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
             </div>
             <!-- <div class="fitem">
                 <span style="width:35%; display:inline-block;">Period</span>
@@ -91,6 +97,14 @@
                     <option value="0">OPEN</option>
                     <option value="1">SUPPLY</option>
                     <option value="2">CLOSED</option>
+                </select>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Status Mold</span>
+                <select style="width:60%;" id="filter_status_mold" class="easyui-combobox" panelHeight="auto">
+                    <option value="">Select All</option>
+                    <option value="Change">Change</option>
+                    <option value="Continue">Continue</option>
                 </select>
             </div>
             <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
@@ -267,7 +281,7 @@
                     $("#process_id").combogrid("setValue", "PC006");
 
                     $('#mold_id').combobox({
-                        url: '<?= base_url('planning/production_schedule_press/readSettingMolds/'); ?>' + window.btoa(row_fg.id),
+                        url: '<?= base_url('planning/production_schedule_press/readSettingMolds/'); ?>' + window.btoa(row_fg.id) + '/' + window.btoa(row.machine_id),
                         valueField: 'mold_id',
                         textField: 'mold_id',
                         prompt: 'Choose Mold ID',
@@ -281,14 +295,14 @@
                 onLoadSuccess: function(data) {
                     // setelah item_fg_id terload → set value dari data lama
                     if (row.item_fg_id) {
-                        $('#item_fg_id').combogrid('setValue', row.item_fg_id);
-                        $('#item_fg_id').combogrid('setText', row.item_number);
+                        // $('#item_fg_id').combogrid('setValue', row.item_fg_id);
+                        // $('#item_fg_id').combogrid('setText', row.item_number);
 
                         // =========================
                         // LOAD MOLD BERDASARKAN ITEM_FG_ID
                         // =========================
                         $('#mold_id').combobox({
-                            url: '<?= base_url('planning/production_schedule_press/readSettingMolds/'); ?>' + window.btoa(row.item_fg_id),
+                            url: '<?= base_url('planning/production_schedule_press/readSettingMolds/'); ?>' + window.btoa(row.item_fg_id) + '/' + window.btoa(row.machine_id),
                             valueField: 'mold_id',
                             textField: 'mold_id',
                             prompt: 'Choose Mold ID',
@@ -303,6 +317,9 @@
                     }
                 }
             });
+
+            $('#item_fg_id').combogrid('setValue', row.item_fg_id);
+            $('#item_fg_id').combogrid('setText', row.item_number);
 
             setTimeout(function() {
                 suppressMonthYearChange = false;
@@ -365,15 +382,19 @@
     function filter() {
         // var filter_month = $("#filter_month").combobox('getValue');
         // var filter_year = $("#filter_year").combobox('getValue');
-        var filter_period = $("#filter_period").combobox('getValue');
-        var filter_machine_no = $("#filter_machine_no").combogrid('getValue');
         // var filter_customers = $("#filter_customers").combogrid('getValue');
         // var filter_sales_order = $("#filter_sales_order").combobox('getValue');
+
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_period = $("#filter_period").combobox('getValue');
+        var filter_machine_no = $("#filter_machine_no").combogrid('getValue');
         var filter_wp = $("#filter_wp").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
+        var filter_status_mold = $("#filter_status_mold").combobox('getValue');
 
-        url = "?filter_period=" + filter_period + "&filter_machine_no=" + filter_machine_no + "&filter_wp=" + filter_wp +  "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
+        url = "?filter_period=" + filter_period + "&filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_machine_no=" + filter_machine_no + "&filter_wp=" + filter_wp +  "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status + "&filter_status_mold=" + filter_status_mold;
 
         $('#dg').datagrid({
             url: '<?= base_url('planning/production_schedule_press/datatables') ?>' + url,
@@ -384,7 +405,10 @@
             pageSize: 10,
         });
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('planning/production_schedule_press/print') ?>' + url);
+        // $("#printout").attr('src', '<?= base_url('planning/production_schedule_press/print') ?>' + url);
+        var cachebuster = "&_t=" + new Date().getTime();
+        $("#printout").attr('src', '<?= base_url('planning/production_schedule_press/print') ?>' + url + cachebuster);
+
     }
 
     function pdf() {
@@ -394,16 +418,20 @@
     function excel() {
         // var filter_month = $("#filter_month").combobox('getValue');
         // var filter_year = $("#filter_year").combobox('getValue');
-        var filter_period = $("#filter_period").combobox('getValue');
-        var filter_machine_no = $("#filter_machine_no").combogrid('getValue');
         // var filter_customers = $("#filter_customers").combogrid('getValue');
         // var filter_sales_order = $("#filter_sales_order").combobox('getValue');
+
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_period = $("#filter_period").combobox('getValue');
+        var filter_machine_no = $("#filter_machine_no").combogrid('getValue');
         var filter_wp = $("#filter_wp").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
+        var filter_status_mold = $("#filter_status_mold").combobox('getValue');
 
 
-        url = "?filter_period=" + filter_period + "&filter_machine_no=" + filter_machine_no + "&filter_wp=" + filter_wp +  "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
+        url = "?filter_period=" + filter_period + "&filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_machine_no=" + filter_machine_no + "&filter_wp=" + filter_wp +  "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status + "&filter_status_mold=" + filter_status_mold;
 
         window.location.assign('<?= base_url('planning/production_schedule_press/print/excel') ?>' + url);
     }
@@ -632,7 +660,7 @@
                 }, ]
             ],
             onSelect : function(index, row) {
-                // console.log(row);
+                console.log('Machine Select : ', row);
                 $("#item_fg_id").combogrid({
                     url: '<?= base_url("planning/production_schedule_press/readItemPressMolds/") ?>' + btoa(row.id),
                     panelWidth: 420,
@@ -648,11 +676,12 @@
                         ]
                     ],
                     onSelect: function (index, row) {
-                        console.log('Row PSS: ', row);
+                        console.log('ITEM FG : ', row);
+                        
                         $("#process_id").combogrid("setValue", "PC006");
 
                         $('#mold_id').combobox({
-                            url: '<?= base_url('planning/production_schedule_press/readSettingMolds/'); ?>' + window.btoa(row.id),
+                            url: '<?= base_url('planning/production_schedule_press/readSettingMolds/'); ?>' + window.btoa(row.id) + '/' + window.btoa(row.machine_id),
                             valueField: 'mold_id',
                             textField: 'mold_id',
                             prompt: 'Choose Mold ID',
@@ -870,6 +899,14 @@
         }
     }
 
+    function statusMoldFormat(value, row) {
+        if (value == 'Change') {
+            return "<b style='color:orange;'>Change</b>";
+        } else if(value == 'Continue'){
+            return "<b style='color: #2fa192;'>Continue</b>";
+        }
+    }
+
     function statusStyle(value, row, index) {
         if (value == 0) {
             return 'background-color:#C8FFCC;';
@@ -877,6 +914,14 @@
             return 'background-color:#FFDFBD;';
         } else {
             return 'background-color:#FFC8C8;';
+        }
+    }
+
+    function statusMoldStyle(value, row, index) {
+        if (value == 'Change') {
+            return 'background-color:#FFDFBD;';
+        } else if(value == 'Continue'){
+            return 'background-color:#c3f8f1;';
         }
     }
 

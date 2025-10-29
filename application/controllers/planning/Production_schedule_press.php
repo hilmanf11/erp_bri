@@ -122,6 +122,24 @@ class Production_schedule_press extends CI_Controller
     }
 
     //GET DATA
+    public function readSettingMolds($item_fg, $machine)
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+
+        $item_fg_id = base64_decode($item_fg);
+        $machine_id = base64_decode($machine);
+
+        $send = $this->crud->query("SELECT * FROM setting_molds 
+            WHERE item_fg_id = '$item_fg_id' 
+            AND machine_id = '$machine_id'
+            AND mold_id LIKE '%$post%' 
+            GROUP BY mold_id
+        ");
+
+        echo json_encode($send);
+    }
+
+    //GET DATA
     public function readMachinePressMolds()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
@@ -164,7 +182,8 @@ class Production_schedule_press extends CI_Controller
             b.id as id,
             b.number,
             b.name,
-            b.item_family_number
+            b.item_family_number,
+            a.machine_id
             FROM setting_molds a
             JOIN item_fg b ON a.item_fg_id = b.id
             WHERE a.machine_id = '$machine_id'
@@ -195,7 +214,7 @@ class Production_schedule_press extends CI_Controller
     public function readWp()
     {
         $period = base64_decode($this->input->get('period'));
-        $send = $this->crud->query("SELECT DISTINCT wp FROM production_schedule_press WHERE `status` = 0 and `period` = '$period' ORDER BY `wp` DESC");
+        $send = $this->crud->query("SELECT DISTINCT wp FROM production_schedule_press WHERE `status` = 0 and `period` = '$period' ORDER BY (wp + 0) ASC, wp ASC");
         echo json_encode($send);
     }
 
@@ -337,16 +356,138 @@ class Production_schedule_press extends CI_Controller
         return $workOrderNo;
     }
 
+    // public function datatables()
+    // {
+    //     if ($this->input->post()) {
+    //         // $filter_month = $this->input->get('filter_month');
+    //         // $filter_year = $this->input->get('filter_year');
+    //         $filter_period = $this->input->get('filter_period');
+    //         $filter_machine_no = $this->input->get('filter_machine_no');
+    //         $filter_wp = $this->input->get('filter_wp');
+    //         $filter_item_fg_id = $this->input->get('filter_item_fg_id');
+    //         $filter_status = $this->input->get('filter_status');
+
+    //         if (empty($filter_period)) {
+    //             $filter_period = date('Ym');
+    //         }
+
+    //         $page = $this->input->post('page');
+    //         $rows = $this->input->post('rows');
+    //         // Pagination 1-10
+    //         $page   = isset($page) ? intval($page) : 1;
+    //         $rows   = isset($rows) ? intval($rows) : 10;
+    //         $offset = ($page - 1) * $rows;
+    //         $result = array();
+    //         // Select Query
+    //         $this->db->select("a.*, 
+    //             c.number as item_number, c.name as item_name, c.uom, 
+    //             d.name as machine_name, 
+    //             d.number as machine_number, 
+    //             e.name as process_name,
+    //             g.id as mold_id,
+    //             (CASE WHEN f.id != '' THEN 2 ELSE a.status END) as status_wo");
+    //         $this->db->from('production_schedule_press a');
+    //         $this->db->join('item_fg c', 'a.item_fg_id = c.id');
+    //         // $this->db->join('line_productions d', 'a.line_id = d.id');
+    //         $this->db->join('machines d', 'a.machine_id = d.id');
+    //         $this->db->join('item_process e', 'a.process_id = e.id', 'left');
+    //         // $this->db->join('scan_item_receipts_fg f', 'a.so_number = f.so_number and a.workorder = f.workorder', 'left');
+    //         $this->db->join('scan_item_receipts_fg f', 'a.workorder = f.workorder', 'left');
+    //         $this->db->join('molds g', 'a.mold_id = g.id', 'left');
+    //         $this->db->where('a.deleted', 0);
+
+    //         // Filter berdasarkan status
+    //         if ($filter_status == "0") {
+    //             $this->db->where("a.status", 0);
+    //         } elseif ($filter_status == "1") {
+    //             $this->db->where("f.id is NULL");
+    //         } elseif ($filter_status == "2") {
+    //             $this->db->where("f.id != ''");
+    //         }
+
+    //         // Filter berdasarkan inputan
+    //         // $this->db->like('a.month', $filter_month);
+    //         // $this->db->like('a.year', $filter_year);
+    //         $this->db->like('a.period', $filter_period);
+    //         $this->db->like('a.machine_id', $filter_machine_no);
+    //         // $this->db->like('a.wp', $filter_wp);
+    //         $this->db->like('a.item_fg_id', $filter_item_fg_id);
+
+    //         if(!empty($filter_wp)) {
+    //             $this->db->where('a.wp', $filter_wp);
+    //         }
+
+    //         $this->db->order_by('a.wp', 'ASC');
+    //         $this->db->order_by('a.machine_id', 'ASC');
+    //         $this->db->order_by('a.trans_date', 'ASC');
+    //         $this->db->order_by('a.id', 'ASC');
+    //         // $this->db->order_by('a.item_fg_id', 'ASC');
+
+    //         // Total Data
+    //         $totalRows = $this->db->count_all_results('', false);
+
+    //         // Limit 1 - 10
+    //         $this->db->limit($rows, $offset);
+
+    //         // Get Data Array
+    //         $records = $this->db->get()->result_array();
+
+    //         // Ambil semua data per machine, urut sesuai WP dan tanggal
+    //         $records_grouped = [];
+    //         foreach ($records as $r) {
+    //             $records_grouped[$r['machine_id']][] = $r;
+    //         }
+
+    //         // Loop per mesin untuk cek status_mold
+    //         foreach ($records_grouped as $machine_id => &$list) {
+    //             $prev_item = null;
+    //             $prev_wp = null;
+
+    //             foreach ($list as &$row) {
+    //                 // Default pertama pasti "Change"
+    //                 if ($prev_item === null) {
+    //                     $row['status_mold'] = 'Change';
+    //                 } else {
+    //                     // Jika item sama → Continue
+    //                     if ($prev_item == $row['item_fg_id']) {
+    //                         $row['status_mold'] = 'Continue';
+    //                     } else {
+    //                         $row['status_mold'] = 'Change';
+    //                     }
+    //                 }
+
+    //                 // Update previous reference
+    //                 $prev_item = $row['item_fg_id'];
+    //                 $prev_wp = $row['wp'];
+    //             }
+    //         }
+
+    //         // Flatten hasil akhir
+    //         $records = [];
+    //         foreach ($records_grouped as $machine_list) {
+    //             foreach ($machine_list as $r) {
+    //                 $records[] = $r;
+    //             }
+    //         }
+
+    //         // Mapping Data
+    //         $result['total'] = $totalRows;
+    //         $result = array_merge($result, ['rows' => $records]);
+    //         echo json_encode($result);
+    //     }
+    // }
+
     public function datatables()
     {
         if ($this->input->post()) {
-            // $filter_month = $this->input->get('filter_month');
-            // $filter_year = $this->input->get('filter_year');
+            $filter_from = $this->input->get('filter_from');
+            $filter_to = $this->input->get('filter_to');
             $filter_period = $this->input->get('filter_period');
             $filter_machine_no = $this->input->get('filter_machine_no');
             $filter_wp = $this->input->get('filter_wp');
             $filter_item_fg_id = $this->input->get('filter_item_fg_id');
             $filter_status = $this->input->get('filter_status');
+            $filter_status_mold = $this->input->get('filter_status_mold');
 
             if (empty($filter_period)) {
                 $filter_period = date('Ym');
@@ -354,28 +495,32 @@ class Production_schedule_press extends CI_Controller
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
-            // Pagination 1-10
             $page   = isset($page) ? intval($page) : 1;
             $rows   = isset($rows) ? intval($rows) : 10;
             $offset = ($page - 1) * $rows;
-            $result = array();
-            // Select Query
+            $result = [];
+
+            // --- base select / joins ---
             $this->db->select("a.*, 
                 c.number as item_number, c.name as item_name, c.uom, 
-                d.name as machine_name, 
-                d.number as machine_number, 
+                d.name as machine_name, d.number as machine_number, 
                 e.name as process_name,
+                g.id as mold_id,
                 (CASE WHEN f.id != '' THEN 2 ELSE a.status END) as status_wo");
             $this->db->from('production_schedule_press a');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
-            // $this->db->join('line_productions d', 'a.line_id = d.id');
             $this->db->join('machines d', 'a.machine_id = d.id');
             $this->db->join('item_process e', 'a.process_id = e.id', 'left');
-            // $this->db->join('scan_item_receipts_fg f', 'a.so_number = f.so_number and a.workorder = f.workorder', 'left');
             $this->db->join('scan_item_receipts_fg f', 'a.workorder = f.workorder', 'left');
+            $this->db->join('molds g', 'a.mold_id = g.id', 'left');
             $this->db->where('a.deleted', 0);
 
-            // Filter berdasarkan status
+            if ($filter_from != "" or $filter_to != "") {
+                $this->db->where('a.trans_date >=', $filter_from);
+                $this->db->where('a.trans_date <=', $filter_to);
+            }
+
+            // status filter
             if ($filter_status == "0") {
                 $this->db->where("a.status", 0);
             } elseif ($filter_status == "1") {
@@ -384,28 +529,98 @@ class Production_schedule_press extends CI_Controller
                 $this->db->where("f.id != ''");
             }
 
-            // Filter berdasarkan inputan
-            // $this->db->like('a.month', $filter_month);
-            // $this->db->like('a.year', $filter_year);
+            // other filters
             $this->db->like('a.period', $filter_period);
             $this->db->like('a.machine_id', $filter_machine_no);
-            $this->db->like('a.wp', $filter_wp);
             $this->db->like('a.item_fg_id', $filter_item_fg_id);
+            if (!empty($filter_wp)) {
+                $this->db->where('a.wp', $filter_wp);
+            }
+            // ORDER BY (wp + 0) DESC, wp DESC
+            // $this->db->order_by('a.wp', 'ASC');
 
-            $this->db->order_by('a.workorder', 'ASC');
+            $this->db->order_by('(a.wp + 0)', 'ASC', false);
+            $this->db->order_by('a.wp', 'ASC');
 
-            // Total Data
-            $totalRows = $this->db->count_all_results('', false);
 
-            // Limit 1 - 10
-            $this->db->limit($rows, $offset);
+            $this->db->order_by('a.machine_id', 'ASC');
+            $this->db->order_by('a.trans_date', 'ASC');
+            $this->db->order_by('a.id', 'ASC');
 
-            // Get Data Array
+            // count + get paginated rows
+            // $totalRows = $this->db->count_all_results('', false);
+            // $this->db->limit($rows, $offset);
+            // $records = $this->db->get()->result_array();
+
             $records = $this->db->get()->result_array();
+            $totalRows = count($records);
 
-            // Mapping Data
+            $first_row_by_machine = [];
+            foreach ($records as $r) {
+                if (!isset($first_row_by_machine[$r['machine_id']])) {
+                    $first_row_by_machine[$r['machine_id']] = $r;
+                }
+            }
+
+            $prev_item_by_machine = [];
+            foreach ($first_row_by_machine as $machine_id => $first) {
+                // Ambil record terakhir sebelum baris pertama di hasil (dalam periode yang sama)
+                $sql = "SELECT item_fg_id, period
+                        FROM production_schedule_press
+                        WHERE machine_id = ?
+                        AND deleted = 0
+                        AND (
+                                (period = ? AND (wp < ? OR (wp = ? AND (trans_date < ? OR (trans_date = ? AND id < ?))))
+                            )
+                            OR (period < ?)
+                        )
+                        ORDER BY period DESC, wp DESC, trans_date DESC, id DESC
+                        LIMIT 1";
+
+                $q = $this->db->query($sql, [
+                    $machine_id,
+                    $first['period'],
+                    $first['wp'],
+                    $first['wp'],
+                    $first['trans_date'],
+                    $first['trans_date'],
+                    $first['id'],
+                    $first['period']
+                ]);
+                
+                $prev = $q->row_array();
+                $prev_item_by_machine[$machine_id] = $prev ? $prev['item_fg_id'] : null;
+            }
+
+            foreach ($records as &$row) {
+                $machine_id = $row['machine_id'];
+                $current_item = $row['item_fg_id'];
+
+                // jika belum ada prev (dan tidak ditemukan di DB) => Change (awal)
+                if (!array_key_exists($machine_id, $prev_item_by_machine) || $prev_item_by_machine[$machine_id] === null) {
+                    $row['status_mold'] = 'Change';
+                } else {
+                    $row['status_mold'] = ($prev_item_by_machine[$machine_id] == $current_item) ? 'Continue' : 'Change';
+                }
+
+                // update prev untuk mesin ini untuk baris berikutnya
+                $prev_item_by_machine[$machine_id] = $current_item;
+            }
+            unset($row);
+
+            if (!empty($filter_status_mold)) {
+                $records = array_filter($records, function ($r) use ($filter_status_mold) {
+                    return $r['status_mold'] === $filter_status_mold;
+                });
+                $records = array_values($records);
+            }
+
+            $totalRows = count($records);
+            $records = array_slice($records, $offset, $rows);
+
+            // output
             $result['total'] = $totalRows;
-            $result = array_merge($result, ['rows' => $records]);
+            $result['rows'] = $records;
             echo json_encode($result);
         }
     }
@@ -418,6 +633,7 @@ class Production_schedule_press extends CI_Controller
                 $workorder = $this->workorder($post['process_id'], $post['trans_date']);
                 $production_schedule_press = $this->crud->read('production_schedule_press', [], [
                     "item_fg_id" => $post['item_fg_id'], 
+                    "mold_id" => $post['mold_id'],
                     "wp" => $post['wp'], 
                     "trans_date" => $post['trans_date'],
                     "process_id" => $post['process_id'],
@@ -501,7 +717,8 @@ class Production_schedule_press extends CI_Controller
                 'machine_id' => $sheet->getCellByColumnAndRow(3, $i)->getValue(),
                 'trans_date' => $wp_trans_date,
                 'item_fg_id' => $sheet->getCellByColumnAndRow(5, $i)->getValue(),
-                'qty' => $sheet->getCellByColumnAndRow(6, $i)->getValue(),
+                'mold_id' => $sheet->getCellByColumnAndRow(6, $i)->getValue(),
+                'qty' => $sheet->getCellByColumnAndRow(7, $i)->getValue(),
             );
         }
 
@@ -515,7 +732,6 @@ class Production_schedule_press extends CI_Controller
 
         unlink($target);
     }
-
 
     public function uploadclearFailed()
     {
@@ -662,7 +878,8 @@ class Production_schedule_press extends CI_Controller
                     empty($data['period']) ||
                     empty($data['machine_id']) ||
                     empty($data['trans_date']) ||
-                    empty($data['item_fg_id']) || 
+                    empty($data['item_fg_id']) ||
+                    // empty($data['mold_id']) ||
                     empty($data['qty']) ||
                     !strtotime($data['trans_date']) ||
                     !is_numeric($data['qty'])
@@ -753,8 +970,80 @@ class Production_schedule_press extends CI_Controller
                     continue;
                 }
 
+                // $mold = $this->crud->read('molds', [], ["id" => $data['mold_id']]);
+                // if (empty($mold)) {
+                //     $results[] = [
+                //         "status" => "failed",
+                //         "item" => "Line " . ($index + 1),
+                //         "message" => "Mold ID " . $data['mold_id'] . " Not Found"
+                //     ];
+                //     continue;
+                // }
+
+                // $checkMoldSettingMolds = $this->crud->read('setting_molds', [], [
+                //     "machine_id" => $machine->id,
+                //     "item_fg_id" => $item_fg->id,
+                //     "mold_id"    => $mold->id,
+                // ]);
+
+                // if (empty($checkMoldSettingMolds)) {
+                //     $results[] = [
+                //         "status" => "failed",
+                //         "item" => "Line " . ($index + 1),
+                //         "message" => "Mold {$data['mold_id']} for Product {$data['item_fg_id']} not found in Machine {$data['machine_id']} settings."
+                //     ];
+                //     continue;
+                // }
+
+                $availableMolds = $this->db
+                    ->select("DISTINCT(mold_id)")
+                    ->where('item_fg_id', $item_fg->id)
+                    ->get('setting_molds')
+                    ->result();
+
+                if (count($availableMolds) === 1) {
+                    $mold_id = $availableMolds[0]->mold_id;
+                } else {
+                    if (empty($data['mold_id'])) {
+                        $results[] = [
+                            "status" => "failed",
+                            "item" => "Line " . ($index + 1),
+                            "message" => "Product No. {$data['item_fg_id']} has multiple molds, please specify mold_id."
+                        ];
+                        continue;
+                    }
+                    $mold_id = $data['mold_id'];
+                }
+
+                $mold = $this->db->get_where('molds', ['id' => $mold_id])->row();
+                if (empty($mold)) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Mold ID {$mold_id} Not Found"
+                    ];
+                    continue;
+                }
+
+                $checkMoldSettingMolds = $this->db
+                    ->where('machine_id', $machine->id)
+                    ->where('item_fg_id', $item_fg->id)
+                    ->where('mold_id', $mold_id)
+                    ->get('setting_molds')
+                    ->row();
+
+                if (empty($checkMoldSettingMolds)) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Mold {$mold_id} for Product {$data['item_fg_id']} not found in Machine {$data['machine_id']} settings."
+                    ];
+                    continue;
+                }
+
                 $checkData = $this->crud->read('production_schedule_press', [], [
                     "item_fg_id" => $item_fg->id,
+                    "mold_id"    => $mold->id,
                     "process_id" => $data['process_id'],
                     "machine_id" => $machine->id,
                     "wp"         => $wp,
@@ -788,6 +1077,7 @@ class Production_schedule_press extends CI_Controller
                     "item_fg_id" => $item_fg->id,
                     "process_id" => $data['process_id'],
                     "machine_id" => $machine->id,
+                    "mold_id" => $mold->id,
                     "trans_date" => $data['trans_date'],
                     "period" => $data['period'],
                     "year" => $year,
@@ -1101,12 +1391,17 @@ class Production_schedule_press extends CI_Controller
         }
         // $filter_month = $this->input->get('filter_month');
         // $filter_year = $this->input->get('filter_year');
-        $filter_period = $this->input->get('filter_period');
-        $filter_machine_no = $this->input->get('filter_machine_no');
         // $filter_customers = $this->input->get('filter_customers');
         // $filter_sales_order = $this->input->get('filter_sales_order');
+
+        $filter_from = $this->input->get('filter_from');
+        $filter_to = $this->input->get('filter_to');
+        $filter_period = $this->input->get('filter_period');
+        $filter_machine_no = $this->input->get('filter_machine_no');
         $filter_wp = $this->input->get('filter_wp');
         $filter_item_fg_id = $this->input->get('filter_item_fg_id');
+        // $filter_status = $this->input->get('filter_status');
+        $filter_status_mold = $this->input->get('filter_status_mold');
 
         if (empty($filter_period)) {
             $filter_period = date('Ym');
@@ -1116,23 +1411,109 @@ class Production_schedule_press extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        $this->db->select('a.*, c.number as item_number, c.name as item_name, c.uom, d.number as machine_number');
+        $this->db->select('a.*, c.number as item_number, c.name as item_name, c.uom, d.number as machine_number, e.cavity_standard');
         $this->db->from('production_schedule_press a');
         // $this->db->join('customers b', 'a.customer_id = b.id');
         $this->db->join('item_fg c', 'a.item_fg_id = c.id');
         $this->db->join('machines d', 'a.machine_id = d.id');
+        $this->db->join('molds e', 'a.mold_id = e.id', 'left');
+
+        if ($filter_from != "" or $filter_to != "") {
+            $this->db->where('a.trans_date >=', $filter_from);
+            $this->db->where('a.trans_date <=', $filter_to);
+        }
+
         $this->db->where('a.deleted', 0);
         // $this->db->like('a.month', $filter_month);
         // $this->db->like('a.year', $filter_year);
         $this->db->like('a.period', $filter_period);
         $this->db->like('a.machine_id', $filter_machine_no);
-        $this->db->like('a.wp', $filter_wp);
+        $this->db->like('a.item_fg_id', $filter_item_fg_id);
+
+        if(!empty($filter_wp)) {
+            $this->db->like('a.wp', $filter_wp);
+        }
+
+        // $this->db->like('a.wp', $filter_wp);
         // $this->db->like('a.customer_id', $filter_customers);
         // $this->db->like('a.so_number', $filter_sales_order);
-        $this->db->like('a.item_fg_id', $filter_item_fg_id);
-        $this->db->order_by('a.trans_date', 'ASC');
-        $this->db->order_by('c.number', 'ASC');
-        $records = $this->db->get()->result_array();
+
+        // $this->db->order_by('a.trans_date', 'ASC');
+        // $this->db->order_by('c.number', 'ASC');
+
+
+            // $this->db->order_by('a.wp', 'ASC');
+
+            $this->db->order_by('(a.wp + 0)', 'ASC', false);
+            $this->db->order_by('a.wp', 'ASC');
+
+            $this->db->order_by('a.machine_id', 'ASC');
+            $this->db->order_by('a.trans_date', 'ASC');
+            $this->db->order_by('a.id', 'ASC');
+
+            $records = $this->db->get()->result_array();
+
+            $first_row_by_machine = [];
+            foreach ($records as $r) {
+                if (!isset($first_row_by_machine[$r['machine_id']])) {
+                    $first_row_by_machine[$r['machine_id']] = $r;
+                }
+            }
+
+            $prev_item_by_machine = [];
+            foreach ($first_row_by_machine as $machine_id => $first) {
+                // Ambil record terakhir sebelum baris pertama di hasil (dalam periode yang sama)
+                $sql = "SELECT item_fg_id, period
+                        FROM production_schedule_press
+                        WHERE machine_id = ?
+                        AND deleted = 0
+                        AND (
+                                (period = ? AND (wp < ? OR (wp = ? AND (trans_date < ? OR (trans_date = ? AND id < ?))))
+                            )
+                            OR (period < ?)
+                        )
+                        ORDER BY period DESC, wp DESC, trans_date DESC, id DESC
+                        LIMIT 1";
+
+                $q = $this->db->query($sql, [
+                    $machine_id,
+                    $first['period'],
+                    $first['wp'],
+                    $first['wp'],
+                    $first['trans_date'],
+                    $first['trans_date'],
+                    $first['id'],
+                    $first['period']
+                ]);
+                
+                $prev = $q->row_array();
+                $prev_item_by_machine[$machine_id] = $prev ? $prev['item_fg_id'] : null;
+            }
+
+            foreach ($records as &$row) {
+                $machine_id = $row['machine_id'];
+                $current_item = $row['item_fg_id'];
+
+                // jika belum ada prev (dan tidak ditemukan di DB) => Change (awal)
+                if (!array_key_exists($machine_id, $prev_item_by_machine) || $prev_item_by_machine[$machine_id] === null) {
+                    $row['status_mold'] = 'Change';
+                } else {
+                    $row['status_mold'] = ($prev_item_by_machine[$machine_id] == $current_item) ? 'Continue' : 'Change';
+                }
+
+                // update prev untuk mesin ini untuk baris berikutnya
+                $prev_item_by_machine[$machine_id] = $current_item;
+            }
+            unset($row);
+
+            if (!empty($filter_status_mold)) {
+                $records = array_filter($records, function ($r) use ($filter_status_mold) {
+                    return $r['status_mold'] === $filter_status_mold;
+                });
+                $records = array_values($records);
+            }
+
+        // $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
             <center>
                 <div style="font-size: 12px; text-align: left;">
@@ -1167,13 +1548,23 @@ class Production_schedule_press extends CI_Controller
                     <th>WP Date</th>
                     <th>Work Order</th>
                     <th>Machine No</th>
+                    <th>Mold Id</th>
+                    <th>Cavity Standard</th>
                     <th>Product No</th>
                     <th>Product Name</th>
                     <th>Qty</th>
                     <th>UoM</th>
+                    <th>Status Mold</th>
                 </tr>';
         $no = 1;
         foreach ($records as $data) {
+
+                if ($data['status_mold'] == 'Change') {
+                    $style = 'background-color:#FFDFBD;color:orange;';
+                } else if($data['status_mold'] == 'Continue'){
+                    $style = 'background-color:#c3f8f1;color:#2fa192;';
+                }
+
             $html .= '<tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td style="text-align:center">' . $data['period'] . '</td>
@@ -1181,10 +1572,13 @@ class Production_schedule_press extends CI_Controller
                             <td style="text-align:center">' . $data['trans_date'] . '</td>
                             <td style="text-align:center">' . $data['workorder'] . '</td>
                             <td style="text-align:center">' . $data['machine_number'] . '</td>
+                            <td style="text-align:center">' . $data['mold_id'] . '</td>
+                            <td style="text-align:center">' . $data['cavity_standard'] . '</td>
                             <td style="text-align:left">' . $data['item_number'] . '</td>
                             <td style="text-align:left">' . $data['item_name'] . '</td>
                             <td style="text-align:center">' . format_number($data['qty']) . '</td>
                             <td style="text-align:center">' . $data['uom'] . '</td>
+                            <td style="text-align:center;'. $style .'"><b>' . $data['status_mold'] . '</b></td>
                         </tr>';
             $no++;
         }
@@ -1199,7 +1593,8 @@ class Production_schedule_press extends CI_Controller
             'C2' => ['ISI DENGAN MACHINE NO (LIHAT DI SHEET Machines)'],
             'D2' => ['ISI DENGAN YYYY-MM-DD'],
             'E2' => ['ISI DENGAN PRODUCT NO (LIHAT DI SHEET Machines)'],
-            'F2' => ['ISI DENGAN ANGKA'],
+            'F2' => ['ISI DENGAN MOLD ID, JIKA ITEM MEMPUNYAI MOLD LEBIH DARI 1 (LIHAT DI SHEET Machines)'],
+            'G2' => ['ISI DENGAN ANGKA'],
         ];
 
         $templateSheet = $spreadsheet->getActiveSheet();
@@ -1213,17 +1608,19 @@ class Production_schedule_press extends CI_Controller
         $templateSheet->getColumnDimension('D')->setWidth(25);
         $templateSheet->getColumnDimension('E')->setWidth(20);
         $templateSheet->getColumnDimension('F')->setWidth(30);
+        $templateSheet->getColumnDimension('G')->setWidth(30);
         $templateSheet->setCellValue('A1', 'TEMPLATE UPLOAD PRODUCTION SCHEDULES PRESS');
         $templateSheet->setCellValue('A2', 'NO');
         $templateSheet->setCellValue('B2', 'PERIOD');
         $templateSheet->setCellValue('C2', 'MACHINE');
         $templateSheet->setCellValue('D2', 'WP DATE');
         $templateSheet->setCellValue('E2', 'PRODUCT NO');
-        $templateSheet->setCellValue('F2', 'PLANNING PCS/DAY');
-        $templateSheet->getStyle('A2:F2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        $templateSheet->setCellValue('F2', 'MOLD ID');
+        $templateSheet->setCellValue('G2', 'PLANNING PCS/DAY');
+        $templateSheet->getStyle('A2:G2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
         $templateSheet->getStyle('A2')->getFont()->setBold(true);
-        $templateSheet->getStyle('B2:F2')->getFont()->setBold(true)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED);
-        $templateSheet->getStyle('A2:F2')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $templateSheet->getStyle('B2:G2')->getFont()->setBold(true)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED);
+        $templateSheet->getStyle('A2:G2')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
         $templateSheet->getStyle('D:D')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_YYYYMMDD2);
         foreach ($comments as $cell => $commentLines) {
             $richText = new RichText();
@@ -1252,10 +1649,11 @@ class Production_schedule_press extends CI_Controller
         $item_refSheet = $spreadsheet->createSheet(1);
         $item_refSheet->setTitle('Machines');
 
-        $this->db->select('a.mold_id, b.number as machine_number, c.number as item_fg_number, c.name as item_fg_name');
+        $this->db->select('a.mold_id, b.number as machine_number, c.number as item_fg_number, c.name as item_fg_name, d.cavity_standard');
         $this->db->from('setting_molds a');
         $this->db->join('machines b', 'a.machine_id = b.id');
         $this->db->join('item_fg c', 'a.item_fg_id = c.id');
+        $this->db->join('molds d', 'a.mold_id = d.id');
 
         $this->db->order_by("
         CAST(
@@ -1277,15 +1675,17 @@ class Production_schedule_press extends CI_Controller
         $item_refSheet->getColumnDimension('C')->setWidth(25);
         $item_refSheet->getColumnDimension('D')->setWidth(30);
         $item_refSheet->getColumnDimension('E')->setWidth(25);
+        $item_refSheet->getColumnDimension('F')->setWidth(25);
 
         $item_refSheet->setCellValue('A1', 'No');
         $item_refSheet->setCellValue('B1', 'Machine No');
         $item_refSheet->setCellValue('C1', 'Product No');
         $item_refSheet->setCellValue('D1', 'Product Name');
         $item_refSheet->setCellValue('E1', 'Mold ID');
-        $item_refSheet->getStyle('A1:E1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
-        $item_refSheet->getStyle('A1:E1')->getFont()->setBold(true);
-        $item_refSheet->getStyle('A1:E1')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $item_refSheet->setCellValue('F1', 'Cavity Standard');
+        $item_refSheet->getStyle('A1:F1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        $item_refSheet->getStyle('A1:F1')->getFont()->setBold(true);
+        $item_refSheet->getStyle('A1:F1')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
         $rowItem_ref = 2;
         $rowNumItem_ref = 1;
@@ -1295,11 +1695,12 @@ class Production_schedule_press extends CI_Controller
             $item_refSheet->setCellValue('C' . $rowItem_ref, $itemref['item_fg_number']);
             $item_refSheet->setCellValue('D' . $rowItem_ref, $itemref['item_fg_name']);
             $item_refSheet->setCellValue('E' . $rowItem_ref, $itemref['mold_id']);
+            $item_refSheet->setCellValue('F' . $rowItem_ref, $itemref['cavity_standard']);
             $item_refSheet->getStyle('A' . $rowItem_ref . ':G' . $rowItem_ref)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
             $item_refSheet->getStyle('H' . $rowItem_ref)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT)->setVertical(Alignment::VERTICAL_CENTER);
             $item_refSheet->getStyle('I' . $rowItem_ref)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
-            $item_refSheet->getStyle('A' . $rowItem_ref . ':E' . $rowItem_ref)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-            $item_refSheet->getStyle('A' . $rowItem_ref . ':E' . $rowItem_ref)->getNumberFormat()->setFormatCode('@');
+            $item_refSheet->getStyle('A' . $rowItem_ref . ':F' . $rowItem_ref)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+            $item_refSheet->getStyle('A' . $rowItem_ref . ':F' . $rowItem_ref)->getNumberFormat()->setFormatCode('@');
             $rowItem_ref++;
             $rowNumItem_ref++;
         }
@@ -1307,7 +1708,7 @@ class Production_schedule_press extends CI_Controller
         $spreadsheet->setActiveSheetIndex(0); 
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename="tmp_prod_sch_press.xls"');
+        header('Content-Disposition: attachment; filename="tmp_prod_sch_press.xlsx"');
         header('Cache-Control: max-age=0');
         $writer = new Xlsx($spreadsheet);
         $writer->save('php://output');

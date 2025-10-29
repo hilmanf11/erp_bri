@@ -32,7 +32,8 @@
             <th rowspan="2" data-options="field:'valid_to',align:'center',width:100,sortable:true">Valid To</th>
             <th rowspan="2" data-options="field:'remark',align:'center',width:100">Remarks</th>
             <th rowspan="2" data-options="field:'btn',align:'center',width:80, formatter:btnHistories">History</th>
-            <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'status',width:120,halign:'center',align:'center', styler:cellStyler, formatter:cellFormatter">General Status</th>
+            <th rowspan="2" data-options="field:'status_product',width:120,halign:'center',align:'center', styler:cellStyler, formatter:cellFormatter">Status Product</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>

@@ -200,7 +200,7 @@ class Menu_loadings extends CI_Controller
                 'manpower' => $data->val($i, 9),
                 'runner' => $data->val($i, 10),
                 'priority' => $data->val($i, 11),
-                'remarks' => $data->val($i, 12),
+                // 'remarks' => $data->val($i, 12),
             );
         }
 
@@ -254,7 +254,7 @@ class Menu_loadings extends CI_Controller
             foreach ($data_list as $index => $data) {
                 $processed_count++;
                 if (
-                    empty($data['item_fg_id']) || 
+                    empty($data['item_fg_id']) ||
                     empty($data['machine_id']) ||
                     empty($data['shift']) ||
                     empty($data['shift_hour']) ||
@@ -437,7 +437,7 @@ class Menu_loadings extends CI_Controller
                     "manpower" => $data['manpower'],
                     "runner" => $data['runner'],
                     "priority" => $data['priority'],
-                    "remarks" => $data['remarks'],
+                    // "remarks" => $data['remarks'],
                 );
 
                 try {
@@ -448,11 +448,11 @@ class Menu_loadings extends CI_Controller
                             "shift_hour" => $data['shift_hour'],
                             "productcivity" => $data['productcivity'],
                             "cycle_time" => $data['cycle_time'],
-                            "cycle_time_process" => $data['cycle_time_process'],
+                            // "cycle_time_process" => $data['cycle_time_process'],
                             "manpower" => $data['manpower'],
                             "runner" => $data['runner'],
                             "priority" => $data['priority'],
-                            "remarks" => $data['remarks'],
+                            // "remarks" => $data['remarks'],
                         ], [
                             "item_fg_id" => $data['item_fg_id'],
                             "mold_id" => $rubberOrCD,
@@ -616,7 +616,6 @@ class Menu_loadings extends CI_Controller
                 <th>Hour/Shift</th>
                 <th>Productivity Factor</th>
                 <th>Cycle Time (Second)</th>
-                <th>Cycle Time Second Process</th>
                 <th>Man Power</th>
                 <th>Runner/Shoot</th>
                 <th>Priority</th>
@@ -637,7 +636,6 @@ class Menu_loadings extends CI_Controller
                     <td>' . $data['shift_hour'] . '</td>
                     <td>' . $data['productcivity'] . '</td>
                     <td>' . $data['cycle_time'] . '</td>
-                    <td>' . $data['cycle_time_process'] . '</td>
                     <td>' . $data['manpower'] . '</td>
                     <td>' . $data['runner'] . '</td>
                     <td>' . $data['priority'] . '</td>';
