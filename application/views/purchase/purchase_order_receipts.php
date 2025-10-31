@@ -503,10 +503,10 @@
                         var mpq = $(editors[7].target);        // MPQ
                         var qty_label = $(editors[8].target);  // Label
 
-                        var f_qty_po = parseInt(qty_po.numberbox('getValue')) || 0;
-                        var f_qty_os = parseInt(qty_os.numberbox('getValue')) || 0;
-                        var f_qty_receipt = parseInt(qty_receipt.numberbox('getValue')) || 0;
-                        var f_mpq = parseInt(mpq.numberbox('getValue')) || 0;
+                        var f_qty_po = parseFloat(qty_po.numberbox('getValue')) || 0;
+                        var f_qty_os = parseFloat(qty_os.numberbox('getValue')) || 0;
+                        var f_qty_receipt = parseFloat(qty_receipt.numberbox('getValue')) || 0;
+                        var f_mpq = parseFloat(mpq.numberbox('getValue')) || 0;
 
                         if (f_qty_receipt == 0 || f_qty_receipt == "" || f_qty_receipt == 0.00) {
                             qty_receipt.numberbox('setValue', 0.00);

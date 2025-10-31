@@ -271,7 +271,10 @@
                     align: 'center',
                     title: "MPQ",
                     editor: {
-                        type: 'numberbox'
+                        type: 'numberbox',
+                        options: {
+                            precision: 2
+                        }
                     }
                 }, {
                     field: 'moq',

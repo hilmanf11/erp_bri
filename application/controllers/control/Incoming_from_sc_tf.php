@@ -43,6 +43,7 @@ class Incoming_from_sc_tf extends CI_Controller
                     WHEN a.delivery_to = 'SUBCONT' THEN 'Subcont'
                     ELSE 'Teaching Factory'
                 END AS delivery_from,
+                COALESCE(b.name, c.name) as incoming_from,
                 COALESCE(b.number, c.number) as destination_code
             FROM delivery_to_subconts a
                 LEFT JOIN subconts b ON b.id = a.destination
@@ -165,6 +166,7 @@ class Incoming_from_sc_tf extends CI_Controller
                     SUM(istf.qty_receive) AS qty_receive_total
                 FROM incoming_from_sc_tf istf
                 WHERE istf.deleted = 0
+                AND istf.delivery_note_no = '$delivery_note_no'
                 GROUP BY istf.item_fg_id, istf.workorder
             ) d ON d.item_fg_id = a.item_fg_id AND d.workorder = a.workorder
 

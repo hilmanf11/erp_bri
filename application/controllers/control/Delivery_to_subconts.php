@@ -267,7 +267,7 @@ class Delivery_to_subconts extends CI_Controller
             $seq = sprintf("%03s", intval($row->kode) + 1);
         }
 
-        $autonumber = "{$seq}/{$destination_code}/{$month}/{$year}";
+        $autonumber = "{$seq}/{$destination_code}/BRI/{$month}/{$year}";
 
         if ($type == "return") {
             return $autonumber;
@@ -495,6 +495,21 @@ class Delivery_to_subconts extends CI_Controller
         // Hapus atau ganti karakter '/' dari nomor Delivery Note
         // $clean_delivery_order_no = str_replace('/', '-', $delivery_to_subconts->delivery_note_no);
 
+        $month = [
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember'
+        ];
+
         //Header Print
         $html = '<html><head><title>' . $delivery_to_subcont->delivery_note_no . '</title><link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="14x14"></head>';
         $html .= '<style>
@@ -603,7 +618,16 @@ class Delivery_to_subconts extends CI_Controller
             // $this->db->limit($rows_per_page, ($i * $rows_per_page));
             $records = $this->db->get()->result_array();
 
-            // Pastikan QR code untuk approval dan created by sudah dibuat
+
+            $delivery_date = @$records[0]['delivery_date'] ?? date('Y-m-d');
+            $timestamp = strtotime($delivery_date);
+
+            $day = date('d', $timestamp);
+            $monthIndo = $month[(int)date('m', $timestamp)];
+            $year = date('Y', $timestamp);
+
+            $date_delivery = "$day $monthIndo $year";
+
 
             $html .= '<div class="page">
                         <div class="content">
@@ -636,6 +660,11 @@ class Delivery_to_subconts extends CI_Controller
                                 <div>
                                     <div style="float:left; width:50%;">
                                         <table style="width:100%; font-size:9pt; font-family:"Arial Unicode MS", "Lucida Sans Unicode", "DejaVu Sans", "Segoe UI"; margin-bottom:10px;font-weight: bold;">
+                                            <tr>
+                                                <td width="150px">Category</td>
+                                                <td width="10px">:</td>
+                                                <td><b>' . @$records[0]['delivery_category'] . '</b></td>
+                                            </tr>
                                             <tr>
                                                 <td width="150px">Delivery Note No</td>
                                                 <td width="10px">:</td>
@@ -683,9 +712,12 @@ class Delivery_to_subconts extends CI_Controller
                         </tr>';
                 $no++;
             }
-            $html .= '</table>';            
+            $html .= '</table>';
 
             $html .= '</div></div>
+                        </div>
+                        <div style="text-align:right; margin-right: 40pt;">
+                            <p>Purwakarta, '. $date_delivery . '</p>
                         </div>
                         <div class="footer" style="margin-top:10pt; font-size:9pt;">
                             <div class="signature-container">
@@ -696,14 +728,13 @@ class Delivery_to_subconts extends CI_Controller
                                         <tr>
                                             <th style="width:15%;padding:2pt;">Diterima</th>
                                             <th style="width:45%;padding:2pt;border:none"></th>
-                                            <th style="padding:2pt;">Diketahui</th>
-                                            <th style="padding:2pt;">Dibuat</th>
+                                            <th style="padding:2pt; width: 20%;">Diketahui</th>
+                                            <th style="padding:2pt; width: 20%;">Dibuat</th>
                                         </tr>
                                         <tr>
                                         <td></td>
                                         <td style="border:none"></td>
                                         <td>';
-                                            // Second Approval
         $html .= '</td>
                                             <td style="height:35pt"></td>
                                         </tr>
@@ -711,7 +742,6 @@ class Delivery_to_subconts extends CI_Controller
                                             <td style="text-align:center;"></td>
                                             <td style="text-align:center;border:none;"></td>
                                             <td style="text-align:center;">';
-                                            // Tampilkan nama Second Approval
 
         $html .= '</td>
                                             <td style="text-align:center; height: 13pt;"></td>

@@ -1380,14 +1380,14 @@ class Output_production_press extends CI_Controller
                     <td>' . format_number($data['target_shoot']) . '</td>
                     <td>' . format_number($data['actual_shoot']) . '</td>
                     <td>' . format_number($data['shoot_deviation']) . '</td>
-                    <td>' . $data['achievment'] . '</td>
-                    <td>' . $data['ng_prod'] . '</td>
-                    <td>' . $data['ng_mold'] . '</td>
-                    <td>' . number_format($data['total_compound_used'], 2, '.', '.') . '</td>
-                    <td>' . number_format($data['waste'], 2, '.', '.') . '</td>
-                    <td>' . $data['waste_percen'] . '</td>
-                    <td>' . number_format($data['total_used_shoot'], 2, '.', '.') . '</td>
-                    <td>' . number_format($data['total_waste_shoot'], 2, '.', '.') . '</td>';
+                    <td>' . number_format($data['achievment'], 2, ',', '.') . '</td>
+                    <td>' . number_format($data['ng_prod'], 2, ',', '.') . '</td>
+                    <td>' . number_format($data['ng_mold'], 2, ',', '.') . '</td>
+                    <td>' . number_format($data['total_compound_used'], 2, ',', '.') . '</td>
+                    <td>' . number_format($data['waste'], 2, ',', '.') . '</td>
+                    <td>' . number_format($data['waste_percen'], 2, ',', '.') . '</td>
+                    <td>' . number_format($data['total_used_shoot'], 2, ',', '.') . '</td>
+                    <td>' . number_format($data['total_waste_shoot'], 2, ',', '.') . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';

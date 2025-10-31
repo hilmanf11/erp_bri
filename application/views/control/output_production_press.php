@@ -313,7 +313,10 @@
                         type: 'textbox'
                     },
                     hidden: true
-                }, {
+                }, 
+
+
+                {
                     field: 'machine_number',
                     width: 100,
                     rowspan: 2,
@@ -373,28 +376,71 @@
                                 var r = dg.datagrid('getSelected');
                                 var idx = dg.datagrid('getRowIndex', r);
 
-                                var ed = dg.datagrid('getEditor', {
-                                    index: idx,
-                                    field: 'machine_id'
+                                var ed = dg.datagrid('getEditor', { 
+                                    index: idx, 
+                                    field: 'machine_id' 
                                 });
 
-                                $(ed.target).textbox('setValue', row.machine_id);
+                                if (ed) $(ed.target).textbox('setValue', row.machine_id);
+
+                                r.machine_id = row.machine_id;
+                                r.machine_number = row.number;
+                                dg.datagrid('updateRow', { index: idx, row: r });
 
                                 var edWO = dg.datagrid('getEditor', { index: idx, field: 'item_fg_number' });
                                 if (edWO) {
-                                    // reload WO sesuai machine terpilih
+                                    $(edWO.target).combogrid('setValue', '');
                                     $(edWO.target).combogrid('grid').datagrid('load', {
                                         machine_id: window.btoa(row.machine_id),
                                         period: window.btoa($('#period').textbox('getValue')),
                                         wp: window.btoa($('#wp').textbox('getValue'))
                                     });
-                                    
+                                }
+                            },
+                            // onHidePanel: function() {
+                            //     var t = $(this).combogrid('getText');
+                            //     var g = $(this).combogrid('grid');
+                            //     var rows = g.datagrid('getRows');
+                            //     var exists = false;
+
+                            //     for (var i = 0; i < rows.length; i++) {
+                            //         if (rows[i].number === t) {
+                            //             exists = true;
+                            //             break;
+                            //         }
+                            //     }
+
+                            //     if (!exists) {
+                            //         $(this).combogrid('setValue', '');
+                            //         var grid = $(this).combogrid('grid');
+                            //         grid.datagrid('load', {});
+                            //     }
+                            // }
+
+                            onHidePanel: function() {
+                                var t = $(this).combogrid('getText');
+                                var g = $(this).combogrid('grid');
+                                var rows = g.datagrid('getRows');
+                                var exists = false;
+
+                                for (var i = 0; i < rows.length; i++) {
+                                    if (rows[i].number === t) {
+                                        exists = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!exists) {
+                                    $(this).combogrid('setValue', '');
+                                    var grid = $(this).combogrid('grid');
+                                    grid.datagrid('load', {});
                                 }
                             }
                         }
                     }
 
-                }, {
+                }, 
+                {
                     field: 'item_fg_number',
                     width: 150,
                     rowspan: 2,
@@ -412,49 +458,41 @@
                             mode: 'remote',
                             fitColumns: true,
                             prompt: 'Choose Product No',
-                            columns: [
-                                [{
-                                    field: 'number',
-                                    title: 'Product No',
-                                    width: 200
-                                }, {
-                                    field: 'name',
-                                    title: 'Product Name',
-                                    width: 150
-                                }, {
-                                    field: 'planning_qty',
-                                    title: 'Planning/day (pcs)',
-                                    width: 150
-                                }, {
-                                    field: 'workorder',
-                                    title: 'Workorder',
-                                    width: 150
-                                }, {
-                                    field: 'mold_id',
-                                    title: 'Mold ID',
-                                    width: 150
-                                }]
-                            ],
+                            columns: [[
+                                { field: 'number', title: 'Product No', width: 200 },
+                                { field: 'name', title: 'Product Name', width: 150 },
+                                { field: 'planning_qty', title: 'Planning/day (pcs)', width: 150 },
+                                { field: 'workorder', title: 'Workorder', width: 150 },
+                                { field: 'mold_id', title: 'Mold ID', width: 150 }
+                            ]],
+                            onBeforeLoad: function(param) {
+                                param.period = window.btoa($('#period').textbox('getValue'));
+                                param.wp = window.btoa($('#wp').textbox('getValue'));
+                                const dg = $('#dg2');
+                                const row = dg.datagrid('getSelected');
+                                param.machine_id = row && row.machine_id ? window.btoa(row.machine_id) : '';
+                            },
                             onLoadSuccess: function(data) {
-                                var dg = $('#dg2');
-                                var row = dg.datagrid('getSelected');
+                                const dg = $('#dg2');
+                                const row = dg.datagrid('getSelected');
                                 if (!row) return;
-                                var idx = dg.datagrid('getRowIndex', row);
+                                const idx = dg.datagrid('getRowIndex', row);
 
-                                var edId   = dg.datagrid('getEditor', { index: idx, field: 'item_fg_id' });
-                                var edNo   = dg.datagrid('getEditor', { index: idx, field: 'item_fg_number' });
-                                var edName = dg.datagrid('getEditor', { index: idx, field: 'item_fg_name' });
-                                var edPlan = dg.datagrid('getEditor', { index: idx, field: 'planning_qty' });
-                                var edPlnShift = dg.datagrid('getEditor', { index: idx, field: 'planning_qty_shift' });
-                                var edWO   = dg.datagrid('getEditor', { index: idx, field: 'workorder' });
-                                var edMold   = dg.datagrid('getEditor', { index: idx, field: 'mold_id' });
+                                const edId = dg.datagrid('getEditor', { index: idx, field: 'item_fg_id' });
+                                const edNo = dg.datagrid('getEditor', { index: idx, field: 'item_fg_number' });
+                                const edName = dg.datagrid('getEditor', { index: idx, field: 'item_fg_name' });
+                                const edPlan = dg.datagrid('getEditor', { index: idx, field: 'planning_qty' });
+                                const edPlnShift = dg.datagrid('getEditor', { index: idx, field: 'planning_qty_shift' });
+                                const edWO = dg.datagrid('getEditor', { index: idx, field: 'workorder' });
+                                const edMold = dg.datagrid('getEditor', { index: idx, field: 'mold_id' });
 
+                                // Auto pilih kalau cuma satu data
                                 if (data.rows && data.rows.length === 1) {
-                                    var item = data.rows[0];
+                                    const item = data.rows[0];
                                     $(edNo.target).combogrid('grid').datagrid('selectRecord', item.item_fg_id);
                                 }
 
-                                let pln_qty = row.planning_qty ? Math.ceil(row.planning_qty / 3) : 0
+                                let pln_qty = row.planning_qty ? Math.ceil(row.planning_qty / 3) : 0;
                                 let planning_qty = row.planning_qty ? Math.round(row.planning_qty) : 0;
 
                                 if (row.item_fg_id) {
@@ -463,42 +501,22 @@
                                     if (edName) $(edName.target).textbox('setValue', row.item_fg_name);
                                     if (edPlan) $(edPlan.target).numberbox('setValue', row.planning_qty);
                                     if (edPlnShift) $(edPlnShift.target).numberbox('setValue', pln_qty);
-                                    if (edWO)   $(edWO.target).textbox('setValue', row.workorder);
-                                    if (edMold)   $(edMold.target).textbox('setValue', row.mold_id);
+                                    if (edWO) $(edWO.target).textbox('setValue', row.workorder);
+                                    if (edMold) $(edMold.target).textbox('setValue', row.mold_id);
                                 }
                             },
-                            onSelect: function(value, rows) {
-                                var dg = $('#dg2');
-                                var row = dg.datagrid('getSelected');
-                                var rowIndex = dg.datagrid('getRowIndex', row);
-                                var ed1 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'item_fg_id'
-                                });
-                                var ed2 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'item_fg_number'
-                                });
-                                var ed3 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'item_fg_name'
-                                });
-                                var ed4 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'planning_qty'
-                                });
-                                var ed5 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'workorder'
-                                });
-                                var ed6 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'planning_qty_shift'
-                                });
-                                var ed7 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'mold_id'
-                                });
+                            onSelect: function(index, rows) {
+                                const dg = $('#dg2');
+                                const row = dg.datagrid('getSelected');
+                                const rowIndex = dg.datagrid('getRowIndex', row);
+
+                                const ed1 = dg.datagrid('getEditor', { index: rowIndex, field: 'item_fg_id' });
+                                const ed2 = dg.datagrid('getEditor', { index: rowIndex, field: 'item_fg_number' });
+                                const ed3 = dg.datagrid('getEditor', { index: rowIndex, field: 'item_fg_name' });
+                                const ed4 = dg.datagrid('getEditor', { index: rowIndex, field: 'planning_qty' });
+                                const ed5 = dg.datagrid('getEditor', { index: rowIndex, field: 'workorder' });
+                                const ed6 = dg.datagrid('getEditor', { index: rowIndex, field: 'planning_qty_shift' });
+                                const ed7 = dg.datagrid('getEditor', { index: rowIndex, field: 'mold_id' });
 
                                 let pln_qty = rows.planning_qty ? Math.ceil(rows.planning_qty / 3) : 0;
                                 let planning_qty = rows.planning_qty ? Math.round(rows.planning_qty) : 0;
@@ -511,9 +529,26 @@
                                 $(ed6.target).textbox('setValue', pln_qty);
                                 $(ed7.target).textbox('setValue', rows.mold_id);
                             },
+                            onHidePanel: function() {
+                                const cg = $(this);
+                                const g = cg.combogrid('grid');
+                                const text = cg.combogrid('getText').trim();
+                                const rows = g.datagrid('getRows');
+                                const exists = rows.some(r => r.number === text);
+
+                                if (!exists && text !== '') {
+                                    cg.combogrid('setValue', '');
+                                    // g.datagrid('loadData', { total: 0, rows: [] }); // reset list
+
+                                    var grid = $(this).combogrid('grid');
+                                    grid.datagrid('load', {});
+                                }
+                            }
                         }
                     }
-                }, {
+                },
+
+                {
                     field: 'item_fg_id',
                     width: 150,
                     rowspan: 2,
@@ -597,7 +632,63 @@
                             readonly: true
                         }
                     }
-                }, {
+                }, 
+                
+                // {
+                //     field: 'operator',
+                //     width: 130,
+                //     rowspan: 2,
+                //     halign: 'center',
+                //     title: "Operator <br>Name",
+                //     editor: {
+                //         type: 'combogrid',
+                //         options: {
+                //             url: '<?= base_url('api/hris_bri/getOperatorName') ?>',
+                //             method: 'get',
+                //             mode: 'remote',
+                //             idField: 'name',
+                //             textField: 'name',
+                //             valueField: 'name',
+                //             prompt: 'Choose Operator Name',
+                //             panelWidth: 265,
+                //             fitColumns: true,
+                //             required: true,
+                //             queryParams: {},
+                //             onShowPanel: function() {
+                //                 var grid = $(this).combogrid('grid');
+                //                 if (!grid.data('loaded')) {
+                //                     grid.datagrid('load', {});
+                //                     grid.data('loaded', true);
+                //                 }
+                //             },
+                //             columns: [[
+                //                 { field: 'name', title: 'Operator Name', width: 250 },
+                //             ]],
+                //             loadFilter: function(data){
+                //                 return Array.isArray(data) ? data : [];
+                //             },
+                //             onHidePanel: function() {
+                //                 var t = $(this).combogrid('getText');
+                //                 var g = $(this).combogrid('grid');
+                //                 var rows = g.datagrid('getRows');
+                //                 var exists = false;
+
+                //                 for (var i = 0; i < rows.length; i++) {
+                //                     if (rows[i].name === t) {
+                //                         exists = true;
+                //                         break;
+                //                     }
+                //                 }
+
+                //                 if (!exists) {
+                //                     $(this).combogrid('setValue', '');
+                //                 }
+                //             }
+                //         }
+                //     }
+                // }, 
+
+                {
                     field: 'operator',
                     width: 130,
                     rowspan: 2,
@@ -614,10 +705,8 @@
                             valueField: 'name',
                             prompt: 'Choose Operator Name',
                             panelWidth: 265,
-                            // panelHeight: 300,
                             fitColumns: true,
                             required: true,
-                            // delay: 500,
                             queryParams: {},
                             onShowPanel: function() {
                                 var grid = $(this).combogrid('grid');
@@ -631,6 +720,25 @@
                             ]],
                             loadFilter: function(data){
                                 return Array.isArray(data) ? data : [];
+                            },
+                            onHidePanel: function() {
+                                var t = $(this).combogrid('getText');
+                                var g = $(this).combogrid('grid');
+                                var rows = g.datagrid('getRows');
+                                var exists = false;
+
+                                for (var i = 0; i < rows.length; i++) {
+                                    if (rows[i].name === t) {
+                                        exists = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!exists) {
+                                    $(this).combogrid('setValue', '');
+                                    g.datagrid('loadData', []);
+                                    g.removeData('loaded');
+                                }
                             }
                         }
                     }
@@ -1330,8 +1438,15 @@
                                 var result = eval('(' + result + ')');
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error(jqXHR.statusText);
-                                $.messager.alert("Error", jqXHR.statusText, 'error');
+                                // toastr.error(jqXHR.statusText);
+                                // $.messager.alert("Error", jqXHR.statusText, 'error');
+
+                                if (jqXHR.responseText && jqXHR.responseText.includes("Error Number: 1451")) {
+                                    toastr.error("Cannot delete data that is still in use");
+                                } else {
+                                    toastr.error("Delete failed: " + jqXHR.statusText);
+                                }
+
                             },
                             complete: function(data) {
                                 $('#dg').datagrid('reload');

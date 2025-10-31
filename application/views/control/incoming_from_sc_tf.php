@@ -94,7 +94,7 @@
             </div>
             <div style="width: 50%; float: left;">
                 <div class="fitem" id="destination_wrapper">
-                    <span style="width:35%; display:inline-block;">Delivery From</span>
+                    <span style="width:35%; display:inline-block;">Incoming From</span>
                     <input style="width:60%;" name="delivery_from" id="delivery_from" required class="easyui-textbox" readonly>
                 </div>
                 <div class="fitem">
@@ -129,7 +129,7 @@
                 setTimeout(regenerateDeliveryNoteNo, 49);
             }
         });
-
+         
         setTimeout(function(){
             $("#delivery_from").textbox('enable');
             $("#delivery_date").textbox('enable');
@@ -139,6 +139,12 @@
             $("#delivery_note_no").combogrid('enable');
             $("#incoming_doc_no").textbox('clear');
             $('#incoming_date').datebox('setValue', '<?= date("Y-m-d") ?>');
+            // $('#delivery_note_no').combogrid('reload');
+
+
+            var url = '<?= base_url('control/incoming_from_sc_tf/readDeliveryNoteNoSCTF/'); ?>?t=' + new Date().getTime();
+            $('#delivery_note_no').combogrid('grid').datagrid('reload', url);
+
         }, 50);
 
         url_save = '<?= base_url('control/incoming_from_sc_tf/create') ?>';
@@ -211,6 +217,7 @@
                             ],
                             onBeforeLoad: function(param) {
                                 param.delivery_note_no = $('#delivery_note_no').combogrid('getValue');
+                                console.log('DEL : ', param.delivery_note_no);
                             },
                             onLoadSuccess: function(data) {
                                 var dg = $('#dg2');
@@ -442,15 +449,15 @@
             field: 'item_fg_id'
         });
 
-        // var subcont_id = $("#subcont_id").combogrid('getValue');
         var item_fg_id = $(ed.target).textbox('getValue');
+        var incoming_doc_no = $("#incoming_doc_no").textbox('getValue');
 
         $.ajax({
             method: 'post',
             url: '<?= base_url('control/incoming_from_sc_tf/delete') ?>',
             data: {
-                subcont_id: row.subcont_id,
-                teaching_factory_id: row.tf_id,
+                // subcont_id: row.subcont_id,
+                incoming_doc_no: incoming_doc_no,
                 item_fg_id: item_fg_id
             },
             success: function(result) {
@@ -909,7 +916,7 @@
         ]],
         onSelect: function(index, row) {
             $('#delivery_from').textbox('setValue', row.destination);
-            $('#delivery_from').textbox('setText', row.delivery_from);
+            $('#delivery_from').textbox('setText', row.incoming_from);
             $('#destination_code').textbox('setValue', row.destination_code);
             $('#delivery_date').textbox('setValue', row.delivery_date);
             regenerateDeliveryNoteNo();

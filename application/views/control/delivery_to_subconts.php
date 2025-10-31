@@ -474,15 +474,22 @@
             field: 'item_fg_id'
         });
 
+        var ed1 = dg.datagrid('getEditor', {
+            index: editIndex,
+            field: 'workorder'
+        });
+
         // var subcont_id = $("#subcont_id").combogrid('getValue');
         var item_fg_id = $(ed.target).textbox('getValue');
+        var workorder = $(ed1.target).textbox('getValue');
+        var delivery_note_no = $("#delivery_note_no").textbox('getValue');
 
         $.ajax({
             method: 'post',
             url: '<?= base_url('control/delivery_to_subconts/delete') ?>',
             data: {
-                subcont_id: row.subcont_id,
-                teaching_factory_id: row.tf_id,
+                delivery_note_no: delivery_note_no,
+                workorder: workorder,
                 item_fg_id: item_fg_id
             },
             success: function(result) {
@@ -549,7 +556,13 @@
                                 var result = eval('(' + result + ')');
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error(jqXHR.statusText);
+                                // toastr.error(jqXHR.statusText);
+
+                                if (jqXHR.responseText && jqXHR.responseText.includes("Error Number: 1451")) {
+                                    toastr.error("Cannot delete data that is still in use");
+                                } else {
+                                    toastr.error("Delete failed: " + jqXHR.statusText);
+                                }
                             },
                             complete: function(data) {
                                 $('#dg').datagrid('reload');

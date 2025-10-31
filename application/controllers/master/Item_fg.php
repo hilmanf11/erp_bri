@@ -32,7 +32,19 @@ class item_fg extends CI_Controller
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         //$send = $this->crud->query("SELECT * FROM item_fg WHERE number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%'");
-        $send = $this->crud->query("SELECT * FROM item_fg WHERE (number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%') AND status = 0");
+
+        // $send = $this->crud->query("SELECT * FROM item_fg WHERE (number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%') AND status = 0");
+
+        $send = $this->crud->query("SELECT * FROM item_fg WHERE (number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%')");
+        echo json_encode($send);
+    }
+
+    //GET DATA
+    public function readsAll()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        //$send = $this->crud->query("SELECT * FROM item_fg WHERE number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%'");
+        $send = $this->crud->query("SELECT * FROM item_fg WHERE (number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%')");
         echo json_encode($send);
     }
 

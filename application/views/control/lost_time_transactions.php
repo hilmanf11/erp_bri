@@ -403,7 +403,11 @@
                                     field: 'machine_id'
                                 });
 
-                                $(ed.target).textbox('setValue', row.machine_id);
+                                if (ed) $(ed.target).textbox('setValue', row.machine_id);
+
+                                r.machine_id = row.machine_id;
+                                r.machine_number = row.number;
+                                dg.datagrid('updateRow', { index: idx, row: r });
 
                                 var edWO = dg.datagrid('getEditor', { index: idx, field: 'item_fg_number' });
                                 if (edWO) {
@@ -414,6 +418,25 @@
                                         wp: window.btoa($('#wp').textbox('getValue')),
                                         shift: window.btoa($('#shift').textbox('getValue')),
                                     });
+                                }
+                            },
+                            onHidePanel: function() {
+                                var t = $(this).combogrid('getText');
+                                var g = $(this).combogrid('grid');
+                                var rows = g.datagrid('getRows');
+                                var exists = false;
+
+                                for (var i = 0; i < rows.length; i++) {
+                                    if (rows[i].number === t) {
+                                        exists = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!exists) {
+                                    $(this).combogrid('setValue', '');
+                                    var grid = $(this).combogrid('grid');
+                                    grid.datagrid('load', {});
                                 }
                             }
                         }
@@ -451,10 +474,15 @@
                                     width: 150
                                 }]
                             ],
+                            onBeforeLoad: function(param) {
+                                param.period = window.btoa($('#period').textbox('getValue'));
+                                param.wp = window.btoa($('#wp').textbox('getValue'));
+                                param.shift = window.btoa($('#shift').textbox('getValue'));
+                                const dg = $('#dg2');
+                                const row = dg.datagrid('getSelected');
+                                param.machine_id = row && row.machine_id ? window.btoa(row.machine_id) : '';
+                            },
                             onLoadSuccess: function(data) {
-                                console.log("=== onLoadSuccess data ===", data);
-
-                                // handle bentuk data apapun
                                 var rows = Array.isArray(data) ? data : (data.rows || []);
                                 if (rows.length === 0) return;
 
@@ -473,8 +501,6 @@
                                 var shift = $('#shift').textbox('getValue');
                                 var period = $('#period').textbox('getValue');
 
-                                console.log("Matching with:", { number_output, wp, shift, period });
-
                                 // cari record cocok
                                 var match = rows.find(function(r) {
                                     return (
@@ -484,8 +510,6 @@
                                         r.period == period
                                     );
                                 });
-
-                                console.log("Matched record:", match);
 
                                 if (match) {
                                     var grid = $(edNo.target).combogrid('grid');
@@ -528,6 +552,22 @@
                                 $(ed3.target).textbox('setValue', rows.workorder);
                                 $(ed4.target).textbox('setValue', rows.operator);
                             },
+                            onHidePanel: function() {
+                                const cg = $(this);
+                                const g = cg.combogrid('grid');
+                                const text = cg.combogrid('getText').trim();
+                                const rows = g.datagrid('getRows');
+                                const exists = rows.some(r => r.number === text);
+
+                                if (!exists && text !== '') {
+                                    cg.combogrid('setValue', '');
+                                    // g.datagrid('loadData', { total: 0, rows: [] }); // reset list
+
+                                    var grid = $(this).combogrid('grid');
+                                    grid.datagrid('load', {});
+                                }
+                            }
+
                         }
                     }
                 }, {
@@ -692,7 +732,30 @@
                                 if (ed) {
                                     $(ed.target).textbox('setValue', row.id);
                                 }
+                            },
+                            onHidePanel: function() {
+                                const cg = $(this);
+                                const g = cg.combogrid('grid');
+                                const text = cg.combogrid('getText').trim();
+                                const rows = g.datagrid('getRows');
+                                const exists = rows.some(r => r.detail === text);
+
+                                if (!exists && text !== '') {
+                                    cg.combogrid('clear');
+                                }
+                            },
+                            onShowPanel: function() {
+                                const cg = $(this);
+                                const g = cg.combogrid('grid');
+                                const rows = g.datagrid('getRows');
+
+                                if (!rows || rows.length === 0) {
+                                    const opts = cg.combogrid('options');
+                                    const param = { factor: "MACHINE" };
+                                    g.datagrid('load', param);
+                                }
                             }
+
                         }
                     }
                 },
@@ -746,6 +809,28 @@
                                 if (ed) {
                                     $(ed.target).textbox('setValue', row.id);
                                 }
+                            },
+                            onHidePanel: function() {
+                                const cg = $(this);
+                                const g = cg.combogrid('grid');
+                                const text = cg.combogrid('getText').trim();
+                                const rows = g.datagrid('getRows');
+                                const exists = rows.some(r => r.detail === text);
+
+                                if (!exists && text !== '') {
+                                    cg.combogrid('clear');
+                                }
+                            },
+                            onShowPanel: function() {
+                                const cg = $(this);
+                                const g = cg.combogrid('grid');
+                                const rows = g.datagrid('getRows');
+
+                                if (!rows || rows.length === 0) {
+                                    const opts = cg.combogrid('options');
+                                    const param = { factor: "MATERIAL" };
+                                    g.datagrid('load', param);
+                                }
                             }
                         }
                     }
@@ -797,6 +882,28 @@
                                 if (ed) {
                                     $(ed.target).textbox('setValue', row.id);
                                 }
+                            },
+                            onHidePanel: function() {
+                                const cg = $(this);
+                                const g = cg.combogrid('grid');
+                                const text = cg.combogrid('getText').trim();
+                                const rows = g.datagrid('getRows');
+                                const exists = rows.some(r => r.detail === text);
+
+                                if (!exists && text !== '') {
+                                    cg.combogrid('clear');
+                                }
+                            },
+                            onShowPanel: function() {
+                                const cg = $(this);
+                                const g = cg.combogrid('grid');
+                                const rows = g.datagrid('getRows');
+
+                                if (!rows || rows.length === 0) {
+                                    const opts = cg.combogrid('options');
+                                    const param = { factor: "METHODE" };
+                                    g.datagrid('load', param);
+                                }
                             }
                         }
                     }
@@ -847,6 +954,28 @@
 
                                 if (ed) {
                                     $(ed.target).textbox('setValue', row.id);
+                                }
+                            },
+                            onHidePanel: function() {
+                                const cg = $(this);
+                                const g = cg.combogrid('grid');
+                                const text = cg.combogrid('getText').trim();
+                                const rows = g.datagrid('getRows');
+                                const exists = rows.some(r => r.detail === text);
+
+                                if (!exists && text !== '') {
+                                    cg.combogrid('clear');
+                                }
+                            },
+                            onShowPanel: function() {
+                                const cg = $(this);
+                                const g = cg.combogrid('grid');
+                                const rows = g.datagrid('getRows');
+
+                                if (!rows || rows.length === 0) {
+                                    const opts = cg.combogrid('options');
+                                    const param = { factor: "MAN" };
+                                    g.datagrid('load', param);
                                 }
                             }
                         }
