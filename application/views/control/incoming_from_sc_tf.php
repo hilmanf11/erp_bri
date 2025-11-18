@@ -6,7 +6,17 @@
             <th rowspan="2" data-options="field:'incoming_doc_no',width:180,halign:'center',sortable:true">Incoming Doc No</th>
             <th rowspan="2" data-options="field:'incoming_date',width:180,halign:'center',sortable:true">Incoming Date</th>
             <th rowspan="2" data-options="field:'delivery_note_no',width:180,halign:'center',sortable:true">Delivery Note No</th>
-            <th rowspan="2" data-options="field:'delivery_date',width:180,halign:'center',sortable:true">Delivery Date</th>
+
+            <th rowspan="2" data-options="field:'delivery_date',width:180,halign:'center',sortable:true,formatter:formatDate">Delivery Date</th>
+<!-- 
+            <th rowspan="2" data-options="
+                field:'delivery_date',
+                width:180,
+                halign:'center',
+                sortable:true,
+                formatter:
+            ">Delivery Date</th> -->
+
             <th rowspan="2" data-options="field:'incoming_from',width:180,halign:'center',sortable:true">Incoming From</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -80,26 +90,43 @@
             <legend><b>Form Data</b></legend>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Incoming Doc No</span>
+                    <input style="width:60%;" name="incoming_doc_no" id="incoming_doc_no" readonly class="easyui-textbox" required>
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Incoming Date</span>
                     <input style="width:60%;" name="incoming_date" id="incoming_date" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
+                <!-- <div class="fitem" id="destination_wrapper">
+                    <span style="width:35%; display:inline-block;">Incoming From</span>
+                    <input style="width:60%;" name="delivery_from" id="delivery_from" required class="easyui-textbox" readonly>
+                </div> -->
+
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Incoming Doc No</span>
-                    <input style="width:60%;" name="incoming_doc_no" id="incoming_doc_no" readonly class="easyui-textbox" required>
+                    <span style="width:35%; display:inline-block;">Incoming From</span>
+                    <select style="width:60%;" id="delivery_from" panelHeight="auto" class="easyui-combobox" data-options="editable:false">
+                        <option value="" disabled selected>Choose Incoming From</option>
+                        <option value="SUBCONT" selected>Subcont</option>
+                        <option value="TEFA">Teaching Factory</option>
+                    </select>
+                </div>
+            </div>
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Source</span>
+                    <input style="width:60%;" name="source" id="source" class="easyui-combogrid" required>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Delivery Note No</span>
                     <input style="width:60%;" name="delivery_note_no" id="delivery_note_no" class="easyui-combogrid" required>
                 </div>
-            </div>
-            <div style="width: 50%; float: left;">
-                <div class="fitem" id="destination_wrapper">
-                    <span style="width:35%; display:inline-block;">Incoming From</span>
-                    <input style="width:60%;" name="delivery_from" id="delivery_from" required class="easyui-textbox" readonly>
-                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Delivery Date</span>
                     <input style="width:60%;" name="delivery_date" id="delivery_date" required class="easyui-textbox" readonly>
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Source ID</span>
+                    <input style="width:60%;" name="source_id" id="source_id" required class="easyui-textbox">
                 </div>
                 <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Destination Code</span>
@@ -129,22 +156,23 @@
                 setTimeout(regenerateDeliveryNoteNo, 49);
             }
         });
-         
+
         setTimeout(function(){
             $("#delivery_from").textbox('enable');
-            $("#delivery_date").textbox('enable');
+            // $("#delivery_date").textbox('enable');
 
             $("#incoming_date").datebox('enable');
             $("#incoming_doc_no").textbox('enable');
-            $("#delivery_note_no").combogrid('enable');
+            // $("#delivery_note_no").combogrid('enable');
             $("#incoming_doc_no").textbox('clear');
             $('#incoming_date').datebox('setValue', '<?= date("Y-m-d") ?>');
             // $('#delivery_note_no').combogrid('reload');
 
 
-            var url = '<?= base_url('control/incoming_from_sc_tf/readDeliveryNoteNoSCTF/'); ?>?t=' + new Date().getTime();
-            $('#delivery_note_no').combogrid('grid').datagrid('reload', url);
-
+            // var url = '<?= base_url('control/incoming_from_sc_tf/readDeliveryNoteNoSCTF/'); ?>?t=' + new Date().getTime();
+            // $('#delivery_note_no').combogrid('grid').datagrid('reload', url);
+            
+            // $("#delivery_from").combobox('setValue', '');
         }, 50);
 
         url_save = '<?= base_url('control/incoming_from_sc_tf/create') ?>';
@@ -216,8 +244,18 @@
                                 }]
                             ],
                             onBeforeLoad: function(param) {
+                                var dg = $('#dg2');
+                                var rows = dg.datagrid('getRows');
                                 param.delivery_note_no = $('#delivery_note_no').combogrid('getValue');
-                                console.log('DEL : ', param.delivery_note_no);
+                                param.incoming_date = $('#incoming_date').datebox('getValue');
+                                param.source_id = $('#source_id').textbox('getValue');
+
+                                var used = rows
+                                    .filter(r => r.item_fg_id && r.workorder)
+                                    .map(r => r.item_fg_id + '_' + r.workorder);
+
+                                param.exclude_keys = used.join(',');
+
                             },
                             onLoadSuccess: function(data) {
                                 var dg = $('#dg2');
@@ -418,11 +456,11 @@
     }
 
     function append() {
-        var delivery_note_no = $("#delivery_note_no").combogrid('getValue');
-        var delivery_from = $("#delivery_from").textbox('getValue');
-        var delivery_date = $("#delivery_date").textbox('getValue');
+        var incoming_date = $("#incoming_date").datebox('getValue');
+        var incoming_doc_no = $("#incoming_doc_no").textbox('getValue');
+        var delivery_from = $("#delivery_from").combobox('getValue');
 
-        if (delivery_note_no != "" && delivery_from != "" && delivery_date != "") {
+        if (incoming_date != "" && incoming_doc_no != "" && delivery_from != "") {
             if (endEditing()) {
                 $('#dg2').datagrid('appendRow', {
                     qty: '0'
@@ -578,7 +616,6 @@
                 // var filterProductFamily = $('#filter_product_family').combogrid('getValue');
                 // var encodedProductFamily = filterProductFamily ? "&product_family=" + window.btoa(filterProductFamily) : "";
 
-
                 ddv.datagrid({
                     url: '<?= base_url('control/incoming_from_sc_tf/datatableDetails?incoming_doc_no=') ?>' + window.btoa(row.incoming_doc_no) + '&item_fg=' + window.btoa(filter_item_fg) + '&delivery_from=' + window.btoa(filter_delivery_from),
                     singleSelect: true,
@@ -727,9 +764,8 @@
                     var incoming_date = $("#incoming_date").datebox('getValue');
                     var incoming_doc_no = $("#incoming_doc_no").textbox('getValue');
                     var delivery_note_no = $("#delivery_note_no").combogrid('getValue');
-                    var delivery_from = $("#delivery_from").textbox('getValue');
                     var delivery_date = $("#delivery_date").textbox('getValue');
-                    // var destination = $("#destination").combogrid('getValue');
+                    var delivery_from = $('#source_id').textbox('getValue');
 
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
@@ -901,67 +937,111 @@
     //     }
     // });
 
-    $('#delivery_note_no').combogrid({
-        url: '<?= base_url('control/incoming_from_sc_tf/readDeliveryNoteNoSCTF/'); ?>',
-        panelWidth: 500,
-        idField: 'delivery_note_no',
-        textField: 'delivery_note_no',
-        mode: 'remote',
-        fitColumns: true,
-        prompt: "Choose Delivery Note No",
-        columns: [[
-            {field: 'delivery_from', title: 'Delivery From', width: 150},
-            {field: 'delivery_note_no', title: 'Delivery Note No', width: 200},
-            {field: 'delivery_date', title: 'Delivery Date', width: 150},
-        ]],
-        onSelect: function(index, row) {
-            $('#delivery_from').textbox('setValue', row.destination);
-            $('#delivery_from').textbox('setText', row.incoming_from);
-            $('#destination_code').textbox('setValue', row.destination_code);
-            $('#delivery_date').textbox('setValue', row.delivery_date);
-            regenerateDeliveryNoteNo();
+    $("#delivery_from").combobox({
+        onChange: function(val) {
+            if (val == "SUBCONT") {
+                setTimeout(function() {
+                    $('#source').combogrid('clear')
+                                        .combogrid('enableValidation')
+                                        .combogrid('enable');
+                }, 50);
+
+                $('#delivery_note_no').combogrid('clear')
+                                    .combogrid('disableValidation')
+                                    .combogrid('disable');
+
+                $('#delivery_date').textbox('clear')
+                                    .textbox('disableValidation')
+                                    .textbox('disable');
+
+                $('#incoming_doc_no').textbox('clear');
+
+                initSubcontGrid();
+
+            } else if (val == "TEFA") {
+                setTimeout(function() {
+                    $('#source').combogrid('clear')
+                                        .combogrid('enableValidation')
+                                        .combogrid('enable');
+                }, 50);
+
+                $('#delivery_note_no').combogrid('clear')
+                                    .combogrid('enableValidation')
+                                    .combogrid('enable');
+
+                $('#delivery_date').textbox('clear')
+                                    .textbox('enableValidation')
+                                    .textbox('enable');
+
+                $('#incoming_doc_no').textbox('clear');
+
+                initTefaGrid();
+            } else {
+
+                $('#source').combogrid('clear')
+                                    .combogrid('disableValidation')
+                                    .combogrid('disable');
+
+                $('#delivery_note_no').combogrid('clear')
+                                    .combogrid('disableValidation')
+                                    .combogrid('disable');
+
+                $('#delivery_date').textbox('clear')
+                                    .textbox('disableValidation')
+                                    .textbox('disable');
+
+                $('#incoming_doc_no').textbox('clear');
+            }
         }
     });
 
-    // function initSubcontGrid() {
-    //     $('#destination').combogrid({
-    //         url: '<?= base_url('master/subconts/reads/'); ?>',
-    //         panelWidth: 420,
-    //         idField: 'id',
-    //         textField: 'name',
-    //         mode: 'remote',
-    //         fitColumns: true,
-    //         prompt: "Choose Subcont",
-    //         columns: [[
-    //             {field: 'number', title: 'Subcont Code', width: 120},
-    //             {field: 'name', title: 'Subcont Name', width: 250}
-    //         ]],
-    //         onSelect: function(index, row) {
-    //             $('#destination_code').combogrid('setValue', row.number); // << kode subcont
-    //             regenerateDeliveryNoteNo();
-    //         }
-    //     });
-    // }
+    function initSubcontGrid() {
+        $('#source').combogrid({
+            url: '<?= base_url('master/subconts/reads/'); ?>',
+            panelWidth: 420,
+            idField: 'id',
+            textField: 'name',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Subcont",
+            columns: [[
+                {field: 'number', title: 'Subcont Code', width: 120},
+                {field: 'name', title: 'Subcont Name', width: 250}
+            ]],
+            onSelect: function(index, row) {
+                $('#destination_code').textbox('setValue', row.number);
+                $('#source_id').textbox('setValue', row.id);
+                regenerateDeliveryNoteNo();
+            }
+        });
+    }
 
-    // function initTefaGrid() {
-    //     $('#destination').combogrid({
-    //         url: '<?= base_url('master/teaching_factory/reads/'); ?>',
-    //         panelWidth: 420,
-    //         idField: 'id',
-    //         textField: 'name',
-    //         mode: 'remote',
-    //         fitColumns: true,
-    //         prompt: "Choose Teaching Factory",
-    //         columns: [[
-    //             {field: 'number', title: 'TF Code', width: 120},
-    //             {field: 'name', title: 'TF Name', width: 250}
-    //         ]],
-    //         onSelect: function(index, row) {
-    //             $('#destination_code').combogrid('setValue', row.number); // << kode TF
-    //             regenerateDeliveryNoteNo();
-    //         }
-    //     });
-    // }
+    function initTefaGrid() {
+        $('#source').combogrid({
+            url: '<?= base_url('master/teaching_factory/reads/'); ?>',
+            panelWidth: 420,
+            idField: 'id',
+            textField: 'name',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Teaching Factory",
+            columns: [[
+                {field: 'number', title: 'TF Code', width: 120},
+                {field: 'name', title: 'TF Name', width: 250}
+            ]],
+            onSelect: function(index, row) {
+                $('#delivery_note_no').combogrid('clear');
+                $('#delivery_note_no').combogrid('grid').datagrid('load', {
+                    source_id: row.id
+                });
+
+                $('#destination_code').textbox('setValue', row.number);
+                // $('#delivery_date').textbox('setValue', row.delivery_date);
+                $('#source_id').textbox('setValue', row.id);
+                regenerateDeliveryNoteNo();
+            }
+        });
+    }
 
     function regenerateDeliveryNoteNo() {
         let incoming_date = $('#incoming_date').datebox('getValue');
@@ -979,6 +1059,26 @@
             });
         }
     }
+
+    $('#delivery_note_no').combogrid({
+        url: '<?= base_url('control/incoming_from_sc_tf/readDeliveryNoteNoSCTF/'); ?>',
+        panelWidth: 500,
+        idField: 'delivery_note_no',
+        textField: 'delivery_note_no',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Delivery Note No",
+        columns: [[
+            {field: 'delivery_from', title: 'Delivery From', width: 150},
+            {field: 'delivery_note_no', title: 'Delivery Note No', width: 200},
+            {field: 'delivery_date', title: 'Delivery Date', width: 150},
+        ]],
+        onSelect: function(index, row) {
+            // $('#destination_code').textbox('setValue', row.destination_code);
+            $('#delivery_date').textbox('setValue', row.delivery_date);
+            // regenerateDeliveryNoteNo();
+        }
+    });
 
     //CELLSTYLE STATUS
     function cellStyler(value, row, index) {
@@ -998,6 +1098,13 @@
             return 'CLOSE';
         }
     };
+
+    function formatDate(value,row){
+        if (value === '0000-00-00' || value === null || value === '' ) {
+            return '';
+        }
+        return value;
+    }
 
     function myformatter(date) {
         var y = date.getFullYear();

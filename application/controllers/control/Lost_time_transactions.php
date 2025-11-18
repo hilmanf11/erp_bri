@@ -393,7 +393,10 @@ class Lost_time_transactions extends CI_Controller
                 lmet.detail AS lt_methode,
                 lmet.category AS lt_methode_category,
                 lman.detail AS lt_man,
-                lman.category AS lt_man_category
+                lman.category AS lt_man_category,
+
+                lmtr.detail AS lt_trial,
+                lmtr.category AS lt_trial_category
             ");
 
             // CEILING(COALESCE(e.planning_qty,0) / 3) as planning_qty_shift,
@@ -426,6 +429,7 @@ class Lost_time_transactions extends CI_Controller
             $this->db->join("lost_times lmat", 'a.lt_material_id = lmat.id', 'left');
             $this->db->join("lost_times lmet", 'a.lt_methode_id = lmet.id', 'left');
             $this->db->join("lost_times lman", 'a.lt_man_id = lman.id', 'left');
+            $this->db->join("lost_times lmtr", 'a.lt_trial_id = lmtr.id', 'left');
 
             $this->db->where('a.number', $number);
             if ($filter_workorder != "") {
@@ -457,6 +461,7 @@ class Lost_time_transactions extends CI_Controller
                 lmat.detail AS lt_material,
                 lmet.detail AS lt_methode,
                 lman.detail AS lt_man,
+                lmtr.detail AS lt_trial
             ");
             $this->db->from('lost_time_transactions a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
@@ -466,6 +471,7 @@ class Lost_time_transactions extends CI_Controller
             $this->db->join("lost_times lmat", 'a.lt_material_id = lmat.id', 'left');
             $this->db->join("lost_times lmet", 'a.lt_methode_id = lmet.id', 'left');
             $this->db->join("lost_times lman", 'a.lt_man_id = lman.id', 'left');
+            $this->db->join("lost_times lmtr", 'a.lt_trial_id = lmtr.id', 'left');
 
             $this->db->where('a.number', $number);
 
@@ -561,6 +567,10 @@ class Lost_time_transactions extends CI_Controller
                 "operator" => $post['operator'],
                 "cleaning_mold" => $post['cleaning_mold'],
                 "changing_mold" => $post['changing_mold'],
+
+                "lt_trial_id" => !empty($post['lt_trial_id']) ? $post['lt_trial_id'] : null,
+                "trial_duration" => $post['trial_duration'],
+
                 "lt_machine_id" => !empty($post['lt_machine_id']) ? $post['lt_machine_id'] : null,
                 "machine_duration" => $post['machine_duration'],
                 "lt_material_id" => !empty($post['lt_material_id']) ? $post['lt_material_id'] : null,
@@ -644,14 +654,18 @@ class Lost_time_transactions extends CI_Controller
                 'item_fg_id' => $sheet->getCellByColumnAndRow(6, $i)->getValue(),
                 'cleaning_mold' => $sheet->getCellByColumnAndRow(7, $i)->getValue(),
                 'changing_mold' => $sheet->getCellByColumnAndRow(8, $i)->getValue(),
-                'lt_machine_id' => $sheet->getCellByColumnAndRow(9, $i)->getValue(),
-                'machine_duration' => $sheet->getCellByColumnAndRow(10, $i)->getValue(),
-                'lt_material_id' => $sheet->getCellByColumnAndRow(11, $i)->getValue(),
-                'material_duration' => $sheet->getCellByColumnAndRow(12, $i)->getValue(),
-                'lt_methode_id' => $sheet->getCellByColumnAndRow(13, $i)->getValue(),
-                'methode_duration' => $sheet->getCellByColumnAndRow(14, $i)->getValue(),
-                'lt_man_id' => $sheet->getCellByColumnAndRow(15, $i)->getValue(),
-                'man_duration' => $sheet->getCellByColumnAndRow(16, $i)->getValue(),
+
+                'lt_trial_id' => $sheet->getCellByColumnAndRow(9, $i)->getValue(),
+                'trial_duration' => $sheet->getCellByColumnAndRow(10, $i)->getValue(),
+
+                'lt_machine_id' => $sheet->getCellByColumnAndRow(11, $i)->getValue(),
+                'machine_duration' => $sheet->getCellByColumnAndRow(12, $i)->getValue(),
+                'lt_material_id' => $sheet->getCellByColumnAndRow(13, $i)->getValue(),
+                'material_duration' => $sheet->getCellByColumnAndRow(14, $i)->getValue(),
+                'lt_methode_id' => $sheet->getCellByColumnAndRow(15, $i)->getValue(),
+                'methode_duration' => $sheet->getCellByColumnAndRow(16, $i)->getValue(),
+                'lt_man_id' => $sheet->getCellByColumnAndRow(17, $i)->getValue(),
+                'man_duration' => $sheet->getCellByColumnAndRow(18, $i)->getValue(),
             );
         }
 
@@ -789,6 +803,19 @@ class Lost_time_transactions extends CI_Controller
                         "message" => "Changing Mold must be numeric"
                     ];
                     continue;
+                }
+
+                if($data['lt_trial_id'] !== "" && !empty($data['lt_trial_id'])) {
+
+                    $lt_trial = $this->crud->read('lost_times', [], ["detail" => $data['lt_trial_id']]);
+                    if (empty($lt_trial)) {
+                        $results[] = [
+                            "status" => "failed",
+                            "item" => "Line " . ($index + 1),
+                            "message" => "Lost Time Detail " . $data['lt_trial_id'] . " Not Found"
+                        ];
+                        continue;
+                    }
                 }
 
                 if($data['lt_machine_id'] !== "" && !empty($data['lt_machine_id'])) {
@@ -1097,6 +1124,9 @@ class Lost_time_transactions extends CI_Controller
                     "cleaning_mold"         => $data['cleaning_mold'],
                     "changing_mold"         => $data['changing_mold'],
 
+                    "lt_trial_id"           => @$lt_trial->id,
+                    "trial_duration"        => $data['trial_duration'] ?? 0,
+
                     "lt_machine_id"         => @$lt_machine->id,
                     "machine_duration"      => $data['machine_duration'] ?? 0,
                     "lt_material_id"        => @$lt_material->id,
@@ -1116,6 +1146,9 @@ class Lost_time_transactions extends CI_Controller
 
                             "cleaning_mold"         => $data['cleaning_mold'],
                             "changing_mold"         => $data['changing_mold'],
+
+                            "lt_trial_id"           => isset($lt_trial->id) ? $lt_trial->id : null,
+                            "trial_duration"        => $data['trial_duration'] ?? 0,
 
                             "lt_machine_id"         => isset($lt_machine->id) ? $lt_machine->id : null,
                             "machine_duration"      => $data['machine_duration'] ?? 0,
@@ -1277,7 +1310,10 @@ class Lost_time_transactions extends CI_Controller
             lmet.detail AS lt_methode,
             lmet.category AS lt_methode_category,
             lman.detail AS lt_man,
-            lman.category AS lt_man_category
+            lman.category AS lt_man_category,
+
+            lmtr.detail AS lt_trial,
+            lmtr.category AS lt_trial_category,
         ");
 
         $this->db->from('lost_time_transactions a');
@@ -1307,6 +1343,7 @@ class Lost_time_transactions extends CI_Controller
         $this->db->join("lost_times lmat", 'a.lt_material_id = lmat.id', 'left');
         $this->db->join("lost_times lmet", 'a.lt_methode_id = lmet.id', 'left');
         $this->db->join("lost_times lman", 'a.lt_man_id = lman.id', 'left');
+        $this->db->join("lost_times lmtr", 'a.lt_trial_id = lmtr.id', 'left');
 
         if ($filter_from != "" or $filter_to != "") {
             $this->db->where('a.trans_date >=', $filter_from);
@@ -1382,13 +1419,16 @@ class Lost_time_transactions extends CI_Controller
                 <th rowspan="2" >Plan/shift (pcs)</th>
                 <th rowspan="2" >WO No</th>
                 <th rowspan="2" >Operator Name</th>
-                <th colspan="2" style="text-align: center;">Planned Lost Time</th>
+                <th colspan="5" style="text-align: center;">Planned Lost Time</th>
                 <th colspan="12" style="text-align: center;">Unplanned Lost Time</th>
             </tr>
 
             <tr>
                 <th>Cleaning Mold <br>(minutes)</th>
                 <th>Changing Mold <br>(minutes)</th>
+                <th>Trial Project</th>
+                <th>Category</th>
+                <th>Duration <br>(minutes)</th>
                 <th>Machine</th>
                 <th>Category</th>
                 <th>Duration <br>(minutes)</th>
@@ -1421,6 +1461,9 @@ class Lost_time_transactions extends CI_Controller
                     <td>' . $data['operator'] . '</td>
                     <td>' . $data['cleaning_mold'] . '</td>
                     <td>' . $data['changing_mold'] . '</td>
+                    <td>' . $data['lt_trial'] . '</td>
+                    <td>' . $data['lt_trial_category'] . '</td>
+                    <td>' . $data['trial_duration'] . '</td>
                     <td>' . $data['lt_machine'] . '</td>
                     <td>' . $data['lt_machine_category'] . '</td>
                     <td>' . $data['machine_duration'] . '</td>
@@ -1449,19 +1492,21 @@ class Lost_time_transactions extends CI_Controller
             'F2' => ['Isi Dengan PRODUCT NO'],
             'G3' => ['Isi Dengan Angka (minutes)'],
             'H3' => ['Isi Dengan Angka (minutes)'],
-            'I3' => ['Isi Dengan DETAIL (LIHAT DI SHEET Master Lost Time, Factor MACHINE)'],
+            'I3' => ['Isi Dengan DETAIL (LIHAT DI SHEET Master Lost Time, Factor TRIAL PROJECT)'],
             'J3' => ['Isi Dengan Angka (minutes)'],
-            'K3' => ['Isi Dengan DETAIL (LIHAT DI SHEET Master Lost Time, Factor MATERIAL)'],
+            'K3' => ['Isi Dengan DETAIL (LIHAT DI SHEET Master Lost Time, Factor MACHINE)'],
             'L3' => ['Isi Dengan Angka (minutes)'],
-            'M3' => ['Isi Dengan DETAIL (LIHAT DI SHEET Master Lost Time, Factor METHOD)'],
+            'M3' => ['Isi Dengan DETAIL (LIHAT DI SHEET Master Lost Time, Factor MATERIAL)'],
             'N3' => ['Isi Dengan Angka (minutes)'],
-            'O3' => ['Isi Dengan DETAIL (LIHAT DI SHEET Master Lost Time, Factor MAN)'],
+            'O3' => ['Isi Dengan DETAIL (LIHAT DI SHEET Master Lost Time, Factor METHOD)'],
             'P3' => ['Isi Dengan Angka (minutes)'],
+            'Q3' => ['Isi Dengan DETAIL (LIHAT DI SHEET Master Lost Time, Factor MAN)'],
+            'R3' => ['Isi Dengan Angka (minutes)'],
         ];
 
         $templateSheet = $spreadsheet->getActiveSheet();
         $templateSheet->setTitle('LOST TIME TRANSACTION');
-        $templateSheet->mergeCells('A1:P1');
+        $templateSheet->mergeCells('A1:R1');
         $templateSheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
         $templateSheet->getStyle('A1')->getFont()->setSize(16)->setBold(true);
         $templateSheet->getColumnDimension('A')->setWidth(10);
@@ -1472,14 +1517,18 @@ class Lost_time_transactions extends CI_Controller
         $templateSheet->getColumnDimension('F')->setWidth(30);
         $templateSheet->getColumnDimension('G')->setWidth(30);
         $templateSheet->getColumnDimension('H')->setWidth(25);
-        $templateSheet->getColumnDimension('I')->setWidth(25);
+
+        $templateSheet->getColumnDimension('I')->setWidth(20);
         $templateSheet->getColumnDimension('J')->setWidth(20);
+
         $templateSheet->getColumnDimension('K')->setWidth(20);
         $templateSheet->getColumnDimension('L')->setWidth(20);
         $templateSheet->getColumnDimension('M')->setWidth(20);
         $templateSheet->getColumnDimension('N')->setWidth(20);
         $templateSheet->getColumnDimension('O')->setWidth(20);
         $templateSheet->getColumnDimension('P')->setWidth(20);
+        $templateSheet->getColumnDimension('Q')->setWidth(20);
+        $templateSheet->getColumnDimension('R')->setWidth(20);
         $templateSheet->setCellValue('A1', 'TEMPLATE UPLOAD LOST TIME TRANSACTION');
         $templateSheet->setCellValue('A2', 'NO');
         $templateSheet->setCellValue('B2', 'PERIOD');
@@ -1489,24 +1538,33 @@ class Lost_time_transactions extends CI_Controller
         $templateSheet->setCellValue('F2', 'PRODUCT NO');
         $templateSheet->setCellValue('G2', 'PLANNED LOST TIME');
         $templateSheet->setCellValue('H2', 'PLANNED LOST TIME');
-        $templateSheet->setCellValue('I2', 'UNPLANNED LOST TIME');
-        $templateSheet->setCellValue('J2', 'UNPLANNED LOST TIME');
+
+        $templateSheet->setCellValue('I2', 'PLANNED LOST TIME');
+        $templateSheet->setCellValue('J2', 'PLANNED LOST TIME');
+
         $templateSheet->setCellValue('K2', 'UNPLANNED LOST TIME');
         $templateSheet->setCellValue('L2', 'UNPLANNED LOST TIME');
         $templateSheet->setCellValue('M2', 'UNPLANNED LOST TIME');
         $templateSheet->setCellValue('N2', 'UNPLANNED LOST TIME');
         $templateSheet->setCellValue('O2', 'UNPLANNED LOST TIME');
         $templateSheet->setCellValue('P2', 'UNPLANNED LOST TIME');
+        $templateSheet->setCellValue('Q2', 'UNPLANNED LOST TIME');
+        $templateSheet->setCellValue('R2', 'UNPLANNED LOST TIME');
+
         $templateSheet->setCellValue('G3', 'CLEANING MOLD')
             ->setCellValue('H3', 'CHANGING MOLD')
-            ->setCellValue('I3', 'MACHINE')
+
+            ->setCellValue('I3', 'TRIAL PROJECT')
             ->setCellValue('J3', 'DURATION')
-            ->setCellValue('K3', 'MATERIAL')
+
+            ->setCellValue('K3', 'MACHINE')
             ->setCellValue('L3', 'DURATION')
-            ->setCellValue('M3', 'METHODE')
+            ->setCellValue('M3', 'MATERIAL')
             ->setCellValue('N3', 'DURATION')
-            ->setCellValue('O3', 'MAN')
-            ->setCellValue('P3', 'DURATION');
+            ->setCellValue('O3', 'METHODE')
+            ->setCellValue('P3', 'DURATION')
+            ->setCellValue('Q3', 'MAN')
+            ->setCellValue('R3', 'DURATION');
 
         $templateSheet->mergeCells('A2:A3');
         $templateSheet->mergeCells('B2:B3');
@@ -1514,17 +1572,17 @@ class Lost_time_transactions extends CI_Controller
         $templateSheet->mergeCells('D2:D3');
         $templateSheet->mergeCells('E2:E3');
         $templateSheet->mergeCells('F2:F3');
-        $templateSheet->mergeCells('G2:H2');
-        $templateSheet->mergeCells('I2:P2');
+        $templateSheet->mergeCells('G2:J2');
+        $templateSheet->mergeCells('K2:R2');
 
-        $templateSheet->getStyle('A2:P2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
-        $templateSheet->getStyle('A3:P3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        $templateSheet->getStyle('A2:R2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        $templateSheet->getStyle('A3:R3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
         $templateSheet->getStyle('A2')->getFont()->setBold(true);
         $templateSheet->getStyle('B2:F2')->getFont()->setBold(true)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED);
-        $templateSheet->getStyle('A2:P2')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-        $templateSheet->getStyle('A3:P3')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-        $templateSheet->getStyle('A2:P2')->getFont()->setBold(true);
-        $templateSheet->getStyle('A3:P3')->getFont()->setBold(true);
+        $templateSheet->getStyle('A2:R2')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $templateSheet->getStyle('A3:R3')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $templateSheet->getStyle('A2:R2')->getFont()->setBold(true);
+        $templateSheet->getStyle('A3:R3')->getFont()->setBold(true);
 
         // $templateSheet->getStyle('D:D')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_YYYYMMDD2);
 

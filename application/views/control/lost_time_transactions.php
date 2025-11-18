@@ -581,6 +581,16 @@
                         type: 'textbox'
                     }
                 }, {
+                    field: 'lt_trial_id',
+                    width: 150,
+                    rowspan: 2,
+                    hidden: true,
+                    halign: 'center',
+                    title: "LT Trial ID",
+                    editor: {
+                        type: 'textbox'
+                    }
+                }, {
                     field: 'lt_machine_id',
                     width: 150,
                     rowspan: 2,
@@ -658,7 +668,7 @@
                     }
                 }, {
                     title: 'Planned Lost Time', 
-                    colspan: 2,
+                    colspan: 4,
                     halign: 'center', 
                     align: 'center' 
                 }, {
@@ -694,8 +704,81 @@
                             precision: 0,                            
                         }
                     }
-                }, 
-                {
+                }, {
+                    field: 'lt_trial',
+                    width: 100,
+                    halign: 'center',
+                    align: 'center',
+                    title: "Trial Project ",
+                    editor: {
+                        type: 'combogrid',
+                        options: {
+                            url: '<?= base_url('control/lost_time_transactions/readLTFactors'); ?>',
+                            method: 'post',
+                            panelWidth: 350,
+                            idField: 'detail',
+                            textField: 'detail',
+                            mode: 'remote',
+                            fitColumns: true,
+                            prompt: 'Choose Trial Project Detail',
+                            columns: [[
+                                { field: 'detail', title: 'Detail', width: 200 },
+                                { field: 'category', title: 'Category', width: 150 },
+                            ]],
+                            onBeforeLoad: function(param) {
+                                param.factor = "TRIAL PROJECT";
+                            },
+                            onSelect: function(index, row) {
+                                var dg = $('#dg2');
+                                var selected = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', selected);
+
+                                var ed = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'lt_trial_id'
+                                });
+
+                                if (ed) {
+                                    $(ed.target).textbox('setValue', row.id);
+                                }
+                            },
+                            onHidePanel: function() {
+                                const cg = $(this);
+                                const g = cg.combogrid('grid');
+                                const text = cg.combogrid('getText').trim();
+                                const rows = g.datagrid('getRows');
+                                const exists = rows.some(r => r.detail === text);
+
+                                if (!exists && text !== '') {
+                                    cg.combogrid('clear');
+                                }
+                            },
+                            onShowPanel: function() {
+                                const cg = $(this);
+                                const g = cg.combogrid('grid');
+                                const rows = g.datagrid('getRows');
+
+                                if (!rows || rows.length === 0) {
+                                    const opts = cg.combogrid('options');
+                                    const param = { factor: "TRIAL PROJECT" };
+                                    g.datagrid('load', param);
+                                }
+                            }
+
+                        }
+                    }
+                }, {
+                    field: 'trial_duration',
+                    width: 75,
+                    align: 'center',
+                    title: "Duration <br>(minutes)",
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            precision: 0,
+                        }
+                    }
+                }, {
                     field: 'lt_machine',
                     width: 100,
                     halign: 'center',
@@ -1280,7 +1363,7 @@
                             width: 130
                         }, {   
                             title: 'Planned Lost Time', 
-                            colspan: 2,
+                            colspan: 5,
                             halign: 'center', 
                             align: 'center' 
                         }, {
@@ -1308,7 +1391,31 @@
                             editor: {
                                 type: 'numberbox',
                             }
+                        }, 
+                        {
+                            field: 'lt_trial',
+                            title: 'Trial',
+                            align: 'center',
+                            halign: 'center',
+                            width: 150
                         }, {
+                            field: 'lt_trial_category',
+                            title: 'Category',
+                            align: 'center',
+                            halign: 'center',
+                            width: 150
+                        }, {
+                            field: 'trial_duration',
+                            width: 100,
+                            align: 'center',
+                            title: "Duration <br>(minutes)",
+                            formatter: numberformat,
+                            editor: {
+                                type: 'numberbox',
+                            }
+                        },
+                        
+                        {
                             field: 'lt_machine',
                             title: 'Machine',
                             align: 'center',
@@ -1461,6 +1568,10 @@
                                 operator: rows[i].operator,
                                 cleaning_mold: rows[i].cleaning_mold,
                                 changing_mold: rows[i].changing_mold,
+
+                                lt_trial_id: rows[i].lt_trial_id,
+                                trial_duration: rows[i].trial_duration,
+
                                 lt_machine_id: rows[i].lt_machine_id,
                                 machine_duration: rows[i].machine_duration,
                                 lt_material_id: rows[i].lt_material_id,

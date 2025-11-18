@@ -522,7 +522,7 @@
                                 let planning_qty = rows.planning_qty ? Math.round(rows.planning_qty) : 0;
 
                                 $(ed1.target).textbox('setValue', rows.item_fg_id);
-                                $(ed2.target).textbox('setValue', rows.number);
+                                $(ed2.target).combogrid('setValue', rows.number);
                                 $(ed3.target).textbox('setValue', rows.name);
                                 $(ed4.target).textbox('setValue', planning_qty);
                                 $(ed5.target).textbox('setValue', rows.workorder);
@@ -633,7 +633,7 @@
                         }
                     }
                 }, 
-                
+
                 // {
                 //     field: 'operator',
                 //     width: 130,
@@ -682,6 +682,8 @@
 
                 //                 if (!exists) {
                 //                     $(this).combogrid('setValue', '');
+                //                     g.datagrid('loadData', []);
+                //                     g.removeData('loaded');
                 //                 }
                 //             }
                 //         }
@@ -697,8 +699,8 @@
                     editor: {
                         type: 'combogrid',
                         options: {
-                            url: '<?= base_url('api/hris_bri/getOperatorName') ?>',
-                            method: 'get',
+                            url: '<?= base_url('master/man_powers/reads') ?>',
+                            // method: 'get',
                             mode: 'remote',
                             idField: 'name',
                             textField: 'name',
@@ -2386,6 +2388,12 @@
         mode: 'remote',
         fitColumns: true,
         prompt: "Choose Product No",
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
         columns: [
             [{
                 field: 'number',
@@ -2397,12 +2405,6 @@
                 width: 250
             }, ]
         ],
-        icons: [{
-            iconCls: 'icon-clear',
-            handler: function(e) {
-                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-            }
-        }],
     });
 
     $("#machine_no_insert").combogrid({

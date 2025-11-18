@@ -949,29 +949,38 @@
         var rows = $('#dg').datagrid('getSelections');
 
         if (rows.length > 0) {
-            $.messager.confirm('Warning', 'Are you sure you want to delete the selected data?', function (r) {
-                if (r) {
-                    let deliveryNos = rows.map(row => row.delivery_order_no);
 
-                    $.ajax({
-                        method: 'post',
-                        url: '<?= base_url('sales/delivery_orders/delete') ?>',
-                        data: { delivery_order_no: deliveryNos },
-                        dataType: 'json',
-                        success: function (res) {
-                            if (res.theme === 'success') {
-                                toastr.success(res.message, res.title);
-                            } else {
-                                toastr.error(res.message, res.title);
+            if (rows[0].status == "0") {
+
+                $.messager.confirm('Warning', 'Are you sure you want to delete the selected data?', function (r) {
+                    if (r) {
+                        let deliveryNos = rows.map(row => row.delivery_order_no);
+
+                        $.ajax({
+                            method: 'post',
+                            url: '<?= base_url('sales/delivery_orders/delete') ?>',
+                            data: { delivery_order_no: deliveryNos },
+                            dataType: 'json',
+                            success: function (res) {
+                                if (res.theme === 'success') {
+                                    toastr.success(res.message, res.title);
+                                } else {
+                                    toastr.error(res.message, res.title);
+                                }
+                                $('#dg').datagrid('reload');
+                            },
+                            error: function (xhr) {
+                                toastr.error(xhr.statusText || 'Server error occurred.');
                             }
-                            $('#dg').datagrid('reload');
-                        },
-                        error: function (xhr) {
-                            toastr.error(xhr.statusText || 'Server error occurred.');
-                        }
-                    });
-                }
-            });
+                        });
+                    }
+                });
+
+            } else if(rows[0].status == "1") {
+                toastr.error("This data is already closed and cannot be deleted.");
+            } else {
+                toastr.warning("Please select one of the data in the table first!", "Information");
+            }
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }

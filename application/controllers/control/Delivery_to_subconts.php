@@ -103,14 +103,81 @@ class Delivery_to_subconts extends CI_Controller
         echo json_encode($query->result_array());
     }
 
+    // public function readItemFgv1()
+    // {
+    //     $post = isset($_POST['q']) ? $_POST['q'] : "";
+    //     $delivery_date = $this->input->post('delivery_date');
+    //     $delivery_date = $delivery_date ?: date('Y-m-d');
+    //     $destination_id = $this->input->post('destination');
+    //     $today = date('Y-m-d');
+
+    //     // $period = date('Ym', strtotime($delivery_date));
+
+    //     $query = "
+    //         SELECT
+    //             a.item_fg_id,
+    //             b.number,
+    //             b.name,
+    //             a.workorder,
+    //             COALESCE(SUM(a.qty_ok), 0) AS total_qty_ok,
+    //             COALESCE(d.qty_delivery_total, 0) AS total_qty_delivery,
+    //             (COALESCE(SUM(a.qty_ok), 0) - COALESCE(d.qty_delivery_total, 0)) AS qty_output,
+    //             MIN(a.trans_date) AS trans_date,
+    //             MIN(a.wp) AS wp,
+    //             b.uom
+    //         FROM output_production_press a
+    //         JOIN item_fg b ON a.item_fg_id = b.id
+    //         LEFT JOIN (
+    //             SELECT 
+    //                 dt.item_fg_id,
+    //                 dt.workorder,
+    //                 SUM(dt.qty_delivery) AS qty_delivery_total
+    //             FROM delivery_to_subconts dt
+    //             WHERE dt.deleted = 0
+    //             GROUP BY dt.item_fg_id, dt.workorder
+    //         ) d ON d.item_fg_id = a.item_fg_id AND d.workorder = a.workorder
+
+    //         JOIN setting_subconts sc ON sc.item_fg_id = a.item_fg_id  
+    //             AND (sc.subcont_id = '$destination_id' OR sc.teaching_factory_id = '$destination_id')
+    //             AND sc.deleted = 0
+
+    //         WHERE (b.number LIKE '%$post%' OR b.name LIKE '%$post%')
+    //         AND a.trans_date BETWEEN '2025-10-31' AND '$today'
+    //         GROUP BY a.item_fg_id, a.workorder, b.number, b.name, b.uom, d.qty_delivery_total
+    //         HAVING (COALESCE(SUM(a.qty_ok), 0) - COALESCE(d.qty_delivery_total, 0)) > 0
+    //         ORDER BY a.trans_date ASC, a.workorder ASC, b.number ASC
+    //     ";
+
+    //     // WHERE a.period = '$period'
+
+    //     $send = $this->crud->query($query);
+    //     echo json_encode($send);
+    // }
+
     public function readItemFg()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $delivery_date = $this->input->post('delivery_date');
         $delivery_date = $delivery_date ?: date('Y-m-d');
         $destination_id = $this->input->post('destination');
+        $today = date('Y-m-d');
 
         // $period = date('Ym', strtotime($delivery_date));
+
+        $exclude_keys = $this->input->post('exclude_keys');
+        $exclude_sql = '';
+
+        if (!empty($exclude_keys)) {
+            $exclude_arr = explode(',', $exclude_keys);
+            $exclude_arr = array_filter($exclude_arr);
+            if (!empty($exclude_arr)) {
+                $escaped = array_map(function($v) {
+                    return $this->db->escape_str($v);
+                }, $exclude_arr);
+                $in = "'" . implode("','", $escaped) . "'";
+                $exclude_sql = "AND CONCAT(a.item_fg_id, '_', a.workorder) NOT IN ($in)";
+            }
+        }
 
         $query = "
             SELECT
@@ -120,12 +187,17 @@ class Delivery_to_subconts extends CI_Controller
                 a.workorder,
                 COALESCE(SUM(a.qty_ok), 0) AS total_qty_ok,
                 COALESCE(d.qty_delivery_total, 0) AS total_qty_delivery,
-                (COALESCE(SUM(a.qty_ok), 0) - COALESCE(d.qty_delivery_total, 0)) AS qty_output,
+
+                (
+                    COALESCE(SUM(a.qty_ok), 0) - COALESCE(d.qty_delivery_total, 0)
+                ) AS qty_output,
+
                 MIN(a.trans_date) AS trans_date,
                 MIN(a.wp) AS wp,
                 b.uom
             FROM output_production_press a
             JOIN item_fg b ON a.item_fg_id = b.id
+
             LEFT JOIN (
                 SELECT 
                     dt.item_fg_id,
@@ -141,98 +213,169 @@ class Delivery_to_subconts extends CI_Controller
                 AND sc.deleted = 0
 
             WHERE (b.number LIKE '%$post%' OR b.name LIKE '%$post%')
-            GROUP BY a.item_fg_id, a.workorder, b.number, b.name, b.uom, d.qty_delivery_total
-            HAVING (COALESCE(SUM(a.qty_ok), 0) - COALESCE(d.qty_delivery_total, 0)) > 0
-            ORDER BY (MIN(a.wp) + 0) ASC, MIN(a.wp) ASC, MIN(a.trans_date) ASC, a.workorder ASC, b.number ASC
-        ";
+            AND a.trans_date BETWEEN '2025-10-31' AND '$today'
+            
+            $exclude_sql
 
-        // WHERE a.period = '$period'
+            GROUP BY a.item_fg_id, a.workorder
+            HAVING qty_output > 0
+            ORDER BY a.trans_date ASC, a.workorder ASC, b.number ASC
+        ";
 
         $send = $this->crud->query($query);
         echo json_encode($send);
     }
 
-    // public function readItemFgv1()
-    // {
-    //     $post = isset($_POST['q']) ? $_POST['q'] : "";
-        
-    //     // $period     = base64_decode($this->input->post('period'));
-    //     // $wp         = base64_decode($this->input->post('wp'));
-    //     // $machine_id = base64_decode($this->input->post('machine_id'));
+    public function readItemFgLast()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $delivery_date = $this->input->post('delivery_date');
+        $delivery_date = $delivery_date ?: date('Y-m-d');
+        $destination_id = $this->input->post('destination');
+        $today = date('Y-m-d');
 
-    //     $delivery_date = $this->input->post('delivery_date');
+        $exclude_keys = $this->input->post('exclude_keys');
+        $exclude_sql = '';
 
-    //     $delivery_date = $delivery_date ?: date('Y-m-d');
+        if (!empty($exclude_keys)) {
+            $exclude_arr = explode(',', $exclude_keys);
+            $exclude_arr = array_filter($exclude_arr);
+            if (!empty($exclude_arr)) {
+                $escaped = array_map(function ($v) {
+                    return $this->db->escape_str($v);
+                }, $exclude_arr);
+                $in = "'" . implode("','", $escaped) . "'";
+                $exclude_sql = "AND CONCAT(a.item_fg_id, '_', a.workorder) NOT IN ($in)";
+            }
+        }
 
-    //     // $date_min = date('Y-m-d', strtotime("$delivery_date -7 days"));
-    //     // $date_max = date('Y-m-d', strtotime("$delivery_date +7 days"));
+        $query = "
+            SELECT
+                a.item_fg_id,
+                b.number,
+                b.name,
+                a.workorder,
+                MIN(a.trans_date) AS trans_date,
+                MIN(a.wp) AS wp,
+                b.uom,
+                proc.doc_no as internal_doc_no,
+                proc.process_date, 
 
-    //     // $date_min = date('Y-m-d', strtotime("$delivery_date -30 days"));
-    //     // $date_max = date('Y-m-d', strtotime("$delivery_date +30 days"));
+                COALESCE(SUM(a.qty_ok), 0) AS total_qty_ok,
 
-    //     // $period = date('Ym', strtotime("$delivery_date"));
+                COALESCE(del.qty_delivery_press, 0) AS total_qty_delivery_press,
+                COALESCE(del.qty_delivery_internal, 0) AS total_qty_delivery_internal,
 
-    //     $query = "
-    //         SELECT DISTINCT 
-    //             a.item_fg_id, 
-    //             b.number, 
-    //             b.name, 
-    //             a.workorder,
-    //             a.mold_id,
-    //             a.operator,
-    //             a.wp,
-    //             a.shift,
-    //             a.period,
-    //             a.number as number_output,
-    //             SUM(a.qty_ok) as qty_output,
-    //             a.trans_date,
-    //             b.uom
-    //         FROM output_production_press a 
-    //         JOIN item_fg b ON a.item_fg_id = b.id
-    //             AND (b.number LIKE '%$post%' OR b.name LIKE '%$post%')
-    //         GROUP BY a.workorder
-    //         ORDER BY (a.wp + 0) ASC, a.wp ASC, a.trans_date ASC, a.workorder ASC, b.number ASC
-    //         ";
-            
-    //     // WHERE a.period = '$period'
-    //     // WHERE a.trans_date BETWEEN '$date_min' AND '$date_max'
-    //     // AND (b.number LIKE '%$post%' OR b.name LIKE '%$post%')
+                COALESCE(proc.source_value, 0) AS proc_value,
 
-    //     $send = $this->crud->query($query);
-    //     echo json_encode($send);
-    // }
+                CASE 
+                    WHEN proc.source_value IS NOT NULL THEN 
+                        (COALESCE(proc.source_value, 0) - COALESCE(del.qty_delivery_internal, 0))
+                    ELSE 
+                        (COALESCE(SUM(a.qty_ok), 0) - COALESCE(del.qty_delivery_press, 0))
+                END AS qty_output,
 
-    // public function delivery_note_no($type = "")
-    // {
-    //     $trans_date = $this->input->post('trans_date');
-    //     $destination_code = $this->input->post('destination_code');
+                CASE 
+                    WHEN proc.source_value IS NOT NULL THEN 'Internal Process'
+                    ELSE 'Output Production Press'
+                END AS source_type
 
-    //     $ym = $trans_date ? date("ym", strtotime($trans_date)) : date("ym");
-    //     $month = date("m", strtotime($trans_date ?: date("Y-m-d")));
-    //     $year = date("y", strtotime($trans_date ?: date("Y-m-d")));
+            FROM output_production_press a
+            JOIN item_fg b ON a.item_fg_id = b.id
 
-    //     $sql = $this->db->query("
-    //         SELECT MAX(SUBSTRING_INDEX(delivery_note_no, '/', 1)) AS kode
-    //         FROM delivery_to_subconts 
-    //         WHERE delivery_note_no LIKE '%/{$destination_code}/{$month}/{$year}'
-    //     ");
-    //     $row = $sql->row();
+            LEFT JOIN (
+                SELECT 
+                    d.item_fg_id,
+                    d.workorder,
+                    SUM(CASE WHEN d.source_type = 'Output Production Press' THEN d.qty_delivery ELSE 0 END) AS qty_delivery_press,
+                    SUM(CASE WHEN d.source_type = 'Internal Process' THEN d.qty_delivery ELSE 0 END) AS qty_delivery_internal
+                FROM delivery_to_subconts d
+                WHERE d.deleted = 0
+                GROUP BY d.item_fg_id, d.workorder
+            ) del ON del.item_fg_id = a.item_fg_id AND del.workorder = a.workorder
 
-    //     if ($row->kode == null) {
-    //         $seq = "001";
-    //     } else {
-    //         $seq = sprintf("%03s", intval($row->kode) + 1);
-    //     }
+            LEFT JOIN (
+                SELECT 
+                    x.item_fg_id,
+                    x.workorder,
+                    x.doc_no,
+                    x.process_date AS process_date,
+                    CASE 
+                        WHEN MAX(x.process_name) = 'Internal Finishing' THEN SUM(x.external)
+                        WHEN MAX(x.process_name) = 'Cutting Punch' THEN SUM(x.ok_punch)
+                        ELSE NULL
+                    END AS source_value
+                FROM internal_process x
+                WHERE x.deleted = 0
+                GROUP BY x.item_fg_id, x.workorder
+            ) proc ON proc.item_fg_id = a.item_fg_id AND proc.workorder = a.workorder
 
-    //     $autonumber = "{$seq}/{$destination_code}/{$month}/{$year}";
+            JOIN setting_subconts sc ON sc.item_fg_id = a.item_fg_id  
+                AND (sc.subcont_id = '$destination_id' OR sc.teaching_factory_id = '$destination_id')
+                AND sc.deleted = 0
 
-    //     if($type == "return") {
-    //         return $autonumber;
-    //     }
+            WHERE (b.number LIKE '%$post%' OR b.name LIKE '%$post%')
+            AND a.trans_date >= '2025-11-10'
+            $exclude_sql
 
-    //     echo $autonumber;
-    // }
+            AND (
+                b.id != 'FGRPNA-0207'
+                OR (
+                    b.id = 'FGRPNA-0207' 
+                    AND EXISTS (
+                        SELECT 1 FROM internal_process ip
+                        WHERE ip.item_fg_id = a.item_fg_id 
+                        AND ip.workorder = a.workorder 
+                        AND ip.deleted = 0
+                        AND ip.process_name = 'Cutting Punch'
+                    )
+                )
+            )
 
+            GROUP BY a.item_fg_id, a.workorder
+            HAVING qty_output > 0
+            ORDER BY a.trans_date ASC, a.workorder ASC, b.number ASC
+        ";
+
+        $send = $this->crud->query($query);
+
+        // $filtered = [];
+        // $delivery_date = '2025-11-18';
+
+
+        // foreach ($send as $row) {
+        //     if ($row->source_type == 'Internal Process') {
+        //         if ($row->trans_date >= date('Y-m-d', strtotime("$delivery_date -2 day"))) {
+        //             $filtered[] = $row;
+        //         }
+        //     } else if ($row->source_type == 'Output Production Press') {
+        //         if ($row->trans_date >= $delivery_date) {
+        //             $filtered[] = $row;
+        //         }
+        //     }
+        // }
+
+        $cutoff_internal = '2025-11-17';
+        $cutoff_press = '2025-11-18';
+
+        $filtered = [];
+        foreach ($send as $row) {
+
+            if ($row->source_type == 'Internal Process') {
+                if ($row->process_date >= $cutoff_internal) {
+                    $filtered[] = $row;
+                }
+
+            } else if ($row->source_type == 'Output Production Press') {
+                if ($row->trans_date >= $cutoff_press) {
+                    $filtered[] = $row;
+                }
+            }
+        }
+
+
+        echo json_encode($filtered);
+    }
 
     public function delivery_note_no($type = "")
     {
@@ -256,7 +399,7 @@ class Delivery_to_subconts extends CI_Controller
         $sql = $this->db->query("
             SELECT MAX(SUBSTRING_INDEX(delivery_note_no, '/', 1)) AS kode
             FROM delivery_to_subconts
-            WHERE delivery_note_no LIKE '%/{$destination_code}/{$month}/{$year}'
+            WHERE delivery_note_no LIKE '%/{$destination_code}/BRI/{$month}/{$year}'
             AND delivery_date BETWEEN '{$period_start}' AND '{$period_end}'
         ");
         $row = $sql->row();
@@ -272,6 +415,55 @@ class Delivery_to_subconts extends CI_Controller
         if ($type == "return") {
             return $autonumber;
         }
+
+        echo $autonumber;
+    }
+
+    public function delivery_note_no_manual()
+    {
+        $trans_date = $this->input->post('trans_date');
+        $destination_code = $this->input->post('destination_code');
+
+        $date = $trans_date ? date("Y-m-d", strtotime($trans_date)) : date("Y-m-d");
+        $month = date("m", strtotime($date));
+        $year = date("y", strtotime($date));
+
+        $start_november = '2025-11-01';
+        $cutoff_november = '2025-11-15';
+
+        $manual_seq = [
+            // Subcont
+            'SCFN' => 13,
+            'SCFB' => 13,
+            'SPTI' => 13,
+
+            // Teaching Factory
+            'MUTU' => 13,
+            'MUDA' => 13,
+            'INTA' => 13,
+        ];
+
+        if ($date >= $start_november && $date <= $cutoff_november) {
+
+            $sql = $this->db->query("
+                SELECT MAX(SUBSTRING_INDEX(delivery_note_no, '/', 1)) AS kode
+                FROM delivery_to_subconts
+                WHERE delivery_note_no LIKE '%/{$destination_code}/BRI/{$month}/{$year}'
+            ");
+            $row = $sql->row();
+
+            if ($row->kode) {
+                $seq = sprintf("%03s", intval($row->kode) + 1);
+            } else {
+                $last_manual = isset($manual_seq[$destination_code]) ? $manual_seq[$destination_code] : 0;
+                $seq = sprintf("%03s", $last_manual + 1);
+            }
+
+        }else{
+            return $this->delivery_note_no();
+        }
+
+        $autonumber = "{$seq}/{$destination_code}/BRI/{$month}/{$year}";
 
         echo $autonumber;
     }
@@ -415,10 +607,12 @@ class Delivery_to_subconts extends CI_Controller
 
             $dataFinal = array(
                 "item_fg_id" => $post['item_fg_id'],
+                "internal_doc_no" => $post['internal_doc_no'],
                 "prod_date" => $post['prod_date'],
                 "workorder" => $post['workorder'],
                 "qty_output" => $post['qty_output'],
                 "qty_delivery" => $post['qty_delivery'],
+                "source_type" => $post['source_type'],
                 "remarks" => $post['remarks'],
             );
 

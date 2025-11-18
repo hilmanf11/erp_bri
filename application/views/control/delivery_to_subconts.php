@@ -1,3 +1,15 @@
+<style>
+  .dialog-button{
+    border-bottom: 0 !important;
+  }
+
+    .btn-clicked {
+        background-color: #e0e0e0 !important;
+        transform: scale(0.97);
+        transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+</style>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -58,9 +70,14 @@
     </div>
 </div>
 
-<div id="toolbar2">
+<!-- <div id="toolbar2">
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="append()"><i class="fa fa-plus"></i> Add</a>
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
+</div> -->
+
+<div id="toolbar2" style="padding: 2px; margin-top: -38px; background-color: #f5f5f5 !important">
+    <a href="javascript:void(0)" id="btn-add" class="easyui-linkbutton" data-options="plain:true" onclick="append()"><i class="fa fa-plus"></i> Add</a>
+    <a href="javascript:void(0)" id="btn-remove" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
 </div>
 
 <!-- Insert & Update -->
@@ -112,6 +129,33 @@
 <iframe id="printout" src="<?= base_url('control/delivery_to_subconts/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
+
+    $(document).ready(function () {
+        $('#dlg_insert').dialog({
+            onOpen: function () {
+                setTimeout(() => {
+                    const panel = $('#dlg_insert').closest('.panel.window.panel-htop');
+                    const toolbar = $('#toolbar2');
+
+                    if (!toolbar.parent().hasClass('panel')) {
+                        panel.append(toolbar);
+                    }
+
+                    function positionToolbar() {
+                        const panelHeight = panel.height();
+                        const toolbarHeight = toolbar.outerHeight();
+                        toolbar.css({
+                            top: (panelHeight - toolbarHeight - 10) + 'px'
+                        });
+                    }
+
+                    positionToolbar();
+                    $(window).on('resize', positionToolbar);
+                }, 100);
+            }
+        });
+    });
+
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
@@ -163,10 +207,10 @@
                     editor: {
                         type: 'combogrid',
                         options: {
-                            url: '<?= base_url('control/delivery_to_subconts/readItemFg/'); ?>',
+                            url: '<?= base_url('control/delivery_to_subconts/readItemFgLast/'); ?>',
                             method: 'post',
                             required: true,
-                            panelWidth: 750,
+                            panelWidth: 950,
                             idField: 'number',
                             textField: 'number',
                             valueField: 'item_fg_id',
@@ -216,17 +260,33 @@
                                             required: true,
                                         }
                                     }
+                                },{
+                                    field: 'source_type',
+                                    title: 'Source Type',
+                                    halign: 'center',
+                                    align: 'center',
+                                    width: 200,
                                 }]
                             ],
                             onBeforeLoad: function(param) {
+                                var dg = $('#dg2');
+                                var rows = dg.datagrid('getRows');
                                 param.delivery_date = $('#delivery_date').datebox('getValue');
-                                param.destination = $('#destination').combogrid('getValue');
+                                param.destination   = $('#destination').combogrid('getValue');
+
+                                var used = rows
+                                    .filter(r => r.item_fg_id && r.workorder)
+                                    .map(r => r.item_fg_id + '_' + r.workorder);
+
+                                param.exclude_keys = used.join(',');
                             },
                             onLoadSuccess: function(data) {
                                 var dg = $('#dg2');
                                 var row = dg.datagrid('getSelected');
                                 if (!row) return;
                                 var idx = dg.datagrid('getRowIndex', row);
+
+                                console.log(data);
 
                                 var edId   = dg.datagrid('getEditor', { index: idx, field: 'item_fg_id' });
                                 var edNo   = dg.datagrid('getEditor', { index: idx, field: 'item_fg_number' });
@@ -236,6 +296,7 @@
                                 var edWO   = dg.datagrid('getEditor', { index: idx, field: 'workorder' });
                                 var edQtyOK   = dg.datagrid('getEditor', { index: idx, field: 'qty_output' });
                                 var edUom   = dg.datagrid('getEditor', { index: idx, field: 'uom' });
+                                var edSourceType   = dg.datagrid('getEditor', { index: idx, field: 'source_type' });
 
                                 if (data.rows && data.rows.length === 1) {
                                     var item = data.rows[0];
@@ -251,6 +312,7 @@
                                     if (edWO)   $(edWO.target).textbox('setValue', row.workorder);
                                     if (edQtyOK)   $(edQtyOK.target).textbox('setValue', row.qty_output);
                                     if (edUom)   $(edUom.target).textbox('setValue', row.uom);
+                                    if (edSourceType)   $(edSourceType.target).textbox('setValue', row.source_type);
                                 }
                             },
 
@@ -285,7 +347,15 @@
                                 var ed7 = dg.datagrid('getEditor', {
                                     index: rowIndex,
                                     field: 'trans_date'
-                                })
+                                });
+                                var ed8 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'source_type'
+                                });
+                                var ed9 = dg.datagrid('getEditor', { 
+                                    index: rowIndex, 
+                                    field: 'internal_doc_no' 
+                                });
 
                                 $(ed1.target).textbox('setValue', rows.item_fg_id);
                                 $(ed2.target).textbox('setValue', rows.number);
@@ -294,6 +364,13 @@
                                 $(ed5.target).textbox('setValue', rows.qty_output);
                                 $(ed6.target).textbox('setValue', rows.uom);
                                 $(ed7.target).textbox('setValue', rows.trans_date);
+                                $(ed8.target).textbox('setValue', rows.source_type);
+
+                                if (rows.source_type === 'Internal Process') {
+                                    if (ed9) $(ed9.target).textbox('setValue', rows.internal_doc_no || '');
+                                } else {
+                                    if (ed9) $(ed9.target).textbox('setValue', null);
+                                }
                             },
                         }
                     }
@@ -303,6 +380,24 @@
                     hidden: true,
                     halign: 'center',
                     title: "Product ID",
+                    editor: {
+                        type: 'textbox'
+                    }
+                }, {
+                    field: 'internal_doc_no',
+                    width: 200,
+                    hidden: true,
+                    halign: 'center',
+                    title: "Internal Document No",
+                    editor: {
+                        type: 'textbox'
+                    }
+                }, {
+                    field: 'source_type',
+                    width: 200,
+                    hidden: true,
+                    halign: 'center',
+                    title: "Source Type",
                     editor: {
                         type: 'textbox'
                     }
@@ -442,7 +537,15 @@
         }
     }
 
+    function buttonClickEffect(btn) {
+        $(btn).addClass('btn-clicked');
+        setTimeout(() => {
+            $(btn).removeClass('btn-clicked');
+        }, 300);
+    }
+
     function append() {
+        buttonClickEffect('#btn-add');
         var delivery_category = $("#delivery_category").combobox('getValue');
         var delivery_to_insert = $("#delivery_to_insert").combobox('getValue');
         var destination = $("#destination").combogrid('getValue');
@@ -461,6 +564,7 @@
     }
 
     function removeit() {
+        buttonClickEffect('#btn-remove');
         if (editIndex == undefined) {
             return true;
         }
@@ -723,7 +827,7 @@
             valueField: 'delivery_note_no',
             textField: 'delivery_note_no',
             prompt: 'Choose All',
-            editable: false,
+            editable: true,
             icons: [{
                 iconCls: 'icon-clear',
                 handler: function(e) {
@@ -735,7 +839,7 @@
         reloadDeliveryNoteCombo();
 
         $('#filter_from, #filter_to').datebox({
-            onSelect: function() {
+            onChange: function() {
                 reloadDeliveryNoteCombo();
             }
         });
@@ -766,11 +870,13 @@
 
                     for (let i = 0; i < totalrows; i++) {
                         if (rows[i].item_fg_id) {
+                            console.log(rows[i].source_type);
                             $.ajax({
                                 type: "post",
                                 url: '<?= base_url('control/delivery_to_subconts/create') ?>',
                                 data: {
                                     item_fg_id: rows[i].item_fg_id,
+                                    internal_doc_no: rows[i].internal_doc_no,
                                     delivery_date: delivery_date,
                                     delivery_note_no: delivery_note_no,
                                     delivery_category: delivery_category,
@@ -780,6 +886,7 @@
                                     workorder: rows[i].workorder,
                                     qty_output: rows[i].qty_output,
                                     qty_delivery: rows[i].qty_delivery,
+                                    source_type: rows[i].source_type,
                                     remarks: rows[i].remarks
                                 },
                                 dataType: "json",
@@ -935,7 +1042,7 @@
         if (trans_date && dest_code) {
             $.ajax({
                 type: "post",
-                url: "<?= base_url('control/delivery_to_subconts/delivery_note_no') ?>",
+                url: "<?= base_url('control/delivery_to_subconts/delivery_note_no_manual') ?>",
                 data: { trans_date: trans_date, destination_code: dest_code },
                 dataType: "html",
                 success: function(result) {

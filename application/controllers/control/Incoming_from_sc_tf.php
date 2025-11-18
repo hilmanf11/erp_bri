@@ -32,6 +32,7 @@ class Incoming_from_sc_tf extends CI_Controller
     public function readDeliveryNoteNoSCTF()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $source_id = $this->input->post('source_id');
         
         $query = "
             SELECT DISTINCT
@@ -52,6 +53,7 @@ class Incoming_from_sc_tf extends CI_Controller
                 OR a.delivery_to LIKE '%{$post}%' 
                 OR a.id LIKE '%{$post}%') 
             AND a.status = 0
+            AND a.destination = '{$source_id}'
         ";
 
         $send = $this->crud->query($query);
@@ -135,15 +137,96 @@ class Incoming_from_sc_tf extends CI_Controller
         echo json_encode($query->result_array());
     }
 
+    // public function readItemFg()
+    // {
+    //     $post = isset($_POST['q']) ? $_POST['q'] : "";
+    //     $incoming_date = $this->input->post('incoming_date');
+    //     $incoming_date = $incoming_date ?: date('Y-m-d');
+    //     $source_id = $this->input->post('source_id');
+    //     $delivery_note_no = $this->input->post('delivery_note_no');
+
+    //     // $period = date('Ym', strtotime($incoming_date));
+
+    //     $query = "
+    //         SELECT
+    //             a.item_fg_id,
+    //             b.number,
+    //             b.name,
+    //             a.workorder,
+    //             COALESCE(SUM(a.qty_delivery), 0) AS total_qty_delivery,
+    //             COALESCE(d.qty_receive_total, 0) AS total_qty_receive,
+    //             (COALESCE(SUM(a.qty_delivery), 0) - COALESCE(d.qty_receive_total, 0)) AS qty_delivery,
+    //             MIN(a.delivery_date) as delivery_date,
+    //             b.uom
+    //         FROM delivery_to_subconts a
+    //         JOIN item_fg b ON a.item_fg_id = b.id
+
+    //         LEFT JOIN (
+    //             SELECT 
+    //                 istf.item_fg_id,
+    //                 istf.workorder,
+    //                 SUM(istf.qty_receive) AS qty_receive_total
+    //             FROM incoming_from_sc_tf istf
+    //             WHERE istf.deleted = 0
+    //             AND istf.delivery_note_no = '$delivery_note_no'
+    //             GROUP BY istf.item_fg_id, istf.workorder
+    //         ) d ON d.item_fg_id = a.item_fg_id AND d.workorder = a.workorder
+
+    //         WHERE (b.number LIKE '%$post%' OR b.name LIKE '%$post%')
+    //         AND a.delivery_note_no = '$delivery_note_no'
+    //         GROUP BY a.item_fg_id, a.workorder, b.number, b.name, b.uom, d.qty_receive_total
+    //         HAVING (COALESCE(SUM(a.qty_delivery), 0) - COALESCE(d.qty_receive_total, 0)) > 0
+    //         ORDER BY a.workorder ASC, b.number ASC
+    //     ";
+
+    //     // WHERE a.period = '$period'
+
+    //     $send = $this->crud->query($query);
+    //     echo json_encode($send);
+    // }
+
     public function readItemFg()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        // $delivery_date = $this->input->post('delivery_date');
-        // $delivery_date = $delivery_date ?: date('Y-m-d');
-        // $destination_id = $this->input->post('destination');
+        $incoming_date = $this->input->post('incoming_date');
+        $incoming_date = $incoming_date ?: date('Y-m-d');
+
+        $source_id = $this->input->post('source_id');
         $delivery_note_no = $this->input->post('delivery_note_no');
 
-        // $period = date('Ym', strtotime($delivery_date));
+        $filterDeliveryNote = "";
+        $filterDestination  = "";
+
+        if (strpos($source_id, "TF") === 0) {
+            $filterDeliveryNote = "AND a.delivery_note_no = '$delivery_note_no'";
+            $filterDestination  = "AND a.destination = '$source_id'";
+
+        } elseif (strpos($source_id, "S") === 0) {
+            $dateFrom = date('Y-m-d', strtotime($incoming_date . ' -7 days'));
+            $dateTo   = $incoming_date;
+
+            $filterDeliveryNote = "AND a.delivery_date BETWEEN '$dateFrom' AND '$dateTo'";
+            $filterDestination  = "AND a.destination = '$source_id'";
+
+        } else {
+            echo json_encode([]);
+            return;
+        }
+
+        $exclude_keys = $this->input->post('exclude_keys');
+        $exclude_sql = '';
+
+        if (!empty($exclude_keys)) {
+            $exclude_arr = explode(',', $exclude_keys);
+            $exclude_arr = array_filter($exclude_arr);
+            if (!empty($exclude_arr)) {
+                $escaped = array_map(function ($v) {
+                    return $this->db->escape_str($v);
+                }, $exclude_arr);
+                $in = "'" . implode("','", $escaped) . "'";
+                $exclude_sql = "AND CONCAT(a.item_fg_id, '_', a.workorder) NOT IN ($in)";
+            }
+        }
 
         $query = "
             SELECT
@@ -166,18 +249,18 @@ class Incoming_from_sc_tf extends CI_Controller
                     SUM(istf.qty_receive) AS qty_receive_total
                 FROM incoming_from_sc_tf istf
                 WHERE istf.deleted = 0
-                AND istf.delivery_note_no = '$delivery_note_no'
+                " . ($filterDeliveryNote ? "AND istf.delivery_note_no = '$delivery_note_no'" : "") . "
                 GROUP BY istf.item_fg_id, istf.workorder
             ) d ON d.item_fg_id = a.item_fg_id AND d.workorder = a.workorder
 
             WHERE (b.number LIKE '%$post%' OR b.name LIKE '%$post%')
-            AND a.delivery_note_no = '$delivery_note_no'
+            $filterDestination
+            $filterDeliveryNote
+            $exclude_sql
             GROUP BY a.item_fg_id, a.workorder, b.number, b.name, b.uom, d.qty_receive_total
             HAVING (COALESCE(SUM(a.qty_delivery), 0) - COALESCE(d.qty_receive_total, 0)) > 0
             ORDER BY a.workorder ASC, b.number ASC
         ";
-
-        // WHERE a.period = '$period'
 
         $send = $this->crud->query($query);
         echo json_encode($send);
@@ -373,6 +456,10 @@ class Incoming_from_sc_tf extends CI_Controller
                 "qty_delivery" => $post['qty_delivery'],
                 "qty_receive" => $post['qty_receive'],
             );
+
+            if (!isset($post['delivery_note_no']) || $post['delivery_note_no'] === '' || $post['delivery_note_no'] === 'null') {
+                $post['delivery_note_no'] = null;
+            }
 
             if (@$post['id'] != "") {
                 $send = $this->crud->update('incoming_from_sc_tf', ["id" => $post['id']], $dataFinal);
