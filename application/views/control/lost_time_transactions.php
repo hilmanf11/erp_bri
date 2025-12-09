@@ -23,20 +23,20 @@
 </table>
 
 <!-- TOOLBAR DATAGRID -->
-<div id="toolbar" style="height: 265px; padding: 10px;">
+<div id="toolbar" style="height: 230px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-        <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+        <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
-            <div style="width: 50%; float: left;">
+            <div style="width: 33.33%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Period</span>
                     <input style="width:60%;" name="filter_period" id="filter_period" class="easyui-combobox" required>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Production Date</span>
-                    <input style="width:30%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
-                    <input style="width:30%;" id="filter_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    <input style="width:29.7%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    <input style="width:29.7%;" id="filter_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
 
                 <!-- <div class="fitem">
@@ -48,6 +48,9 @@
                     <span style="width:35%; display:inline-block;">Lost Time Doc No</span>
                     <input style="width:60%;" id="filter_number" class="easyui-combobox">
                 </div>
+            </div>
+
+            <div style="width: 33.33%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Shift</span>
                     <select style="width:60%;" id="filter_shift" class="easyui-combobox" panelHeight="auto">
@@ -57,8 +60,6 @@
                         <option value="3">3</option>
                     </select>
                 </div>
-            </div>
-            <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">WP No</span>
                     <input style="width:60%;" id="filter_wp" class="easyui-combobox">
@@ -67,9 +68,16 @@
                     <span style="width:35%; display:inline-block;">WO No</span>
                     <input style="width:60%;" id="filter_workorder" class="easyui-combobox">
                 </div>
+            </div>
+
+            <div style="width: 33.33%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No</span>
                     <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Category</span>
+                    <input style="width:60%;" id="filter_category" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status</span>
@@ -1245,10 +1253,11 @@
         var filter_wp = $("#filter_wp").combobox('getValue');
         var filter_workorder = $("#filter_workorder").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
+        var filter_category = $("#filter_category").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
         var url = "?filter_period=" + filter_period + "&filter_from=" + filter_from + "&filter_to=" + filter_to +
-        "&filter_number=" + filter_number + "&filter_shift=" + filter_shift + "&filter_wp=" + filter_wp + "&filter_workorder=" + filter_workorder + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
+        "&filter_number=" + filter_number + "&filter_shift=" + filter_shift + "&filter_wp=" + filter_wp + "&filter_workorder=" + filter_workorder + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_category=" + filter_category + "&filter_status=" + filter_status;
 
         $('#dg').datagrid({
             url: '<?= base_url('control/lost_time_transactions/datatables') ?>' + url
@@ -1273,10 +1282,11 @@
         var filter_wp = $("#filter_wp").combobox('getValue');
         var filter_workorder = $("#filter_workorder").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
+        var filter_category = $("#filter_category").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
         var url = "?filter_period=" + filter_period + "&filter_from=" + filter_from + "&filter_to=" + filter_to +
-        "&filter_number=" + filter_number + "&filter_shift=" + filter_shift + "&filter_wp=" + filter_wp + "&filter_workorder=" + filter_workorder + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
+        "&filter_number=" + filter_number + "&filter_shift=" + filter_shift + "&filter_wp=" + filter_wp + "&filter_workorder=" + filter_workorder + "&filter_item_fg_id=" + "&filter_category=" + filter_category + filter_item_fg_id + "&filter_status=" + filter_status;
 
         window.location.assign('<?= base_url('control/lost_time_transactions/print/excel') ?>' + url);
     }
@@ -1306,10 +1316,11 @@
             onExpandRow: function(index, row) {
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
                 var filter_workorder = $("#filter_workorder").combobox('getValue');
+                var filter_category = $("#filter_category").combobox('getValue');
                 var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
 
                 ddv.datagrid({
-                    url: '<?= base_url('control/lost_time_transactions/datatableDetails?number=') ?>' + window.btoa(row.number) + "&filter_workorder=" + window.btoa(filter_workorder) + "&filter_item_fg_id=" + window.btoa(filter_item_fg_id),
+                    url: '<?= base_url('control/lost_time_transactions/datatableDetails?number=') ?>' + window.btoa(row.number) + "&filter_workorder=" + window.btoa(filter_workorder) + "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) + "&filter_category=" + window.btoa(filter_category),
                     singleSelect: true,
                     rownumbers: true,
                     // fitColumns: true,
@@ -1794,6 +1805,19 @@
         valueField: 'workorder',
         textField: 'workorder',
         prompt: 'Choose Work Order No',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_category').combobox({
+        url: '<?= base_url('control/lost_time_transactions/readCategories'); ?>',
+        valueField: 'category',
+        textField: 'category',
+        prompt: 'Choose Category',
         icons: [{
             iconCls: 'icon-clear',
             handler: function(e) {

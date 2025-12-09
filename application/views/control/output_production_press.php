@@ -26,6 +26,7 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
+            <th rowspan="2" data-options="field:'printed',width:100,align:'center', formatter:btnPrint">Print</th>
             <th rowspan="2" data-options="field:'period',width:150,halign:'center',align:'center'">Period</th>
             <th rowspan="2" data-options="field:'trans_date',width:200,align:'center'">Production Date</th>
             <th rowspan="2" data-options="field:'number',width:200,align:'center'">Document No</th>
@@ -60,8 +61,8 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Production Date</span>
-                    <input style="width:30%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
-                    <input style="width:30%;" id="filter_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    <input style="width:29.75%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    <input style="width:29.8%;" id="filter_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
 
                 <!-- <div class="fitem">
@@ -167,10 +168,20 @@
                     <input style="width:60%;" id="machine_no_insert" class="easyui-combogrid">
                 </div>
 
-                <div class="fitem">
+                <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">PIC</span>
                     <input style="width:60%;" name="pic" id="pic" class="easyui-textbox">
+                </div> -->
+
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">PIC</span>
+                    <select style="width:60%;" name="pic" id="pic" class="easyui-combobox" panelHeight="auto" editable="false" required>
+                        <option value="ASEP">ASEP</option>
+                        <option value="BAYU">BAYU</option>
+                        <option value="RONAL">RONAL</option>
+                    </select>
                 </div>
+
             </div>
 
         </fieldset>
@@ -197,6 +208,25 @@
         </ul>
     </div>
 </div>
+
+<!-- POPUP PRINT -->
+<div id="dlgPrint" class="easyui-dialog" title="Print Label Output Production"
+     style="width:900px;height:500px;padding:10px"
+     closed="true" modal="true">
+
+    <table id="dgPrint" class="easyui-datagrid" style="width:100%;height:100%;"></table>
+
+</div>
+
+<!-- <div id="dlgCustomer" class="easyui-dialog" title="Customer List" closed="true" modal="true" style="width:400px;padding:10px">
+    <table id="dgCustomer" class="easyui-datagrid" style="width:100%; height:200px;"
+           singleSelect="true"></table>
+
+    <div style="text-align:right; margin-top:10px;">
+        <a class="easyui-linkbutton" onclick="selectCustomer()" iconCls="icon-ok">Choose</a>
+    </div>
+</div> -->
+
 
 <!-- PDF -->
 <iframe id="printout" src="<?= base_url('control/output_production_press/print') ?>" style="width: 100%;" hidden></iframe>
@@ -295,6 +325,8 @@
         });
     }
 
+    // 
+
     function addTable(link = "") {
         $('#dg2').datagrid({
             url: link,
@@ -313,8 +345,7 @@
                         type: 'textbox'
                     },
                     hidden: true
-                }, 
-
+                },
 
                 {
                     field: 'machine_number',
@@ -397,26 +428,6 @@
                                     });
                                 }
                             },
-                            // onHidePanel: function() {
-                            //     var t = $(this).combogrid('getText');
-                            //     var g = $(this).combogrid('grid');
-                            //     var rows = g.datagrid('getRows');
-                            //     var exists = false;
-
-                            //     for (var i = 0; i < rows.length; i++) {
-                            //         if (rows[i].number === t) {
-                            //             exists = true;
-                            //             break;
-                            //         }
-                            //     }
-
-                            //     if (!exists) {
-                            //         $(this).combogrid('setValue', '');
-                            //         var grid = $(this).combogrid('grid');
-                            //         grid.datagrid('load', {});
-                            //     }
-                            // }
-
                             onHidePanel: function() {
                                 var t = $(this).combogrid('getText');
                                 var g = $(this).combogrid('grid');
@@ -1841,108 +1852,6 @@
             }
         });
 
-        //SAVE DATA
-        // $('#dlg_insert').dialog({
-        //     buttons: [{
-        //         text: 'Save All',
-        //         iconCls: 'icon-ok',
-        //         handler: function() {
-        //             var trans_date = $("#trans_date").datebox('getValue');
-        //             var number = $("#number").textbox('getValue');
-        //             var period = $("#period").combobox('getValue');
-        //             var wp = $("#wp").combobox('getValue');
-        //             var shift = $("#shift").combobox('getValue');
-        //             var pic = $("#pic").textbox('getValue');
-        //             var machine_no_insert = $("#machine_no_insert").combogrid('getValues');
-
-        //             console.log('Machine No Insert : ', machine_no_insert);
-
-        //             if (!trans_date || !number || !period || !wp || !shift) {
-        //                 toastr.error("Please complete all required fields before saving");
-        //                 return;
-        //             }
-
-        //             var rows = $('#dg2').datagrid('getRows');
-        //             var totalrows = rows.length;
-        //             endEditing();
-
-        //             console.log(JSON.stringify(rows));
-                    
-
-        //             for (let i = 0; i < totalrows; i++) {
-        //                 if (rows[i].item_fg_id) {
-
-        //                     var dataFinal = {
-        //                         trans_date: trans_date,
-        //                         number: number,
-        //                         period: period,
-        //                         wp: wp,
-        //                         shift: shift,
-        //                         pic: pic,
-        //                         id: rows[i].id,
-        //                         machine_id: rows[i].machine_id,
-        //                         item_fg_id: rows[i].item_fg_id,
-        //                         planning_qty: rows[i].planning_qty,
-        //                         qty_ok: rows[i].qty_ok,
-        //                         qty_ng: rows[i].qty_ng,
-        //                         qty_ng_mold: rows[i].qty_ng_mold,
-        //                         workorder: rows[i].workorder,
-        //                         actual_cavity: rows[i].actual_cavity,
-        //                         operator: rows[i].operator,
-        //                         // standard_curing_time: rows[i].standard_curing_time,
-        //                         actual_curing_time: rows[i].actual_curing_time,
-        //                         shift_hour: rows[i].shift_hour,
-        //                         // target_shoot: rows[i].target_shoot,
-        //                         actual_shoot: rows[i].actual_shoot,
-        //                         total_compound_used: rows[i].total_compound_used,
-        //                         waste: rows[i].waste,
-        //                         // mold_cleaning: rows[i].mold_cleaning,
-        //                         // trial: rows[i].trial,
-        //                         // mold_changing: rows[i].mold_changing,
-        //                         // machine_repair: rows[i].machine_repair,
-        //                         // mold_repair: rows[i].mold_repair,
-        //                         // others: rows[i].others,
-        //                         // remarks: rows[i].remarks
-        //                     };
-
-        //                     var url_save = "<?= base_url('control/output_production_press/create') ?>";
-
-        //                     $.ajax({
-        //                         type: "post",
-        //                         url: url_save,
-        //                         data: dataFinal,
-        //                         dataType: "json",
-        //                         success: function(result) {
-        //                             if (result.theme === "error") {
-        //                                 toastr.error(result.message);
-        //                             }else{
-        //                                 if (i == (totalrows - 1)) {
-        //                                     Swal.fire({
-        //                                         title: result.message,
-        //                                         icon: result.theme,
-        //                                         confirmButtonText: 'Ok',
-        //                                         allowOutsideClick: false,
-        //                                     }).then((result) => {
-        //                                         if (result.isConfirmed) {
-        //                                             window.location.reload();
-        //                                         }
-        //                                     });
-        //                                 }
-        //                             }
-        //                         },
-        //                         error: function(xhr, status, error) {
-        //                             toastr.error("Server error: " + error);
-        //                         }
-        //                     });
-        //                 }
-        //             }
-
-        //             $('#dg').datagrid('reload');
-        //             $('#dlg_insert').dialog('close');
-        //         }
-        //     }]
-        // });
-
         // SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
@@ -1954,7 +1863,7 @@
                     var period = $("#period").combobox('getValue');
                     var wp = $("#wp").combobox('getValue');
                     var shift = $("#shift").combobox('getValue');
-                    var pic = $("#pic").textbox('getValue');
+                    var pic = $("#pic").combobox('getValue');
                     var machine_no_insert = $("#machine_no_insert").combogrid('getValues'); // multiple machine id
 
                     console.log('Machine No Insert : ', machine_no_insert);
@@ -1982,6 +1891,10 @@
                                 shift: shift,
                                 pic: pic,
                                 id: rows[i].id,
+                                
+                                machine_number: rows[i].machine_number,
+                                item_fg_number: rows[i].item_fg_number,
+
                                 machine_id: rows[i].machine_id,
                                 item_fg_id: rows[i].item_fg_id,
                                 mold_id: rows[i].mold_id,
@@ -2072,6 +1985,39 @@
                         return;
                     }
 
+                    let duplicateCheck = {};
+                    let duplicateFound = false;
+
+                    for (let i = 0; i < dataToSave.length; i++) {
+                        let row = dataToSave[i];
+
+                        let key = (row.item_fg_id || "") + "|" + (row.machine_id || "")
+                            + "|" + (row.workorder || "") + "|" + (row.mold_id || "");
+
+                        if (!duplicateCheck[key]) {
+                            duplicateCheck[key] = true;
+                        } else {
+                            duplicateFound = true;
+                            toastr.error(
+                                `Duplicate data found on:<br>
+                                Machine No: <b>${row.machine_number}</b><br>
+                                Product No: <b>${row.item_fg_number}</b><br>
+                                WO No: <b>${row.workorder}</b><br>
+                                Mold ID: <b>${row.mold_id}</b>`
+                            );
+                            break;
+                        }
+                    }
+
+                    if (duplicateFound) {
+                        return;
+                    }
+
+                    for (let i = 0; i < dataToSave.length; i++) {
+                        delete dataToSave[i].item_fg_number;
+                        delete dataToSave[i].machine_number;
+                    }
+
                     var url_save = "<?= base_url('control/output_production_press/create') ?>";
 
                     let successCount = 0;
@@ -2111,86 +2057,6 @@
         });
 
     });
-
-    // UPLOAD DATA
-    // $('#dlg_upload').dialog({
-    //     buttons: [{
-    //         text: 'List Failed',
-    //         handler: function() {
-    //             window.open('<?= base_url('control/output_production_press/uploadDownloadFailed') ?>', '_blank');
-    //         }
-    //     }, {
-    //         text: 'Upload',
-    //         iconCls: 'icon-ok',
-    //         handler: function() {
-    //             $('#frm_upload').form('submit', {
-    //                 url: '<?= base_url('control/output_production_press/upload') ?>',
-    //                 onSubmit: function() {
-    //                     if ($(this).form('validate') == false) {
-    //                         return $(this).form('validate');
-    //                     } else {
-    //                         $.messager.progress({
-    //                             title: 'Please Wait',
-    //                             msg: 'Importing Excel to Database'
-    //                         });
-    //                     }
-    //                 },
-    //                 success: function(result) {
-    //                     $.messager.progress('close');
-    //                     //Clear File
-    //                     $.ajax({
-    //                         url: "<?= base_url('control/output_production_press/uploadclearFailed') ?>"
-    //                     });
-    //                     var json = eval('(' + result + ')');
-    //                     requestData(json.total, json);
-
-    //                     function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-    //                         if (value < 100) {
-    //                             value = Math.floor((number / total) * 100);
-    //                             $('#p_upload').progressbar('setValue', value);
-    //                             $('#p_start').html(number);
-    //                             $('#p_finish').html(total);
-
-    //                             $.ajax({
-    //                                 type: "POST",
-    //                                 async: true,
-    //                                 url: "<?= base_url('control/output_production_press/uploadCreate') ?>",
-    //                                 data: {
-    //                                     "data": json[number - 1]
-    //                                 },
-    //                                 cache: false,
-    //                                 dataType: "json",
-    //                                 success: function(result) {
-    //                                     if (result.theme == "success") {
-    //                                         $('#p_success').html(success);
-    //                                         var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-    //                                         requestData(total, json, number + 1, value, success + 1, failed + 0);
-    //                                     } else {
-    //                                         $('#p_failed').html(failed);
-    //                                         var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-    //                                         //Json Failed
-    //                                         $.ajax({
-    //                                             type: "POST",
-    //                                             async: true,
-    //                                             url: "<?= base_url('control/output_production_press/uploadcreateFailed') ?>",
-    //                                             data: {
-    //                                                 data: json[number - 1],
-    //                                                 message: result.message
-    //                                             },
-    //                                             cache: false
-    //                                         });
-    //                                         requestData(total, json, number + 1, value, success + 0, failed + 1);
-    //                                     }
-    //                                     $("#p_remarks").append(title + "<br>");
-    //                                 }
-    //                             });
-    //                         }
-    //                     }
-    //                 }
-    //             });
-    //         }
-    //     }]
-    // });
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
@@ -2498,5 +2364,363 @@
             $(edTot.target).numberbox('setValue', total);
         }
     }
+
+    // function hitungTotal(target) {
+    //     var dg = $('#dg2');
+    //     var row = dg.datagrid('getSelected');
+    //     if (!row) return;
+
+    //     var idx = dg.datagrid('getRowIndex', row);
+
+    //     var edOK   = dg.datagrid('getEditor', { index: idx, field: 'qty_ok' });
+    //     var edNG   = dg.datagrid('getEditor', { index: idx, field: 'qty_ng' });
+    //     var edNGM  = dg.datagrid('getEditor', { index: idx, field: 'qty_ng_mold' });
+    //     var edPlan = dg.datagrid('getEditor', { index: idx, field: 'planning_qty_shift' });
+    //     var edTotal = dg.datagrid('getEditor', { index: idx, field: 'total_qty' });
+
+    //     var plan = edPlan ? parseFloat($(edPlan.target).numberbox('getValue')) || 0 : 0;
+    //     var ok   = edOK ? parseFloat($(edOK.target).numberbox('getValue')) || 0 : 0;
+    //     var ng   = edNG ? parseFloat($(edNG.target).numberbox('getValue')) || 0 : 0;
+    //     var ngm  = edNGM ? parseFloat($(edNGM.target).numberbox('getValue')) || 0 : 0;
+
+    //     if (ok > plan) {
+    //         $(edOK.target).numberbox('setValue', '');
+    //         toastr.warning("Qty OK must not exceed Planning Qty/Shift");
+    //         ok = '';
+    //         return;
+    //     }
+    //     if (ng > plan) {
+    //         $(edNG.target).numberbox('setValue', '');
+    //         toastr.warning("Qty NG must not exceed Planning Qty/Shift");
+    //         ng = '';
+    //         return;
+    //     }
+    //     if (ngm > plan) {
+    //         $(edNGM.target).numberbox('setValue', '');
+    //         toastr.warning("Qty NG Mold must not exceed Planning Qty/Shift");
+    //         ngm = '';
+    //         return;
+    //     }
+
+    //     var total = ok + ng + ngm;
+
+    //     if (total > plan) {
+    //         toastr.warning("Total Qty (OK + NG + NG Mold) must not exceed Planning Qty/Shift");
+
+    //         $(target).value = 0;
+    //         $(target).numberbox('setValue', 0);
+
+    //         ok   = edOK ? parseFloat($(edOK.target).numberbox('getValue')) : 0;
+    //         ng   = edNG ? parseFloat($(edNG.target).numberbox('getValue')) : 0;
+    //         ngm  = edNGM ? parseFloat($(edNGM.target).numberbox('getValue')) : 0;
+    //         total = ok + ng + ngm;
+    //     }
+
+    //     // Set total qty
+    //     if (edTotal) {
+    //         $(edTotal.target).numberbox('setValue', total);
+    //     }
+    // }
+
+
+
+    var editIndexPrint = undefined;
+
+    function endEditingPrint() {
+        if (editIndexPrint === undefined) return true;
+
+        if ($('#dgPrint').datagrid('validateRow', editIndexPrint)) {
+            $('#dgPrint').datagrid('endEdit', editIndexPrint);
+            editIndexPrint = undefined;
+            return true;
+        } 
+        return false;
+    }
+
+    function onClickCellPrint(index, field) {
+        var dg = $('#dgPrint');
+        var row = dg.datagrid('getRows')[index];
+
+        if (field === 'qty_packing') {
+
+            if (row.qty_packing == 0) {
+                if (endEditingPrint()) {
+                    dg.datagrid('selectRow', index)
+                    .datagrid('beginEdit', index);
+
+                    var ed = dg.datagrid('getEditor', {
+                        index: index,
+                        field: field
+                    });
+
+                    if (ed) {
+                        $(ed.target).numberbox('textbox').focus();
+                    }
+
+                    editIndexPrint = index;
+                }
+            } else {
+                toastr.warning('Qty Packing cannot be edited because the value is greater than 0');
+            }
+
+        } else {
+            endEditingPrint();
+        }
+    }
+
+    function btnPrint(val, row) {
+        var print = "dialog_output_press('" + row.number + "')";
+
+        if(row.printed==0){
+            return '<a class="btn btn-primary w-100" onClick="' + print + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-print"></i></a>';
+        }else{
+            return '<a class="btn btn-secondary w-100" onClick="' + print + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-print"></i></a>';
+
+        }
+    }
+
+    function btnPrintItem(val, row) {
+        return `
+            <a class="btn btn-primary w-100"
+            onClick="handlePrintPress('${row.number}','${row.workorder}','${row.item_fg_id}','${row.qty_label}','${row.qty_packing}','${row.qty_ok}')"
+            style="pointer-events: visible; opacity:1;">
+            <i class="fa fa-print"></i>
+            </a>`;
+    }
+
+    function handlePrintPress(number, workorder, item_fg_id, qty_label, qty_packing, qty_ok) {
+
+        if (parseInt(qty_packing) === 0) {
+            toastr.warning("Qty Packing cannot be zero");
+            return;
+        }
+
+        print_output_press(number, workorder, item_fg_id, qty_label, qty_packing, qty_ok);
+    }
+
+    // function btnPrintItem(val, row) {
+    //     return `
+    //         <a class="btn btn-primary w-100"
+    //         onClick="handlePrintPress('${row.number}','${row.workorder}','${row.item_fg_id}','${row.qty_label}','${row.qty_packing}','${row.qty_ok}','${row.shift}')"
+    //         style="pointer-events: visible; opacity:1;">
+    //         <i class="fa fa-print"></i>
+    //         </a>`;
+    // }
+
+    // function handlePrintPress(number, workorder, item_fg_id, qty_label, qty_packing, qty_ok, shift) {
+
+    //     if (parseInt(qty_packing) === 0) {
+    //         toastr.warning("Qty Packing cannot be zero");
+    //         return;
+    //     }
+
+    //     $.ajax({
+    //         url: "<?= base_url('control/output_production_press/checkExistingCustomer') ?>",
+    //         type: "GET",
+    //         data: { number: number, workorder: workorder, shift: shift },
+    //         dataType: "json",
+    //         success: function(resExist) {
+
+    //             if (resExist.exists) {
+    //                 print_output_press(
+    //                     number, workorder, item_fg_id,
+    //                     qty_label, qty_packing, qty_ok,
+    //                     resExist.customer_code
+    //                 );
+    //                 return;
+    //             }
+
+    //             $.ajax({
+    //                 url: "<?= base_url('control/output_production_press/checkCustomers') ?>",
+    //                 type: "GET",
+    //                 data: { item_fg_id: item_fg_id },
+    //                 dataType: "json",
+    //                 success: function(res) {
+
+    //                     if (res.count === 0) {
+    //                         toastr.error("No customer mapping found for this product");
+    //                         return;
+    //                     }
+
+    //                     if (res.count === 1) {
+    //                         print_output_press(
+    //                             number, workorder, item_fg_id,
+    //                             qty_label, qty_packing, qty_ok,
+    //                             res.customers[0].customer_code
+    //                         );
+    //                     } else {
+    //                         openCustomerDialog(
+    //                             res.customers,
+    //                             function(selectedCustomerCode){
+    //                                 print_output_press(
+    //                                     number, workorder, item_fg_id,
+    //                                     qty_label, qty_packing, qty_ok,
+    //                                     selectedCustomerCode
+    //                                 );
+    //                             }
+    //                         );
+    //                     }
+    //                 }
+    //             });
+
+    //         }
+    //     });
+    // }
+
+
+    function dialog_output_press(number) {
+        $('#dlgPrint').dialog('open').dialog('center');
+
+        $('#dgPrint').datagrid({
+            url: '<?= base_url('control/output_production_press/getDataPrint?number=') ?>' + encodeURIComponent(number),
+            method: 'get',
+            fitColumns: true,
+            singleSelect: true,
+            onClickCell: onClickCellPrint,
+            loadFilter: function(data) {
+                if (Array.isArray(data.rows)) {
+                    data.rows.forEach(r => calculateLabel(r));
+                }
+                return data;
+            },
+            onAfterEdit: function(index, row) {
+                calculateLabel(row);
+                $('#dgPrint').datagrid('refreshRow', index);
+            },
+            columns: [[
+                {
+                    field: 'no',
+                    title: 'No',
+                    width: 60,
+                    align: 'center',
+                    formatter: function(value, row, index) {
+                        return index + 1;
+                    }
+                },
+                { 
+                    field: 'item_fg_id', 
+                    title: 'Product ID', 
+                    width: 120 
+                }, { 
+                    field: 'item_fg_number', 
+                    title: 'Product No', 
+                    width: 180 
+                }, { 
+                    field: 'item_fg_name', 
+                    title: 'Product Name', 
+                    width: 200 
+                }, { 
+                    field: 'workorder', 
+                    title: 'WO No', 
+                    width: 150, 
+                    align: 'center' 
+                }, { 
+                    field: 'qty_ok', 
+                    title: 'OK', 
+                    width: 100, 
+                    align: 'center',
+                    formatter: numberformat 
+                }, { 
+                    field: 'qty_packing', 
+                    title: 'Qty Packing', 
+                    width: 120, 
+                    align: 'center',
+                    formatter: numberformat,
+                    editor: { 
+                                type: 'numberbox', 
+                                options: { 
+                                            precision: 0, 
+                                            min: 0 
+                                }
+                            }
+                }, { 
+                    field: 'qty_label', 
+                    title: 'Qty Label', 
+                    width: 100, 
+                    align: 'center'
+                }, { 
+                    field: 'print', 
+                    title: 'Print', 
+                    width: 100, 
+                    align: 'center', 
+                    formatter: btnPrintItem 
+                }
+            ]],
+        });
+    }
+
+    function calculateLabel(row) {
+        if (row.qty_packing > 0) {
+            row.qty_label = Math.ceil(row.qty_ok / row.qty_packing);
+        } else {
+            row.qty_label = 0;
+        }
+    }
+
+    function print_output_press(number, workorder, item_fg_id, qty_label, qty_packing, qty_ok) {
+        const encodedNumber = window.btoa(number);
+        const encodedWorkorder = window.btoa(workorder);
+        const encodedItemFg = window.btoa(item_fg_id);
+        const encodedQtyLabel = window.btoa(qty_label);
+        const encodedPacking = window.btoa(qty_packing);
+        const encodedOK = window.btoa(qty_ok);
+
+        const url = "<?= base_url('control/output_production_press/print_label_press?number=') ?>" 
+                + encodedNumber + "&workorder=" + encodedWorkorder + "&item_fg_id=" + encodedItemFg + "&qty_label=" + encodedQtyLabel + "&qty_packing=" + encodedPacking + "&qty_ok=" + encodedOK;
+
+        window.open(url, "_blank");
+    }
+
+    // function print_output_press(number, workorder, item_fg_id, qty_label, qty_packing, qty_ok, customer_code) {
+    //     const encodedNumber = window.btoa(number);
+    //     const encodedWorkorder = window.btoa(workorder);
+    //     const encodedItemFg = window.btoa(item_fg_id);
+    //     const encodedQtyLabel = window.btoa(qty_label);
+    //     const encodedPacking = window.btoa(qty_packing);
+    //     const encodedOK = window.btoa(qty_ok);
+    //     const encodedCustomerCode = window.btoa(customer_code);
+
+    //     const url = "<?= base_url('control/output_production_press/print_output_press?number=') ?>" 
+    //             + encodedNumber + "&workorder=" + encodedWorkorder + "&item_fg_id=" + encodedItemFg + "&qty_label=" + encodedQtyLabel + "&qty_packing=" + encodedPacking + "&qty_ok=" + encodedOK  + "&customer_code=" + encodedCustomerCode;
+
+    //     window.open(url, "_blank");
+    // }
+
+    // var customerSelectCallback = null;
+
+    // function openCustomerDialog(customers, callback) {
+    //     customerSelectCallback = callback;
+
+    //     $('#dgCustomer').datagrid({
+    //         data: customers,
+    //         columns: [[
+    //             { 
+    //                 field: 'customer_code', 
+    //                 title: 'Customer Code', 
+    //                 width: 120 
+    //             }, { 
+    //                 field: 'customer_name', 
+    //                 title: 'Customer Name', 
+    //                 width: 240 
+    //             }
+    //         ]]
+    //     });
+
+    //     $('#dlgCustomer').dialog('open').dialog('center');
+    // }
+
+    // function selectCustomer() {
+    //     var row = $('#dgCustomer').datagrid('getSelected');
+    //     if (!row) {
+    //         toastr.warning("Please select a customer");
+    //         return;
+    //     }
+
+    //     $('#dlgCustomer').dialog('close');
+    //     if (customerSelectCallback) {
+    //         customerSelectCallback(row.customer_code);
+    //     }
+    // }
+
 
 </script>

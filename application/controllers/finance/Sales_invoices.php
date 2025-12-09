@@ -1066,7 +1066,8 @@ class Sales_invoices extends CI_Controller
                 } else {
                     $dpp_total = $sub_total * 11/12;
                 }
-                $vat_total = $dpp_total * ($record['taxes']/100);
+                // $vat_total = $dpp_total * ($record['taxes']/100);
+                $vat_total = $sub_total * ($record['taxes']/100);
                 $sales_invoices = $this->db->query("SELECT * FROM sales_invoice_journals WHERE account_number IN ('170.110.00', '170.230.00') AND number = ?", [$record['number']])->result();
                 // var_dump($sales_invoices);
                 
@@ -1471,7 +1472,8 @@ class Sales_invoices extends CI_Controller
                 } else {
                     $dpp_total = $sub_total * 11/12;
                 }
-                $vat_total = $dpp_total * ($record['taxes']/100);
+                // $vat_total = $dpp_total * ($record['taxes']/100);
+                $vat_total = $sub_total * ($record['taxes']/100);
                 $sales_invoices = $this->db->query("SELECT * FROM sales_invoice_journals WHERE account_number IN ('170.110.00', '170.230.00') AND number = ?", [$record['number']])->result();
                 // var_dump($sales_invoices);
                 

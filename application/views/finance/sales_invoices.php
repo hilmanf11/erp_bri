@@ -958,7 +958,8 @@
                 var total_sub = parseFloat(total_sub);
                 $("#total_dpp").numberbox('setValue', total_dpp);
 
-                var disc_tax = parseFloat(total_dpp * (taxes / 100));
+                // var disc_tax = parseFloat(total_dpp * (taxes / 100));
+                var disc_tax = parseFloat(total_sub * (taxes / 100));
                 $("#total_vat").numberbox('setValue', disc_tax);
                 var total_pph = $("#total_pph").numberbox('getValue');
                 var total_grand = (parseFloat(Math.abs(total_sub)) + parseFloat(disc_tax) - parseFloat(total_pph));

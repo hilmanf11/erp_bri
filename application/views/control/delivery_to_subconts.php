@@ -19,6 +19,11 @@
             <th rowspan="2" data-options="field:'delivery_note_no',width:220,halign:'center',sortable:true">Delivery Note No</th>
             <th rowspan="2" data-options="field:'delivery_date',width:220,halign:'center',sortable:true">Delivery Date</th>
             <th rowspan="2" data-options="field:'destination_name',width:220,halign:'center',sortable:true">Destination</th>
+            <th rowspan="2" data-options="field:'total_qty_delivery',width:130,halign:'center',sortable:true, formatter:numberFormat, align:'center'">Total Qty Delivery</th>
+            
+            <th rowspan="2" data-options="field:'approved_to',width:130,halign:'center',align:'center',formatter:formatApproved,styler:styleApproved">Status <br>Approve</th>
+            <th rowspan="2" data-options="field:'approved_by',width:130,halign:'center',align:'center'">Approve By</th>
+            <th rowspan="2" data-options="field:'approved_date',width:130,halign:'center'">Approve Date</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -78,6 +83,9 @@
 <div id="toolbar2" style="padding: 2px; margin-top: -38px; background-color: #f5f5f5 !important">
     <a href="javascript:void(0)" id="btn-add" class="easyui-linkbutton" data-options="plain:true" onclick="append()"><i class="fa fa-plus"></i> Add</a>
     <a href="javascript:void(0)" id="btn-remove" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
+
+    <span id="total_qty_delivery">0</span>
+    </div>
 </div>
 
 <!-- Insert & Update -->
@@ -446,7 +454,26 @@
                             readonly: true
                         }
                     }
-                }, {
+                },
+
+
+                //  {
+                //     field: 'qty_total',
+                //     width: 100,
+                //     align: 'center',
+                //     title: "Total Qty",
+                //     formatter: numberFormatField,
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             precision: 0,
+                //             required: true,
+                //         }
+                //     }
+                // },
+
+
+                {
                     field: 'qty_delivery',
                     width: 100,
                     align: 'center',
@@ -482,7 +509,11 @@
                                     }
 
                                     // row.qty_delivery = 0;
+                                    updateTotalQtyDelivery();
                                 }
+
+                                row.qty_delivery = qtyDel;
+                                updateTotalQtyDelivery();
                             }
                         }
                     }
@@ -493,7 +524,9 @@
                     title: "UOM",
                     editor: {
                         type: 'textbox',
-                        readonly: true,
+                        options: {
+                            readonly: true
+                        }
                     }
                 }, {
                     field: 'remarks',
@@ -505,8 +538,43 @@
                     }
                 }]
             ],
-            onClickCell: onClickCell
+            onClickCell: onClickCell,
+            onAfterEdit: function(index, row) {
+                updateTotalQtyDelivery();
+            },
+            onLoadSuccess: function() {
+                updateTotalQtyDelivery();
+            },
+
         });
+    }
+
+    function updateTotalQtyDelivery() {
+        var dg = $('#dg2');
+        var rows = dg.datagrid('getRows') || [];
+        var total = 0;
+
+        for (var i = 0; i < rows.length; i++) {
+            // kalau ada editor untuk baris ini, ambil nilainya dari editor (real-time)
+            var ed = dg.datagrid('getEditor', { index: i, field: 'qty_delivery' });
+            var val = 0;
+            if (ed && ed.target) {
+                // numberbox editor -> pakai numberbox('getValue')
+                try {
+                    val = parseFloat($(ed.target).numberbox('getValue')) || 0;
+                } catch (e) {
+                    val = parseFloat(rows[i].qty_delivery) || 0;
+                }
+            } else {
+                val = parseFloat(rows[i].qty_delivery) || 0;
+            }
+
+            total += val;
+        }
+
+        // set di dua tempat (toolbar & dialog text)
+        $("#total_insert_qty").text(total);
+        $("#total_qty_delivery").text(total);
     }
 
     var editIndex = undefined;
@@ -557,6 +625,7 @@
                 });
                 editIndex = $('#dg2').datagrid('getRows').length - 1;
                 $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
+                updateTotalQtyDelivery();
             }
         } else {
             toastr.error("Please fill in all required fields first");
@@ -611,6 +680,7 @@
 
         $('#dg2').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
         editIndex = undefined;
+        updateTotalQtyDelivery();
     }
 
     //EDIT DATA
@@ -654,7 +724,9 @@
                             method: 'post',
                             url: '<?= base_url('control/delivery_to_subconts/delete') ?>',
                             data: {
-                                delivery_note_no: row.delivery_note_no
+                                delivery_note_no: row.delivery_note_no,
+                                // item_fg_id: row.item_fg_id,
+                                // workorder: row.workorder,
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
@@ -853,7 +925,21 @@
 
         //SAVE DATA
         $('#dlg_insert').dialog({
-            buttons: [{
+            buttons: [
+                // {
+                //     text: '<span id="total_qty_delivery" style="font-size: 14px !important; color:#000; font-weight:normal;">Total Qty Delivery : <b style="font-size: 14px !important; border: #000 !important;" id="total_insert_qty">' + $('#total_qty_delivery').text() + '</b></span>',
+                //     plain: true,
+                //     handler: function(){ }
+                // },
+
+                {
+                    text: '<span style="font-size: 14px !important; color:#000;">Total Qty Delivery : <b id="total_insert_qty" style="font-size: 14px !important; border: #000 !important;">0</b></span>',
+                    plain: true,
+                    handler: function(){ }
+                },
+
+
+                {
                 text: 'Save All',
                 iconCls: 'icon-ok',
                 handler: function() {
@@ -1042,7 +1128,7 @@
         if (trans_date && dest_code) {
             $.ajax({
                 type: "post",
-                url: "<?= base_url('control/delivery_to_subconts/delivery_note_no_manual') ?>",
+                url: "<?= base_url('control/delivery_to_subconts/delivery_note_no') ?>",
                 data: { trans_date: trans_date, destination_code: dest_code },
                 dataType: "html",
                 success: function(result) {

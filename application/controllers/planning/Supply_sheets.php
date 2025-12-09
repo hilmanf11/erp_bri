@@ -173,7 +173,8 @@ class Supply_sheets extends CI_Controller
                                                   UNION
                                                   SELECT eq_5 FROM equivalents WHERE item_rm_id = a.item_rm_id
                                                 )
-                                              GROUP BY request_no, item_rm_id
+                                                GROUP BY request_no, item_rm_id
+                                                LIMIT 1
                                             )
                                     , 0 ) - a.qty_req
                 ) 
@@ -419,6 +420,7 @@ class Supply_sheets extends CI_Controller
                                                   SELECT eq_5 FROM equivalents WHERE item_rm_id = a.item_rm_id
                                                 )
                                               GROUP BY request_no, item_rm_id
+                                              LIMIT 1
                                             )
                                     , 0 ) - a.qty_req
                             )

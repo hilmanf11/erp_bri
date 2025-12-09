@@ -356,7 +356,7 @@ class Delivery_to_subconts extends CI_Controller
         // }
 
         $cutoff_internal = '2025-11-17';
-        $cutoff_press = '2025-11-18';
+        $cutoff_press = '2025-11-17';
 
         $filtered = [];
         foreach ($send as $row) {
@@ -428,19 +428,19 @@ class Delivery_to_subconts extends CI_Controller
         $month = date("m", strtotime($date));
         $year = date("y", strtotime($date));
 
-        $start_november = '2025-11-01';
-        $cutoff_november = '2025-11-15';
+        $start_november = '2025-11-19';
+        $cutoff_november = '2025-12-15';
 
         $manual_seq = [
             // Subcont
-            'SCFN' => 13,
-            'SCFB' => 13,
-            'SPTI' => 13,
+            'SCFN' => 2,
+            'SCFB' => 2,
+            'SPTI' => 2,
 
             // Teaching Factory
-            'MUTU' => 13,
-            'MUDA' => 13,
-            'INTA' => 13,
+            'MUTU' => 2,
+            'MUDA' => 2,
+            'INTA' => 2,
         ];
 
         if ($date >= $start_november && $date <= $cutoff_november) {
@@ -488,7 +488,11 @@ class Delivery_to_subconts extends CI_Controller
             $result = array();
 
             //Select Query
-            $this->db->select("a.*, COALESCE(c.name, d.name) as destination_name");
+            $this->db->select("
+                a.*, 
+                COALESCE(c.name, d.name) as destination_name,
+                SUM(a.qty_delivery) as total_qty_delivery    
+            ");
             $this->db->from('delivery_to_subconts a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('subconts c', 'a.destination = c.id', 'left');
@@ -657,6 +661,17 @@ class Delivery_to_subconts extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
+
+        // $this->crud->update('output_production_press_detail', [
+        //     "workorder_label" => $data['workorder_label'], 
+        //     "status" => 1,
+        // ], ["status" => 0]);
+
+        // $this->crud->delete('shipping_to_subconts', [
+        //     "workorder_label" => $data['workorder_label'], 
+        //     "status" => 1,
+        // ]);
+
         $send = $this->crud->delete('delivery_to_subconts', $data);
         echo $send;
     }
@@ -670,6 +685,48 @@ class Delivery_to_subconts extends CI_Controller
         $delivery_to_subconts = $this->crud->reads('delivery_to_subconts', [], ["delivery_note_no" => $delivery_note_no]);
 
         $delivery_to_subcont = $this->crud->read('delivery_to_subconts', [], ["delivery_note_no" => $delivery_note_no]);
+
+        // $user = $this->crud->read('users', [], ["username" => $delivery_to_subcont->created_by]);
+        $table_approval = 'delivery_to_subconts';
+
+        $approval=$this->db->query("
+            SELECT *, CASE 
+                WHEN user_approval_1 = '$delivery_to_subcont->approved_by' THEN '1'
+                WHEN user_approval_2 = '$delivery_to_subcont->approved_by' THEN '2'
+                ELSE '0' 
+                END AS approved_by 
+            FROM approvals 
+            WHERE table_name = '$table_approval'
+        ");
+
+        $sqlApproval = $approval->row();
+
+        $user1 = null;
+        $user2 = null;
+
+        if(intval($sqlApproval->approved_by) == 2){
+            $user1 = $sqlApproval->user_approval_1;
+            $user2 = $sqlApproval->user_approval_2;
+        }
+
+        if(intval($sqlApproval->approved_by) == 1){
+            $user1 = $sqlApproval->user_approval_1;
+        }
+
+        // Inisialisasi variabel approval
+        $approval_1 = null;
+        $approval_2 = null;
+        $created_date = $delivery_to_subcont->created_date;
+
+        if($user1 != null){
+            // Cek status approval pertama
+            $approval_1 = $this->crud->read('users', [], ["username" => $user1]);
+        }
+
+        if($user2 != null){
+            // Cek status approval kedua
+            $approval_2 = $this->crud->read('users', [], ["username" => $user2]);
+        }
 
         $config = $this->db->get('config')->row();
 
@@ -703,6 +760,16 @@ class Delivery_to_subconts extends CI_Controller
             11 => 'November',
             12 => 'Desember'
         ];
+
+
+        // Generate QR code untuk approval 1 jika sudah diapprove
+        if ($approval_1) {
+            $this->createQrcode($approval_1->name, "assets/image/qrcode/");
+        }
+
+        if ($approval_2) {
+            $this->createQrcode($approval_2->name, "assets/image/qrcode/");
+        }
 
         //Header Print
         $html = '<html><head><title>' . $delivery_to_subcont->delivery_note_no . '</title><link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="14x14"></head>';
@@ -799,19 +866,22 @@ class Delivery_to_subconts extends CI_Controller
 
         //Loop Page
         $no = 1;
-        $page = ceil(count($delivery_to_subconts) / $rows_per_page);
-        for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, b.uom, COALESCE(c.name, d.name) as destination_name, COALESCE(c.address, d.address) as address');
+        // $page = ceil(count($delivery_to_subconts) / $rows_per_page);
+        // for ($i = 0; $i < $page; $i++) {
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, b.uom, COALESCE(c.name, d.name) as destination_name, COALESCE(c.address, d.address) as address, h.name as created_by_name');
             $this->db->from('delivery_to_subconts a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('subconts c', 'a.destination = c.id', 'left');
             $this->db->join('teaching_factory d', 'a.destination = d.id', 'left');
             $this->db->where('a.delivery_note_no', $delivery_note_no);
             $this->db->order_by('a.workorder', 'asc');
+            $this->db->join('users h', 'a.created_by = h.username');
             $this->db->order_by('b.number', 'asc');
             // $this->db->limit($rows_per_page, ($i * $rows_per_page));
             $records = $this->db->get()->result_array();
 
+            // Pastikan QR code untuk approval dan created by sudah dibuat
+            $this->createQrcode($records[0]['created_by_name'], "assets/image/qrcode/");
 
             $delivery_date = @$records[0]['delivery_date'] ?? date('Y-m-d');
             $timestamp = strtotime($delivery_date);
@@ -895,6 +965,8 @@ class Delivery_to_subconts extends CI_Controller
                                             <th>Qty Delivery</th>
                                             <th>Remarks</th>
                                         </tr>';
+            $total_qty_delivery = 0;
+
             foreach ($records as $record) {
                 $html .= '<tr>
                             <td style="text-align:center">' . $no . '</td>
@@ -904,48 +976,73 @@ class Delivery_to_subconts extends CI_Controller
                             <td style="text-align:center">' . number_format($record['qty_delivery'], 0, ",", ".") . '</td>
                             <td style="text-align:center">' . $record['remarks'] ?? '' . '</td>
                         </tr>';
+                $total_qty_delivery += $record['qty_delivery'];
                 $no++;
             }
+
+            $html .= '
+                    <tr>
+                        <td colspan="4" style="text-align:right; font-weight:bold;">Total Qty Delivery</td>
+                        <td style="text-align:center; font-weight:bold;">' . number_format($total_qty_delivery, 0, ",", ".") . '</td>
+                        <td></td>
+                    </tr>
+                </table>';
+
             $html .= '</table>';
 
             $html .= '</div></div>
-                        </div>
-                        <div style="text-align:right; margin-right: 40pt;">
-                            <p>Purwakarta, '. $date_delivery . '</p>
-                        </div>
-                        <div class="footer" style="margin-top:10pt; font-size:9pt;">
-                            <div class="signature-container">
-                                
-                                <!-- Tabel Supplier -->
-                                <div class="supplier-signature">
-                                    <table class="supplier-table">
-                                        <tr>
-                                            <th style="width:15%;padding:2pt;">Diterima</th>
-                                            <th style="width:45%;padding:2pt;border:none"></th>
-                                            <th style="padding:2pt; width: 20%;">Diketahui</th>
-                                            <th style="padding:2pt; width: 20%;">Dibuat</th>
-                                        </tr>
-                                        <tr>
-                                        <td></td>
-                                        <td style="border:none"></td>
-                                        <td>';
+                    </div>
+                    <div style="text-align:right; margin-right: 40pt;">
+                        <p>Purwakarta, '. $date_delivery . '</p>
+                    </div>
+                    <div class="footer" style="margin-top:10pt; font-size:9pt;">
+                        <div class="signature-container">
+                            
+                            <!-- Tabel Supplier -->
+                            <div class="supplier-signature">
+                                <table class="supplier-table">
+                                    <tr>
+                                        <th style="width:15%;padding:2pt;">Diterima</th>
+                                        <th style="width:45%;padding:2pt;border:none"></th>
+                                        <th style="padding:2pt; width: 20%;">Diketahui</th>
+                                        <th style="padding:2pt; width: 20%;">Dibuat</th>
+                                    </tr>
+                                    <tr>
+                                    <td></td>
+                                    <td style="border:none"></td>
+                                    <td>';
+
+                                    if($user2 != null){
+                                        $html .= '<img src="' . base_url('assets/image/qrcode/' . $approval_2->name . '.png') . '" style="width:35pt"/>';
+                                    } else if($user1 != null) {
+                                        $html .= '<img src="' . base_url('assets/image/qrcode/' . $approval_1->name . '.png') . '" style="width:35pt"/>';
+                                    }
         $html .= '</td>
-                                            <td style="height:35pt"></td>
-                                        </tr>
-                                        <tr>
-                                            <td style="text-align:center;"></td>
-                                            <td style="text-align:center;border:none;"></td>
-                                            <td style="text-align:center;">';
+                                    <td>
+                                        <img src="' . base_url('assets/image/qrcode/' . @$records[0]['created_by_name'] . '.png') . '" style="width:35pt"/>
+                                    </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="text-align:center;"></td>
+                                        <td style="text-align:center;border:none;"></td>
+                                        
+                                        <td style="text-align:center;">';
+                                        if($user2 != null){
+                                            $html .= $approval_2->name;
+                                        }else if($user1 != null) {
+                                            $html .= $approval_1->name;
+                                        }
 
         $html .= '</td>
-                                            <td style="text-align:center; height: 13pt;"></td>
-                                        </tr>
-                                    </table>
-                                </div>
+                                        <td style="text-align:center;">' . @$records[0]['created_by_name'] . '</td>
+                                    </tr>
+                                </table>
                             </div>
                         </div>
-                    </div>';
-            }
+                    </div>
+                </div>';
+
+            // }
         $html .= '</div><script>window.print()</script>';
         die($html);
     }

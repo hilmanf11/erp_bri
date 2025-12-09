@@ -124,6 +124,15 @@ class Lost_time_transactions extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readCategories()
+    {
+        $send = $this->crud->query("SELECT DISTINCT category
+        FROM lost_times
+        WHERE `deleted` = 0
+        ORDER BY category ASC");
+        echo json_encode($send);
+    }
+
     public function readMachine()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
@@ -302,6 +311,7 @@ class Lost_time_transactions extends CI_Controller
             $filter_wp = $this->input->get('filter_wp');
             $filter_workorder = $this->input->get('filter_workorder');
             $filter_item_fg_id = $this->input->get('filter_item_fg_id');
+            $filter_category = $this->input->get('filter_category');
             $filter_status = $this->input->get('filter_status');
 
             if (empty($filter_period)) {
@@ -321,6 +331,12 @@ class Lost_time_transactions extends CI_Controller
             $this->db->from('lost_time_transactions a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
 
+            $this->db->join("lost_times lm", 'a.lt_machine_id = lm.id', 'left');
+            $this->db->join("lost_times lmat", 'a.lt_material_id = lmat.id', 'left');
+            $this->db->join("lost_times lmet", 'a.lt_methode_id = lmet.id', 'left');
+            $this->db->join("lost_times lman", 'a.lt_man_id = lman.id', 'left');
+            $this->db->join("lost_times lmtr", 'a.lt_trial_id = lmtr.id', 'left');
+
             if ($filter_from != "" or $filter_to != "") {
                 $this->db->where('a.trans_date >=', $filter_from);
                 $this->db->where('a.trans_date <=', $filter_to);
@@ -328,6 +344,18 @@ class Lost_time_transactions extends CI_Controller
             // if ($filter_division != "") {
             //     $this->db->where('b.division_id', $filter_division);
             // }
+
+            if ($filter_category != "") {
+                $this->db->group_start();
+
+                $this->db->where('lm.category', $filter_category);
+                $this->db->or_where('lmat.category', $filter_category);
+                $this->db->or_where('lmet.category', $filter_category);
+                $this->db->or_where('lman.category', $filter_category);
+                $this->db->or_where('lmtr.category', $filter_category);
+
+                $this->db->group_end();
+            }
 
             if ($filter_period != "") {
                 $this->db->where('a.period', $filter_period);
@@ -378,6 +406,7 @@ class Lost_time_transactions extends CI_Controller
             $number = base64_decode($this->input->get('number'));
             $filter_workorder = base64_decode($this->input->get('filter_workorder'));
             $filter_item_fg_id = base64_decode($this->input->get('filter_item_fg_id'));
+            $filter_category = base64_decode($this->input->get('filter_category'));
 
             $this->db->select("a.*, 
                 b.number as item_fg_number,
@@ -435,6 +464,24 @@ class Lost_time_transactions extends CI_Controller
             if ($filter_workorder != "") {
                 $this->db->where('a.workorder', $filter_workorder);
             }
+            $this->db->where('a.number', $number);
+
+            if ($filter_workorder != "") {
+                $this->db->where('a.workorder', $filter_workorder);
+            }
+
+            if ($filter_category != "") {
+                $this->db->group_start();
+
+                $this->db->where('lm.category', $filter_category);
+                $this->db->or_where('lmat.category', $filter_category);
+                $this->db->or_where('lmet.category', $filter_category);
+                $this->db->or_where('lman.category', $filter_category);
+                $this->db->or_where('lmtr.category', $filter_category);
+
+                $this->db->group_end();
+            }
+
             if ($filter_item_fg_id != "") {
                 $this->db->where('a.item_fg_id', $filter_item_fg_id);
             }
@@ -594,27 +641,27 @@ class Lost_time_transactions extends CI_Controller
             if (@$post['id'] != "") {
                 $send = $this->crud->update('lost_time_transactions', ["id" => $post['id']], $dataFinal);
             } else {
-                $checkLTTrans = $this->crud->read('lost_time_transactions', [], [
-                    "period"     => $post['period'],
-                    // "trans_date" => $post['trans_date'],
-                    "wp"         => $post['wp'],
-                    "shift"      => $post['shift'],
-                    "machine_id" => $post['machine_id'],
-                    "item_fg_id" => $post['item_fg_id'],
-                    "workorder"  => $post['workorder'],
-                ]);
+                // $checkLTTrans = $this->crud->read('lost_time_transactions', [], [
+                //     "period"     => $post['period'],
+                //     // "trans_date" => $post['trans_date'],
+                //     "wp"         => $post['wp'],
+                //     "shift"      => $post['shift'],
+                //     "machine_id" => $post['machine_id'],
+                //     "item_fg_id" => $post['item_fg_id'],
+                //     "workorder"  => $post['workorder'],
+                // ]);
 
-                $item_fg = $this->crud->read("item_fg", [], ["id" => $post['item_fg_id']]);
-                $machine = $this->crud->read("machines", [], ["id" => $post['machine_id']]);
+                // $item_fg = $this->crud->read("item_fg", [], ["id" => $post['item_fg_id']]);
+                // $machine = $this->crud->read("machines", [], ["id" => $post['machine_id']]);
 
-                if (!empty($checkLTTrans)) {
-                    echo json_encode(array(
-                        "title"   => "Duplicate Data",
-                        "message" => "Duplicate Data for Product {$item_fg->number} on Machine {$machine->number} (Period: {$post['period']}, WP: {$post['wp']}, Shift: {$post['shift']}, Workorder: {$post['workorder']}).",
-                        "theme"   => "error"
-                    ));
-                    exit;
-                }
+                // if (!empty($checkLTTrans)) {
+                //     echo json_encode(array(
+                //         "title"   => "Duplicate Data",
+                //         "message" => "Duplicate Data for Product {$item_fg->number} on Machine {$machine->number} (Period: {$post['period']}, WP: {$post['wp']}, Shift: {$post['shift']}, Workorder: {$post['workorder']}).",
+                //         "theme"   => "error"
+                //     ));
+                //     exit;
+                // }
 
                 $send = $this->crud->create('lost_time_transactions', $post);
             }
@@ -1285,6 +1332,7 @@ class Lost_time_transactions extends CI_Controller
         $filter_wp = $this->input->get('filter_wp');
         $filter_workorder = $this->input->get('filter_workorder');
         $filter_item_fg_id = $this->input->get('filter_item_fg_id');
+        $filter_category = $this->input->get('filter_category');
         $filter_status = $this->input->get('filter_status');
 
         if (empty($filter_period)) {
@@ -1348,6 +1396,18 @@ class Lost_time_transactions extends CI_Controller
         if ($filter_from != "" or $filter_to != "") {
             $this->db->where('a.trans_date >=', $filter_from);
             $this->db->where('a.trans_date <=', $filter_to);
+        }
+
+        if ($filter_category != "") {
+            $this->db->group_start();
+
+            $this->db->where('lm.category', $filter_category);
+            $this->db->or_where('lmat.category', $filter_category);
+            $this->db->or_where('lmet.category', $filter_category);
+            $this->db->or_where('lman.category', $filter_category);
+            $this->db->or_where('lmtr.category', $filter_category);
+
+            $this->db->group_end();
         }
 
         if ($filter_period != "") {

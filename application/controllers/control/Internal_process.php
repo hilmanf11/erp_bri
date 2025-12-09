@@ -165,7 +165,7 @@ class Internal_process extends CI_Controller
             ) del ON del.item_fg_id = a.item_fg_id AND del.workorder = a.workorder
 
             WHERE (b.number LIKE '%$post%' OR b.name LIKE '%$post%')
-            AND a.trans_date BETWEEN '2025-11-10' AND '$today'
+            AND a.trans_date BETWEEN '2025-11-18' AND '$today'
             AND b.id != 'FGRPNA-0207'
 
             $exclude_sql

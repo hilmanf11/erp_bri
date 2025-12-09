@@ -314,7 +314,18 @@ class Notifications extends CI_Controller
             $this->load->view('notifications/delivery_orders');
         }
     }
-    
+    public function delivery_to_subconts($user, $name){
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['user'] = base64_decode($user);
+            $data['name'] = base64_decode($name);
+            $data['table'] = "delivery_to_subconts";
+            
+            $this->load->view('template/header', $data);
+            $this->load->view('notifications/delivery_to_subconts');
+        }
+    }
     public function notification_data($table = "", $user = "", $name = "")
     {
         $user = base64_decode($user);
@@ -575,6 +586,33 @@ class Notifications extends CI_Controller
             $this->db->group_by('a.delivery_order_no');
             $this->db->order_by('h.created_date', 'DESC');
         }
+
+        if($table=='delivery_to_subconts'){
+            $this->db->select('
+                a.delivery_note_no, 
+                a.delivery_date, 
+                d.name as created_by_name, 
+                e.name as approved_by_name, 
+                h.id as id_notification,
+                COALESCE(sc.name, tf.name) as destination_name
+            ');
+            $this->db->from('delivery_to_subconts a');
+            $this->db->join('users d', 'a.created_by = d.username', 'left');
+            $this->db->join('users e', 'a.approved_by = e.username', 'left'); 
+            $this->db->join('notifications h', 'a.id = h.table_id');
+
+            $this->db->join('subconts sc', 'a.destination = sc.id', 'left');
+            $this->db->join('teaching_factory tf', 'a.destination = tf.id', 'left');
+
+            $this->db->where('h.users_id_to', $this->session->username);
+            $this->db->where('h.table_name', $table);
+            $this->db->where('h.users_id_from', $user);
+            $this->db->where('h.name', $name);
+            $this->db->where('h.deleted', 0);
+            $this->db->group_by('a.delivery_note_no');
+            $this->db->order_by('h.created_date', 'DESC');
+        }
+
             $records = $this->db->get()->result_array();
             $this->crud->update('notifications', ["users_id_to" => $this->session->username, "table_name" => $table, "users_id_from" => $user, "name" => $name, "status" => 0], ["status" => 1]);
             echo json_encode($records);

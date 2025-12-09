@@ -10,6 +10,7 @@ class Output_production_press extends CI_Controller
         $this->load->helper(array('form', 'url'));
         $this->load->library('form_validation');
         $this->load->library('session');
+        $this->load->library('Ciqrcode');
         $this->load->model('crud');
         //VALIDASI FORM
         $this->form_validation->set_rules('item_fg_id', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[output_production_press.item_fg_id]');
@@ -201,6 +202,32 @@ class Output_production_press extends CI_Controller
         echo json_encode($send);
     }
 
+    public function getDataPrint()
+    {
+        $number = $this->input->get('number');
+
+        $records = $this->db
+            ->select("
+                a.*, 
+                b.number as item_fg_number, 
+                b.name as item_fg_name,
+                b.mpq as qty_packing
+            ")
+            ->from('output_production_press a')
+            ->join('item_fg b', 'a.item_fg_id = b.id', 'left')
+            ->join('machines c', 'a.machine_id = c.id', 'left')
+            ->where('a.number', $number)
+            ->where('a.qty_ok > 0')
+            ->order_by('c.id', 'ASC')
+            ->get()
+            ->result_array();
+
+        echo json_encode([
+            "total" => count($records),
+            "rows"  => $records
+        ]);
+    }
+
     //GET DATATABLES
     public function datatables()
     {
@@ -357,13 +384,15 @@ class Output_production_press extends CI_Controller
             $this->db->join('bom d', 'a.item_fg_id = d.item_fg_id and d.priority = 1', 'left');
             $this->db->join('item_rm e', 'd.item_rm_id = e.id', 'left');
 
-            $this->db->join("(SELECT item_fg_id, MIN(mold_id) AS mold_id
-                  FROM setting_molds
-                  GROUP BY item_fg_id
-                 ) f", "a.item_fg_id = f.item_fg_id", "left");
+            // $this->db->join("(SELECT item_fg_id, MIN(mold_id) AS mold_id
+            //       FROM setting_molds
+            //       GROUP BY item_fg_id
+            //      ) f", "a.item_fg_id = f.item_fg_id", "left");
 
-            // $this->db->join('setting_molds f', 'a.item_fg_id = f.item_fg_id', 'left');
-            $this->db->join('molds g', 'f.mold_id = g.id', 'left');
+            // // $this->db->join('setting_molds f', 'a.item_fg_id = f.item_fg_id', 'left');
+            // $this->db->join('molds g', 'f.mold_id = g.id', 'left');
+            
+            $this->db->join('molds g', 'a.mold_id = g.id', 'left');
 
             $this->db->where('a.number', $number);
             if ($filter_workorder != "") {
@@ -717,6 +746,14 @@ class Output_production_press extends CI_Controller
                         "status"  => "failed",
                         "item"    => "Line " . ($index + 1),
                         "message" => "Production Date is invalid format"
+                    ];
+                    continue;
+                }
+                if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/', $data['trans_date'])) {
+                    $results[] = [
+                        "status"  => "failed",
+                        "item"    => "Line " . ($index + 1),
+                        "message" => "Production Date must be in format YYYY-MM-DD"
                     ];
                     continue;
                 }
@@ -1160,6 +1197,921 @@ class Output_production_press extends CI_Controller
         }
     }
 
+    // public function checkCustomers() 
+    // {
+    //     $item_fg_id = $this->input->get('item_fg_id');
+
+    //     $this->db->select('ci.customer_id, c.number as customer_code, c.name as customer_name');
+    //     $this->db->from('customer_items ci');
+    //     $this->db->join('customers c', 'c.id = ci.customer_id', 'left');
+    //     $this->db->where('ci.item_fg_id', $item_fg_id);
+    //     $customers = $this->db->get()->result();
+
+    //     echo json_encode([
+    //         'count' => count($customers),
+    //         'customers' => $customers
+    //     ]);
+    // }
+
+    // public function checkExistingCustomer()
+    // {
+    //     $number    = $this->input->get('number');
+    //     $workorder = $this->input->get('workorder');
+    //     $shift     = $this->input->get('shift');
+
+    //     $this->db->select('customer_code');
+    //     $this->db->from('output_production_press');
+    //     $this->db->where('number', $number);
+    //     $this->db->where('workorder', $workorder);
+    //     $this->db->where('shift', $shift);
+    //     $row = $this->db->get()->row();
+
+    //     echo json_encode([
+    //         'exists' => !empty($row->customer_code),
+    //         'customer_code' => $row->customer_code ?? null
+    //     ]);
+    // }
+
+    // BY CUSTOMER
+    // public function print_output_press()
+    // {
+    //     $number       = base64_decode($this->input->get('number'));
+    //     $workorder    = base64_decode($this->input->get('workorder'));
+    //     $item_fg_id   = base64_decode($this->input->get('item_fg_id'));
+    //     $qty_ok       = intval(base64_decode($this->input->get('qty_ok')));
+    //     $qty_label    = intval(base64_decode($this->input->get('qty_label')));
+    //     $qty_packing  = intval(base64_decode($this->input->get('qty_packing')));
+    //     $customer_code   = base64_decode($this->input->get('customer_code'));
+
+
+    //     if (!$number || !$workorder || !$item_fg_id || $qty_ok <= 0 || $qty_packing <= 0) {
+    //         show_error("Missing or invalid parameters", 400);
+    //         return;
+    //     }
+
+    //     if (!empty($customer_code)) {
+    //         $this->db->select('customer_code');
+    //         $this->db->where('number', $number);
+    //         $this->db->where('workorder', $workorder);
+    //         $existing_cust = $this->db->get('output_production_press')->row();
+
+    //         if (empty($existing_cust->customer_code)) {
+    //             $this->db->where('number', $number);
+    //             $this->db->where('workorder', $workorder);
+    //             $this->db->update('output_production_press', [
+    //                 'customer_code' => $customer_code
+    //             ]);
+    //         }
+    //     }
+
+    //     // Format workorder: WOP251103-047 => WOP251103047
+    //     $workorder_clean = str_replace('-', '', $workorder);
+
+    //     $this->db->where('number_output', $number);
+    //     $this->db->where('workorder', $workorder);
+    //     $this->db->where('item_fg_id', $item_fg_id);
+    //     $existing = $this->db->get('output_production_press_detail')->result();
+
+    //     $existing_total_qty = 0;
+    //     foreach ($existing as $r) {
+    //         $existing_total_qty += intval($r->qty_packing);
+    //     }
+
+    //     if ($existing_total_qty < $qty_ok) {
+
+    //         // Hitung remaining yang masih harus dibuat
+    //         $remaining = $qty_ok - $existing_total_qty;
+
+    //         // Ambil last sequence
+    //         $this->db->select_max('workorder_label');
+    //         $this->db->like('workorder_label', $workorder_clean . '-', 'after');
+    //         $last_label = $this->db->get('output_production_press_detail')->row()->workorder_label;
+
+    //         $last_sequence = 0;
+    //         if ($last_label) {
+    //             $last_sequence = intval(substr($last_label, -3));
+    //         }
+
+    //         $sequence = $last_sequence + 1;
+
+    //         for ($i = 1; $i <= $qty_label; $i++) {
+
+    //             // label terakhir ambil sisa
+    //             if ($i == $qty_label) {
+    //                 $current_qty = $remaining;
+    //             } else {
+    //                 $current_qty = min($qty_packing, $remaining);
+    //             }
+
+    //             if ($current_qty <= 0) break;
+
+    //             $workorder_label = $workorder_clean . '-' . sprintf("%03d", $sequence);
+
+    //             $detail = [
+    //                 'number_output'    => $number,
+    //                 'workorder'        => $workorder,
+    //                 'workorder_label'  => $workorder_label,
+    //                 'item_fg_id'       => $item_fg_id,
+    //                 'qty_packing'      => $current_qty,
+    //                 'status'           => 0
+    //             ];
+
+    //             $this->crud->create('output_production_press_detail', $detail);
+
+    //             $remaining -= $current_qty;
+    //             $sequence++;
+
+    //             if ($remaining <= 0) break;
+    //         }
+    //     }
+
+    //     $this->db->select('
+    //         fg.number AS item_fg_number, 
+    //         fg.name AS item_fg_name, 
+    //         fg.uom,
+
+    //         opp.trans_date, 
+    //         opp.shift, 
+    //         opp.workorder, 
+    //         opp.operator, 
+    //         opp.qty_ok, 
+
+    //         opd.workorder_label, 
+    //         opd.qty_packing,
+
+    //         cs.number as cust_code
+    //     ');
+    //     $this->db->from('output_production_press_detail opd');
+    //     $this->db->join('output_production_press opp', 'opp.number = opd.number_output and opp.workorder = opd.workorder');
+
+    //     // $this->db->join(
+    //     //     "(SELECT item_fg_id, MIN(customer_id) as customer_id
+    //     //     FROM customer_items 
+    //     //     WHERE type_item = 'Original'
+    //     //     GROUP BY item_fg_id
+    //     //     ) ci",
+    //     //     "ci.item_fg_id = opp.item_fg_id",
+    //     //     "left"
+    //     // );
+
+    //     // $this->db->join('customers cs', 'cs.id = ci.customer_id', 'left');
+
+    //     $this->db->join('customers cs', "cs.number = '{$customer_code}'", 'left');
+
+    //     $this->db->join('item_fg fg', 'opp.item_fg_id = fg.id', 'left');
+    //     $this->db->where('opd.number_output', $number);
+    //     $this->db->where('opd.workorder', $workorder);
+        
+    //     if (!empty($item_fg_id)) {
+    //         $this->db->where('opp.item_fg_id', $item_fg_id);
+    //     }
+        
+    //     $this->db->group_by('opd.workorder_label');
+        
+    //     $output_press_packing_details = $this->db->get()->result();
+        
+    //     if (empty($output_press_packing_details)) {
+    //         echo "<center><h3>Data not found</h3></center>";
+    //         return;
+    //     }
+        
+    //     $first_workorder_label = $output_press_packing_details[0]->workorder_label;
+        
+    //     foreach ($output_press_packing_details as $detail) {
+    //         $this->createQrcode($detail->workorder_label, "assets/image/qrcode/");
+    //     }
+        
+    //     $html = '<html>
+    //                 <head>
+    //                     <title>Label Packing - ' . $first_workorder_label . '</title>
+    //                     <link rel="icon" type="image/png" href="' . base_url('assets/image/icon.png') . '">
+    //                     <style>
+    //                         body { 
+    //                             font-family: Arial, Helvetica, sans-serif; 
+    //                             margin: 2; 
+    //                         }
+
+    //                         table { 
+    //                             border-collapse: collapse; 
+    //                             width: 48mm; 
+    //                             height: 41mm; 
+    //                             font-size: 10px;
+    //                             border: 1px solid black; 
+    //                             table-layout: fixed; 
+    //                         }
+
+    //                         th, td { 
+    //                             border: 1px solid black; 
+    //                             /*padding: 1.5px;*/
+    //                             padding: 1px;
+    //                             text-align: left; 
+    //                         }
+
+    //                         th { 
+    //                             text-align: center; 
+    //                             font-size: 5px; 
+    //                             font-weight: bold; 
+    //                         }
+
+    //                         .header { 
+    //                             text-align: center; 
+    //                             font-size: 11px; 
+    //                             font-weight: bold; 
+    //                         }
+
+    //                         .logo { 
+    //                             text-align: center; 
+    //                             width: 100%; 
+    //                             padding-left: 3px; 
+    //                             padding-right: 3px; 
+    //                         }
+
+    //                         .operator-sign, .qc-sign, .qr-code { 
+    //                             font-size: 7px; 
+    //                             text-align: center; 
+    //                             vertical-align: bottom; 
+    //                             font-weight: bold; 
+    //                         }
+    //                         .qc-sign { 
+    //                             text-align: center; 
+    //                             height: 10mm; 
+    //                         }
+    //                         .qr-code img { 
+    //                             width: 40px; 
+    //                             height: 40px; 
+    //                             display: block; 
+    //                             margin: 0 auto;
+    //                         }
+    //                         .serial-label { 
+    //                             font-size: 5px; 
+    //                             text-align: center; 
+    //                             word-wrap: break-word; 
+    //                             overflow: hidden; 
+    //                             font-weight: bold; 
+    //                         }
+    //                         @page {
+    //                                 size: 48mm 41mm;
+    //                                 margin: 0;
+    //                                 }
+    //                         @media print {
+    //                                 .printLabel {
+    //                                     page-break-after: auto:
+    //                                     width: 48mm;
+    //                                     height: 41mm;
+    //                                     display: block;
+    //                                     padding: 0;
+    //                                     margin: 0;
+    //                                 }
+
+    //                                 table {
+    //                                     width: 100%;
+    //                                     font-size: 6px;
+    //                                     margin: 0;
+    //                                     padding: 0;
+    //                                 }
+
+    //                                 body {
+    //                                     margin: 0;
+    //                                     padding: 0;
+    //                                 }
+    //                             }
+    //                     </style>
+    //                 </head>
+    //             <body>';
+        
+    //     foreach ($output_press_packing_details as $detail) {
+    //         $qty_packing_formatted = number_format($detail->qty_packing, 0, ',', '.') . ' ' .strtoupper($output_press_packing_details[0]->uom);
+    //         $html .= '<div class="printLabel">
+    //                     <table style="width: 48mm; height: 41mm;">
+    //                     <tr>
+    //                         <th class="logo" colspan="6" style="text-align: center;">
+    //                             <img src="' . base_url('assets/image/bri_logo.png') . '" width="10" align="left"/>
+    //                             <span class="header" style="font-size: 10px; height: 10px;">LABEL PACKING PRESS</span>
+    //                         </th>
+    //                     </tr>
+    //                     <tr>
+    //                         <td colspan="2" style="width: 30%;"><b>Cust Code:</b></td>
+    //                         <td colspan="4" style="font-weight: bold;">' . $detail->cust_code . '</td>
+    //                     </tr>
+    //                     <tr>
+    //                         <td colspan="2" style="width: 30%;"><b>Prod No:</b></td>
+    //                         <td colspan="4" style="font-weight: bold;">' . $detail->item_fg_number . '</td>
+    //                     </tr>
+    //                     <tr>
+    //                         <td colspan="2" style="width: 30%;"><b>Prod Name:</b></td>
+    //                         <td colspan="4" style="font-weight: bold;">' . $detail->item_fg_name . '</td>
+    //                     </tr>
+    //                     <tr>
+    //                         <td colspan="2" style="width: 30%;"><b>Prod Date/Shift:</b></td>
+    //                         <td colspan="4" style="font-weight: bold;">' . $detail->trans_date . ' / '. $detail->shift .'</td>
+    //                     </tr>
+    //                     <tr>
+    //                         <td colspan="2" style="width: 30%;"><b>WO No:</b></td>
+    //                         <td colspan="4" style="font-weight: bold;">' . $detail->workorder . '</td>
+    //                     </tr>
+    //                     <tr>
+    //                         <td colspan="2" style="width: 30%;"><b>MP Press:</b></td>
+    //                         <td colspan="4" style="font-weight: bold;">' . $detail->operator . '</td>
+    //                     </tr>
+    //                     <tr>
+    //                         <td colspan="2" style="width: 30%;"><b>Mix Date:</b></td>
+    //                         <td colspan="4" style="font-weight: bold;"></td>
+    //                     </tr>
+    //                     <tr>
+    //                         <td colspan="2" style="width: 30%;"><b>Comp Lot No:</b></td>
+    //                         <td colspan="4" style="font-weight: bold;"></td>
+    //                     </tr>
+    //                     <tr>
+    //                         <td colspan="2" style="width: 30%;"><b>Qty:</b></td>
+    //                         <td colspan="4" style="font-weight: bold;">' . $qty_packing_formatted . '</td>
+    //                     </tr>
+    //                     <tr>
+    //                         <th colspan="2" style="font-size: 6px !important;">MP Finishing | QA</th>
+    //                         <th colspan="4" style="font-size: 6px !important;">QR Code</th>
+    //                     </tr>
+    //                     <tr>
+    //                         <td class="operator-sign" colspan="2"></td>
+    //                         <td class="qr-code" colspan="4">
+    //                             <img src="' . base_url('assets/image/qrcode/' . $detail->workorder_label . '.png') . '"/>
+    //                             <div class="serial-label">' . $detail->workorder_label . '</div>
+    //                         </td>
+    //                     </tr>
+    //                 </table>
+            
+    //         </div>';
+    //     } 
+    
+    //     $html .= '<script>window.print()</script>
+    //             </body>
+    //         </html>';
+    
+    //     die($html);
+
+    // }
+
+
+    public function print_output_press()
+    {
+        $number       = base64_decode($this->input->get('number'));
+        $workorder    = base64_decode($this->input->get('workorder'));
+        $item_fg_id   = base64_decode($this->input->get('item_fg_id'));
+        $qty_ok       = intval(base64_decode($this->input->get('qty_ok')));
+        $qty_label    = intval(base64_decode($this->input->get('qty_label')));
+        $qty_packing  = intval(base64_decode($this->input->get('qty_packing')));
+
+        if (!$number || !$workorder || !$item_fg_id || $qty_ok <= 0 || $qty_packing <= 0) {
+            show_error("Missing or invalid parameters", 400);
+            return;
+        }
+
+        // Format workorder: WOP251103-047 => WOP251103047
+        $workorder_clean = str_replace('-', '', $workorder);
+
+        $this->db->where('number_output', $number);
+        $this->db->where('workorder', $workorder);
+        $this->db->where('item_fg_id', $item_fg_id);
+        $existing = $this->db->get('output_production_press_detail')->result();
+
+        $existing_total_qty = 0;
+        foreach ($existing as $r) {
+            $existing_total_qty += intval($r->qty_packing);
+        }
+
+        if ($existing_total_qty < $qty_ok) {
+
+            // Hitung remaining yang masih harus dibuat
+            $remaining = $qty_ok - $existing_total_qty;
+
+            // Ambil last sequence
+            $this->db->select_max('workorder_label');
+            $this->db->like('workorder_label', $workorder_clean . '-', 'after');
+            $last_label = $this->db->get('output_production_press_detail')->row()->workorder_label;
+
+            $last_sequence = 0;
+            if ($last_label) {
+                $last_sequence = intval(substr($last_label, -3));
+            }
+
+            $sequence = $last_sequence + 1;
+
+            for ($i = 1; $i <= $qty_label; $i++) {
+
+                // label terakhir ambil sisa
+                if ($i == $qty_label) {
+                    $current_qty = $remaining;
+                } else {
+                    $current_qty = min($qty_packing, $remaining);
+                }
+
+                if ($current_qty <= 0) break;
+
+                $workorder_label = $workorder_clean . '-' . sprintf("%03d", $sequence);
+
+                $detail = [
+                    'number_output'    => $number,
+                    'workorder'        => $workorder,
+                    'workorder_label'  => $workorder_label,
+                    'item_fg_id'       => $item_fg_id,
+                    'qty_packing'      => $current_qty,
+                    'status'           => 0
+                ];
+
+                $this->crud->create('output_production_press_detail', $detail);
+
+                $remaining -= $current_qty;
+                $sequence++;
+
+                if ($remaining <= 0) break;
+            }
+        }
+
+        $this->db->select('
+            fg.number AS item_fg_number, 
+            fg.name AS item_fg_name, 
+            fg.uom,
+
+            opp.trans_date, 
+            opp.shift, 
+            opp.workorder, 
+            opp.operator, 
+            opp.qty_ok, 
+
+            opd.workorder_label, 
+            opd.qty_packing
+        ');
+        $this->db->from('output_production_press_detail opd');
+        $this->db->join('output_production_press opp', 'opp.number = opd.number_output and opp.workorder = opd.workorder');
+
+        $this->db->join('item_fg fg', 'opp.item_fg_id = fg.id', 'left');
+        $this->db->where('opd.number_output', $number);
+        $this->db->where('opd.workorder', $workorder);
+        
+        if (!empty($item_fg_id)) {
+            $this->db->where('opp.item_fg_id', $item_fg_id);
+        }
+        
+        $this->db->group_by('opd.workorder_label');
+        
+        $output_press_packing_details = $this->db->get()->result();
+        
+        if (empty($output_press_packing_details)) {
+            echo "<center><h3>Data not found</h3></center>";
+            return;
+        }
+        
+        $first_workorder_label = $output_press_packing_details[0]->workorder_label;
+        
+        foreach ($output_press_packing_details as $detail) {
+            $this->createQrcode($detail->workorder_label, "assets/image/qrcode/");
+        }
+        
+        $html = '<html>
+                    <head>
+                        <title>Label Packing - ' . $first_workorder_label . '</title>
+                        <link rel="icon" type="image/png" href="' . base_url('assets/image/icon.png') . '">
+                        <style>
+                            body { 
+                                font-family: Arial, Helvetica, sans-serif; 
+                                margin: 2; 
+                            }
+
+                            table { 
+                                border-collapse: collapse; 
+                                width: 48mm; 
+                                height: 41mm; 
+                                font-size: 10px;
+                                border: 1px solid black; 
+                                table-layout: fixed; 
+                            }
+
+                            th, td { 
+                                border: 1px solid black; 
+                                /*padding: 1.5px;*/
+                                padding: 1px;
+                                text-align: left; 
+                            }
+
+                            th { 
+                                text-align: center; 
+                                font-size: 5px; 
+                                font-weight: bold; 
+                            }
+
+                            .header { 
+                                text-align: center; 
+                                font-size: 11px; 
+                                font-weight: bold; 
+                            }
+
+                            .logo { 
+                                text-align: center; 
+                                width: 100%; 
+                                padding-left: 3px; 
+                                padding-right: 3px; 
+                            }
+
+                            .operator-sign, .qc-sign, .qr-code { 
+                                font-size: 7px; 
+                                text-align: center; 
+                                vertical-align: bottom; 
+                                font-weight: bold; 
+                            }
+                            .qc-sign { 
+                                text-align: center; 
+                                height: 10mm; 
+                            }
+                            .qr-code img { 
+                                width: 40px; 
+                                height: 40px; 
+                                display: block; 
+                                margin: 0 auto;
+                            }
+                            .serial-label { 
+                                font-size: 5px; 
+                                text-align: center; 
+                                word-wrap: break-word; 
+                                overflow: hidden; 
+                                font-weight: bold; 
+                            }
+                            @page {
+                                    size: 48mm 41mm;
+                                    margin: 0;
+                                    }
+                            @media print {
+                                    .printLabel {
+                                        page-break-after: auto:
+                                        width: 48mm;
+                                        height: 41mm;
+                                        display: block;
+                                        padding: 0;
+                                        margin: 0;
+                                    }
+
+                                    table {
+                                        width: 100%;
+                                        font-size: 6px;
+                                        margin: 0;
+                                        padding: 0;
+                                    }
+
+                                    body {
+                                        margin: 0;
+                                        padding: 0;
+                                    }
+                                }
+                        </style>
+                    </head>
+                <body>';
+        
+        foreach ($output_press_packing_details as $detail) {
+            $qty_packing_formatted = number_format($detail->qty_packing, 0, ',', '.') . ' ' .strtoupper($output_press_packing_details[0]->uom);
+            $html .= '<div class="printLabel">
+                        <table style="width: 48mm; height: 41mm;">
+                        <tr>
+                            <th class="logo" colspan="6" style="text-align: center;">
+                                <img src="' . base_url('assets/image/bri_logo.png') . '" width="10" align="left"/>
+                                <span class="header" style="font-size: 10px; height: 10px;">LABEL PACKING PRESS</span>
+                            </th>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Prod No:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->item_fg_number . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Prod Name:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->item_fg_name . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Status:</b></td>
+                            <td colspan="4" style="font-weight: bold;"></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Prod Date/Shift:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->trans_date . ' / '. $detail->shift .'</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>WO No:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->workorder . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>MP Press:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->operator . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Mix Date:</b></td>
+                            <td colspan="4" style="font-weight: bold;"></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Comp Lot No:</b></td>
+                            <td colspan="4" style="font-weight: bold;"></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Qty:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $qty_packing_formatted . '</td>
+                        </tr>
+                        <tr>
+                            <th colspan="2" style="font-size: 6px !important;">MP Finishing | QA</th>
+                            <th colspan="4" style="font-size: 6px !important;">QR Code</th>
+                        </tr>
+                        <tr>
+                            <td class="operator-sign" colspan="2"></td>
+                            <td class="qr-code" colspan="4">
+                                <img src="' . base_url('assets/image/qrcode/' . $detail->workorder_label . '.png') . '"/>
+                                <div class="serial-label">' . $detail->workorder_label . '</div>
+                            </td>
+                        </tr>
+                    </table>
+            
+            </div>';
+        } 
+    
+        $html .= '<script>window.print()</script>
+                </body>
+            </html>';
+    
+        die($html);
+
+    }
+
+
+    public function print_label_press() 
+    {
+        $number       = base64_decode($this->input->get('number'));
+        $workorder    = base64_decode($this->input->get('workorder'));
+        $item_fg_id   = base64_decode($this->input->get('item_fg_id'));
+        $qty_ok       = intval(base64_decode($this->input->get('qty_ok')));
+        $qty_label    = intval(base64_decode($this->input->get('qty_label')));
+        $qty_packing  = intval(base64_decode($this->input->get('qty_packing')));
+
+        if (!$number || !$workorder || !$item_fg_id || $qty_ok <= 0 || $qty_packing <= 0) {
+            show_error("Missing or invalid parameters", 400);
+            return;
+        }
+
+        // Format workorder: WOP251103-047 => WOP251103047
+        $workorder_clean = str_replace('-', '', $workorder);
+
+        $this->db->where('number_output', $number);
+        $this->db->where('workorder', $workorder);
+        $this->db->where('item_fg_id', $item_fg_id);
+        $existing = $this->db->get('output_production_press_detail')->result();
+
+        $existing_total_qty = 0;
+        foreach ($existing as $r) {
+            $existing_total_qty += intval($r->qty_packing);
+        }
+
+        if ($existing_total_qty < $qty_ok) {
+
+            // Hitung remaining yang masih harus dibuat
+            $remaining = $qty_ok - $existing_total_qty;
+
+            // Ambil last sequence
+            $this->db->select_max('workorder_label');
+            $this->db->like('workorder_label', $workorder_clean . '-', 'after');
+            $last_label = $this->db->get('output_production_press_detail')->row()->workorder_label;
+
+            $last_sequence = 0;
+            if ($last_label) {
+                $last_sequence = intval(substr($last_label, -3));
+            }
+
+            $sequence = $last_sequence + 1;
+
+            for ($i = 1; $i <= $qty_label; $i++) {
+
+                // label terakhir ambil sisa
+                if ($i == $qty_label) {
+                    $current_qty = $remaining;
+                } else {
+                    $current_qty = min($qty_packing, $remaining);
+                }
+
+                if ($current_qty <= 0) break;
+
+                $workorder_label = $workorder_clean . '-' . sprintf("%03d", $sequence);
+
+                $detail = [
+                    'number_output'    => $number,
+                    'workorder'        => $workorder,
+                    'workorder_label'  => $workorder_label,
+                    'item_fg_id'       => $item_fg_id,
+                    'qty_packing'      => $current_qty,
+                    'status'           => 0
+                ];
+
+                $this->crud->create('output_production_press_detail', $detail);
+
+                $remaining -= $current_qty;
+                $sequence++;
+
+                if ($remaining <= 0) break;
+            }
+        }
+
+        $this->db->select('
+            fg.number AS item_fg_number, 
+            fg.name AS item_fg_name, 
+            fg.uom,
+
+            opp.trans_date, 
+            opp.shift, 
+            opp.workorder, 
+            opp.operator, 
+            opp.qty_ok, 
+
+            opd.workorder_label, 
+            opd.qty_packing
+        ');
+        $this->db->from('output_production_press_detail opd');
+        $this->db->join('output_production_press opp', 'opp.number = opd.number_output and opp.workorder = opd.workorder');
+
+        $this->db->join('item_fg fg', 'opp.item_fg_id = fg.id', 'left');
+        $this->db->where('opd.number_output', $number);
+        $this->db->where('opd.workorder', $workorder);
+        
+        if (!empty($item_fg_id)) {
+            $this->db->where('opp.item_fg_id', $item_fg_id);
+        }
+        
+        $this->db->group_by('opd.workorder_label');
+        
+        $output_press_packing_details = $this->db->get()->result();
+        
+        if (empty($output_press_packing_details)) {
+            echo "<center><h3>Data not found</h3></center>";
+            return;
+        }
+        
+        $first_workorder_label = $output_press_packing_details[0]->workorder_label;
+
+        foreach ($output_press_packing_details as $detail) {
+            $this->createQrcode($detail->workorder_label, "assets/image/qrcode/");
+        }
+
+        $html = '<html>
+                    <head>
+                        <title>Label Packing - ' . $first_workorder_label . '</title>
+                        <link rel="icon" type="image/png" href="' . base_url('assets/image/icon.png') . '">
+                        <style>
+                            body { 
+                                font-family: Arial, Helvetica, sans-serif; 
+                                margin: 2; 
+                            }
+                            table { 
+                                border-collapse: collapse; 
+                                width: 7.5cm; 
+                                height: 8cm; 
+                                font-size: 11px; 
+                                border: 2px solid black; 
+                                table-layout: fixed; 
+                            }
+                            th, td { 
+                                border: 1px solid black; 
+                                padding: 2px; 
+                                text-align: left; 
+                            }
+                            th { 
+                                text-align: center; 
+                                font-size: 11px; 
+                                font-weight: bold; 
+                            }
+                            .header { 
+                                text-align: center; 
+                                font-size: 15px; 
+                                font-weight: bold; 
+                            }
+                            .logo { 
+                                text-align: center; 
+                                width: 100%; 
+                                padding: 3px; 
+                            }
+                            .operator-sign, 
+                            .qc-sign, 
+                            .qr-code { 
+                                font-size: 12px; 
+                                text-align: center; 
+                                height: 20mm; 
+                                vertical-align: bottom; 
+                                font-weight: bold; 
+                            }
+                            .qc-sign { 
+                                text-align: center; 
+                                height: 20mm; 
+                            }
+                            .qr-code img { 
+                                width: 60px; 
+                                height: 60px; 
+                                display: block; 
+                                margin: 0 auto; 
+                            }
+                            .serial-label { 
+                                font-size: 11px; 
+                                text-align: center; 
+                                word-wrap: break-word; 
+                                overflow: hidden; 
+                                font-weight: bold; 
+                            }
+                            @page {
+                                    size: 7.5cm 8cm;
+                                    margin: 0;
+                                    }
+                            @media print {
+                                    .printLabel {
+                                        page-break-after: always;
+                                        width: 7.5cm;
+                                        height: 8cm;
+                                        display: block;
+                                        padding: 0mm;
+                                        margin: 0;
+                                    }
+
+                                    table {
+                                        width: 100%;
+                                        font-size: 11px;
+                                        margin: 0;
+                                        padding: 0;
+                                    }
+
+                                    body {
+                                        margin: 0;
+                                        padding: 0;
+                                    }
+                                }
+                        </style>
+                    </head>
+                <body>';
+
+        foreach ($output_press_packing_details as $detail) {
+            $qty_packing_formatted = number_format($detail->qty_packing, 0, ',', '.') . ' ' .strtoupper($output_press_packing_details[0]->uom);
+            $html .= '<div class="printLabel">
+                        <table style="max-width: 7.5cm; max-height:8cm;">
+                        <tr>
+                            <th class="logo" colspan="6" style="text-align: center;">
+                                <img src="' . base_url('assets/image/bri_logo.png') . '" width="21" align="left"/>
+                                <span class="header" style="font-size: 16px; height: 16px;">LABEL PACKING PRESS</span>
+                            </th>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Prod No:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->item_fg_number . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Prod Name:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->item_fg_name . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Status:</b></td>
+                            <td colspan="4" style="font-weight: bold;"></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Prod Date/Shift:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->trans_date . ' / '. $detail->shift .'</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>WO No:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->workorder . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>MP Press:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $detail->operator . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Mix Date:</b></td>
+                            <td colspan="4" style="font-weight: bold;"></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Comp Lot No:</b></td>
+                            <td colspan="4" style="font-weight: bold;"></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="width: 30%;"><b>Qty:</b></td>
+                            <td colspan="4" style="font-weight: bold;">' . $qty_packing_formatted . '</td>
+                        </tr>
+                        <tr>
+                            <th colspan="2">MP Finishing | QA</th>
+                            <th colspan="4">QR Code</th>
+                        </tr>
+                        <tr>
+                            <td class="operator-sign" colspan="2"></td>
+                            <td class="qr-code" colspan="4">
+                                <img src="' . base_url('assets/image/qrcode/' . $detail->workorder_label . '.png') . '"/>
+                                <div class="serial-label">' . $detail->workorder_label . '</div>
+                            </td>
+                        </tr>
+                    </table>
+            
+            </div>';
+        } 
+    
+        $html .= '<script>window.print()</script>
+                </body>
+            </html>';
+    
+        die($html);
+    }
+
+
     //PRINT & EXCEL DATA
     public function print($option = "")
     {
@@ -1237,13 +2189,13 @@ class Output_production_press extends CI_Controller
         $this->db->join('bom d', 'a.item_fg_id = d.item_fg_id and d.priority = 1', 'left');
         $this->db->join('item_rm e', 'd.item_rm_id = e.id', 'left');
 
-        $this->db->join("(SELECT item_fg_id, MIN(mold_id) AS mold_id
-                FROM setting_molds
-                GROUP BY item_fg_id
-                ) f", "a.item_fg_id = f.item_fg_id", "left");
+        // $this->db->join("(SELECT item_fg_id, MIN(mold_id) AS mold_id
+        //         FROM setting_molds
+        //         GROUP BY item_fg_id
+        //         ) f", "a.item_fg_id = f.item_fg_id", "left");
 
         // $this->db->join('setting_molds f', 'a.item_fg_id = f.item_fg_id', 'left');
-        $this->db->join('molds g', 'f.mold_id = g.id', 'left');
+        $this->db->join('molds g', 'a.mold_id = g.id', 'left');
 
         if ($filter_from != "" or $filter_to != "") {
             $this->db->where('a.trans_date >=', $filter_from);
@@ -1321,6 +2273,7 @@ class Output_production_press extends CI_Controller
                 <th rowspan="2" >Planning/day (pcs)</th>
                 <th rowspan="2" >Planning/shift (pcs)</th>
                 <th rowspan="2" >Work Order No</th>
+                <th rowspan="2" >Mold ID</th>
                 <th rowspan="2" >Operator Name</th>
                 <th colspan="4" style="text-align: center;">Output</th>
                 <th rowspan="2" >Minus Production</th>
@@ -1366,6 +2319,7 @@ class Output_production_press extends CI_Controller
                     <td>' . format_number($data['planning_qty']) . '</td>
                     <td>' . format_number($data['planning_qty_shift']) . '</td>
                     <td>' . $data['workorder'] . '</td>
+                    <td>' . $data['mold_id'] . '</td>
                     <td>' . $data['operator'] . '</td>
                     <td>' . format_number($data['qty_ok']) . '</td>
                     <td>' . format_number($data['qty_ng']) . '</td>
