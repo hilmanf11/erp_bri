@@ -39,23 +39,25 @@ class Production_capacities extends CI_Controller
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $send = $this->crud->query("SELECT 
-                distinct a.item_fg_id,
+                distinct 
+                a.item_fg_id,
                 d.number as item_fg_number,
                 d.name as item_fg_name,
                 a.machine_id,
                 b.number as machine_number,
                 a.cycle_time,
-                a.item_fg_id,
                 a.productcivity,
                 c.cavity_actual,
                 a.shift,
                 a.shift_hour,
                 d.item_family_number,
-                d.mpq
+                d.mpq,
+                c.id as mold_id,
+                CONCAT(d.id, '_', b.id, '_', c.id, '_', c.cavity_actual) AS unique_key
             FROM menu_loadings a 
             JOIN machines b ON a.machine_id = b.id
             JOIN item_fg d ON a.item_fg_id = d.id
-            LEFT JOIN molds c ON a.mold_id = c.id
+            JOIN molds c ON a.mold_id = c.id
             WHERE d.number LIKE '%$post%' or d.name LIKE '%$post%'
         ");
         echo json_encode($send);
@@ -85,16 +87,20 @@ class Production_capacities extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*,b.number as item_fg_number, b.name as item_fg_name, c.number as machine_number, d.cycle_time, d.productcivity, e.cavity_actual');
+            $this->db->select('a.*,b.number as item_fg_number, b.name as item_fg_name, c.number as machine_number, d.cycle_time, d.productcivity, e.cavity_actual, e.id as mold_id');
             $this->db->from('production_capacities a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('machines c', 'a.machine_id = c.id');
-            $this->db->join('menu_loadings d', 'd.machine_id = c.id and d.item_fg_id = b.id');
+            $this->db->join('menu_loadings d', 'd.machine_id = c.id and d.item_fg_id = b.id', 'left');
             $this->db->join('molds e', 'd.mold_id = e.id', 'left');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if($filter->field == "item_fg_number"){
+                    if($filter->field == "item_fg_id"){
+                        $this->db->like("b.id", $filter->value);
+                    }else if($filter->field == "mold_id"){
+                        $this->db->like("e.id", $filter->value);
+                    }else if($filter->field == "item_fg_number"){
                         $this->db->like("b.number", $filter->value);
                     }elseif($filter->field == "item_fg_name"){
                         $this->db->like("b.name", $filter->value);
@@ -131,6 +137,10 @@ class Production_capacities extends CI_Controller
     {
         if ($this->input->post()) {
             $post   = $this->input->post();
+
+            $arr_item_fg = explode('_', $post['item_fg_id']);
+            $post['item_fg_id'] = $arr_item_fg[0];
+
             $production_capacities = $this->crud->read('production_capacities', [], ["item_fg_id" => $post['item_fg_id'],"machine_id" => $post['machine_id']]);
             $machines = $this->crud->read('machines', [], ["id" => $post['machine_id']]);
             $item_fg = $this->crud->read('item_fg', [], ["id" => $post['item_fg_id']]);
@@ -152,6 +162,10 @@ class Production_capacities extends CI_Controller
             
             $id = base64_decode($this->input->get('id'));
             $post = $this->input->post();
+
+            $arr_item_fg = explode('_', $post['item_fg_id']);
+            $post['item_fg_id'] = $arr_item_fg[0];
+
             $existing_data = $this->crud->read('production_capacities', [], ["id" => $id]); // Membaca data yang ada
 
             // Periksa apakah item_fg_id dan machine_id tetap sama
@@ -311,6 +325,33 @@ class Production_capacities extends CI_Controller
                 $shift = $menu_loading->shift;
                 $shift_hour = $menu_loading->shift_hour;
 
+                if ($cycle_time <= 0) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Cycle time invalid (0 or null)"
+                    ];
+                    continue;
+                }
+
+                if ($productcivity <= 0) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Productivity invalid (0 or null)"
+                    ];
+                    continue;
+                }
+
+                if ($actual_cavity <= 0 && $item_family_number != 'CD') {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Cavity invalid (0 or null)"
+                    ];
+                    continue;
+                }
+
                 $item_family_number = $item_fg_id->item_family_number;
 
                 if($item_family_number == 'CD') {
@@ -449,11 +490,11 @@ class Production_capacities extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        $this->db->select('a.*,b.number as item_fg_number, b.name as item_fg_name, c.number as machine_number, d.cycle_time, d.productcivity, e.cavity_actual');
+        $this->db->select('a.*,b.number as item_fg_number, b.name as item_fg_name, c.number as machine_number, d.cycle_time, d.productcivity, e.cavity_actual, e.id as mold_id');
         $this->db->from('production_capacities a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('machines c', 'a.machine_id = c.id');
-        $this->db->join('menu_loadings d', 'd.machine_id = c.id');
+        $this->db->join('menu_loadings d', 'd.machine_id = c.id and d.item_fg_id = b.id');
         $this->db->join('molds e', 'd.mold_id = e.id');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('id', 'ASC');
@@ -485,9 +526,11 @@ class Production_capacities extends CI_Controller
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
-                <th>Product No</th>
-                <th>Machine No</th>
+                <th>Product ID</th>
+                <th>Product No.</th>
                 <th>Product Name</th>
+                <th>Mold ID</th>
+                <th>Machine No</th>
                 <th>Cycle Time</th>
                 <th>Productivity</th>
                 <th>Cavity Actual</th>
@@ -501,8 +544,10 @@ class Production_capacities extends CI_Controller
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['item_fg_id'] . '</td>
-                    <td>' . $data['machine_number'] . '</td>
+                    <td>' . $data['item_fg_number'] . '</td>
                     <td>' . $data['item_fg_name'] . '</td>
+                    <td>' . $data['mold_id'] . '</td>
+                    <td>' . $data['machine_number'] . '</td>
                     <td>' . $data['cycle_time'] . '</td>
                     <td>' . $data['productcivity'] . '</td>
                     <td>' . $data['cavity_actual'] . '</td>

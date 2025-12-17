@@ -103,6 +103,18 @@ class Internal_process extends CI_Controller
         echo json_encode($query->result_array());
     }
 
+    public function readWorkorder()
+    {
+        $send = $this->crud->query("
+            SELECT DISTINCT workorder
+            FROM output_production_press_detail
+            WHERE `status` = 0 
+            AND item_fg_id = 'FGRPNA-0207'
+            ORDER BY workorder ASC
+        ");
+        echo json_encode($send);
+    }
+
     public function readItemFg()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
@@ -184,9 +196,10 @@ class Internal_process extends CI_Controller
     public function readItemFgCP()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $process_date = $this->input->post('process_date');
-        $process_date = $process_date ?: date('Y-m-d');
-        $today = date('Y-m-d');
+        // $process_date = $this->input->post('process_date');
+        // $process_date = $process_date ?: date('Y-m-d');
+        // $today = date('Y-m-d');
+        $workorder = $this->input->post('workorder');
 
         $exclude_keys = $this->input->post('exclude_keys');
         $exclude_sql = '';
@@ -199,7 +212,7 @@ class Internal_process extends CI_Controller
                     return $this->db->escape_str($v);
                 }, $exclude_arr);
                 $in = "'" . implode("','", $escaped) . "'";
-                $exclude_sql = "AND CONCAT(a.item_fg_id, '_', a.workorder) NOT IN ($in)";
+                $exclude_sql = "AND CONCAT(a.item_fg_id, '_', a.workorder, '_', c.workorder_label) NOT IN ($in)";
             }
         }
 
@@ -208,50 +221,26 @@ class Internal_process extends CI_Controller
                 a.item_fg_id,  
                 b.number,  
                 b.name,  
-                a.workorder,  
-                CASE
-                    WHEN e.last_os_cutting_punch IS NOT NULL 
-                    THEN 
-                        COALESCE(e.last_os_cutting_punch)
-                    ELSE 
-                        COALESCE(SUM(a.qty_ok), 0) - COALESCE(f.total_delivery, 0)
-                END AS ok_press,
+                a.workorder,
+                c.workorder_label,
+                c.qty_packing ok_press,
                 MIN(a.workorder) AS workorder,
+                CONCAT(c.id, '_', c.workorder, '_', a.item_fg_id, '_', c.workorder_label) AS unique_key,
                 b.uom
             FROM output_production_press a  
             JOIN item_fg b ON a.item_fg_id = b.id  
+            JOIN output_production_press_detail c ON a.item_fg_id = c.item_fg_id AND a.workorder = c.workorder
 
-            LEFT JOIN (
-                SELECT x.item_fg_id, x.workorder, x.os_cutting_punch AS last_os_cutting_punch
-                FROM internal_process x
-                WHERE x.deleted = 0
-                AND x.id IN (
-                    SELECT MAX(y.id)
-                    FROM internal_process y
-                    WHERE y.deleted = 0
-                    GROUP BY y.item_fg_id, y.workorder
-                )
-            ) e ON e.item_fg_id = a.item_fg_id AND e.workorder = a.workorder
-
-            LEFT JOIN (
-                SELECT 
-                    d.item_fg_id, 
-                    d.workorder,
-                    SUM(d.qty_delivery) AS total_delivery
-                FROM delivery_to_subconts d
-                WHERE d.deleted = 0
-                GROUP BY d.item_fg_id, d.workorder
-            ) f ON f.item_fg_id = a.item_fg_id AND f.workorder = a.workorder
-
-            WHERE (b.number LIKE '%$post%' OR b.name LIKE '%$post%')
-            AND a.trans_date BETWEEN '2025-11-10' AND '$today'
+            WHERE (b.number LIKE '%$post%' OR b.name LIKE '%$post%' OR c.workorder_label LIKE '%$post%')
+            -- AND a.trans_date >= '2025-10-01'
             AND b.id = 'FGRPNA-0207'
+            AND c.status = 0
+            AND c.workorder = '$workorder'
 
             $exclude_sql
 
-            GROUP BY a.item_fg_id, a.workorder
-            HAVING ok_press > 0
-            ORDER BY a.workorder ASC
+            GROUP BY a.item_fg_id, a.workorder, c.workorder_label
+            ORDER BY c.workorder_label ASC
         ";
 
         $send = $this->crud->query($query);
@@ -406,6 +395,7 @@ class Internal_process extends CI_Controller
                 b.number AS item_fg_number,
                 b.name AS item_fg_name,
                 a.workorder,
+                a.workorder_label,
                 a.ok_press,
                 a.internal,
                 a.external,
@@ -425,10 +415,10 @@ class Internal_process extends CI_Controller
 
             $this->db->group_by([
                 'a.item_fg_id',
-                'a.workorder',
+                'a.workorder_label',
             ]);
 
-            $this->db->order_by('a.workorder');
+            $this->db->order_by('a.workorder_label');
             $records = $this->db->get()->result_array();
 
             echo json_encode($records);
@@ -524,17 +514,23 @@ class Internal_process extends CI_Controller
         if ($this->input->post()) {
             $post = $this->input->post();
 
+            $mp_punch = isset($post['mp_punch']) ? strtoupper($post['mp_punch']) : null;
+
+            $post['mp_punch'] = $mp_punch;
+
             $dataFinal = array(
                 "item_fg_id" => $post['item_fg_id'],
                 "process_date" => $post['process_date'],
                 "process_name" => $post['process_name'],
                 "doc_no" => $post['doc_no'],
                 "workorder" => $post['workorder'],
+                "workorder_label" => $post['workorder_label'],
                 "ok_press" => $post['ok_press'],
                 "punch_process" => $post['punch_process'],
                 "ok_punch" => $post['ok_punch'],
                 "ng_punch" => $post['ng_punch'],
                 "os_cutting_punch" => $post['os_cutting_punch'],
+                "mp_punch" => $mp_punch,
             );
 
             if (!isset($post['workorder']) || $post['workorder'] === '' || $post['workorder'] === 'null') {
@@ -547,6 +543,8 @@ class Internal_process extends CI_Controller
 
                 $send = $this->crud->create('internal_process', $post);
             }
+
+            $send = $this->crud->update('output_production_press_detail', ["workorder_label" => $post['workorder_label']], ["status" => 2]);
             echo $send;
         } else {
             show_error("Cannot Process your request");
@@ -570,6 +568,11 @@ class Internal_process extends CI_Controller
         $internal_doc_no     = $data['internal_doc_no'];
         $item_fg_id = $data['item_fg_id'];
         $workorder  = $data['workorder'];
+        $workorder_label  = $data['workorder_label'];
+
+        if (!isset($workorder_label) || $workorder_label === '' || $workorder_label === 'null') {
+            $workorder_label = null;
+        }
 
         $this->db->where('internal_doc_no', $internal_doc_no);
         $this->db->where('item_fg_id', $item_fg_id);
@@ -584,11 +587,22 @@ class Internal_process extends CI_Controller
             return;
         }
 
-        $send = $this->crud->delete('internal_process', [
-            'doc_no'     => $internal_doc_no,
-            'item_fg_id' => $item_fg_id,
-            'workorder'  => $workorder
-        ]);
+        if($workorder_label == "" || $workorder_label == null) {
+            $send = $this->crud->delete('internal_process', [
+                'doc_no'           => $internal_doc_no,
+                'item_fg_id'       => $item_fg_id,
+                'workorder'        => $workorder
+            ]);
+        } else {
+            $send = $this->crud->delete('internal_process', [
+                'doc_no'           => $internal_doc_no,
+                'item_fg_id'       => $item_fg_id,
+                'workorder'        => $workorder,
+                'workorder_label'  => $workorder_label
+            ]);
+        }
+
+        $this->crud->update('output_production_press_detail', ["workorder_label" => $workorder_label], ["status" => 0]);
 
         echo $send;
     }

@@ -1867,20 +1867,222 @@
         });
 
         // SAVE DATA
+        // $('#dlg_insert').dialog({
+        //     buttons: [{
+        //         text: 'Save All',
+        //         iconCls: 'icon-ok',
+        //         handler: function() {
+        //             var trans_date = $("#trans_date").datebox('getValue');
+        //             var number = $("#number").textbox('getValue');
+        //             var period = $("#period").combobox('getValue');
+        //             var wp = $("#wp").combobox('getValue');
+        //             var shift = $("#shift").combobox('getValue');
+        //             var pic = $("#pic").combobox('getValue');
+        //             var machine_no_insert = $("#machine_no_insert").combogrid('getValues'); // multiple machine id
+
+        //             console.log('Machine No Insert : ', machine_no_insert);
+
+        //             if (!trans_date || !number || !period || !wp || !shift) {
+        //                 toastr.error("Please complete all required fields before saving");
+        //                 return;
+        //             }
+
+        //             endEditing();
+        //             var rows = $('#dg2').datagrid('getRows') || [];
+        //             var totalrows = rows.length;
+                    
+
+        //             // Array semua data dari datagrid
+        //             var dataToSave = [];
+
+        //             for (let i = 0; i < totalrows; i++) {
+        //                 if (rows[i].item_fg_id) {
+        //                     dataToSave.push({
+        //                         trans_date: trans_date,
+        //                         number: number,
+        //                         period: period,
+        //                         wp: wp,
+        //                         shift: shift,
+        //                         pic: pic,
+        //                         id: rows[i].id,
+                                
+        //                         machine_number: rows[i].machine_number,
+        //                         item_fg_number: rows[i].item_fg_number,
+
+        //                         machine_id: rows[i].machine_id,
+        //                         item_fg_id: rows[i].item_fg_id,
+        //                         mold_id: rows[i].mold_id,
+        //                         planning_qty: rows[i].planning_qty,
+        //                         qty_ok: rows[i].qty_ok,
+        //                         qty_ng: rows[i].qty_ng,
+        //                         qty_ng_mold: rows[i].qty_ng_mold,
+        //                         workorder: rows[i].workorder,
+        //                         actual_cavity: rows[i].actual_cavity,
+        //                         operator: rows[i].operator,
+        //                         actual_curing_time: rows[i].actual_curing_time,
+        //                         shift_hour: rows[i].shift_hour,
+        //                         actual_shoot: rows[i].actual_shoot,
+        //                         total_compound_used: rows[i].total_compound_used,
+        //                         waste: rows[i].waste
+        //                     });
+        //                 }
+        //             }
+
+        //             // Tambahkan machine tambahan
+        //             // if (machine_no_insert.length > 0) {
+        //             //     for (let j = 0; j < machine_no_insert.length; j++) {
+        //             //         dataToSave.push({
+        //             //             trans_date: trans_date,
+        //             //             number: number,
+        //             //             period: period,
+        //             //             wp: wp,
+        //             //             shift: shift,
+        //             //             pic: pic,
+        //             //             machine_id: machine_no_insert[j],
+
+        //             //             // semua field lain kosong/null
+        //             //             item_fg_id: null,
+        //             //             planning_qty: null,
+        //             //             qty_ok: null,
+        //             //             qty_ng: null,
+        //             //             qty_ng_mold: null,
+        //             //             workorder: null,
+        //             //             actual_cavity: null,
+        //             //             operator: null,
+        //             //             actual_curing_time: null,
+        //             //             shift_hour: null,
+        //             //             actual_shoot: null,
+        //             //             total_compound_used: null,
+        //             //             waste: null
+        //             //         });
+        //             //     }
+        //             // }
+
+        //             if (currentMode === 'add' && machine_no_insert.length > 0) {
+        //                 for (let j = 0; j < machine_no_insert.length; j++) {
+        //                     dataToSave.push({
+        //                         trans_date: trans_date,
+        //                         number: number,
+        //                         period: period,
+        //                         wp: wp,
+        //                         shift: shift,
+        //                         pic: pic,
+        //                         machine_id: machine_no_insert[j],
+
+        //                         // semua field lain kosong/null
+        //                         item_fg_id: null,
+        //                         mold_id: null,
+        //                         planning_qty: null,
+        //                         qty_ok: null,
+        //                         qty_ng: null,
+        //                         qty_ng_mold: null,
+        //                         workorder: null,
+        //                         actual_cavity: null,
+        //                         operator: null,
+        //                         actual_curing_time: null,
+        //                         shift_hour: null,
+        //                         actual_shoot: null,
+        //                         total_compound_used: null,
+        //                         waste: null
+        //                     });
+        //                 }
+        //             }
+
+        //             console.log('Save Mode:', currentMode);
+        //             console.log('Machine No Insert:', machine_no_insert);
+
+        //             console.log('Final Data to Save:', dataToSave);
+
+        //             // Loop simpan semua ke server
+        //             if (dataToSave.length === 0) {
+        //                 toastr.error("No data to save");
+        //                 return;
+        //             }
+
+        //             let duplicateCheck = {};
+        //             let duplicateFound = false;
+
+        //             for (let i = 0; i < dataToSave.length; i++) {
+        //                 let row = dataToSave[i];
+
+        //                 let key = (row.item_fg_id || "") + "|" + (row.machine_id || "")
+        //                     + "|" + (row.workorder || "") + "|" + (row.mold_id || "");
+
+        //                 if (!duplicateCheck[key]) {
+        //                     duplicateCheck[key] = true;
+        //                 } else {
+        //                     duplicateFound = true;
+        //                     toastr.error(
+        //                         `Duplicate data found on:<br>
+        //                         Machine No: <b>${row.machine_number}</b><br>
+        //                         Product No: <b>${row.item_fg_number}</b><br>
+        //                         WO No: <b>${row.workorder}</b><br>
+        //                         Mold ID: <b>${row.mold_id}</b>`
+        //                     );
+        //                     break;
+        //                 }
+        //             }
+
+        //             if (duplicateFound) {
+        //                 return;
+        //             }
+
+        //             for (let i = 0; i < dataToSave.length; i++) {
+        //                 delete dataToSave[i].item_fg_number;
+        //                 delete dataToSave[i].machine_number;
+        //             }
+
+        //             var url_save = "<?= base_url('control/output_production_press/create') ?>";
+
+        //             let successCount = 0;
+        //             for (let k = 0; k < dataToSave.length; k++) {
+        //                 $.ajax({
+        //                     type: "post",
+        //                     url: url_save,
+        //                     data: dataToSave[k],
+        //                     dataType: "json",
+        //                     success: function(result) {
+        //                         if (result.theme === "error") {
+        //                             toastr.error(result.message);
+        //                         } else {
+        //                             successCount++;
+        //                             if (successCount === dataToSave.length) {
+        //                                 Swal.fire({
+        //                                     title: "All data saved successfully",
+        //                                     icon: "success",
+        //                                     confirmButtonText: 'Ok',
+        //                                     allowOutsideClick: false,
+        //                                 }).then(() => {
+        //                                     window.location.reload();
+        //                                 });
+
+        //                                 $('#dg').datagrid('reload');
+        //                                 $('#dlg_insert').dialog('close');
+        //                             }
+        //                         }
+        //                     },
+        //                     error: function(xhr, status, error) {
+        //                         toastr.error("Server error: " + error);
+        //                     }
+        //                 });
+        //             }
+        //         }
+        //     }]
+        // });
+
         $('#dlg_insert').dialog({
             buttons: [{
                 text: 'Save All',
                 iconCls: 'icon-ok',
                 handler: function() {
+
                     var trans_date = $("#trans_date").datebox('getValue');
                     var number = $("#number").textbox('getValue');
                     var period = $("#period").combobox('getValue');
                     var wp = $("#wp").combobox('getValue');
                     var shift = $("#shift").combobox('getValue');
                     var pic = $("#pic").combobox('getValue');
-                    var machine_no_insert = $("#machine_no_insert").combogrid('getValues'); // multiple machine id
-
-                    console.log('Machine No Insert : ', machine_no_insert);
+                    var machine_no_insert = $("#machine_no_insert").combogrid('getValues');
 
                     if (!trans_date || !number || !period || !wp || !shift) {
                         toastr.error("Please complete all required fields before saving");
@@ -1889,87 +2091,53 @@
 
                     endEditing();
                     var rows = $('#dg2').datagrid('getRows') || [];
-                    var totalrows = rows.length;
-                    
 
-                    // Array semua data dari datagrid
-                    var dataToSave = [];
+                    let items = [];
 
-                    for (let i = 0; i < totalrows; i++) {
-                        if (rows[i].item_fg_id) {
-                            dataToSave.push({
+                    // ✔ Ambil semua baris dg2 → masukkan ke items[]
+                    rows.forEach(row => {
+                        if (row.item_fg_id) {
+                            items.push({
                                 trans_date: trans_date,
                                 number: number,
                                 period: period,
                                 wp: wp,
                                 shift: shift,
                                 pic: pic,
-                                id: rows[i].id,
-                                
-                                machine_number: rows[i].machine_number,
-                                item_fg_number: rows[i].item_fg_number,
 
-                                machine_id: rows[i].machine_id,
-                                item_fg_id: rows[i].item_fg_id,
-                                mold_id: rows[i].mold_id,
-                                planning_qty: rows[i].planning_qty,
-                                qty_ok: rows[i].qty_ok,
-                                qty_ng: rows[i].qty_ng,
-                                qty_ng_mold: rows[i].qty_ng_mold,
-                                workorder: rows[i].workorder,
-                                actual_cavity: rows[i].actual_cavity,
-                                operator: rows[i].operator,
-                                actual_curing_time: rows[i].actual_curing_time,
-                                shift_hour: rows[i].shift_hour,
-                                actual_shoot: rows[i].actual_shoot,
-                                total_compound_used: rows[i].total_compound_used,
-                                waste: rows[i].waste
+                                id: row.id || null,
+                                machine_id: row.machine_id,
+                                item_fg_id: row.item_fg_id,
+                                mold_id: row.mold_id,
+                                planning_qty: row.planning_qty,
+                                qty_ok: row.qty_ok,
+                                qty_ng: row.qty_ng,
+                                qty_ng_mold: row.qty_ng_mold,
+                                workorder: row.workorder,
+                                actual_cavity: row.actual_cavity,
+                                operator: row.operator,
+                                actual_curing_time: row.actual_curing_time,
+                                shift_hour: row.shift_hour,
+                                actual_shoot: row.actual_shoot,
+                                total_compound_used: row.total_compound_used,
+                                waste: row.waste
                             });
                         }
-                    }
+                    });
 
-                    // Tambahkan machine tambahan
-                    // if (machine_no_insert.length > 0) {
-                    //     for (let j = 0; j < machine_no_insert.length; j++) {
-                    //         dataToSave.push({
-                    //             trans_date: trans_date,
-                    //             number: number,
-                    //             period: period,
-                    //             wp: wp,
-                    //             shift: shift,
-                    //             pic: pic,
-                    //             machine_id: machine_no_insert[j],
-
-                    //             // semua field lain kosong/null
-                    //             item_fg_id: null,
-                    //             planning_qty: null,
-                    //             qty_ok: null,
-                    //             qty_ng: null,
-                    //             qty_ng_mold: null,
-                    //             workorder: null,
-                    //             actual_cavity: null,
-                    //             operator: null,
-                    //             actual_curing_time: null,
-                    //             shift_hour: null,
-                    //             actual_shoot: null,
-                    //             total_compound_used: null,
-                    //             waste: null
-                    //         });
-                    //     }
-                    // }
-
+                    // ✔ Mode ADD → Tambah baris kosong berdasarkan machine_no_insert
                     if (currentMode === 'add' && machine_no_insert.length > 0) {
-                        for (let j = 0; j < machine_no_insert.length; j++) {
-                            dataToSave.push({
+                        machine_no_insert.forEach(mid => {
+                            items.push({
                                 trans_date: trans_date,
                                 number: number,
                                 period: period,
                                 wp: wp,
                                 shift: shift,
                                 pic: pic,
-                                machine_id: machine_no_insert[j],
 
-                                // semua field lain kosong/null
+                                id: null,
+                                machine_id: mid,
                                 item_fg_id: null,
                                 mold_id: null,
                                 planning_qty: null,
@@ -1985,87 +2153,43 @@
                                 total_compound_used: null,
                                 waste: null
                             });
-                        }
+                        });
                     }
 
-                    console.log('Save Mode:', currentMode);
-                    console.log('Machine No Insert:', machine_no_insert);
-
-                    console.log('Final Data to Save:', dataToSave);
-
-                    // Loop simpan semua ke server
-                    if (dataToSave.length === 0) {
+                    if (items.length === 0) {
                         toastr.error("No data to save");
                         return;
                     }
 
-                    let duplicateCheck = {};
-                    let duplicateFound = false;
+                    // ✔ Kirim 1x saja
+                    $.ajax({
+                        type: "POST",
+                        url: "<?= base_url('control/output_production_press/create') ?>",
+                        data: { items: items },
+                        dataType: "json",
+                        success: function(res) {
+                            toastr.clear();
+                            if (res.theme === "success") {
+                                Swal.fire({
+                                    title: res.message,
+                                    icon: 'success',
+                                    confirmButtonText: 'OK',
+                                    allowOutsideClick: false,
+                                }).then(() => {
+                                    window.location.reload();
+                                });
 
-                    for (let i = 0; i < dataToSave.length; i++) {
-                        let row = dataToSave[i];
-
-                        let key = (row.item_fg_id || "") + "|" + (row.machine_id || "")
-                            + "|" + (row.workorder || "") + "|" + (row.mold_id || "");
-
-                        if (!duplicateCheck[key]) {
-                            duplicateCheck[key] = true;
-                        } else {
-                            duplicateFound = true;
-                            toastr.error(
-                                `Duplicate data found on:<br>
-                                Machine No: <b>${row.machine_number}</b><br>
-                                Product No: <b>${row.item_fg_number}</b><br>
-                                WO No: <b>${row.workorder}</b><br>
-                                Mold ID: <b>${row.mold_id}</b>`
-                            );
-                            break;
-                        }
-                    }
-
-                    if (duplicateFound) {
-                        return;
-                    }
-
-                    for (let i = 0; i < dataToSave.length; i++) {
-                        delete dataToSave[i].item_fg_number;
-                        delete dataToSave[i].machine_number;
-                    }
-
-                    var url_save = "<?= base_url('control/output_production_press/create') ?>";
-
-                    let successCount = 0;
-                    for (let k = 0; k < dataToSave.length; k++) {
-                        $.ajax({
-                            type: "post",
-                            url: url_save,
-                            data: dataToSave[k],
-                            dataType: "json",
-                            success: function(result) {
-                                if (result.theme === "error") {
-                                    toastr.error(result.message);
-                                } else {
-                                    successCount++;
-                                    if (successCount === dataToSave.length) {
-                                        Swal.fire({
-                                            title: "All data saved successfully",
-                                            icon: "success",
-                                            confirmButtonText: 'Ok',
-                                            allowOutsideClick: false,
-                                        }).then(() => {
-                                            window.location.reload();
-                                        });
-                                    }
-                                }
-                            },
-                            error: function(xhr, status, error) {
-                                toastr.error("Server error: " + error);
+                                $('#dg').datagrid('reload');
+                                $('#dlg_insert').dialog('close');
+                            } else {
+                                toastr.error(res.message, res.title || "Error");
                             }
-                        });
-                    }
+                        },
+                        error: function() {
+                            toastr.error("Server error while saving");
+                        }
+                    });
 
-                    $('#dg').datagrid('reload');
-                    $('#dlg_insert').dialog('close');
                 }
             }]
         });

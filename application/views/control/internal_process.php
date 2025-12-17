@@ -1,21 +1,3 @@
-<style>
-  .dialog-button{
-    border-bottom: 0 !important;
-  }
-
-    .btn-clicked {
-        background-color: #e0e0e0 !important;
-        transform: scale(0.97);
-        transition: background-color 0.2s ease, transform 0.2s ease;
-    }
-
-    .btn-clicked2 {
-        background-color: #e0e0e0 !important;
-        transform: scale(0.97);
-        transition: background-color 0.2s ease, transform 0.2s ease;
-    }
-</style>
-
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -84,25 +66,25 @@
     </div>
 </div>
 
-<!-- <div id="toolbar2">
+<div id="toolbar2">
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="append()"><i class="fa fa-plus"></i> Add</a>
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
-</div> -->
+</div>
 
-<div id="toolbar2" style="padding: 2px; margin-top: -38px; background-color: #f5f5f5 !important">
+<!-- <div id="toolbar2" style="padding: 2px; margin-top: -38px; background-color: #f5f5f5 !important">
     <a href="javascript:void(0)" id="btn-add" class="easyui-linkbutton" data-options="plain:true" onclick="append()"><i class="fa fa-plus"></i> Add</a>
     <a href="javascript:void(0)" id="btn-remove" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
-</div>
-
-<!-- <div id="toolbar_cp">
-    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="append2()"><i class="fa fa-plus"></i> Add</a>
-    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit2()"><i class="fa fa-times"></i> Remove</a>
 </div> -->
 
-<div id="toolbar_cp" style="padding: 2px; margin-top: -38px; background-color: #f5f5f5 !important">
+<div id="toolbar_cp">
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="append2()"><i class="fa fa-plus"></i> Add</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit2()"><i class="fa fa-times"></i> Remove</a>
+</div>
+
+<!-- <div id="toolbar_cp" style="padding: 2px; margin-top: -38px; background-color: #f5f5f5 !important">
     <a href="javascript:void(0)" id="btn-add2" class="easyui-linkbutton" data-options="plain:true" onclick="append2()"><i class="fa fa-plus"></i> Add</a>
     <a href="javascript:void(0)" id="btn-remove2" class="easyui-linkbutton" data-options="plain:true" onclick="removeit2()"><i class="fa fa-times"></i> Remove</a>
-</div>
+</div> -->
 
 
 <!-- Insert & Update -->
@@ -151,6 +133,11 @@
                     <span style="width:35%; display:inline-block;">Doc No</span>
                     <input style="width:60%;" name="doc_no2" id="doc_no2" class="easyui-textbox" readonly required>
                 </div>
+
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Workorder</span>
+                    <input style="width:60%;" name="workorder2" id="workorder2" class="easyui-combobox" required>
+                </div>
             </div>
         </fieldset>
         <table id="dg3" class="easyui-datagrid" style="width:100%;" title="Product No List" toolbar="#toolbar_cp"></table>
@@ -164,56 +151,6 @@
 
     var isReadOnlyMode = false;
     var isReadOnlyMode2 = false;
-
-    $(document).ready(function () {
-        $('#dlg_insert').dialog({
-            onOpen: function () {
-                setTimeout(() => {
-                    const panel = $('#dlg_insert').closest('.panel.window.panel-htop');
-                    const toolbar = $('#toolbar2');
-
-                    if (!toolbar.parent().hasClass('panel')) {
-                        panel.append(toolbar);
-                    }
-
-                    function positionToolbar() {
-                        const panelHeight = panel.height();
-                        const toolbarHeight = toolbar.outerHeight();
-                        toolbar.css({
-                            top: (panelHeight - toolbarHeight - 10) + 'px'
-                        });
-                    }
-
-                    positionToolbar();
-                    $(window).on('resize', positionToolbar);
-                }, 100);
-            }
-        });
-
-        $('#dlg_insert2').dialog({
-            onOpen: function () {
-                setTimeout(() => {
-                    const panel = $('#dlg_insert2').closest('.panel.window.panel-htop');
-                    const toolbar = $('#toolbar_cp');
-
-                    if (!toolbar.parent().hasClass('panel')) {
-                        panel.append(toolbar);
-                    }
-
-                    function positionToolbar() {
-                        const panelHeight = panel.height();
-                        const toolbarHeight = toolbar.outerHeight();
-                        toolbar.css({
-                            top: (panelHeight - toolbarHeight - 10) + 'px'
-                        });
-                    }
-
-                    positionToolbar();
-                    $(window).on('resize', positionToolbar);
-                }, 100);
-            }
-        });
-    });
 
     //ADD DATA
     function add() {
@@ -266,6 +203,7 @@
 
         setTimeout(function(){
             $("#process_date2").datebox('enable');
+            $("#workorder2").combobox('enable');
             $('#process_name2').textbox('setValue', 'Cutting Punch');
             $("#doc_no2").textbox('enable');
             $("#doc_no2").textbox('clear');
@@ -647,29 +585,78 @@
     // }
 
 
+    // function removeit() {
+    //     buttonClickEffect('#btn-remove');
+
+    //     var dg = $('#dg2');
+    //     var row = dg.datagrid('getSelected');
+
+    //     if (!row) {
+    //         toastr.warning("Please select a row first!");
+    //         return;
+    //     }
+
+    //     var index = (typeof editIndex !== 'undefined' && editIndex !== undefined)
+    //         ? editIndex
+    //         : dg.datagrid('getRowIndex', row);
+
+    //     var item_fg_id = row.item_fg_id;
+    //     var workorder = row.workorder;
+    //     var doc_no = $("#doc_no").textbox('getValue');
+
+    //     if (!item_fg_id || !workorder) {
+    //         toastr.error("Missing data: item_fg_id or workorder not found.");
+    //         return;
+    //     }
+
+    //     $.ajax({
+    //         method: 'post',
+    //         url: '<?= base_url('control/internal_process/delete') ?>',
+    //         data: {
+    //             internal_doc_no: doc_no,
+    //             workorder: workorder,
+    //             item_fg_id: item_fg_id
+    //         },
+    //         success: function(result) {
+    //             try {
+    //                 var result = JSON.parse(result);
+    //             } catch (e) {
+    //                 toastr.error("Invalid server response");
+    //                 return;
+    //             }
+
+    //             if (result.status === 'error') {
+    //                 toastr.error(result.message);
+    //                 return;
+    //             }
+
+    //             toastr.success(result.message);
+    //             dg.datagrid('deleteRow', index);
+    //         },
+    //         error: function(jqXHR) {
+    //             toastr.error(jqXHR.statusText);
+    //             $.messager.alert("Error", jqXHR.statusText, 'error');
+    //         },
+    //         complete: function() {
+    //             $('#dg').datagrid('reload');
+    //         }
+    //     });
+    // }
+
+
     function removeit() {
         buttonClickEffect('#btn-remove');
 
         var dg = $('#dg2');
         var row = dg.datagrid('getSelected');
 
-        if (!row) {
-            toastr.warning("Please select a row first!");
-            return;
-        }
+        if (!row) return;
 
-        var index = (typeof editIndex !== 'undefined' && editIndex !== undefined)
-            ? editIndex
-            : dg.datagrid('getRowIndex', row);
+        var rowIndex = dg.datagrid('getRowIndex', row);
 
-        var item_fg_id = row.item_fg_id;
-        var workorder = row.workorder;
-        var doc_no = $("#doc_no").textbox('getValue');
-
-        if (!item_fg_id || !workorder) {
-            toastr.error("Missing data: item_fg_id or workorder not found.");
-            return;
-        }
+        var item_fg_id = row.item_fg_id ?? "";
+        var workorder  = row.workorder ?? "";
+        var doc_no     = $("#doc_no").textbox('getValue');
 
         $.ajax({
             method: 'post',
@@ -679,21 +666,20 @@
                 workorder: workorder,
                 item_fg_id: item_fg_id
             },
-            success: function(result) {
+            success: function(res) {
                 try {
-                    var result = JSON.parse(result);
+                    res = JSON.parse(res);
+
+                    if(res.message == "Cannot delete data that is still in use") {
+                        toastr.error(res.message);
+                    }else{
+                        toastr.success(res.message);
+                        dg.datagrid('deleteRow', rowIndex);
+                    }
+
                 } catch (e) {
-                    toastr.error("Invalid server response");
-                    return;
+                    toastr.error("Invalid response");
                 }
-
-                if (result.status === 'error') {
-                    toastr.error(result.message);
-                    return;
-                }
-
-                toastr.success(result.message);
-                dg.datagrid('deleteRow', index);
             },
             error: function(jqXHR) {
                 toastr.error(jqXHR.statusText);
@@ -704,6 +690,248 @@
             }
         });
     }
+
+    // function addTableCP(link = "", readonly = false) {
+    //      isReadOnlyMode2 = readonly;
+    //     $('#dg3').datagrid({
+    //         url: link,
+    //         fitColumns: true,
+    //         singleSelect: true,
+    //         columns: [
+    //             [{
+    //                 field: 'id',
+    //                 width: 150,
+    //                 halign: 'center',
+    //                 title: "ID",
+    //                 editor: {
+    //                     type: 'textbox'
+    //                 },
+    //                 hidden: true
+    //             }, {
+    //                 field: 'item_fg_number',
+    //                 width: 150,
+    //                 halign: 'center',
+    //                 title: "Product No",
+    //                 editor: {
+    //                     type: 'combogrid',
+    //                     options: {
+    //                         url: '<?= base_url('control/internal_process/readItemFgCP/'); ?>',
+    //                         method: 'post',
+    //                         required: true,
+    //                         panelWidth: 750,
+    //                         idField: 'number',
+    //                         textField: 'number',
+    //                         valueField: 'item_fg_id',
+    //                         mode: 'remote',
+    //                         fitColumns: true,
+    //                         prompt: 'Choose Product No',
+    //                         columns: [
+    //                             [{
+    //                                 field: 'number',
+    //                                 title: 'Product No',
+    //                                 halign: 'center',
+    //                                 width: 200
+    //                             },{
+    //                                 field: 'name',
+    //                                 title: 'Product Name',
+    //                                 halign: 'center',
+    //                                 width: 200
+    //                             },{
+    //                                 field: 'workorder',
+    //                                 title: 'Workorder',
+    //                                 halign: 'center',
+    //                                 width: 150
+    //                             },{
+    //                                 field: 'ok_press',
+    //                                 title: 'OK Press',
+    //                                 halign: 'center',
+    //                                 align: 'center',
+    //                                 formatter: numberFormatField,
+    //                                 width: 150,
+    //                                 editor: {
+    //                                     type: 'numberbox',
+    //                                     options: {
+    //                                         precision: 0,
+    //                                         required: true,
+    //                                     }
+    //                                 }
+    //                             }]
+    //                         ],
+    //                         onBeforeLoad: function(param) {
+    //                             var dg = $('#dg3');
+    //                             var rows = dg.datagrid('getRows');
+    //                             param.process_date = $('#process_date2').datebox('getValue');
+
+    //                             var used = rows
+    //                                 .filter(r => r.item_fg_id && r.workorder)
+    //                                 .map(r => r.item_fg_id + '_' + r.workorder);
+
+    //                             param.exclude_keys = used.join(',');
+    //                         },
+    //                         onLoadSuccess: function(data) {
+    //                             var dg = $('#dg3');
+    //                             var row = dg.datagrid('getSelected');
+    //                             if (!row) return;
+    //                             var idx = dg.datagrid('getRowIndex', row);
+
+    //                             var edId   = dg.datagrid('getEditor', { index: idx, field: 'item_fg_id' });
+    //                             var edNo   = dg.datagrid('getEditor', { index: idx, field: 'item_fg_number' });
+    //                             var edName = dg.datagrid('getEditor', { index: idx, field: 'item_fg_name' });
+    //                             var edWO   = dg.datagrid('getEditor', { index: idx, field: 'workorder' });
+    //                             var edOKPress   = dg.datagrid('getEditor', { index: idx, field: 'ok_press' });
+
+    //                             if (row.item_fg_id) {
+    //                                 if (edId) $(edId.target).textbox('setValue', row.item_fg_id);
+    //                                 if (edNo) $(edNo.target).combogrid('setValue', row.item_fg_number);
+    //                                 if (edName) $(edName.target).textbox('setValue', row.item_fg_name);
+    //                                 if (edWO)   $(edWO.target).textbox('setValue', row.workorder);
+    //                                 if (edOKPress)   $(edOKPress.target).textbox('setValue', row.ok_press);
+    //                             }
+    //                         },
+
+    //                         onSelect: function(value, rows) {
+    //                             var dg = $('#dg3');
+    //                             var row = dg.datagrid('getSelected');
+    //                             var rowIndex = dg.datagrid('getRowIndex', row);
+    //                             var ed1 = dg.datagrid('getEditor', {
+    //                                 index: rowIndex,
+    //                                 field: 'item_fg_id'
+    //                             });
+    //                             var ed2 = dg.datagrid('getEditor', {
+    //                                 index: rowIndex,
+    //                                 field: 'item_fg_number'
+    //                             });
+    //                             var ed3 = dg.datagrid('getEditor', {
+    //                                 index: rowIndex,
+    //                                 field: 'item_fg_name'
+    //                             });
+    //                             var ed4 = dg.datagrid('getEditor', {
+    //                                 index: rowIndex,
+    //                                 field: 'workorder'
+    //                             });
+    //                             var ed5 = dg.datagrid('getEditor', {
+    //                                 index: rowIndex,
+    //                                 field: 'ok_press'
+    //                             });
+
+    //                             $(ed1.target).textbox('setValue', rows.item_fg_id);
+    //                             $(ed2.target).textbox('setValue', rows.number);
+    //                             $(ed3.target).textbox('setValue', rows.name);
+    //                             $(ed4.target).textbox('setValue', rows.workorder);
+    //                             $(ed5.target).textbox('setValue', rows.ok_press);
+    //                         },
+    //                     }
+    //                 }
+    //             }, {
+    //                 field: 'item_fg_id',
+    //                 width: 200,
+    //                 hidden: true,
+    //                 halign: 'center',
+    //                 title: "Product ID",
+    //                 editor: {
+    //                     type: 'textbox'
+    //                 }
+    //             }, {
+    //                 field: 'item_fg_name',
+    //                 width: 200,
+    //                 halign: 'center',
+    //                 title: "Product Name",
+    //                 editor: {
+    //                     type: 'textbox',
+    //                     options: {
+    //                         readonly: true
+    //                     }
+    //                 }
+    //             }, {
+    //                 field: 'workorder',
+    //                 width: 200,
+    //                 halign: 'center',
+    //                 title: "WO No",
+    //                 editor: {
+    //                     type: 'textbox',
+    //                     options: {
+    //                         readonly: true
+    //                     }
+    //                 }
+    //             }, {
+    //                 field: 'ok_press',
+    //                 width: 100,
+    //                 align: 'center',
+    //                 title: "OK Press",
+    //                 formatter: numberFormatField,
+    //                 editor: {
+    //                     type: 'numberbox',
+    //                     options: {
+    //                         precision: 0,
+    //                         required: true,
+    //                         readonly: true
+    //                     }
+    //                 }
+    //             }, {
+    //                 field: 'ok_punch',
+    //                 width: 100,
+    //                 align: 'center',
+    //                 title: "OK Punch",
+    //                 formatter: numberFormatField,
+    //                 editor: {
+    //                     type: 'numberbox',
+    //                     options: {
+    //                         precision: 0,
+    //                         required: true,
+    //                         onChange: function(newValue, oldValue) {
+    //                             validateOkNgPunch(this);
+    //                         }
+    //                     }
+    //                 }
+    //             }, {
+    //                 field: 'ng_punch',
+    //                 width: 100,
+    //                 align: 'center',
+    //                 title: "NG Punch",
+    //                 formatter: numberFormatField,
+    //                 editor: {
+    //                     type: 'numberbox',
+    //                     options: {
+    //                         precision: 0,
+    //                         required: true,
+    //                         onChange: function(newValue, oldValue) {
+    //                             validateOkNgPunch(this);
+    //                         }
+    //                     }
+    //                 }
+    //             }, {
+    //                 field: 'punch_process',
+    //                 width: 100,
+    //                 align: 'center',
+    //                 title: "Punch Process",
+    //                 formatter: numberFormatField,
+    //                 editor: {
+    //                     type: 'numberbox',
+    //                     options: {
+    //                         precision: 0,
+    //                         required: true,
+    //                     }
+    //                 }
+    //             }, {
+    //                 field: 'os_cutting_punch',
+    //                 width: 100,
+    //                 align: 'center',
+    //                 title: "OS Cutting Punch",
+    //                 formatter: numberFormatField,
+    //                 editor: {
+    //                     type: 'numberbox',
+    //                     options: {
+    //                         precision: 0,
+    //                         required: true,
+    //                         readonly: true
+    //                     }
+    //                 }
+    //             }]
+    //         ],
+    //         onClickCell: onClickCell2
+    //     });
+    // }
+
 
     function addTableCP(link = "", readonly = false) {
          isReadOnlyMode2 = readonly;
@@ -734,6 +962,7 @@
                             required: true,
                             panelWidth: 750,
                             idField: 'number',
+                            // idField: 'unique_key',
                             textField: 'number',
                             valueField: 'item_fg_id',
                             mode: 'remote',
@@ -744,15 +973,20 @@
                                     field: 'number',
                                     title: 'Product No',
                                     halign: 'center',
-                                    width: 200
+                                    width: 150
                                 },{
                                     field: 'name',
                                     title: 'Product Name',
                                     halign: 'center',
-                                    width: 200
+                                    width: 150
                                 },{
                                     field: 'workorder',
                                     title: 'Workorder',
+                                    halign: 'center',
+                                    width: 150
+                                },{
+                                    field: 'workorder_label',
+                                    title: 'Serial WO Press',
                                     halign: 'center',
                                     width: 150
                                 },{
@@ -775,10 +1009,12 @@
                                 var dg = $('#dg3');
                                 var rows = dg.datagrid('getRows');
                                 param.process_date = $('#process_date2').datebox('getValue');
+                                param.workorder = $('#workorder2').combobox('getValue');
+                                console.log("TEST : ", $('#workorder2').combobox('getValue'));
 
                                 var used = rows
-                                    .filter(r => r.item_fg_id && r.workorder)
-                                    .map(r => r.item_fg_id + '_' + r.workorder);
+                                    .filter(r => r.item_fg_id && r.workorder && r.workorder_label)
+                                    .map(r => r.item_fg_id + '_' + r.workorder + '_' + r.workorder_label);
 
                                 param.exclude_keys = used.join(',');
                             },
@@ -791,15 +1027,17 @@
                                 var edId   = dg.datagrid('getEditor', { index: idx, field: 'item_fg_id' });
                                 var edNo   = dg.datagrid('getEditor', { index: idx, field: 'item_fg_number' });
                                 var edName = dg.datagrid('getEditor', { index: idx, field: 'item_fg_name' });
-                                var edWO   = dg.datagrid('getEditor', { index: idx, field: 'workorder' });
+                                var edWOLabel   = dg.datagrid('getEditor', { index: idx, field: 'workorder_label' });
                                 var edOKPress   = dg.datagrid('getEditor', { index: idx, field: 'ok_press' });
+                                var edWO   = dg.datagrid('getEditor', { index: idx, field: 'workorder' });
 
                                 if (row.item_fg_id) {
                                     if (edId) $(edId.target).textbox('setValue', row.item_fg_id);
                                     if (edNo) $(edNo.target).combogrid('setValue', row.item_fg_number);
                                     if (edName) $(edName.target).textbox('setValue', row.item_fg_name);
-                                    if (edWO)   $(edWO.target).textbox('setValue', row.workorder);
+                                    if (edWOLabel)   $(edWOLabel.target).textbox('setValue', row.workorder_label);
                                     if (edOKPress)   $(edOKPress.target).textbox('setValue', row.ok_press);
+                                    if (edWO)   $(edWO.target).textbox('setValue', row.workorder);
                                 }
                             },
 
@@ -821,18 +1059,23 @@
                                 });
                                 var ed4 = dg.datagrid('getEditor', {
                                     index: rowIndex,
-                                    field: 'workorder'
+                                    field: 'workorder_label'
                                 });
                                 var ed5 = dg.datagrid('getEditor', {
                                     index: rowIndex,
                                     field: 'ok_press'
                                 });
+                                var ed6 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'workorder'
+                                });
 
                                 $(ed1.target).textbox('setValue', rows.item_fg_id);
                                 $(ed2.target).textbox('setValue', rows.number);
                                 $(ed3.target).textbox('setValue', rows.name);
-                                $(ed4.target).textbox('setValue', rows.workorder);
+                                $(ed4.target).textbox('setValue', rows.workorder_label);
                                 $(ed5.target).textbox('setValue', rows.ok_press);
+                                $(ed6.target).textbox('setValue', rows.workorder);
                             },
                         }
                     }
@@ -846,6 +1089,18 @@
                         type: 'textbox'
                     }
                 }, {
+                    field: 'workorder',
+                    width: 200,
+                    halign: 'center',
+                    hidden: true,
+                    title: "WO No",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
                     field: 'item_fg_name',
                     width: 200,
                     halign: 'center',
@@ -857,10 +1112,10 @@
                         }
                     }
                 }, {
-                    field: 'workorder',
+                    field: 'workorder_label',
                     width: 200,
                     halign: 'center',
-                    title: "WO No",
+                    title: "Serial WO Press",
                     editor: {
                         type: 'textbox',
                         options: {
@@ -882,10 +1137,10 @@
                         }
                     }
                 }, {
-                    field: 'punch_process',
+                    field: 'ng_punch',
                     width: 100,
                     align: 'center',
-                    title: "Punch Process",
+                    title: "NG Punch",
                     formatter: numberFormatField,
                     editor: {
                         type: 'numberbox',
@@ -893,7 +1148,7 @@
                             precision: 0,
                             required: true,
                             onChange: function(newValue, oldValue) {
-                                validatePunch(this, 'punch_process');
+                                validateOkNgPunch(this);
                             }
                         }
                     }
@@ -908,100 +1163,88 @@
                         options: {
                             precision: 0,
                             required: true,
-                            onChange: function(newValue, oldValue) {
-                                validatePunchOkNg(this, 'ok_punch');
-                            }
+                            readonly: true,
+                            // onChange: function(newValue, oldValue) {
+                            //     validateOkNgPunch(this);
+                            // }
                         }
                     }
                 }, {
-                    field: 'ng_punch',
+                    field: 'punch_process',
                     width: 100,
+                    hidden: true,
                     align: 'center',
-                    title: "NG Punch",
+                    title: "Punch Process",
                     formatter: numberFormatField,
                     editor: {
                         type: 'numberbox',
                         options: {
                             precision: 0,
                             required: true,
-                            onChange: function(newValue, oldValue) {
-                                validatePunchOkNg(this, 'ng_punch');
-                            }
                         }
                     }
-                }, {
-                    field: 'os_cutting_punch',
+                }, 
+                // {
+                //     field: 'os_cutting_punch',
+                //     width: 100,
+                //     align: 'center',
+                //     title: "OS Cutting Punch",
+                //     formatter: numberFormatField,
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             precision: 0,
+                //             required: true,
+                //             readonly: true
+                //         }
+                //     }
+                // }
+
+                {
+                    field: 'mp_punch',
                     width: 100,
                     align: 'center',
-                    title: "OS Cutting Punch",
-                    formatter: numberFormatField,
+                    title: "MP Punch",
                     editor: {
-                        type: 'numberbox',
+                        type: 'textbox',
                         options: {
                             precision: 0,
                             required: true,
-                            readonly: true
                         }
                     }
-                }]
+                },
+                ]
             ],
             onClickCell: onClickCell2
         });
     }
 
-    function validatePunch(target, fieldName) {
+
+    function validateOkNgPunch(target) {
         var dg = $('#dg3');
         var tr = $(target).closest('tr.datagrid-row');
         var index = parseInt(tr.attr('datagrid-row-index'));
 
-        var ok_press_editor = dg.datagrid('getEditor', { index: index, field: 'ok_press' });
-        var punch_process_editor = dg.datagrid('getEditor', { index: index, field: 'punch_process' });
-        var os_cutting_punch_editor = dg.datagrid('getEditor', { index: index, field: 'os_cutting_punch' });
+        var ok_press_ed  = dg.datagrid('getEditor', { index: index, field: 'ok_press' });
+        var ok_punch_ed  = dg.datagrid('getEditor', { index: index, field: 'ok_punch' });
+        var ng_punch_ed  = dg.datagrid('getEditor', { index: index, field: 'ng_punch' });
+        var punch_proc_ed = dg.datagrid('getEditor', { index: index, field: 'punch_process' });
+        // var os_cut_ed     = dg.datagrid('getEditor', { index: index, field: 'os_cutting_punch' });
 
-        var ok_press = parseInt($(ok_press_editor.target).numberbox('getValue')) || 0;
-        var punch_process = parseInt($(punch_process_editor.target).numberbox('getValue')) || 0;
+        var ok_press  = parseInt($(ok_press_ed.target).numberbox('getValue')) || 0;
+        var ok_punch  = parseInt($(ok_punch_ed.target).numberbox('getValue')) || 0;
+        var ng_punch  = parseInt($(ng_punch_ed.target).numberbox('getValue')) || 0;
 
-        if (punch_process > ok_press) {
-            $(target).numberbox('clear');
-
-            if (fieldName === 'punch_process') punch_process = 0;
-            punch_process = punch_process;
-            $(os_cutting_punch_editor.target).numberbox('setValue', '');
-
-            toastr.warning("Punch Process must not exceed the OK Press!", "Information");
+        if (ng_punch > ok_press) {
+            $(ng_punch_ed.target).numberbox('clear');
+            toastr.warning("NG Punch must not exceed OK Press!", "Information");
             return;
         }
 
-        $(os_cutting_punch_editor.target).numberbox('setValue', ok_press - punch_process);
-    }
+        var final_ok_punch = ok_press - ng_punch;
+        $(ok_punch_ed.target).numberbox('setValue', final_ok_punch);
 
-    function validatePunchOkNg(target, fieldName) {
-        var dg = $('#dg3');
-        var tr = $(target).closest('tr.datagrid-row');
-        var index = parseInt(tr.attr('datagrid-row-index'));
-
-        var punch_process_editor = dg.datagrid('getEditor', { index: index, field: 'punch_process' });
-        var ok_punch_editor = dg.datagrid('getEditor', { index: index, field: 'ok_punch' });
-        var ng_punch_editor = dg.datagrid('getEditor', { index: index, field: 'ng_punch' });
-
-        var punch_process = parseInt($(punch_process_editor.target).numberbox('getValue')) || 0;
-        var ok_punch = parseInt($(ok_punch_editor.target).numberbox('getValue')) || 0;
-        var ng_punch = parseInt($(ng_punch_editor.target).numberbox('getValue')) || 0;
-
-        if (ok_punch > punch_process) {
-            $(target).numberbox('clear');
-
-            if (fieldName === 'ok_punch') ok_punch = 0;
-            if (fieldName === 'ng_punch') ng_punch = 0;
-            $(ng_punch_editor.target).numberbox('setValue', '');
-
-            toastr.warning("OK Punch must not exceed the Punch Process!", "Information");
-            return;
-        }
-
-        if (fieldName === 'ok_punch') {
-            $(ng_punch_editor.target).numberbox('setValue', punch_process - ok_punch);
-        }
+        $(punch_proc_ed.target).numberbox('setValue', ok_press);
     }
 
     var editIndex2 = undefined;
@@ -1073,8 +1316,9 @@
         var process_date = $("#process_date2").datebox('getValue');
         var process_name = $("#process_name2").textbox('getValue');
         var doc_no = $("#doc_no2").textbox('getValue');
+        var workorder = $("#workorder2").combobox('getValue');
 
-        if (process_date != "" && process_name != "" && doc_no != "") {
+        if (process_date != "" && process_name != "" && doc_no != "" && workorder != "") {
             if (endEditing2()) {
                 $('#dg3').datagrid('appendRow', {
                     qty: '0'
@@ -1089,28 +1333,30 @@
 
     // function removeit2() {
     //     buttonClickEffect2('#btn-remove2');
-    //     if (editIndex2 == undefined) {
-    //         return true;
-    //     }
 
     //     var dg = $('#dg3');
     //     var row = dg.datagrid('getSelected');
-    //     var rowIndex = dg.datagrid('getRowIndex', row);
 
-    //     var ed = dg.datagrid('getEditor', {
-    //         index: editIndex2,
-    //         field: 'item_fg_id'
-    //     });
+    //     // jika belum ada row dipilih, tampilkan peringatan
+    //     if (!row) {
+    //         toastr.warning("Please select a row first!");
+    //         return;
+    //     }
 
-    //     var ed1 = dg.datagrid('getEditor', {
-    //         index: editIndex2,
-    //         field: 'workorder'
-    //     });
+    //     // jika sedang edit, ambil index dari editIndex2
+    //     var index = (typeof editIndex2 !== 'undefined' && editIndex2 !== undefined)
+    //         ? editIndex2
+    //         : dg.datagrid('getRowIndex', row);
 
-    //     // var subcont_id = $("#subcont_id").combogrid('getValue');
-    //     var item_fg_id = $(ed.target).textbox('getValue');
-    //     var workorder = $(ed1.target).textbox('getValue');
+    //     // ambil nilai field langsung dari row, bukan editor
+    //     var item_fg_id = row.item_fg_id;
+    //     var workorder = row.workorder;
     //     var doc_no = $("#doc_no2").textbox('getValue');
+
+    //     if (!item_fg_id || !workorder) {
+    //         toastr.error("Missing data: item_fg_id or workorder not found.");
+    //         return;
+    //     }
 
     //     $.ajax({
     //         method: 'post',
@@ -1121,22 +1367,26 @@
     //             item_fg_id: item_fg_id
     //         },
     //         success: function(result) {
-    //             var result = eval('(' + result + ')');
+    //             try {
+    //                 var result = JSON.parse(result);
+    //             } catch (e) {
+    //                 toastr.error("Invalid server response");
+    //                 return;
+    //             }
 
-    //             if(result.status === 'error'){
+    //             if (result.status === 'error') {
     //                 toastr.error(result.message);
     //                 return;
     //             }
 
     //             toastr.success(result.message);
-    //             $('#dg3').datagrid('cancelEdit', editIndex2).datagrid('deleteRow', editIndex2);
-    //             editIndex2 = undefined;
+    //             dg.datagrid('deleteRow', index);
     //         },
-    //         error: function(jqXHR, textStatus, errorThrown) {
+    //         error: function(jqXHR) {
     //             toastr.error(jqXHR.statusText);
     //             $.messager.alert("Error", jqXHR.statusText, 'error');
     //         },
-    //         complete: function(data) {
+    //         complete: function() {
     //             $('#dg').datagrid('reload');
     //         }
     //     });
@@ -1148,26 +1398,14 @@
         var dg = $('#dg3');
         var row = dg.datagrid('getSelected');
 
-        // jika belum ada row dipilih, tampilkan peringatan
-        if (!row) {
-            toastr.warning("Please select a row first!");
-            return;
-        }
+        if (!row) return;
 
-        // jika sedang edit, ambil index dari editIndex2
-        var index = (typeof editIndex2 !== 'undefined' && editIndex2 !== undefined)
-            ? editIndex2
-            : dg.datagrid('getRowIndex', row);
+        var rowIndex = dg.datagrid('getRowIndex', row);
 
-        // ambil nilai field langsung dari row, bukan editor
-        var item_fg_id = row.item_fg_id;
-        var workorder = row.workorder;
-        var doc_no = $("#doc_no2").textbox('getValue');
-
-        if (!item_fg_id || !workorder) {
-            toastr.error("Missing data: item_fg_id or workorder not found.");
-            return;
-        }
+        var item_fg_id = row.item_fg_id ?? "";
+        var workorder  = row.workorder ?? "";
+        var workorder_label  = row.workorder_label ?? "";
+        var doc_no     = $("#doc_no2").textbox('getValue');
 
         $.ajax({
             method: 'post',
@@ -1175,23 +1413,22 @@
             data: {
                 internal_doc_no: doc_no,
                 workorder: workorder,
+                workorder_label: workorder_label,
                 item_fg_id: item_fg_id
             },
-            success: function(result) {
+            success: function(res) {
                 try {
-                    var result = JSON.parse(result);
+                    res = JSON.parse(res);
+
+                    if(res.message == "Cannot delete data that is still in use") {
+                        toastr.error(res.message);
+                    }else{
+                        toastr.success(res.message);
+                        dg.datagrid('deleteRow', rowIndex);
+                    }
                 } catch (e) {
-                    toastr.error("Invalid server response");
-                    return;
+                    toastr.error("Invalid response");
                 }
-
-                if (result.status === 'error') {
-                    toastr.error(result.message);
-                    return;
-                }
-
-                toastr.success(result.message);
-                dg.datagrid('deleteRow', index);
             },
             error: function(jqXHR) {
                 toastr.error(jqXHR.statusText);
@@ -1202,7 +1439,6 @@
             }
         });
     }
-
 
     //EDIT DATA
     function update_cp() {
@@ -1216,12 +1452,14 @@
                 setTimeout(function() {
                     $('#process_date2').datebox('setValue', row.process_date);
                     $('#process_name2').textbox('setValue', row.process_name);
+                    $('#workorder2').combobox('setValue', row.workorder);
                     $('#doc_no2').textbox('setValue', row.doc_no);
                 }, 200);
 
                 $("#process_date2").datebox('disable');
                 $("#process_name2").textbox('disable');
                 $("#doc_no2").textbox('disable');
+                $("#workorder2").combobox('disable');
 
                 $('#btn-add2').hide();
 
@@ -1267,6 +1505,7 @@
     //DELETE DATA
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
+        console.log('ROWSS : ', rows);
         if (rows.length > 0) {
             $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
                 if (r) {
@@ -1280,6 +1519,7 @@
                                 internal_doc_no: row.doc_no,
                                 item_fg_id: row.item_fg_id,
                                 workorder: row.workorder,
+                                workorder_label: row.workorder_label,
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
@@ -1441,6 +1681,11 @@
                                 halign: 'center',
                                 width: 200
                             }, {
+                                field: 'workorder_label',
+                                title: 'Serial WO No',
+                                halign: 'center',
+                                width: 200
+                            }, {
                                 field: 'ok_press',
                                 title: 'OK Press',
                                 halign: 'center',
@@ -1468,14 +1713,16 @@
                                 align: 'right',
                                 width: 100,
                                 formatter: numberFormat
-                            }, {
-                                field: 'os_cutting_punch',
-                                title: 'OS Cutting Punch',
-                                halign: 'center',
-                                align: 'right',
-                                width: 100,
-                                formatter: numberFormat
-                            }]
+                            },
+                            // {
+                            //     field: 'os_cutting_punch',
+                            //     title: 'OS Cutting Punch',
+                            //     halign: 'center',
+                            //     align: 'right',
+                            //     width: 100,
+                            //     formatter: numberFormat
+                            // }
+                            ]
                         ],
                         onResize: function() {
                             $('#dg').datagrid('fixDetailRowHeight', index);
@@ -1676,11 +1923,13 @@
                                     process_name: process_name,
                                     doc_no: doc_no,
                                     workorder: rows[i].workorder,
+                                    workorder_label: rows[i].workorder_label,
                                     ok_press: rows[i].ok_press,
                                     punch_process: rows[i].punch_process,
                                     ok_punch: rows[i].ok_punch,
                                     ng_punch: rows[i].ng_punch,
-                                    os_cutting_punch: rows[i].os_cutting_punch
+                                    os_cutting_punch: 0, //rows[i].os_cutting_punch
+                                    mp_punch: rows[i].mp_punch,
                                 },
                                 dataType: "json",
                                 success: function(result) {
@@ -1769,6 +2018,18 @@
         }
     }
 
+    $("#workorder2").combobox({
+        url: '<?= base_url('control/internal_process/readWorkorder') ?>',
+        valueField: 'workorder',
+        textField: 'workorder',
+        prompt: "Select Workorder",
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
 
     //CELLSTYLE STATUS
     function cellStyler(value, row, index) {
