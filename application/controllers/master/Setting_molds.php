@@ -118,6 +118,8 @@ class Setting_molds extends CI_Controller
             $post   = $this->input->post();
             $setting_molds = $this->crud->read('setting_molds', [], ["item_fg_id" => $post['item_fg_id'], "machine_id" => $post['machine_id'], "mold_id" => $post['mold_id']]);
 
+            unset($post['mold_actual']);
+
             if (!empty($setting_molds->item_fg_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . $post['item_fg_id'] . " & Machine Id " . $post['machine_id'] . " Duplicate Data", "theme" => "error"));
             } else {
@@ -129,60 +131,252 @@ class Setting_molds extends CI_Controller
         }
     }
 
-
     //UPDATE DATA
+    // public function updatev1()
+    // {
+    //     if ($this->input->post()) {
+
+    //         $id = base64_decode($this->input->get('id'));
+    //         $post = $this->input->post();
+    //         $existing_data = $this->crud->read('setting_molds', [], ["id" => $id]);
+
+    //         if (
+    //             ($existing_data->item_fg_id == $post['item_fg_id']) &&
+    //             ($existing_data->machine_id == $post['machine_id']) &&
+    //             ($existing_data->mold_id == $post['mold_id'])
+    //         ) {
+    //             // Item_fg_id dan machine_id tetap sama, lanjutkan dengan pembaruan
+    //             $send = $this->crud->update('setting_molds', ["id" => $id], $post);
+    //             echo $send;
+    //         } else {
+    //             // Item_fg_id atau machine_id telah berubah, lakukan validasi duplikasi
+    //             $setting_molds = $this->crud->read('setting_molds', [], [
+    //                 "item_fg_id" => $post['item_fg_id'], 
+    //                 "machine_id" => $post['machine_id'], 
+    //                 "mold_id" => $post['mold_id']
+    //             ]);
+
+    //             if (!empty($setting_molds->item_fg_id)) {
+    //                 echo json_encode(array(
+    //                     "title" => "Duplicated", 
+    //                     "message" => "Product Id " . $post['item_fg_id'] . " & Machine Id " . $post['machine_id'] . " Duplicate Data", 
+    //                     "theme" => "error"
+    //                 ));
+    //             } else {
+    //                 // Tidak ada duplikasi, lanjutkan dengan pembaruan
+    //                 $send = $this->crud->update('setting_molds', ["id" => $id], $post);
+    //                 echo $send;
+    //             }
+    //         }
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+
     public function update()
     {
-        if ($this->input->post()) {
+        if (!$this->input->post()) {
+            show_error("Cannot Process your request");
+        }
 
-            $id = base64_decode($this->input->get('id'));
-            $post = $this->input->post();
-            $existing_data = $this->crud->read('setting_molds', [], ["id" => $id]); // Membaca data yang ada
+        $this->db->trans_begin();
 
-            // Periksa apakah item_fg_id dan machine_id tetap sama
-            if (
-                ($existing_data->item_fg_id == $post['item_fg_id']) &&
-                ($existing_data->machine_id == $post['machine_id']) &&
-                ($existing_data->mold_id == $post['mold_id'])
-            ) {
-                // Item_fg_id dan machine_id tetap sama, lanjutkan dengan pembaruan
-                $send = $this->crud->update('setting_molds', ["id" => $id], $post);
-                echo $send;
-            } else {
-                // Item_fg_id atau machine_id telah berubah, lakukan validasi duplikasi
-                $setting_molds = $this->crud->read('setting_molds', [], ["item_fg_id" => $post['item_fg_id'], "machine_id" => $post['machine_id'], "mold_id" => $post['mold_id']]);
-                if (!empty($setting_molds->item_fg_id)) {
-                    echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . $post['item_fg_id'] . " & Machine Id " . $post['machine_id'] . " Duplicate Data", "theme" => "error"));
-                } else {
-                    // Tidak ada duplikasi, lanjutkan dengan pembaruan
-                    $send = $this->crud->update('setting_molds', ["id" => $id], $post);
-                    echo $send;
+        $id   = base64_decode($this->input->get('id'));
+        $post = $this->input->post();
+
+        $cavity_actual = $post['mold_actual'];
+        unset($post['mold_actual']);
+
+        $old = $this->crud->read('setting_molds', [], ["id" => $id]);
+
+        if (!$old) {
+            $this->db->trans_rollback();
+            echo json_encode([
+                "theme" => "error",
+                "title" => "Not Found",
+                "message" => "Setting mold not found"
+            ]);
+            return;
+        }
+
+        if (
+            $old->item_fg_id != $post['item_fg_id'] ||
+            $old->machine_id != $post['machine_id'] ||
+            $old->mold_id    != $post['mold_id']
+        ) {
+            $duplicate = $this->crud->read('setting_molds', [], [
+                "item_fg_id" => $post['item_fg_id'],
+                "machine_id" => $post['machine_id'],
+                "mold_id"    => $post['mold_id'],
+            ]);
+
+            if ($duplicate) {
+                $this->db->trans_rollback();
+                echo json_encode([
+                    "title" => "Duplicated", 
+                    "message" => "Product Id " . $post['item_fg_id'] . " & Machine Id " . $post['machine_id'] . " Duplicate Data", 
+                    "theme" => "error"
+                ]);
+                return;
+            }
+        }
+
+        $this->crud->update('setting_molds', ["id" => $id], $post);
+
+        // $cycle_changed = ((float)$old->cycle_time !== (float)$post['cycle_time']);
+
+        // if ($cycle_changed) {
+            $menu = $this->crud->read('menu_loadings', [], [
+                "item_fg_id" => $post['item_fg_id'],
+                "machine_id" => $post['machine_id'],
+                "mold_id"    => $post['mold_id'],
+            ]);
+
+            if ($menu) {
+
+                // UPDATE CYCLE TIME MENU LOADING
+                $this->crud->update('menu_loadings', [
+                    "item_fg_id" => $post['item_fg_id'],
+                    "machine_id" => $post['machine_id'],
+                    "mold_id"    => $post['mold_id'],
+                ], [
+                    "cycle_time" => $post['cycle_time']
+                ]);
+
+                $pc = $this->crud->read("production_capacities", [], [
+                    "machine_id" => $post['machine_id'],
+                    "item_fg_id" => $post['item_fg_id'],
+                ]);
+
+                if ($pc) {
+
+                    // HITUNG ULANG KAPASITAS
+                    $cycle         = (float)$post['cycle_time'];
+                    $productivity  = (float)$menu->productcivity;
+                    $shift_hour    = (int)$menu->shift_hour;
+                    $shift         = (int)$menu->shift;
+                    $actual_cavity = (int)$cavity_actual;
+
+                    $capacity_hour  = ceil((3600 / $cycle) * $actual_cavity * ($productivity / 100));
+                    $capacity_shift = ceil($capacity_hour * $shift_hour);
+                    $capacity_day   = ceil($capacity_shift * $shift);
+
+                    $this->crud->update("production_capacities", [
+                        "machine_id" => $post['machine_id'],
+                        "item_fg_id" => $post['item_fg_id'],
+                    ], [
+                        "capacity_hour"  => $capacity_hour,
+                        "capacity_shift" => $capacity_shift,
+                        "capacity_day"   => $capacity_day,
+                    ]);
                 }
             }
+        // }
+
+        if ($this->db->trans_status() === FALSE) {
+            $this->db->trans_rollback();
+            echo json_encode([
+                "theme" => "error",
+                "title" => "Failed",
+                "message" => "Update failed"
+            ]);
         } else {
-            show_error("Cannot Process your request");
+            $this->db->trans_commit();
+            echo json_encode([
+                "theme" => "success",
+                "title" => "Success",
+                "message" => "Data updated successfully"
+            ]);
         }
     }
 
     //DELETE DATA
+    // public function deletev1()
+    // {
+    //     $data = $this->input->post();
+    //     $send = $this->crud->delete('setting_molds', $data);
+    //     echo $send;
+    // }
+
     public function delete()
     {
         $data = $this->input->post();
+
+        $setting_mold = $this->crud->read('setting_molds', [], ['id' => $data['id'], 'deleted' => 0]);
+
+        if (empty($setting_mold)) {
+            echo json_encode(
+                array(
+                "title" => "Data Not Found", 
+                "message" => "Setting Mold data not found", 
+                "theme" => "error"
+            ));
+            return;
+        }
+
+        $used = $this->db
+            ->where('item_fg_id', $setting_mold->item_fg_id)
+            ->where('machine_id', $setting_mold->machine_id)
+            ->where('mold_id', $setting_mold->mold_id)
+            ->where('deleted', 0)
+            ->limit(1)
+            ->get('menu_loadings')
+            ->num_rows();
+
+        if ($used > 0) {
+            echo json_encode(
+                array(
+                "title" => "Cannot Delete Data", 
+                "message" => "Cannot delete data that is still in use",
+                "theme" => "error"
+            ));
+            return;
+        }
+
         $send = $this->crud->delete('setting_molds', $data);
         echo $send;
     }
 
     //UPLOAD DATA
+    // public function upload()
+    // {
+    //     error_reporting(0);
+    //     require_once 'assets/vendors/excel_reader2.php';
+    //     $target = basename($_FILES['file_upload']['name']);
+    //     move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
+    //     chmod($_FILES['file_upload']['name'], 0777);
+    //     $file = $_FILES['file_upload']['name'];
+    //     $data = new Spreadsheet_Excel_Reader($file, false);
+    //     $total_row = $data->rowcount($sheet_index = 0);
+    //     for ($i = 3; $i <= $total_row; $i++) {
+    //         $datas[] = array(
+    //             //excel
+    //             'item_fg_id' => $data->val($i, 2),
+    //             'machine_id' => $data->val($i, 3),
+    //             'mold_id' => $data->val($i, 4),
+    //             'cycle_time' => $data->val($i, 5),
+    //             'lot_size' => $data->val($i, 6),
+    //             'priority' => $data->val($i, 7),
+    //         );
+    //     }
+    //     $datas['total'] = count($datas);
+    //     echo json_encode($datas);
+    //     unlink($_FILES['file_upload']['name']);
+    // }
+
     public function upload()
     {
         error_reporting(0);
         require_once 'assets/vendors/excel_reader2.php';
+
         $target = basename($_FILES['file_upload']['name']);
         move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
-        chmod($_FILES['file_upload']['name'], 0777);
-        $file = $_FILES['file_upload']['name'];
-        $data = new Spreadsheet_Excel_Reader($file, false);
+        chmod($target, 0777);
+
+        $data = new Spreadsheet_Excel_Reader($target, false);
         $total_row = $data->rowcount($sheet_index = 0);
+        $datas = [];
+
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
                 //excel
@@ -194,62 +388,284 @@ class Setting_molds extends CI_Controller
                 'priority' => $data->val($i, 7),
             );
         }
-        $datas['total'] = count($datas);
-        echo json_encode($datas);
-        unlink($_FILES['file_upload']['name']);
-    }
-    public function uploadclearFailed()
-    {
-        @unlink('failed/setting_molds.txt');
-    }
-    public function uploadcreateFailed()
-    {
-        if ($this->input->post()) {
-            $message = $this->input->post('message');
-            $textFailed = fopen('failed/setting_molds.txt', 'a');
-            fwrite($textFailed, $message . "\n");
-            fclose($textFailed);
-        }
+
+        echo json_encode([
+            "total" => count($datas),
+            "data" => $datas
+        ]);
+
+        unlink($target);
     }
 
-    //UPLOAD DOWNLOAD FAILED
+    public function uploadclearFailed()
+    {
+        @unlink('failed/setting_molds.xls');
+    }
+
     public function uploadDownloadFailed()
     {
-        $file = "failed/setting_molds.txt";
-        header('Content-Description: File Failed');
-        header('Content-Disposition: attachment; filename=' . basename($file));
-        header('Expires: 0');
-        header('Cache-Control: must-revalidate');
-        header('Pragma: public');
-        header('Content-Length: ' . @filesize($file));
-        header("Content-Type: text/plain");
-        @readfile($file);
+        $file = "failed/setting_molds.xls";
+
+        if (!file_exists($file)) {
+            echo "No failed data to download";
+            return;
+        }
+
+        $filename = "upload_failed_setting_molds_" . date("Ymd_s") . ".xls";
+
+        header("Content-Description: File Upload Failed");
+        header("Content-type: application/vnd.ms-excel");
+        header("Content-Disposition: attachment; filename={$filename}");
+        header("Pragma: no-cache");
+        header("Expires: 0");
+
+        readfile($file);
     }
 
     //UPLOAD CREATE DATA
     public function uploadcreate()
     {
         if ($this->input->post()) {
-            $data = $this->input->post('data');
+            $raw = file_get_contents("php://input");
+            $postData = json_decode($raw, true);
 
-            //Cek Process Number        //table          //field          //field excel
-            $product = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
-            $machine = $this->crud->read('machines', [], ["id" => $data['machine_id']]);
-            $molds = $this->crud->read('molds', [], ["id" => $data['mold_id']]);
-            $setting_molds = $this->crud->read('setting_molds', [], ["item_fg_id" => $data['item_fg_id'], "machine_id" => $data['machine_id'], "mold_id" => $data['mold_id']]);
+            $data_list = $postData['data'];
+            
+            $total_expected = count($data_list);
+            $processed_count = 0;
 
-            if (empty($product->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Product Id " . $data['item_fg_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty($machine->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Machine Id " . $data['machine_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty($molds->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Mold Id " . $data['mold_id'] . " Not Found", "theme" => "error"));
-            } elseif (!empty($setting_molds->item_fg_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . $data['item_fg_id'] . " Duplicate Data", "theme" => "error"));
-            } else {
-                $send   = $this->crud->create('setting_molds', $data);
-                echo $send;
+            $this->db->trans_begin();
+            $results = [];
+
+            foreach ($data_list as $index => $data) {
+                $processed_count++;
+                if (
+                    empty($data['item_fg_id']) ||
+                    empty($data['machine_id']) ||
+                    empty($data['mold_id'])
+                   ) {
+                        $results[] = [
+                            "status" => "failed",
+                            "item" => "Line " . ($index + 1),
+                            "message" => "Invalid or missing data"
+                        ];
+                        continue;
+                }
+
+                $item_fg_id = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
+                if (empty($item_fg_id) && $item_fg_id->item_family_number != "CD") {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Product No " . $data['item_fg_id'] . " Not Found"
+                    ];
+                    continue;
+                }
+
+                $molds = $this->crud->read('molds', [], ["id" => $data['mold_id']]);
+                if (empty($molds) && $item_fg_id->item_family_number != "CD") {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Mold Model " . $data['mold_id'] . " Not Found"
+                    ];
+                    continue;
+                }
+
+                $machine = $this->crud->read('machines', [], ["id" => $data['machine_id']]);
+                if (empty($machine)) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Machine ID " . $data['machine_id'] . " Not Found"
+                    ];
+                    continue;
+                }
+
+                $checkMenuLoading = $this->crud->read('setting_molds', [], [
+                    "item_fg_id" => $data['item_fg_id'],
+                    "mold_id" => $data['mold_id'],
+                    "machine_id" => $data['machine_id'],
+                ]);
+
+                // if (!empty($checkMenuLoading)) {
+                //     $results[] = [
+                //         "status" => "failed",
+                //         "item" => "Line " . ($index + 1), 
+                //         "message" => "Duplicate Data Product No. " . $item_fg_id->number ." on Machine No. " . $machine->number . " already exists",
+                //     ];
+                //     continue;
+                // }
+
+                $dataFinal = array(
+                    //field
+                    "item_fg_id" => $item_fg_id->id,
+                    "mold_id" => $molds->id,
+                    "machine_id" => $machine->id,
+                    "cycle_time" => $data['cycle_time'],
+                    "lot_size" => $data['lot_size'],
+                    "priority" => $data['priority'],
+                );
+
+                try {
+                    if (!empty($checkMenuLoading)) {
+                        // Update
+                        $this->crud->update('setting_molds', [
+                            "item_fg_id" => $data['item_fg_id'],
+                            "mold_id" => $data['mold_id'],
+                            "machine_id" => $machine->id
+                        ], [
+                            "cycle_time" => $data['cycle_time'],
+                            "lot_size" => $data['lot_size'],
+                            "priority" => $data['priority'],
+                        ]);
+
+
+                        // $cycle_changed = ((float)$checkMenuLoading->cycle_time != (float)$data['cycle_time']);
+
+                        // if ($cycle_changed) {
+                            $menu = $this->crud->read('menu_loadings', [], [
+                                "item_fg_id" => $data['item_fg_id'],
+                                "machine_id" => $data['machine_id'],
+                                "mold_id"    => $data['mold_id'],
+                            ]);
+
+                            if ($menu) {
+
+                                // UPDATE CYCLE TIME MENU LOADING
+                                $this->crud->update('menu_loadings', [
+                                    "item_fg_id" => $data['item_fg_id'],
+                                    "machine_id" => $data['machine_id'],
+                                    "mold_id"    => $data['mold_id'],
+                                ], [
+                                    "cycle_time" => $data['cycle_time']
+                                ]);
+
+                                $pc = $this->crud->read("production_capacities", [], [
+                                    "machine_id" => $data['machine_id'],
+                                    "item_fg_id" => $data['item_fg_id'],
+                                ]);
+
+                                if ($pc) {
+
+                                    // HITUNG ULANG KAPASITAS
+                                    $cycle         = (float)$data['cycle_time'];
+                                    $productivity  = (float)$menu->productcivity;
+                                    $shift_hour    = (int)$menu->shift_hour;
+                                    $shift         = (int)$menu->shift;
+                                    $actual_cavity = (int)$molds->cavity_actual;
+
+                                    $capacity_hour  = ceil((3600 / $cycle) * $actual_cavity * ($productivity / 100));
+                                    $capacity_shift = ceil($capacity_hour * $shift_hour);
+                                    $capacity_day   = ceil($capacity_shift * $shift);
+
+                                    $this->crud->update("production_capacities", [
+                                        "machine_id" => $data['machine_id'],
+                                        "item_fg_id" => $data['item_fg_id'],
+                                    ], [
+                                        "capacity_hour"  => $capacity_hour,
+                                        "capacity_shift" => $capacity_shift,
+                                        "capacity_day"   => $capacity_day,
+                                    ]);
+                                }
+                            }
+                        // }
+
+
+                        $status = "update";
+                    } else {
+                        // Insert
+                        $this->crud->create('setting_molds', $dataFinal);
+
+                        $status = "insert";
+                    }
+
+                    $res_item = ($status === "insert" ? "Create" : "Update");
+                    $res_msg  = ($status === "insert" ? "Data Saved Successfully" : "Product No $item_fg_id->number, Mold ID $molds->id on Machine No $machine->number Data Updated");
+
+                    $results[] = [
+                        "status" => "success",
+                        "item" => $res_item,
+                        "message" => $res_msg
+                    ];
+                } catch (Exception $e) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => $item_fg_id->name,
+                        "message" => $e->getMessage()
+                    ];
+                    continue;
+                }
             }
+
+            $failed = array_filter($results, fn($r) => $r['status'] === 'failed');
+            $hasDbError = ($this->db->trans_status() === FALSE);
+
+            if (count($failed) > 0 || $hasDbError) {
+                $filePath = 'failed/setting_molds.xls';
+
+                $html = '
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body>
+                    <table border="1" cellspacing="0" cellpadding="5" style="border-collapse: collapse; font-family: Arial, sans-serif;">
+                        <thead style="background-color: #f2f2f2;">
+                            <tr>
+                                <th style="width: 40px; text-align: center;">No</th>
+                                <th style="width: 100px; text-align: left;">Line</th>
+                                <th style="width: 450px; text-align: left;">Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                ';
+
+                $no = 1;
+                foreach ($failed as $row) {
+                    $line = htmlspecialchars($row['item']);
+                    $msg  = htmlspecialchars($row['message']);
+                    $html .= "
+                        <tr>
+                            <td style='text-align: center;'>{$no}</td>
+                            <td style='text-align: left;'>{$line}</td>
+                            <td style='text-align: left;'>{$msg}</td>
+                        </tr>";
+                    $no++;
+                }
+
+                $html .= '
+                        </tbody>
+                    </table>
+                </body>
+                </html>';
+
+                file_put_contents($filePath, $html);
+
+                echo json_encode([
+                    "theme" => "error",
+                    "title" => "Upload Failed",
+                    "message" => "Data failed to save",
+                    "results" => $results,
+                    "total_expected" => $total_expected,
+                    "processed_count" => $processed_count,
+                    "stopped_at" => $index + 1
+                ]);
+            } else {
+                @unlink('failed/setting_molds.xls');
+
+                $this->db->trans_commit();
+                echo json_encode([
+                    "theme" => "success",
+                    "title" => "Upload Successfully",
+                    "message" => "Data uploaded successfully",
+                    "results" => $results,
+                    "total_expected" => $total_expected,
+                    "processed_count" => $processed_count,
+                    "stopped_at" => $index + 1
+                ]);
+            }
+
         }
     }
 
@@ -267,7 +683,7 @@ class Setting_molds extends CI_Controller
         $config = $this->db->get()->row();
         $config_iso = $this->db->get('config_iso')->row();
 
-        $this->db->select('a.*, b.number as item_fg_no, b.name as item_fg_name , c.number as machine_no , d.model as mold_model, d.actual as mold_actual, d.standard as mold_standard');
+        $this->db->select('a.*, b.number as item_fg_no, b.name as item_fg_name , c.number as machine_no , d.model as mold_model, d.cavity_actual as mold_actual, d.cavity_standard as mold_standard');
         $this->db->from('setting_molds a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('machines c', 'a.machine_id = c.id');

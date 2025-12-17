@@ -96,7 +96,7 @@ class Molds extends CI_Controller
         }
     }
     //UPDATE DATA
-    public function update()
+    public function updatev1()
     {
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
@@ -107,24 +107,161 @@ class Molds extends CI_Controller
             show_error("Cannot Process your request");
         }
     }
+
+    public function update()
+    {
+        if (!$this->input->post()) {
+            show_error("Cannot Process your request");
+        }
+
+        $this->db->trans_begin();
+
+        $id   = base64_decode($this->input->get('id'));
+        $post = $this->input->post();
+
+        $old = $this->crud->read('molds', [], ['id' => $id]);
+
+        unset($post['id']);
+        $this->crud->update('molds', ['id' => $id], $post);
+
+        if ((int)$old->cavity_actual !== (int)$post['cavity_actual']) {
+
+            $settings = $this->db->query("
+                SELECT 
+                    sm.item_fg_id,
+                    sm.machine_id,
+                    sm.mold_id,
+                    sm.cycle_time
+                FROM setting_molds sm
+                WHERE sm.mold_id = '{$id}'
+            ")->result();
+
+            foreach ($settings as $sm) {
+
+                $menu = $this->crud->read('menu_loadings', [], [
+                    'item_fg_id' => $sm->item_fg_id,
+                    'machine_id' => $sm->machine_id,
+                    'mold_id'    => $sm->mold_id
+                ]);
+
+                if (!$menu) {
+                    continue;
+                }
+
+                // UPDATE CYCLE TIME MENU LOADING
+                $this->crud->update('menu_loadings', [
+                    'item_fg_id' => $sm->item_fg_id,
+                    'machine_id' => $sm->machine_id,
+                    'mold_id'    => $sm->mold_id
+                ], [
+                    'cycle_time' => $sm->cycle_time
+                ]);
+
+                $pc = $this->crud->read('production_capacities', [], [
+                    'item_fg_id' => $sm->item_fg_id,
+                    'machine_id' => $sm->machine_id
+                ]);
+
+                if (!$pc) {
+                    continue;
+                }
+
+                $cycle         = (float)$sm->cycle_time;
+                $productivity  = (float)$menu->productcivity;
+                $shift_hour    = (int)$menu->shift_hour;
+                $shift         = (int)$menu->shift;
+                $actual_cavity = (int)$post['cavity_actual'];
+
+                $capacity_hour  = ceil((3600 / $cycle) * $actual_cavity * ($productivity / 100));
+                $capacity_shift = ceil($capacity_hour * $shift_hour);
+                $capacity_day   = ceil($capacity_shift * $shift);
+
+                // UPDATE PRODUCTION CAPACITIES
+                $this->crud->update('production_capacities', [
+                    'item_fg_id' => $sm->item_fg_id,
+                    'machine_id' => $sm->machine_id
+                ], [
+                    'capacity_hour'  => $capacity_hour,
+                    'capacity_shift' => $capacity_shift,
+                    'capacity_day'   => $capacity_day
+                ]);
+            }
+        }
+
+        if ($this->db->trans_status() === FALSE) {
+            $this->db->trans_rollback();
+            echo json_encode([
+                "theme"   => "error",
+                "title"   => "Failed",
+                "message" => "Update failed"
+            ]);
+        } else {
+            $this->db->trans_commit();
+            echo json_encode([
+                "theme"   => "success",
+                "title"   => "Success",
+                "message" => "Data updated successfully"
+            ]);
+        }
+    }
+
     //DELETE DATA
+    // public function delete()
+    // {
+    //     $data = $this->input->post();
+    //     $send = $this->crud->delete('molds', $data);
+    //     echo $send;
+    // }
+
     public function delete()
     {
         $data = $this->input->post();
+        $mold = $this->crud->read('molds', [], ['id' => $data['id'], 'deleted' => 0]);
+
+        if (empty($mold)) {
+            echo json_encode(
+                array(
+                "title" => "Data Not Found", 
+                "message" => "Mold data not found", 
+                "theme" => "error"
+            ));
+            return;
+        }
+
+        $used = $this->db
+            ->where('mold_id', $mold->id)
+            ->limit(1)
+            ->get('setting_molds')
+            ->num_rows();
+
+        if ($used > 0) {
+            echo json_encode(
+                array(
+                "title" => "Cannot Delete Data", 
+                "message" => "Cannot delete data that is still in use",
+                "theme" => "error"
+            ));
+            return;
+        }
+
         $send = $this->crud->delete('molds', $data);
         echo $send;
     }
+
     //UPLOAD DATA
     public function upload()
     {
         error_reporting(0);
         require_once 'assets/vendors/excel_reader2.php';
+
         $target = basename($_FILES['file_upload']['name']);
         move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
-        chmod($_FILES['file_upload']['name'], 0777);
-        $file = $_FILES['file_upload']['name'];
-        $data = new Spreadsheet_Excel_Reader($file, false);
+        chmod($target, 0777);
+
+        $data = new Spreadsheet_Excel_Reader($target, false);
         $total_row = $data->rowcount($sheet_index = 0);
+        $datas = [];
+
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
                 //excel
@@ -146,64 +283,147 @@ class Molds extends CI_Controller
                 'status' => $data->val($i, 17)
             );
         }
-        $datas['total'] = count($datas);
-        echo json_encode($datas);
-        unlink($_FILES['file_upload']['name']);
+
+        echo json_encode([
+            "total" => count($datas),
+            "data" => $datas
+        ]);
+
+        unlink($target);
     }
+
     public function uploadclearFailed()
     {
-        @unlink('failed/molds.txt');
+        @unlink('failed/molds.xls');
     }
-    public function uploadcreateFailed()
-    {
-        if ($this->input->post()) {
-            $message = $this->input->post('message');
-            $textFailed = fopen('failed/molds.txt', 'a');
-            fwrite($textFailed, $message . "\n");
-            fclose($textFailed);
-        }
-    }
-    //UPLOAD DOWNLOAD FAILED
+
     public function uploadDownloadFailed()
     {
-        $file = "failed/molds.txt";
-        header('Content-Description: File Failed');
-        header('Content-Disposition: attachment; filename=' . basename($file));
-        header('Expires: 0');
-        header('Cache-Control: must-revalidate');
-        header('Pragma: public');
-        header('Content-Length: ' . @filesize($file));
-        header("Content-Type: text/plain");
-        @readfile($file);
+        $file = "failed/molds.xls";
+
+        if (!file_exists($file)) {
+            echo "No failed data to download";
+            return;
+        }
+
+        $filename = "upload_failed_molds_" . date("Ymd_s") . ".xls";
+
+        header("Content-Description: File Upload Failed");
+        header("Content-type: application/vnd.ms-excel");
+        header("Content-Disposition: attachment; filename={$filename}");
+        header("Pragma: no-cache");
+        header("Expires: 0");
+
+        readfile($file);
     }
+
     //UPLOAD CREATE DATA
+    // public function uploadcreate()
+    // {
+    //     if ($this->input->post()) {
+    //         $data = $this->input->post('data');
+
+    //         //Cek Process Number          //table       //field        //field excel
+    //         // $molds = $this->crud->read('molds', [], ["number" => $data['number']]);
+    //         // $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
+    //         $customer = $this->crud->read('customers', [], ["number" => $data['customer_number']]);
+
+    //         //AUTOID
+    //         $code = $data['type'] . $data['model'];
+    //         $sql = $this->db->query("SELECT coalesce(max(`id`),0) as kode From molds where id like '%$code%'");
+    //         $row = $sql->row();
+    //         $kode = substr($row->kode, -3);
+    //         $autoid = "MD" . $code . "-" . sprintf("%03s", $kode + 1);
+
+
+    //         if (empty($customer->number)) {
+    //             echo json_encode(array("title" => "Not Found", "message" => "Customer " . $data['customer_number'] . " Not Found", "theme" => "error"));
+    //         } else {
+    //             $dataFinal = array(
+    //                 //field
+    //                 "id" => $autoid,
+    //                 "mold_name" => $data['mold_name'],
+    //                 "type" => $data['type'],
+    //                 "customer_id" => @$customer->id,
+    //                 "model" => $data['model'],
+    //                 "mold_size" => $data['mold_size'],
+    //                 "project_year" => $data['project_year'],
+    //                 "cavity_standard" => $data['cavity_standard'],
+    //                 "cavity_actual" => $data['cavity_actual'],
+    //                 "shoot_standard" => $data['shoot_standard'],
+    //                 "shoot_actual" => $data['shoot_actual'],
+    //                 "mold_type" => $data['mold_type'],
+    //                 "remark" => $data['remark'],
+    //                 "status" => $data['status'],
+    //                 "total_mold" => $data['total_mold'],
+    //                 "mold_no" => $data['mold_no'],
+    //                 "mold_year" => $data['mold_year'],
+    //                 "mold_size" => $data['mold_size'],
+    //             );
+    //             $send   = $this->crud->create('molds', $dataFinal);
+    //             echo $send;
+    //         }
+    //     }
+    // }
+
     public function uploadcreate()
     {
         if ($this->input->post()) {
-            $data = $this->input->post('data');
+            $raw = file_get_contents("php://input");
+            $postData = json_decode($raw, true);
 
-            //Cek Process Number          //table       //field        //field excel
-            // $molds = $this->crud->read('molds', [], ["number" => $data['number']]);
-            // $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
-            $customer = $this->crud->read('customers', [], ["number" => $data['customer_number']]);
+            $data_list = $postData['data'];
+            
+            $total_expected = count($data_list);
+            $processed_count = 0;
 
-            //AUTOID
-            $code = $data['type'] . $data['model'];
-            $sql = $this->db->query("SELECT coalesce(max(`id`),0) as kode From molds where id like '%$code%'");
-            $row = $sql->row();
-            $kode = substr($row->kode, -3);
-            $autoid = "MD" . $code . "-" . sprintf("%03s", $kode + 1);
+            $this->db->trans_begin();
+            $results = [];
 
+            foreach ($data_list as $index => $data) {
+                $processed_count++;
+                if (
+                    empty($data['mold_name']) ||
+                    empty($data['type']) ||
+                    empty($data['customer_number'])
+                   ) {
+                        $results[] = [
+                            "status" => "failed",
+                            "item" => "Line " . ($index + 1),
+                            "message" => "Invalid or missing data"
+                        ];
+                        continue;
+                }
 
-            if (empty($customer->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Customer " . $data['customer_number'] . " Not Found", "theme" => "error"));
-            } else {
+                $customer = $this->crud->read('customers', [], ["number" => $data['customer_number']]);
+                if (empty($customer)) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Customer " . $data['customer_number'] . " Not Found"
+                    ];
+                    continue;
+                }
+
+                $checkMold = $this->crud->read('molds', [], [
+                    "mold_name" => $data['mold_name'],
+                    "type" => $data['type'],
+                    "customer_id" => $customer->id,
+                ]);
+
+                //AUTOID
+                $code = $data['type'] . $data['model'];
+                $sql = $this->db->query("SELECT coalesce(max(`id`),0) as kode From molds where id like '%$code%'");
+                $row = $sql->row();
+                $kode = substr($row->kode, -3);
+                $autoid = "MD" . $code . "-" . sprintf("%03s", $kode + 1);
+
                 $dataFinal = array(
                     //field
                     "id" => $autoid,
                     "mold_name" => $data['mold_name'],
                     "type" => $data['type'],
-                    "customer_id" => @$customer->id,
+                    "customer_id" => $customer->id,
                     "model" => $data['model'],
                     "mold_size" => $data['mold_size'],
                     "project_year" => $data['project_year'],
@@ -219,11 +439,199 @@ class Molds extends CI_Controller
                     "mold_year" => $data['mold_year'],
                     "mold_size" => $data['mold_size'],
                 );
-                $send   = $this->crud->create('molds', $dataFinal);
-                echo $send;
+
+                try {
+                    if (!empty($checkMold)) {
+
+                        $old = $this->crud->read('molds', [], [
+                            "mold_name" => $data['mold_name'],
+                            "type" => $data['type'],
+                            "customer_id" => $customer->id,
+                        ]);
+
+                        // Update
+                        $this->db->update('molds', [
+                            "model" => $data['model'],
+                            "mold_size" => $data['mold_size'],
+                            "project_year" => $data['project_year'],
+                            "cavity_standard" => $data['cavity_standard'],
+                            "cavity_actual" => $data['cavity_actual'],
+                            "shoot_standard" => $data['shoot_standard'],
+                            "shoot_actual" => $data['shoot_actual'],
+                            "mold_type" => $data['mold_type'],
+                            "remark" => $data['remark'],
+                            "status" => $data['status'],
+                            "total_mold" => $data['total_mold'],
+                            "mold_no" => $data['mold_no'],
+                            "mold_year" => $data['mold_year'],
+                            "mold_size" => $data['mold_size'],
+                        ], [
+                            "mold_name" => $data['mold_name'],
+                            "type" => $data['type'],
+                            "customer_id" => $customer->id,
+                        ]);
+
+                        if ((int)$old->cavity_actual !== (int)$data['cavity_actual']) {
+
+                            $settings = $this->db->query("
+                                SELECT 
+                                    sm.item_fg_id,
+                                    sm.machine_id,
+                                    sm.mold_id,
+                                    sm.cycle_time
+                                FROM setting_molds sm
+                                WHERE sm.mold_id = '{$old->id}'
+                            ")->result();
+
+                            foreach ($settings as $sm) {
+
+                                $menu = $this->crud->read('menu_loadings', [], [
+                                    'item_fg_id' => $sm->item_fg_id,
+                                    'machine_id' => $sm->machine_id,
+                                    'mold_id'    => $sm->mold_id
+                                ]);
+
+                                if (!$menu) {
+                                    continue;
+                                }
+
+                                // UPDATE CYCLE TIME MENU LOADING
+                                $this->crud->update('menu_loadings', [
+                                    'item_fg_id' => $sm->item_fg_id,
+                                    'machine_id' => $sm->machine_id,
+                                    'mold_id'    => $sm->mold_id
+                                ], [
+                                    'cycle_time' => $sm->cycle_time
+                                ]);
+
+                                $pc = $this->crud->read('production_capacities', [], [
+                                    'item_fg_id' => $sm->item_fg_id,
+                                    'machine_id' => $sm->machine_id
+                                ]);
+
+                                if (!$pc) {
+                                    continue;
+                                }
+
+                                $cycle         = (float)$sm->cycle_time;
+                                $productivity  = (float)$menu->productcivity;
+                                $shift_hour    = (int)$menu->shift_hour;
+                                $shift         = (int)$menu->shift;
+                                $actual_cavity = (int)$data['cavity_actual'];
+
+                                $capacity_hour  = ceil((3600 / $cycle) * $actual_cavity * ($productivity / 100));
+                                $capacity_shift = ceil($capacity_hour * $shift_hour);
+                                $capacity_day   = ceil($capacity_shift * $shift);
+
+                                // UPDATE PRODUCTION CAPACITIES
+                                $this->crud->update('production_capacities', [
+                                    'item_fg_id' => $sm->item_fg_id,
+                                    'machine_id' => $sm->machine_id
+                                ], [
+                                    'capacity_hour'  => $capacity_hour,
+                                    'capacity_shift' => $capacity_shift,
+                                    'capacity_day'   => $capacity_day
+                                ]);
+                            }
+                        }
+
+                        $status = "update";
+                    } else {
+                        // Insert
+                        $this->crud->create('molds', $dataFinal);
+
+                        $status = "insert";
+                    }
+
+                    $res_item = ($status === "insert" ? "Create" : "Update");
+                    $res_msg  = ($status === "insert" ? "Data Saved Successfully" : "Data Updated Successfully");
+
+                    $results[] = [
+                        "status" => "success",
+                        "item" => $res_item,
+                        "message" => $res_msg
+                    ];
+                } catch (Exception $e) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => $data['mold_name'],
+                        "message" => $e->getMessage()
+                    ];
+                    continue;
+                }
             }
+
+            $failed = array_filter($results, fn($r) => $r['status'] === 'failed');
+            $hasDbError = ($this->db->trans_status() === FALSE);
+
+            if (count($failed) > 0 || $hasDbError) {
+                $filePath = 'failed/setting_molds.xls';
+
+                $html = '
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body>
+                    <table border="1" cellspacing="0" cellpadding="5" style="border-collapse: collapse; font-family: Arial, sans-serif;">
+                        <thead style="background-color: #f2f2f2;">
+                            <tr>
+                                <th style="width: 40px; text-align: center;">No</th>
+                                <th style="width: 100px; text-align: left;">Line</th>
+                                <th style="width: 450px; text-align: left;">Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                ';
+
+                $no = 1;
+                foreach ($failed as $row) {
+                    $line = htmlspecialchars($row['item']);
+                    $msg  = htmlspecialchars($row['message']);
+                    $html .= "
+                        <tr>
+                            <td style='text-align: center;'>{$no}</td>
+                            <td style='text-align: left;'>{$line}</td>
+                            <td style='text-align: left;'>{$msg}</td>
+                        </tr>";
+                    $no++;
+                }
+
+                $html .= '
+                        </tbody>
+                    </table>
+                </body>
+                </html>';
+
+                file_put_contents($filePath, $html);
+
+                echo json_encode([
+                    "theme" => "error",
+                    "title" => "Upload Failed",
+                    "message" => "Data failed to save",
+                    "results" => $results,
+                    "total_expected" => $total_expected,
+                    "processed_count" => $processed_count,
+                    "stopped_at" => $index + 1
+                ]);
+            } else {
+                @unlink('failed/setting_molds.xls');
+
+                $this->db->trans_commit();
+                echo json_encode([
+                    "theme" => "success",
+                    "title" => "Upload Successfully",
+                    "message" => "Data uploaded successfully",
+                    "results" => $results,
+                    "total_expected" => $total_expected,
+                    "processed_count" => $processed_count,
+                    "stopped_at" => $index + 1
+                ]);
+            }
+
         }
     }
+
     //PRINT & EXCEL DATA
     public function print($option = "")
     {

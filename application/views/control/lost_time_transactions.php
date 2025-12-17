@@ -1218,6 +1218,7 @@
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
+                                toastr.success(result.message);
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
                                 toastr.error(jqXHR.statusText);

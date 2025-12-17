@@ -489,18 +489,14 @@ class Output_production_press extends CI_Controller
         echo json_encode($machines);
     }
 
-    public function create()
+    public function createv1()
     {
         if ($this->input->post()) {
             $post = $this->input->post();
 
+            $this->db->trans_begin();
+
             $dataFinal = array(
-                //field
-                // "trans_date" => $post['trans_date'],
-                // "number" => $post['number'],
-                // "period" => $post['period'],
-                // "wp" => $post['wp'],
-                // "shift" => $post['shift'],
                 "item_fg_id" => $post['item_fg_id'],
                 "machine_id" => $post['machine_id'],
                 "mold_id" => $post['mold_id'],
@@ -508,40 +504,114 @@ class Output_production_press extends CI_Controller
                 "qty_ok" => $post['qty_ok'],
                 "qty_ng" => $post['qty_ng'],
                 "qty_ng_mold" => $post['qty_ng_mold'],
-                // "workorder" => $post['workorder'],
                 "workorder" => !empty($post['workorder']) ? $post['workorder'] : null,
                 "actual_cavity" => $post['actual_cavity'],
                 "operator" => $post['operator'],
                 "pic" => $post['pic'],
-                // "standard_curing_time" => $post['standard_curing_time'],
                 "actual_curing_time" => $post['actual_curing_time'],
                 "shift_hour" => $post['shift_hour'],
-                // "target_shoot" => $post['target_shoot'],
                 "actual_shoot" => $post['actual_shoot'],
                 "total_compound_used" => $post['total_compound_used'],
                 "waste" => $post['waste'],
-                // "mold_cleaning" => $post['mold_cleaning'],
-                // "trial" => $post['trial'],
-                // "mold_changing" => $post['mold_changing'],
-                // "machine_repair" => $post['machine_repair'],
-                // "mold_repair" => $post['mold_repair'],
-                // "others" => $post['others'],
-                // "remarks" => $post['remarks'],
             );
-
-            $dataFinalMold = [
-                "cavity_actual" => $post['actual_cavity'],
-            ];
 
             if (!isset($post['workorder']) || $post['workorder'] === '' || $post['workorder'] === 'null') {
                 $post['workorder'] = null;
             }
 
+            if(!empty($post['item_fg_id']) && !empty($post['machine_id']) && !empty($post['mold_id'])) {
+                $machine_id = $post['machine_id'];
+                $item_fg_id = $post['item_fg_id'];
+                $mold_id    = $post['mold_id'];
+                $actual_cavity = $post['actual_cavity'];
+
+                $dataFinalMold = [
+                    "cavity_actual" => $post['actual_cavity'],
+                ];
+
+                $mold = $this->crud->read("molds", [], ["id" => $post['mold_id']]);
+                if($mold && $mold->cavity_actual != $actual_cavity) {
+
+                    if(!empty($post['mold_id']) || $post['mold_id'] !== '' || $post['mold_id'] !== 'null') {
+                        $this->crud->update("molds", ["id" => $post['mold_id']], $dataFinalMold);
+                    }
+
+                    $checkMachine = $this->db->get_where('machines', ['id' => $machine_id])->row();
+                    $checkItemFg = $this->db->get_where('item_fg', ['id' => $item_fg_id])->row();
+                    $checkMold = $this->db->get_where('molds', ['id' => $mold_id])->row();
+
+                    $dataItem = $this->crud->query("
+                        SELECT DISTINCT
+                            a.item_fg_id,
+                            d.number AS item_fg_number,
+                            d.name AS item_fg_name,
+                            a.machine_id,
+                            b.number AS machine_number,
+                            a.cycle_time,
+                            a.productcivity,
+                            c.cavity_actual,
+                            a.shift,
+                            a.shift_hour,
+                            d.item_family_number,
+                            d.mpq,
+                            c.id AS mold_id
+                        FROM menu_loadings a 
+                        JOIN machines b ON a.machine_id = b.id
+                        JOIN item_fg d ON a.item_fg_id = d.id
+                        JOIN molds c ON a.mold_id = c.id
+                        WHERE a.machine_id = '$machine_id'
+                        AND a.item_fg_id = '$item_fg_id'
+                        AND a.mold_id = '$mold_id'
+                    ");
+
+                    if (empty($dataItem)) {
+                        $this->db->trans_rollback();
+                        echo json_encode([
+                            "theme" => "error",
+                            "title" => "Invalid Combination",
+                            "message" => "Menu Loading data not found for the selected Machine No. $checkMachine->number, Product No. $checkItemFg->number , and Mold ID $checkMold->id"
+                        ]);
+                        return;
+                    }
+
+                    $production_capacity = $this->crud->read("production_capacities", [], [
+                        "machine_id" => $machine_id,
+                        "item_fg_id" => $item_fg_id,
+                    ]);
+
+                    if(empty($production_capacity)) {
+                        $this->db->trans_rollback();
+                        echo json_encode([
+                            "theme" => "error",
+                            "title" => "Invalid Combination",
+                            "message" => "Production Capacity data not found for the selected Machine No. $checkMachine->number, Product No. $checkItemFg->number , and Mold ID $checkMold->id"
+                        ]);
+                        return;
+                    }
+
+                    $capacity_hour = ceil((3600 / $dataItem[0]->cycle_time) * $actual_cavity * ($dataItem[0]->productcivity / 100));
+                    $capacity_shift = ceil($capacity_hour * $dataItem[0]->shift_hour);
+                    $capacity_day = ceil($capacity_shift * $dataItem[0]->shift);
+
+                    $dataFinalCapacity = [
+                        "capacity_hour" => $capacity_hour,
+                        "capacity_shift" => $capacity_shift,
+                        "capacity_day" => $capacity_day,
+                    ];
+
+                    $this->crud->update("production_capacities", [
+                        "machine_id" => $machine_id,
+                        "item_fg_id" => $item_fg_id,
+                    ], $dataFinalCapacity);
+                }
+            }
+
+            
             if (@$post['id'] != "") {
 
-                if(!empty($post['mold_id']) || $post['mold_id'] !== '' || $post['mold_id'] !== 'null') {
-                    $this->crud->update("molds", ["id" => $post['mold_id']], $dataFinalMold);
-                }
+                // if(!empty($post['mold_id']) || $post['mold_id'] !== '' || $post['mold_id'] !== 'null') {
+                //     $this->crud->update("molds", ["id" => $post['mold_id']], $dataFinalMold);
+                // }
 
                 $send = $this->crud->update('output_production_press', ["id" => $post['id']], $dataFinal);
             } else {
@@ -569,14 +639,190 @@ class Output_production_press extends CI_Controller
 
                 $send = $this->crud->create('output_production_press', $post);
 
-                if(!empty($post['mold_id']) || $post['mold_id'] !== '' || $post['mold_id'] !== 'null') {
-                    $this->crud->update("molds", ["id" => $post['mold_id']], $dataFinalMold);
-                }
+                // if(!empty($post['mold_id']) || $post['mold_id'] !== '' || $post['mold_id'] !== 'null') {
+                //     $this->crud->update("molds", ["id" => $post['mold_id']], $dataFinalMold);
+                // }
             }
-            echo $send;
+
+
+            if ($this->db->trans_status() === FALSE) {
+                $this->db->trans_rollback();
+                echo json_encode([
+                    "title" => "Error",
+                    "message" => "Failed to be create or update data",
+                    "theme" => "error"
+                ]);
+                return;
+            }
+
+            $this->db->trans_commit();
+
+            echo json_encode([
+                "title" => "Success",
+                "message" => "Data saved successfully",
+                "theme" => "success"
+            ]);
+
+            // echo $send;
         } else {
             show_error("Cannot Process your request");
         }
+    }
+
+    public function create()
+    {
+        if (!$this->input->post('items')) {
+            show_error("Cannot process your request.");
+        }
+
+        $items = $this->input->post('items');
+        $errors = [];
+        $success_count = 0;
+
+        $this->db->trans_begin();
+
+        foreach ($items as $post) {
+
+            $dataFinal = [
+                "item_fg_id" => $post['item_fg_id'],
+                "machine_id" => $post['machine_id'],
+                "mold_id" => $post['mold_id'],
+                "planning_qty" => $post['planning_qty'],
+                "qty_ok" => $post['qty_ok'],
+                "qty_ng" => $post['qty_ng'],
+                "qty_ng_mold" => $post['qty_ng_mold'],
+                "workorder" => !empty($post['workorder']) ? $post['workorder'] : null,
+                "actual_cavity" => $post['actual_cavity'],
+                "operator" => $post['operator'],
+                "pic" => $post['pic'],
+                "actual_curing_time" => $post['actual_curing_time'],
+                "shift_hour" => $post['shift_hour'],
+                "actual_shoot" => $post['actual_shoot'],
+                "total_compound_used" => $post['total_compound_used'],
+                "waste" => $post['waste'],
+            ];
+
+            if (!isset($post['workorder']) || $post['workorder'] === '' || $post['workorder'] === 'null') {
+                $post['workorder'] = null;
+            }
+
+            if (!empty($post['item_fg_id']) && !empty($post['machine_id']) && !empty($post['mold_id'])) {
+
+                $machine_id = $post['machine_id'];
+                $item_fg_id = $post['item_fg_id'];
+                $mold_id    = $post['mold_id'];
+                $actual_cavity = $post['actual_cavity'];
+
+                $mold = $this->crud->read("molds", [], ["id" => $mold_id]);
+
+                if ($mold && $mold->cavity_actual != $actual_cavity) {
+
+                    // update cavity molds
+                    $this->crud->update("molds", ["id" => $mold_id], [
+                        "cavity_actual" => $actual_cavity
+                    ]);
+
+                    $checkMachine = $this->db->get_where('machines', ['id' => $machine_id])->row();
+                    $checkItemFg = $this->db->get_where('item_fg', ['id' => $item_fg_id])->row();
+                    $checkMold = $this->db->get_where('molds', ['id' => $mold_id])->row();
+
+                    // cek menu loading
+                    $dataItem = $this->crud->query("
+                        SELECT DISTINCT
+                            a.item_fg_id,
+                            d.number AS item_fg_number,
+                            d.name AS item_fg_name,
+                            a.machine_id,
+                            b.number AS machine_number,
+                            a.cycle_time,
+                            a.productcivity,
+                            c.cavity_actual,
+                            a.shift,
+                            a.shift_hour,
+                            d.item_family_number,
+                            d.mpq,
+                            c.id AS mold_id
+                        FROM menu_loadings a 
+                        JOIN machines b ON a.machine_id = b.id
+                        JOIN item_fg d ON a.item_fg_id = d.id
+                        JOIN molds c ON a.mold_id = c.id
+                        WHERE a.machine_id = '$machine_id'
+                        AND a.item_fg_id = '$item_fg_id'
+                        AND a.mold_id = '$mold_id'
+                    ");
+
+                    if (empty($dataItem)) {
+                        $errors[] = "Menu Loading data not found for Machine No. $checkMachine->number, Product No. $checkItemFg->number and Mold ID $checkMold->id";
+                        continue;
+                    }
+
+                    $production_capacity = $this->crud->read("production_capacities", [], [
+                        "machine_id" => $machine_id,
+                        "item_fg_id" => $item_fg_id,
+                    ]);
+
+                    if(empty($production_capacity)) {
+                        $errors[] = "Production Capacity data not found for Machine No. $checkMachine->number, Product No. $checkItemFg->number , and Mold ID $checkMold->id";
+                        continue;
+                    }
+
+                    // hitung kapasitas
+                    $cycle = $dataItem[0]->cycle_time;
+                    $productivity = $dataItem[0]->productcivity;
+                    $shift_hour = $dataItem[0]->shift_hour;
+                    $shift = $dataItem[0]->shift;
+
+                    $capacity_hour = ceil((3600 / $cycle) * $actual_cavity * ($productivity / 100));
+                    $capacity_shift = ceil($capacity_hour * $shift_hour);
+                    $capacity_day = ceil($capacity_shift * $shift);
+
+                    $this->crud->update("production_capacities", [
+                        "machine_id" => $machine_id,
+                        "item_fg_id" => $item_fg_id,
+                    ], [
+                        "capacity_hour" => $capacity_hour,
+                        "capacity_shift" => $capacity_shift,
+                        "capacity_day" => $capacity_day,
+                    ]);
+                }
+            }
+
+            if (!empty($post['id'])) {
+                // UPDATE MODE
+                $result = $this->crud->update(
+                    'output_production_press',
+                    ["id" => $post['id']],
+                    $dataFinal
+                );
+            } else {
+                // INSERT MODE
+                $result = $this->crud->create('output_production_press', $post);
+            }
+
+            if ($result) {
+                $success_count++;
+            } else {
+                $errors[] = "Failed saving output press for Machine ID {$post['machine_id']}";
+            }
+        }
+
+        if ($this->db->trans_status() === FALSE || !empty($errors)) {
+            $this->db->trans_rollback();
+            echo json_encode([
+                "title" => "Failed to Save",
+                "message" => implode("\n", array_unique($errors)),
+                "theme" => "error"
+            ]);
+            return;
+        }
+
+        $this->db->trans_commit();
+
+        echo json_encode([
+            "title" => "Success",
+            "message" => "Data saved successfully",
+            "theme" => "success"
+        ]);
     }
 
     public function delete()
@@ -698,6 +944,505 @@ class Output_production_press extends CI_Controller
     }
 
     //UPLOAD CREATE DATA
+    // public function uploadcreate()
+    // {
+    //     if ($this->input->post()) {
+    //         $raw = file_get_contents("php://input");
+    //         $postData = json_decode($raw, true);
+
+    //         $data_list = $postData['data'];
+            
+    //         $total_expected = count($data_list);
+    //         $processed_count = 0;
+
+    //         $this->db->trans_begin();
+    //         $results = [];
+
+    //         $groupNumbers = [];
+    //         foreach ($data_list as $index => $data) {
+    //             $processed_count++;
+
+    //             if (empty($data['period'])) {
+    //                 $results[] = [
+    //                     "status"  => "failed",
+    //                     "item"    => "Line " . ($index + 1),
+    //                     "message" => "Period is required"
+    //                 ];
+    //                 continue;
+    //             }
+    //             if (!preg_match('/^\d{6}$/', $data['period'])) {
+    //                 $results[] = [
+    //                     "status"  => "failed",
+    //                     "item"    => "Line " . ($index + 1),
+    //                     "message" => "Period format must be YYYYMM"
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             if (empty($data['trans_date'])) {
+    //                 $results[] = [
+    //                     "status"  => "failed",
+    //                     "item"    => "Line " . ($index + 1),
+    //                     "message" => "Production Date is required"
+    //                 ];
+    //                 continue;
+    //             }
+    //             if (!strtotime($data['trans_date'])) {
+    //                 $results[] = [
+    //                     "status"  => "failed",
+    //                     "item"    => "Line " . ($index + 1),
+    //                     "message" => "Production Date is invalid format"
+    //                 ];
+    //                 continue;
+    //             }
+    //             if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/', $data['trans_date'])) {
+    //                 $results[] = [
+    //                     "status"  => "failed",
+    //                     "item"    => "Line " . ($index + 1),
+    //                     "message" => "Production Date must be in format YYYY-MM-DD"
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             if (empty($data['wp'])) {
+    //                 $results[] = [
+    //                     "status"  => "failed",
+    //                     "item"    => "Line " . ($index + 1),
+    //                     "message" => "WP No is required"
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             if (empty($data['shift'])) {
+    //                 $results[] = [
+    //                     "status"  => "failed",
+    //                     "item"    => "Line " . ($index + 1),
+    //                     "message" => "Shift is required"
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             if (!in_array($data['shift'], [1, 2, 3])) {
+    //                 $results[] = [
+    //                     "status"  => "failed",
+    //                     "item"    => "Line " . ($index + 1),
+    //                     "message" => "Shift must be 1, 2, or 3"
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             if (empty($data['machine_id'])) {
+    //                 $results[] = [
+    //                     "status"  => "failed",
+    //                     "item"    => "Line " . ($index + 1),
+    //                     "message" => "Machine No is required"
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             if (empty($data['item_fg_id'])) {
+    //                 $results[] = [
+    //                     "status"  => "failed",
+    //                     "item"    => "Line " . ($index + 1),
+    //                     "message" => "Product No is required"
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             if (empty($data['workorder'])) {
+    //                 $results[] = [
+    //                     "status"  => "failed",
+    //                     "item"    => "Line " . ($index + 1),
+    //                     "message" => "Work Order is required"
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             if ($data['qty_ok'] === "" || !is_numeric($data['qty_ok'])) {
+    //                 $results[] = [
+    //                     "status"  => "failed",
+    //                     "item"    => "Line " . ($index + 1),
+    //                     "message" => "Qty OK must be numeric and not empty"
+    //                 ];
+    //                 continue;
+    //             }
+    //             if ($data['qty_ng'] === "" || !is_numeric($data['qty_ng'])) {
+    //                 $results[] = [
+    //                     "status"  => "failed",
+    //                     "item"    => "Line " . ($index + 1),
+    //                     "message" => "Qty NG must be numeric and not empty"
+    //                 ];
+    //                 continue;
+    //             }
+    //             if ($data['qty_ng_mold'] === "" || !is_numeric($data['qty_ng_mold'])) {
+    //                 $results[] = [
+    //                     "status"  => "failed",
+    //                     "item"    => "Line " . ($index + 1),
+    //                     "message" => "Qty NG Mold must be numeric and not empty"
+    //                 ];
+    //                 continue;
+    //             }
+    //             if ($data['actual_cavity'] === "" || !is_numeric($data['actual_cavity'])) {
+    //                 $results[] = [
+    //                     "status"  => "failed",
+    //                     "item"    => "Line " . ($index + 1),
+    //                     "message" => "Actual Cavity must be numeric and not empty"
+    //                 ];
+    //                 continue;
+    //             }
+    //             // if ($data['standard_curing_time'] === "" || !is_numeric($data['standard_curing_time'])) {
+    //             //     $results[] = [
+    //             //         "status"  => "failed",
+    //             //         "item"    => "Line " . ($index + 1),
+    //             //         "message" => "Standard Curing Time must be numeric and not empty"
+    //             //     ];
+    //             //     continue;
+    //             // }
+    //             if ($data['actual_curing_time'] === "" || !is_numeric($data['actual_curing_time'])) {
+    //                 $results[] = [
+    //                     "status"  => "failed",
+    //                     "item"    => "Line " . ($index + 1),
+    //                     "message" => "Actual Curing Time must be numeric and not empty"
+    //                 ];
+    //                 continue;
+    //             }
+    //             if ($data['shift_hour'] === "" || !is_numeric($data['shift_hour'])) {
+    //                 $results[] = [
+    //                     "status"  => "failed",
+    //                     "item"    => "Line " . ($index + 1),
+    //                     "message" => "Hour/Shift must be numeric and not empty"
+    //                 ];
+    //                 continue;
+    //             }
+    //             // if ($data['target_shoot'] === "" || !is_numeric($data['target_shoot'])) {
+    //             //     $results[] = [
+    //             //         "status"  => "failed",
+    //             //         "item"    => "Line " . ($index + 1),
+    //             //         "message" => "Target Shoot must be numeric and not empty"
+    //             //     ];
+    //             //     continue;
+    //             // }
+    //             if ($data['actual_shoot'] === "" || !is_numeric($data['actual_shoot'])) {
+    //                 $results[] = [
+    //                     "status"  => "failed",
+    //                     "item"    => "Line " . ($index + 1),
+    //                     "message" => "Actual Shoot must be numeric and not empty"
+    //                 ];
+    //                 continue;
+    //             }
+    //             if ($data['total_compound_used'] === "") {
+    //                 $results[] = [
+    //                     "status"  => "failed",
+    //                     "item"    => "Line " . ($index + 1),
+    //                     "message" => "Total Compound Used must be numeric and not empty"
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             // $data['process_id'] = 'PC006'; // Pressing process
+    //             // $wp = $data['wp'];
+
+    //             // Validasi qty tidak boleh kosong atau nol
+    //             // if (!isset($data['qty']) || $data['qty'] == "" || $data['qty'] == null) {
+    //             //     $results[] = [
+    //             //         "status" => "failed",
+    //             //         "item" => "Line " . ($index + 1),
+    //             //         "message" => "Quantity must be greater than 0"
+    //             //     ];
+    //             //     continue;
+    //             // }
+
+    //             $groupKey = $data['period'] . '|' . $data['trans_date'] . '|' . $data['wp'] . '|' . $data['shift'];
+
+    //             if (!isset($groupNumbers[$groupKey])) {
+    //                 $groupNumbers[$groupKey] = $this->autonumber_excel($data['trans_date']);
+    //             }
+
+    //             $groupNumber = $groupNumbers[$groupKey];
+
+    //             $machine = $this->crud->read('machines', [], ["number" => $data['machine_id']]);
+    //             if (empty($machine)) {
+    //                 $results[] = [
+    //                     "status" => "failed",
+    //                     "item" => "Line " . ($index + 1),
+    //                     "message" => "Machine No. " . $data['machine_id'] . " Not Found"
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             $checkMachineProdSchPress = $this->crud->read('production_schedule_press', [], ["machine_id" => $machine->id]);
+
+    //             if (empty($checkMachineProdSchPress)) {
+    //                 $results[] = [
+    //                     "status" => "failed",
+    //                     "item" => "Line " . ($index + 1),
+    //                     "message" => "Machine No. " . $data['machine_id'] . " not found in Production Schedule Press"
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             $item_fg = $this->crud->read('item_fg', [], ["number" => $data['item_fg_id']]);
+    //             if (empty($item_fg)) {
+    //                 $results[] = [
+    //                     "status" => "failed",
+    //                     "item" => "Line " . ($index + 1),
+    //                     "message" => "Product No. " . $data['item_fg_id'] . " Not Found"
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             $checkItemProdSchPress = $this->crud->read('production_schedule_press', [], [
+    //                 "machine_id" => $machine->id,
+    //                 "item_fg_id" => $item_fg->id
+    //             ]);
+
+    //             if (empty($checkItemProdSchPress)) {
+    //                 $results[] = [
+    //                     "status" => "failed",
+    //                     "item" => "Line " . ($index + 1),
+    //                     "message" => "Product No. " . $data['item_fg_id'] . " not found in Production Schedule Press for Machine " . $data['machine_id']
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             $checkWPProdSchPress = $this->crud->read('production_schedule_press', [], [
+    //                 "wp" => $data['wp'],
+    //                 "machine_id" => $machine->id,
+    //                 "item_fg_id" => $item_fg->id,
+    //             ]);
+
+    //             if (empty($checkWPProdSchPress)) {
+    //                 $results[] = [
+    //                     "status" => "failed",
+    //                     "item" => "Line " . ($index + 1),
+    //                     "message" => "WP No. {$data['wp']} not found in Production Schedule Press ". "for Product No. {$item_fg->number} on Machine {$machine->number}."
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             $checkWOProdSchPress = $this->crud->read('production_schedule_press', [], [
+    //                 "machine_id" => $machine->id,
+    //                 "item_fg_id" => $item_fg->id,
+    //                 "workorder" => $data['workorder'],
+    //             ]);
+
+    //             if (empty($checkWOProdSchPress)) {
+    //                 $results[] = [
+    //                     "status" => "failed",
+    //                     "item" => "Line " . ($index + 1),
+    //                     "message" => "Work Order No. {$data['workorder']} not found in Production Schedule Press ". "for Product No. {$item_fg->number} on Machine {$machine->number}."
+    //                 ];
+    //                 continue;
+    //             }
+
+    //             $planning_qty = @$checkWOProdSchPress->qty;
+
+    //             $checkData = $this->crud->read('output_production_press', [], [
+    //                 "period"     => $data['period'],
+    //                 "trans_date" => $data['trans_date'],
+    //                 "wp"         => $data['wp'],
+    //                 "shift"      => $data['shift'],
+    //                 "machine_id" => $machine->id,
+    //                 "item_fg_id" => $item_fg->id,
+    //                 "mold_id"    => $checkWOProdSchPress->mold_id,
+    //                 "workorder"  => $data['workorder'],
+    //             ]);
+
+    //             // if (!empty($checkData)) {
+    //             //     $results[] = [
+    //             //         "status" => "failed",
+    //             //         "item" => "Line " . ($index + 1),
+    //             //         "message" => "Duplicate Data: Period " . $data['period'] . 
+    //             //                     ", Product No. " . $data['item_fg_id'] . 
+    //             //                     ", Machine No. " . $data['machine_id'] . 
+    //             //                     ", WP No. " . $wp . 
+    //             //                     ", Trans Date " . $data['trans_date']
+    //             //     ];
+    //             //     continue;
+    //             // }
+
+    //             // // Generate workorder
+    //             // $workorder = $data['workorder'];
+
+    //             // // Generate month dan year dari trans_date
+    //             // $dateObj = DateTime::createFromFormat('Y-m-d', $data['trans_date']);
+    //             // $year = $dateObj->format('Y');
+    //             // $month = $dateObj->format('m');
+
+    //             $dataFinal = array(
+    //                 "period"                => $data['period'],
+    //                 "number"                => $groupNumber,
+    //                 "trans_date"            => $data['trans_date'],
+    //                 "wp"                    => $data['wp'],
+    //                 "shift"                 => $data['shift'],
+    //                 "machine_id"            => $machine->id,
+    //                 "item_fg_id"            => $item_fg->id,
+    //                 "mold_id"               => $checkWOProdSchPress->mold_id,
+    //                 "workorder"             => $data['workorder'],
+    //                 "planning_qty"          => $planning_qty,
+    //                 "qty_ok"                => $data['qty_ok'],
+    //                 "qty_ng"                => $data['qty_ng'],
+    //                 "qty_ng_mold"           => $data['qty_ng_mold'],
+    //                 "actual_cavity"         => $data['actual_cavity'],
+
+    //                 // "standard_curing_time"  => $data['standard_curing_time'],
+    //                 "actual_curing_time"    => $data['actual_curing_time'],
+    //                 "shift_hour"            => $data['shift_hour'],
+    //                 // "target_shoot"          => $data['target_shoot'],
+    //                 "actual_shoot"          => $data['actual_shoot'],
+    //                 "total_compound_used"   => $data['total_compound_used'],
+    //                 "waste"                 => $data['waste'],
+    //                 // "mold_cleaning"         => $data['mold_cleaning'],
+    //                 // "trial"                 => $data['trial'],
+    //                 // "mold_changing"         => $data['mold_changing'],
+    //                 // "machine_repair"        => $data['machine_repair'],
+    //                 // "mold_repair"           => $data['mold_repair'],
+    //                 // "others"                => $data['others'],
+
+    //                 "operator"              => $data['operator'],
+    //                 "pic"                   => $data['pic'],
+    //                 // "remarks"               => $data['remarks'],
+    //             );
+
+    //             try {
+    //                 if (!empty($checkData)) {
+    //                     // Update
+    //                     $this->db->update('output_production_press', [
+    //                         "qty_ok"                => $data['qty_ok'],
+    //                         "qty_ng"                => $data['qty_ng'],
+    //                         "qty_ng_mold"           => $data['qty_ng_mold'],
+    //                         "actual_cavity"         => $data['actual_cavity'],
+    //                         // "standard_curing_time"  => $data['standard_curing_time'],
+    //                         "actual_curing_time"    => $data['actual_curing_time'],
+    //                         "shift_hour"            => $data['shift_hour'],
+    //                         // "target_shoot"          => $data['target_shoot'],
+    //                         "actual_shoot"          => $data['actual_shoot'],
+    //                         "total_compound_used"   => $data['total_compound_used'],
+    //                         "waste"                 => $data['waste'],
+    //                         // "mold_cleaning"         => $data['mold_cleaning'],
+    //                         // "trial"                 => $data['trial'],
+    //                         // "mold_changing"         => $data['mold_changing'],
+    //                         // "machine_repair"        => $data['machine_repair'],
+    //                         // "mold_repair"           => $data['mold_repair'],
+    //                         // "others"                => $data['others'],
+    //                         "operator"              => $data['operator'],
+    //                         "pic"                   => $data['pic'],
+    //                         // "remarks"               => $data['remarks'],
+    //                     ], [
+    //                         "period"     => $data['period'],
+    //                         "trans_date" => $data['trans_date'],
+    //                         "wp"         => $data['wp'],
+    //                         "shift"      => $data['shift'],
+    //                         "machine_id" => $machine->id,
+    //                         "item_fg_id" => $item_fg->id,
+    //                         "mold_id"    => $checkWOProdSchPress->mold_id,
+    //                         "workorder"  => $data['workorder'],
+    //                     ]);
+
+    //                     $status = "update";
+    //                 } else {
+    //                     // Insert
+    //                     $this->crud->create('output_production_press', $dataFinal);
+
+    //                     $status = "insert";
+    //                 }
+
+    //                 if(!empty($checkWOProdSchPress->mold_id) || $checkWOProdSchPress->mold_id !== '' || $checkWOProdSchPress->mold_id !== 'null') {
+    //                     $dataFinalMold = [
+    //                         "cavity_actual" => $data['actual_cavity'],
+    //                     ];
+    //                     $this->crud->update("molds", ["id" => $checkWOProdSchPress->mold_id], $dataFinalMold);
+    //                 }
+
+    //                 $res_item = ($status === "insert" ? "Create" : "Update");
+    //                 $res_msg  = ($status === "insert" ? "Data Saved Successfully" : "WP {$data['wp']} Shift {$data['shift']} for Product {$item_fg->number} on Machine {$machine->number} updated");
+
+    //                 $results[] = [
+    //                     "status" => "success",
+    //                     "item" => $res_item,
+    //                     "message" => $res_msg
+    //                 ];
+    //             } catch (Exception $e) {
+    //                 $results[] = [
+    //                     "status" => "failed",
+    //                     "item" => $item_fg->name,
+    //                     "message" => $e->getMessage()
+    //                 ];
+    //                 continue;
+    //             }
+    //         }
+
+    //         $failed = array_filter($results, fn($r) => $r['status'] === 'failed');
+    //         $hasDbError = ($this->db->trans_status() === FALSE);
+
+    //         if (count($failed) > 0 || $hasDbError) {
+    //             $filePath = 'failed/output_production_press.xls';
+
+    //             $html = '
+    //             <html>
+    //             <head>
+    //                 <meta charset="UTF-8">
+    //             </head>
+    //             <body>
+    //                 <table border="1" cellspacing="0" cellpadding="5" style="border-collapse: collapse; font-family: Arial, sans-serif;">
+    //                     <thead style="background-color: #f2f2f2;">
+    //                         <tr>
+    //                             <th style="width: 40px; text-align: center;">No</th>
+    //                             <th style="width: 100px; text-align: left;">Line</th>
+    //                             <th style="width: 450px; text-align: left;">Message</th>
+    //                         </tr>
+    //                     </thead>
+    //                     <tbody>
+    //             ';
+
+    //             $no = 1;
+    //             foreach ($failed as $row) {
+    //                 $line = htmlspecialchars($row['item']);
+    //                 $msg  = htmlspecialchars($row['message']);
+    //                 $html .= "
+    //                     <tr>
+    //                         <td style='text-align: center;'>{$no}</td>
+    //                         <td style='text-align: left;'>{$line}</td>
+    //                         <td style='text-align: left;'>{$msg}</td>
+    //                     </tr>";
+    //                 $no++;
+    //             }
+
+    //             $html .= '
+    //                     </tbody>
+    //                 </table>
+    //             </body>
+    //             </html>';
+
+    //             file_put_contents($filePath, $html);
+
+    //             echo json_encode([
+    //                 "theme" => "error",
+    //                 "title" => "Upload Failed",
+    //                 "message" => "Data failed to save",
+    //                 "results" => $results,
+    //                 "total_expected" => $total_expected,
+    //                 "processed_count" => $processed_count,
+    //                 "stopped_at" => $index + 1
+    //             ]);
+    //         } else {
+    //             @unlink('failed/output_production_press.xls');
+
+    //             $this->db->trans_commit();
+    //             echo json_encode([
+    //                 "theme" => "success",
+    //                 "title" => "Upload Successfully",
+    //                 "message" => "Data uploaded successfully",
+    //                 "results" => $results,
+    //                 "total_expected" => $total_expected,
+    //                 "processed_count" => $processed_count,
+    //                 "stopped_at" => $index + 1
+    //             ]);
+    //         }
+
+    //     }
+    // }
+
     public function uploadcreate()
     {
         if ($this->input->post()) {
@@ -989,6 +1734,91 @@ class Output_production_press extends CI_Controller
                     continue;
                 }
 
+                if (!empty($item_fg->id) && !empty($machine->id) && !empty($checkWOProdSchPress->mold_id)) {
+
+                    $machine_id = $machine->id;
+                    $item_fg_id = $item_fg->id;
+                    $mold_id    = $checkWOProdSchPress->mold_id;
+                    $actual_cavity = $data['actual_cavity'];
+
+                    $mold = $this->crud->read("molds", [], ["id" => $mold_id]);
+
+                    if ($mold && $mold->cavity_actual != $actual_cavity) {
+
+                        // update cavity molds
+                        $this->crud->update("molds", ["id" => $mold_id], [
+                            "cavity_actual" => $actual_cavity
+                        ]);
+
+                        // cek menu loading
+                        $dataItem = $this->crud->query("
+                            SELECT DISTINCT
+                                a.item_fg_id,
+                                d.number AS item_fg_number,
+                                d.name AS item_fg_name,
+                                a.machine_id,
+                                b.number AS machine_number,
+                                a.cycle_time,
+                                a.productcivity,
+                                c.cavity_actual,
+                                a.shift,
+                                a.shift_hour,
+                                d.item_family_number,
+                                d.mpq,
+                                c.id AS mold_id
+                            FROM menu_loadings a 
+                            JOIN machines b ON a.machine_id = b.id
+                            JOIN item_fg d ON a.item_fg_id = d.id
+                            JOIN molds c ON a.mold_id = c.id
+                            WHERE a.machine_id = '$machine_id'
+                            AND a.item_fg_id = '$item_fg_id'
+                            AND a.mold_id = '$mold_id'
+                        ");
+
+                        if (empty($dataItem)) {
+                            $results[] = [
+                                "status" => "failed",
+                                "item" => "Line " . ($index + 1),
+                                "message" => "Menu Loading data not found for Machine No. $machine->number, Product No. $item_fg->number and Mold ID $mold->id"
+                            ];
+                            continue;
+                        }
+
+                        $production_capacity = $this->crud->read("production_capacities", [], [
+                            "machine_id" => $machine_id,
+                            "item_fg_id" => $item_fg_id,
+                        ]);
+
+                        if(empty($production_capacity)) {
+                            $results[] = [
+                                "status" => "failed",
+                                "item" => "Line " . ($index + 1),
+                                "message" => "Production Capacity data not found for Machine No. $machine->number, Product No. $item_fg->number and Mold ID $mold->id"
+                            ];
+                            continue;
+                        }
+
+                        // hitung kapasitas
+                        $cycle = $dataItem[0]->cycle_time;
+                        $productivity = $dataItem[0]->productcivity;
+                        $shift_hour = $dataItem[0]->shift_hour;
+                        $shift = $dataItem[0]->shift;
+
+                        $capacity_hour = ceil((3600 / $cycle) * $actual_cavity * ($productivity / 100));
+                        $capacity_shift = ceil($capacity_hour * $shift_hour);
+                        $capacity_day = ceil($capacity_shift * $shift);
+
+                        $this->crud->update("production_capacities", [
+                            "machine_id" => $machine_id,
+                            "item_fg_id" => $item_fg_id,
+                        ], [
+                            "capacity_hour" => $capacity_hour,
+                            "capacity_shift" => $capacity_shift,
+                            "capacity_day" => $capacity_day,
+                        ]);
+                    }
+                }
+
                 $planning_qty = @$checkWOProdSchPress->qty;
 
                 $checkData = $this->crud->read('output_production_press', [], [
@@ -1039,23 +1869,14 @@ class Output_production_press extends CI_Controller
                     "qty_ng_mold"           => $data['qty_ng_mold'],
                     "actual_cavity"         => $data['actual_cavity'],
 
-                    // "standard_curing_time"  => $data['standard_curing_time'],
                     "actual_curing_time"    => $data['actual_curing_time'],
                     "shift_hour"            => $data['shift_hour'],
-                    // "target_shoot"          => $data['target_shoot'],
                     "actual_shoot"          => $data['actual_shoot'],
                     "total_compound_used"   => $data['total_compound_used'],
                     "waste"                 => $data['waste'],
-                    // "mold_cleaning"         => $data['mold_cleaning'],
-                    // "trial"                 => $data['trial'],
-                    // "mold_changing"         => $data['mold_changing'],
-                    // "machine_repair"        => $data['machine_repair'],
-                    // "mold_repair"           => $data['mold_repair'],
-                    // "others"                => $data['others'],
 
                     "operator"              => $data['operator'],
                     "pic"                   => $data['pic'],
-                    // "remarks"               => $data['remarks'],
                 );
 
                 try {
@@ -1066,22 +1887,13 @@ class Output_production_press extends CI_Controller
                             "qty_ng"                => $data['qty_ng'],
                             "qty_ng_mold"           => $data['qty_ng_mold'],
                             "actual_cavity"         => $data['actual_cavity'],
-                            // "standard_curing_time"  => $data['standard_curing_time'],
                             "actual_curing_time"    => $data['actual_curing_time'],
                             "shift_hour"            => $data['shift_hour'],
-                            // "target_shoot"          => $data['target_shoot'],
                             "actual_shoot"          => $data['actual_shoot'],
                             "total_compound_used"   => $data['total_compound_used'],
                             "waste"                 => $data['waste'],
-                            // "mold_cleaning"         => $data['mold_cleaning'],
-                            // "trial"                 => $data['trial'],
-                            // "mold_changing"         => $data['mold_changing'],
-                            // "machine_repair"        => $data['machine_repair'],
-                            // "mold_repair"           => $data['mold_repair'],
-                            // "others"                => $data['others'],
                             "operator"              => $data['operator'],
                             "pic"                   => $data['pic'],
-                            // "remarks"               => $data['remarks'],
                         ], [
                             "period"     => $data['period'],
                             "trans_date" => $data['trans_date'],
@@ -1101,12 +1913,12 @@ class Output_production_press extends CI_Controller
                         $status = "insert";
                     }
 
-                    if(!empty($checkWOProdSchPress->mold_id) || $checkWOProdSchPress->mold_id !== '' || $checkWOProdSchPress->mold_id !== 'null') {
-                        $dataFinalMold = [
-                            "cavity_actual" => $data['actual_cavity'],
-                        ];
-                        $this->crud->update("molds", ["id" => $checkWOProdSchPress->mold_id], $dataFinalMold);
-                    }
+                    // if(!empty($checkWOProdSchPress->mold_id) || $checkWOProdSchPress->mold_id !== '' || $checkWOProdSchPress->mold_id !== 'null') {
+                    //     $dataFinalMold = [
+                    //         "cavity_actual" => $data['actual_cavity'],
+                    //     ];
+                    //     $this->crud->update("molds", ["id" => $checkWOProdSchPress->mold_id], $dataFinalMold);
+                    // }
 
                     $res_item = ($status === "insert" ? "Create" : "Update");
                     $res_msg  = ($status === "insert" ? "Data Saved Successfully" : "WP {$data['wp']} Shift {$data['shift']} for Product {$item_fg->number} on Machine {$machine->number} updated");
@@ -1847,6 +2659,8 @@ class Output_production_press extends CI_Controller
             show_error("Missing or invalid parameters", 400);
             return;
         }
+
+        $this->db->query("UPDATE output_production_press SET printed=1 WHERE `workorder` = '$workorder' AND `number` = '$number' AND item_fg_id = '$item_fg_id' ");
 
         // Format workorder: WOP251103-047 => WOP251103047
         $workorder_clean = str_replace('-', '', $workorder);

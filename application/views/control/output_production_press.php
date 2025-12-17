@@ -19,6 +19,13 @@
     .datagrid-header-inner {
         border-bottom: 1px solid #d0d0d0;
     }
+
+    .swal2-container {
+        z-index: 9999 !important;
+    }
+    .swal2-popup {
+        z-index: 99999 !important;
+    }
 </style>
 
 <!-- TABLE DATAGRID -->
@@ -1258,18 +1265,24 @@
             success: function(result) {
                 var result = eval('(' + result + ')');
                 toastr.success(result.message);
+
+                $('#dg2').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
+                editIndex = undefined;
             },
             error: function(jqXHR, textStatus, errorThrown) {
-                toastr.error(jqXHR.statusText);
-                $.messager.alert("Error", jqXHR.statusText, 'error');
+                // toastr.error(jqXHR.statusText);
+                // $.messager.alert("Error", jqXHR.statusText, 'error');
+
+                if (jqXHR.responseText && jqXHR.responseText.includes("Error Number: 1451")) {
+                    toastr.error("Cannot delete data that is still in use");
+                } else {
+                    toastr.error("Delete failed: " + jqXHR.statusText);
+                }
             },
             complete: function(data) {
                 $('#dg').datagrid('reload');
             }
         });
-
-        $('#dg2').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
-        editIndex = undefined;
     }
 
     //EDIT DATA
@@ -1449,6 +1462,7 @@
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
+                                toastr.success(result.message);
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
                                 // toastr.error(jqXHR.statusText);
@@ -2471,27 +2485,54 @@
     function btnPrint(val, row) {
         var print = "dialog_output_press('" + row.number + "')";
 
-        if(row.printed==0){
+        // if(row.printed==0){
             return '<a class="btn btn-primary w-100" onClick="' + print + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-print"></i></a>';
-        }else{
-            return '<a class="btn btn-secondary w-100" onClick="' + print + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-print"></i></a>';
+        // }else{
+        //     return '<a class="btn btn-secondary w-100" onClick="' + print + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-print"></i></a>';
 
-        }
+        // }
     }
 
     function btnPrintItem(val, row) {
-        return `
-            <a class="btn btn-primary w-100"
-            onClick="handlePrintPress('${row.number}','${row.workorder}','${row.item_fg_id}','${row.qty_label}','${row.qty_packing}','${row.qty_ok}')"
-            style="pointer-events: visible; opacity:1;">
-            <i class="fa fa-print"></i>
-            </a>`;
+        if(row.printed==0){
+            return `
+                <a class="btn btn-primary w-100"
+                onClick="handlePrintPress('${row.number}','${row.workorder}','${row.item_fg_id}','${row.qty_label}','${row.qty_packing}','${row.qty_ok}','${row.printed}')"
+                style="pointer-events: visible; opacity:1;">
+                <i class="fa fa-print"></i>
+                </a>`;
+        } else {
+            return `
+                <a class="btn btn-secondary w-100"
+                onClick="handlePrintPress('${row.number}','${row.workorder}','${row.item_fg_id}','${row.qty_label}','${row.qty_packing}','${row.qty_ok}','${row.printed}')"
+                style="pointer-events: visible; opacity:1;">
+                <i class="fa fa-print"></i>
+                </a>`;
+        }
     }
 
-    function handlePrintPress(number, workorder, item_fg_id, qty_label, qty_packing, qty_ok) {
+    function handlePrintPress(number, workorder, item_fg_id, qty_label, qty_packing, qty_ok, printed) {
 
         if (parseInt(qty_packing) === 0) {
             toastr.warning("Qty Packing cannot be zero");
+            return;
+        }
+
+        if (parseInt(printed) === 1) {
+            Swal.fire({
+                title: 'Reprint?',
+                text: 'The label has already been printed. Do you want to reprint it?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, reprint',
+                cancelButtonText: 'Cancel',
+                // reverseButtons: true,
+                focusCancel: true,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    print_output_press(number, workorder, item_fg_id, qty_label, qty_packing, qty_ok);
+                }
+            });
             return;
         }
 
@@ -2664,6 +2705,10 @@
         const encodedQtyLabel = window.btoa(qty_label);
         const encodedPacking = window.btoa(qty_packing);
         const encodedOK = window.btoa(qty_ok);
+
+        setTimeout(() => {
+            $('#dgPrint').datagrid('reload');
+        }, 500);
 
         const url = "<?= base_url('control/output_production_press/print_label_press?number=') ?>" 
                 + encodedNumber + "&workorder=" + encodedWorkorder + "&item_fg_id=" + encodedItemFg + "&qty_label=" + encodedQtyLabel + "&qty_packing=" + encodedPacking + "&qty_ok=" + encodedOK;
