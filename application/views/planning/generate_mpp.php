@@ -1,33 +1,28 @@
-<table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
+<table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar" data-options="showFooter:true">
     <thead frozen="true">
         <th field="ck" checkbox="true"></th>
-        <th data-options="field:'product_no',width:150,halign:'center'">Product No</th>
-        <th data-options="field:'item_alias',width:150,halign:'center'">Product Alias</th>
-        <th data-options="field:'product_name',width:150,halign:'center'">Product Name</th>
+        <th data-options="field:'machine_no',width:120,halign:'center'">Machine</th>
+        <th data-options="field:'shift',width:60,halign:'center',align:'center'">Shift</th>
+        <th data-options="field:'product_no',width:250,halign:'center'">Product No</th>
+        <th data-options="field:'product_name',width:250,halign:'center'">Product Name</th>
         <th data-options="field:'mpsprod',width:80,halign:'center',align:'right'">Prod Plan</th>
         <th data-options="field:'floating',width:80,halign:'center',align:'right',styler:floating">Plotting</th>
+        <th data-options="field:'cap_shift',width:80,halign:'center',align:'right',formatter: numberFormat">Cap/Shift</th>
     </thead>
     <thead>
-        <!-- <tr>   
-            <th colspan="34" data-options="field:'',width:500,halign:'center',align:'right'">Date Prodplan</th>
-        </tr> -->
         <tr>
-            <th data-options="field:'cct',width:80,align:'center'">CCT</th>
-            <th data-options="field:'lot',width:80,align:'center'">Lot</th>
-            <th data-options="field:'capacity',width:80,align:'center'">Capacity</th>
-            <th data-options="field:'customer_name',width:250,halign:'center'">Customer</th>
             <?php 
                 if($this->input->get('filter_month')){
                     $filter_month = base64_decode($this->input->get('filter_month'));
                     $filter_year = base64_decode($this->input->get('filter_year'));
                     $filter_revision = base64_decode($this->input->get('filter_revision'));
-                    $filter_line_no = base64_decode($this->input->get('filter_line_no'));
+                    // $filter_line_no = base64_decode($this->input->get('filter_line_no'));
                     $filter_product_no = base64_decode($this->input->get('filter_product_no'));
                 }else{
                     $filter_month = date("m");
                     $filter_year = date("Y");
                     $filter_revision = "0";
-                    $filter_line_no = "";
+                    // $filter_line_no = "";
                     $filter_product_no = "";
                 }
 
@@ -166,9 +161,25 @@
                             }
                         }
                     }
-            ?>
-            <th data-options="field:'date_<?= $tgl ?>',width:60,halign:'center',align:'right',editor:'textbox',styler:dates,formatter:datef"><?= $tgl ?><br><?= $wpp ?></th>
-            <?php
+                    ?>
+                    <!-- <th data-options="field:'date_<?= $tgl ?>',width:60,halign:'center',align:'right',editor:'textbox',styler:dates,formatter:datef"><?= $tgl ?><br><?= $wpp ?></th> -->
+                    
+                    
+                    <!-- <th data-options="field:'date_<?= $tgl ?>',width:70,halign:'center',align:'right',editor:'textbox',styler:dates,formatter:datef">
+                        <?= $tgl ?>
+                    </th>
+                    
+                    <?php if (date('w', strtotime($firstDate)) != '0' && date('w', strtotime($firstDate)) != '6'): ?>
+                        <th data-options="field:'log_<?= $tgl ?>',width:70,halign:'center',align:'right'">
+                            CT
+                        </th>
+                    <?php endif; ?> -->
+
+
+                    <th colspan="2"><?= $wpp ?></th>
+
+
+                    <?php
                     $form_input .= ' <div style="float: left; width: 14%;">
                                         <div class="fitem">
                                             <span style="width:40%; display:inline-block;">'.$tgl.' | '.$wpp.'</span>
@@ -183,6 +194,29 @@
                                     <span style="width:40%; display:inline-block;">Last Date</span>
                                     <input style="width:50%;" id="last_date" class="easyui-textbox" value="'.($tgl-1).'">
                                 </div>';
+            ?>
+        </tr>
+
+        <tr>
+            <?php 
+            $tgl = 1;
+            $firstDate = date("Y-m-01", strtotime(date("$filter_year-$filter_month-01")));
+            while (strtotime($firstDate) <= strtotime($endDate)) {
+            ?>
+                <th data-options="field:'date_<?= $tgl ?>',width:70,halign:'center',align:'right',editor:'textbox',styler:dates,formatter:datef">
+                    <?= date('d/m', strtotime($firstDate)) ?>
+                </th>
+                <th data-options="field:'log_<?= $tgl ?>',width:70,halign:'center',align:'right',
+                formatter:function(value,row){
+                      if (value == null || value === '') return '';
+                      return parseInt(value).toLocaleString('en-US');
+                  }">
+                    CT (hours)
+                </th>
+            <?php
+                $tgl++;
+                $firstDate = date("Y-m-d", strtotime("+1 day", strtotime($firstDate)));
+            }
             ?>
         </tr>
     </thead>
@@ -201,10 +235,10 @@
                 <span style="width:35%; display:inline-block;">Revision</span>
                 <input style="width:60%;" name="filter_revision" id="filter_revision" value="<?= $filter_revision ?>" readonly class="easyui-textbox" data-options="prompt:'Revision'">
             </div>
-            <div class="fitem">
+            <!-- <div class="fitem">
                 <span style="width:35%; display:inline-block;">Customer Name</span>
                 <input style="width:60%;" id="filter_line_no" value="<?= $filter_line_no ?>" class="easyui-combobox">
-            </div>
+            </div> -->
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
                 <input style="width:60%;" id="filter_product_no" value="<?= $filter_product_no ?>" class="easyui-combogrid">
@@ -221,19 +255,19 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-                <a href="javascript:;" class="easyui-linkbutton" id="push_data" onclick="push_data()"><i class="fa fa-database"></i> Push Data</a>
+                <!-- <a href="javascript:;" class="easyui-linkbutton" id="push_data" onclick="push_data()"><i class="fa fa-database"></i> Push Data</a> -->
             </div>
         </fieldset>
         <fieldset style="width: 30%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Process Generate Data</b></legend>
-            <div style="width: 100%; float: left;">
-                <b>WIP TRX MPP</b>
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column;">
+                <b>MPP GENERATE</b>
                 <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
                 <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
 
-                <b>MPP GENERATE</b>
+                <!-- <b>MPP GENERATE</b>
                 <div id="p_upload_mpp_generate" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
-                <center><b id="p_start_mpp_generate">0</b> Of <b id="p_finish_mpp_generate">0</b></center>
+                <center><b id="p_start_mpp_generate">0</b> Of <b id="p_finish_mpp_generate">0</b></center> -->
             </div>
             <div style="width: 50%; float: left;" hidden="">
                 <b>PLAN SCHEDULE</b>
@@ -247,7 +281,7 @@
         </fieldset>
         <fieldset style="width: 30%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Result Generate</b></legend>
-            <div id="p_remarks" class="easyui-panel" style="width:100%; height:160px; padding:10px; margin-top: 10px; overflow: auto;">
+            <div id="p_remarks" class="easyui-panel" style="width:100%; height:120px; padding:10px; margin-top: 10px; overflow: auto;">
                 <ul id="remarks">
 
                 </ul>
@@ -356,7 +390,7 @@
                 $("#row_index").textbox('setValue', index);
                 $('#dlg_insert').dialog('open');
                 $('#frm_insert').form('load', row);
-                url_update = '<?= base_url('planning/generate_mpp/update'); ?>?id=' + btoa(row.id);
+                url_update = '<?= base_url('planning/generate_mpp/update'); ?>?id=' + btoa(row.detail_id);
 
                 if(row.wds_1 == "F"){ $("#date_1").textbox('disable'); }
                 if(row.wds_2 == "F"){ $("#date_2").textbox('disable'); }
@@ -402,7 +436,7 @@
         var filter_month = $("#filter_month").combobox('getValue');
         var filter_year = $("#filter_year").textbox('getValue');
         var filter_revision = $("#filter_revision").textbox('getValue');
-        var filter_line_no = $("#filter_line_no").combobox('getValue');
+        // var filter_line_no = $("#filter_line_no").combobox('getValue');
         var filter_product_no = $("#filter_product_no").combogrid('getValue');
 
         if (filter_month == "" || filter_year == "" || filter_revision == "") {
@@ -426,12 +460,12 @@
                         data: "filter_month=" + window.btoa(filter_month) +
                             "&filter_year=" + window.btoa(filter_year) +
                             "&filter_revision=" + window.btoa(filter_revision) +
-                            "&filter_line_no=" + window.btoa(filter_line_no) +
+                            // "&filter_line_no=" + window.btoa(filter_line_no) +
                             "&filter_product_no=" + window.btoa(filter_product_no),
                         dataType: "json",
                         success: function(rows) {
                             Swal.close();
-
+                            console.log('Data : ', rows);
                             if(rows.length > 0){
                                 requestData(rows.length, rows);
                             }else{
@@ -904,19 +938,20 @@
         var filter_month = $("#filter_month").combobox('getValue');
         var filter_year = $("#filter_year").textbox('getValue');
         var filter_revision = $("#filter_revision").textbox('getValue');
-        var filter_line_no = $("#filter_line_no").combobox('getValue');
+        // var filter_line_no = $("#filter_line_no").combobox('getValue');
         var filter_product_no = $("#filter_product_no").combogrid('getValue');
 
         var url = "?filter_month=" + window.btoa(filter_month) +
             "&filter_year=" + window.btoa(filter_year) +
             "&filter_revision=" + window.btoa(filter_revision) +
-            "&filter_line_no=" + window.btoa(filter_line_no) +
+            // "&filter_line_no=" + window.btoa(filter_line_no) +
             "&filter_product_no=" + window.btoa(filter_product_no);
 
         if (filter_month == "" || filter_year == "" || filter_revision == "") {
             toastr.warning("Please select Period!", "Information");
         } else {
             window.location.assign(url);
+            // window.location.assign('<?= base_url('planning/generate_mpp/print') ?>' + url);
         }
     }
 
@@ -928,13 +963,13 @@
         var filter_month = $("#filter_month").combobox('getValue');
         var filter_year = $("#filter_year").textbox('getValue');
         var filter_revision = $("#filter_revision").textbox('getValue');
-        var filter_line_no = $("#filter_line_no").combobox('getValue');
+        // var filter_line_no = $("#filter_line_no").combobox('getValue');
         var filter_product_no = $("#filter_product_no").combogrid('getValue');
 
         var url = "?filter_month=" + window.btoa(filter_month) +
             "&filter_year=" + window.btoa(filter_year) +
             "&filter_revision=" + window.btoa(filter_revision) +
-            "&filter_line_no=" + window.btoa(filter_line_no) +
+            // "&filter_line_no=" + window.btoa(filter_line_no) +
             "&filter_product_no=" + window.btoa(filter_product_no);
 
         if (filter_month == "" || filter_year == "" || filter_revision == "") {
@@ -1066,8 +1101,8 @@
                         toastr.error(result.message, result.title);
                     }
 
-                    //$('#dlg_insert').dialog('close');
-                    // $('#dg').datagrid('reload');
+                    $('#dlg_insert').dialog('close');
+                    $('#dg').datagrid('reload');
                 }
             });
         }
@@ -1084,16 +1119,18 @@
         var filter_month = $("#filter_month").combobox('getValue');
         var filter_year = $("#filter_year").textbox('getValue');
         var filter_revision = $("#filter_revision").textbox('getValue');
-        var filter_line_no = $("#filter_line_no").combobox('getValue');
+        // var filter_line_no = $("#filter_line_no").combobox('getValue');
         var filter_product_no = $("#filter_product_no").combogrid('getValue');
 
         var url = "?filter_month=" + window.btoa(filter_month) +
             "&filter_year=" + window.btoa(filter_year) +
             "&filter_revision=" + window.btoa(filter_revision) +
-            "&filter_line_no=" + window.btoa(filter_line_no) +
+            // "&filter_line_no=" + window.btoa(filter_line_no) +
             "&filter_product_no=" + window.btoa(filter_product_no);
 
-        if (filter_month != "" && filter_year != "" && (filter_line_no != "" || filter_product_no != "")) {
+        // if (filter_month != "" && filter_year != "" && (filter_line_no != "" || filter_product_no != "")) {
+
+        if (filter_month != "" && filter_year != "" && filter_revision != "") {
             $('#dg').datagrid({
                 url: '<?= base_url('planning/generate_mpp/datatables') ?>' + url,
                 pagination: true,
@@ -1102,11 +1139,134 @@
                 fit: true,
                 pageList: [20, 50, 100, 500, 1000],
                 pageSize: 20,
+                onLoadSuccess: function(data){
+
+                    console.log('DATA : ', data);
+
+                    if (!data.rows || data.rows.length === 0) return;
+
+                    const dg = $(this);
+                    const rows = data.rows;
+
+                    let start = 0, span = 1;
+
+                    const sameGroup = (i, j) => {
+                        return rows[i].item_fg_id === rows[j].item_fg_id &&
+                            rows[i].machine_no  === rows[j].machine_no;
+                    };
+
+                    for (let i = 1; i <= rows.length; i++) {
+                        if (i < rows.length && sameGroup(i, i-1)) {
+                            span++;
+                            continue;
+                        }
+                        if (span > 1) {
+                            dg.datagrid('mergeCells', {
+                                index: start,
+                                field: 'machine_no',
+                                rowspan: span
+                            });
+                        }
+                        start = i;
+                        span = 1;
+                    }
+
+                    for (let r = 0; r < rows.length; r++) {
+                        for (let d = 1; d <= 31; d++) {
+                            const df = 'date_'+d, lf = 'log_'+d;
+                            const v = rows[r][df];
+                            if (v === 'W') {
+                                dg.datagrid('mergeCells', { index: r, field: df, colspan: 2 });
+                            }
+                        }
+                    }
+
+                    const totals = { machine_no: 'TOTAL' };
+                    let totalProdPlan = 0;
+
+                    rows.forEach(row => {
+                        totalProdPlan += Number(row.mpsprod) || 0;
+                        for (let d = 1; d <= 31; d++) {
+                            const df = 'date_'+d, lf = 'log_'+d;
+                            totals[df] = (Number(totals[df]) || 0) + (Number(row[df]) || 0);
+                            totals[lf] = (Number(totals[lf]) || 0) + (Number(row[lf]) || 0);
+                        }
+                    });
+
+                    // totals.mpsprod = totalProdPlan.toLocaleString('en-US');
+                    totals.cap_shift = '';
+                    $('#dg').datagrid('reloadFooter', [totals]);
+                }
+
             });
 
             $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
             $("#printout").attr('src', '<?= base_url('planning/generate_mpp/print') ?>' + url);
         }
+
+        //         onLoadSuccess: function(data){
+
+        //             console.log('DATA : ', data);
+
+        //             if (!data.rows || data.rows.length === 0) return;
+
+        //             const dg = $(this);
+        //             const rows = data.rows;
+
+        //             let start = 0, span = 1;
+
+        //             const sameGroup = (i, j) => {
+        //                 return rows[i].item_fg_id === rows[j].item_fg_id &&
+        //                     rows[i].machine_no  === rows[j].machine_no;
+        //             };
+
+        //             for (let i = 1; i <= rows.length; i++) {
+        //                 if (i < rows.length && sameGroup(i, i-1)) {
+        //                     span++;
+        //                     continue;
+        //                 }
+        //                 if (span > 1) {
+        //                     dg.datagrid('mergeCells', {
+        //                         index: start,
+        //                         field: 'machine_no',
+        //                         rowspan: span
+        //                     });
+        //                 }
+        //                 start = i;
+        //                 span = 1;
+        //             }
+
+        //             for (let r = 0; r < rows.length; r++) {
+        //                 for (let d = 1; d <= 31; d++) {
+        //                     const df = 'date_'+d, lf = 'log_'+d;
+        //                     const v = rows[r][df];
+        //                     if (v === 'W') {
+        //                         dg.datagrid('mergeCells', { index: r, field: df, colspan: 2 });
+        //                     }
+        //                 }
+        //             }
+
+        //             const totals = { product_no: 'TOTAL' };
+        //             let totalProdPlan = 0;
+
+        //             rows.forEach(row => {
+        //                 totalProdPlan += Number(row.mpsprod) || 0;
+        //                 for (let d = 1; d <= 31; d++) {
+        //                     const df = 'date_'+d, lf = 'log_'+d;
+        //                     totals[df] = (Number(totals[df]) || 0) + (Number(row[df]) || 0);
+        //                     totals[lf] = (Number(totals[lf]) || 0) + (Number(row[lf]) || 0);
+        //                 }
+        //             });
+
+        //             totals.mpsprod = totalProdPlan.toLocaleString('en-US');
+        //             $('#dg').datagrid('reloadFooter', [totals]);
+        //         }
+
+        //     });
+
+        //     $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+        //     $("#printout").attr('src', '<?= base_url('planning/generate_mpp/print') ?>' + url);
+        // }
 
 
         // $('#dg').datagrid({
@@ -1279,7 +1439,8 @@
                     url: '<?php echo base_url('planning/generate_mpp/readRevisions/'); ?>' + row.id + '/' + filter_year,
                     dataType: "json",
                     success: function(rev) {
-                        $('#filter_revision').textbox('setValue', rev.revision);
+                        let revision = rev.revision ?? 0;
+                        $('#filter_revision').textbox('setValue', revision);
                     }
                 });
             }
@@ -1304,30 +1465,36 @@
                     url: '<?php echo base_url('planning/generate_mpp/readRevisions/'); ?>' + filter_month + '/' + row.id,
                     dataType: "json",
                     success: function(rev) {
-                        $('#filter_revision').textbox('setValue', rev.revision);
+                        let revision = rev.revision ?? 0;
+                        $('#filter_revision').textbox('setValue', revision);
                     }
                 });
             }
         });
 
-        $('#filter_line_no').combobox({
-            url: '<?php echo base_url('planning/mst_line/reads'); ?>',
-            valueField: 'line_no',
-            textField: 'remarks',
-            prompt: 'Select Customer Name',
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }],
-        });
+        // $('#filter_line_no').combobox({
+        //     // url: '<?php echo base_url('planning/mst_line/reads'); ?>',
+        //     url: '<?php echo base_url('master/line_productions/reads'); ?>',
+        //     // valueField: 'line_no',
+        //     // textField: 'remarks',
+        //     valueField: 'number',
+        //     textField: 'name',
+        //     prompt: 'Select Customer Name',
+        //     icons: [{
+        //         iconCls: 'icon-clear',
+        //         handler: function(e) {
+        //             $(e.data.target).combobox('clear').combobox('textbox').focus();
+        //         }
+        //     }],
+        // });
 
         $('#filter_product_no').combogrid({
-            url: '<?= base_url('planning/mst_data/readProducts') ?>',
+            // url: '<?= base_url('planning/mst_data/readProducts') ?>',
+            url: '<?= base_url('master/item_fg/reads') ?>',
             panelWidth: 400,
-            idField: 'item_id',
-            textField: 'item_id',
+            idField: 'number',
+            textField: 'number',
+            valueField: 'number',
             mode: 'remote',
             fitColumns: true,
             prompt: "Select Product No",
@@ -1339,12 +1506,16 @@
             }],
             columns: [
                 [{
-                    field: 'item_id',
-                    title: 'Item ID',
+                    field: 'id',
+                    title: 'Product ID',
                     width: 200
                 }, {
-                    field: 'item_name',
-                    title: 'Item Name',
+                    field: 'number',
+                    title: 'Product No',
+                    width: 200
+                }, {
+                    field: 'name',
+                    title: 'Product Name',
                     width: 200
                 }]
             ]
@@ -1383,11 +1554,11 @@
 
     function datef(value, row, index) {
         if (value == "W") {
-            return "Weekend";
+            return "<center>Weekend</center>";
         }else if(value == "F"){
             return "PROD";
         }else{
-            return value;
+            return parseInt(value).toLocaleString('id-ID');
         }
     }
 
@@ -1396,8 +1567,17 @@
             return 'background: #FFA5A5; color:white;';
         }else if(row.mpsprod > value){
             return 'background: #FF9F00; color:white;';
+        }else if(row.machine_no === "TOTAL") {
+            return '';
         }else{
             return 'background: #22CC00; color:white;';
         }
+    }
+
+    function numberFormat(value, row) {
+        const formatter = new Intl.NumberFormat('id-ID', {
+            minimumFractionDigits: 0
+        });
+        return formatter.format(value);
     }
 </script>

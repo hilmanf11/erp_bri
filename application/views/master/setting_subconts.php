@@ -1,3 +1,15 @@
+<style>
+  .dialog-button{
+    border-bottom: 0 !important;
+  }
+
+    .btn-clicked {
+        background-color: #e0e0e0 !important;
+        transform: scale(0.97);
+        transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+</style>
+
 <div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
     <div class="easyui-accordion" style="width:100%; height: 100%;">
         <div title="RELATIONS" style="padding: 20px;">
@@ -70,10 +82,15 @@
 
     </div>
 </div>
-
+<!-- 
 <div id="toolbar2">
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="append()"><i class="fa fa-plus"></i> Add</a>
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
+</div> -->
+
+<div id="toolbar2" style="padding: 2px; margin-top: -38px; background-color: #f5f5f5 !important">
+    <a href="javascript:void(0)" id="btn-add" class="easyui-linkbutton" data-options="plain:true" onclick="append()"><i class="fa fa-plus"></i> Add</a>
+    <a href="javascript:void(0)" id="btn-remove" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
 </div>
 
 <!-- Insert & Update -->
@@ -146,6 +163,33 @@
 <iframe id="printout" src="<?= base_url('master/setting_subconts/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
+
+    $(document).ready(function () {
+        $('#dlg_insert').dialog({
+            onOpen: function () {
+                setTimeout(() => {
+                    const panel = $('#dlg_insert').closest('.panel.window.panel-htop');
+                    const toolbar = $('#toolbar2');
+
+                    if (!toolbar.parent().hasClass('panel')) {
+                        panel.append(toolbar);
+                    }
+
+                    function positionToolbar() {
+                        const panelHeight = panel.height();
+                        const toolbarHeight = toolbar.outerHeight();
+                        toolbar.css({
+                            top: (panelHeight - toolbarHeight - 10) + 'px'
+                        });
+                    }
+
+                    positionToolbar();
+                    $(window).on('resize', positionToolbar);
+                }, 100);
+            }
+        });
+    });
+
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
@@ -375,7 +419,15 @@
         }
     }
 
+    function buttonClickEffect(btn) {
+        $(btn).addClass('btn-clicked');
+        setTimeout(() => {
+            $(btn).removeClass('btn-clicked');
+        }, 300);
+    }
+
     function append() {
+        buttonClickEffect('#btn-add');
         var subcont_id = $("#subcont_id").combogrid('getValue');
         var teaching_factory_id = $("#teaching_factory_id").combogrid('getValue');
         if (subcont_id != "" || teaching_factory_id != "") {
@@ -392,6 +444,7 @@
     }
 
     function removeit() {
+        buttonClickEffect('#btn-remove');
         if (editIndex == undefined) {
             return true;
         }
@@ -530,7 +583,7 @@
         var url = "?filter_subcont_id=" + window.btoa(filter_subcont_id) +
             "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
             "&delivery_to=" + window.btoa(deliveryTo) +
-            "&filter_teaching_factory_id=" + window.btoa(filter_teaching_factory_id) ;        
+            "&filter_teaching_factory_id=" + window.btoa(filter_teaching_factory_id);
 
         // if(deliveryTo === ""){
         //     toastr.warning("Please select Delivery To first!", "Information");

@@ -64,7 +64,21 @@
     <form id="frm_insert" method="post" novalidate enctype="multipart/form-data">
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
+
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Machines</span>
+                <input style="width:60%;" name="machine_id" id="machine_id" required="" class="easyui-combogrid">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Product No</span>
+                <input style="width:60%;" name="item_fg_id" required="" id="item_fg_id" class="easyui-combogrid">
+            </div>
+            <div class="fitem" id="mold_wrapper">
+                <span style="width:35%; display:inline-block;">Mold ID</span>
+                <input style="width:60%;" name="mold_id" id="mold_id" required="" class="easyui-combobox">
+            </div>
+
+            <!-- <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No.</span>
                 <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combogrid">
             </div>
@@ -75,7 +89,8 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Machine No.</span>
                 <input style="width:60%;" name="machine_id" id="machine_id" required="" class="easyui-combobox">
-            </div>
+            </div> -->
+
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Shift</span>
                 <input style="width:60%;" name="shift" id="shift" class="easyui-numberbox">
@@ -146,13 +161,152 @@
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
-        if (row) {
-            $('#dlg_insert').dialog('open');
-            $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/menu_loadings/update') ?>?id=' + btoa(row.id);
-        } else {
-            toastr.warning("Please select one of the data in the table first!", "Information");
+        if (!row) {
+            toastr.warning("Please select data first");
+            return;
         }
+
+        console.log('ROW : ', row);
+        
+
+        $('#dlg_insert').dialog('open');
+        $('#frm_insert').form('load', row);
+
+        $('#machine_id').combogrid('setValue', row.machine_id);
+
+        url_save = '<?= base_url('master/menu_loadings/update') ?>?id=' + btoa(row.id);
+
+
+        // if(row.mold_id == null) {
+        //     $('#mold_id').combobox('clear');
+        //     $('#mold_id').combobox('disableValidation'); 
+        //     $('#mold_wrapper').hide();
+        //     $('#runner-wrapper').hide();
+        // }else{
+        //     $('#mold_wrapper').show();
+        //     $('#runner-wrapper').show();
+        //     $('#mold_id').combobox('enableValidation');
+        // }
+
+
+        let { item_family_number, machine_id } = row;
+
+        if (item_family_number === 'CD') {
+            $('#mold_id').combobox('clear');
+            $('#mold_id').combobox('disableValidation'); 
+            $('#mold_wrapper').hide();
+            $('#runner-wrapper').hide();
+
+            $('#item_fg_id').combogrid({
+                url: '<?php echo base_url('master/menu_loadings/readItemMachines/'); ?>'+ btoa(row.machine_id),
+                required: true,
+                panelWidth: 500,
+                idField: 'item_fg_id',
+                textField: 'item_fg_number',
+                mode: 'remote',
+                fitColumns: true,
+                prompt: 'Choose Product No',
+                columns: [
+                    [{
+                        field: 'item_fg_id',
+                        title: 'Product ID',
+                        width: 120
+                    }, {
+                        field: 'item_fg_number',
+                        title: 'Product No.',
+                        width: 150
+                    }, {
+                        field: 'item_fg_name',
+                        title: 'Product Name',
+                        width: 200
+                    }]
+                ],
+                onSelect: function(index, row) {
+                    $('#cycle_time').numberbox('setValue', row.cycle_time || 0);
+                },
+                onLoadSuccess: function(data) {
+                    // console.log('Data', data);
+
+                    if (data.rows && data.rows.length === 1) {
+                        $('#item_fg_id').combogrid('grid').datagrid('selectRow', 0);
+                        $('#item_fg_id').combogrid('setValue', data.rows[0].item_fg_id);
+                    }
+
+                }
+            });
+
+        } else {
+            $('#mold_wrapper').show();
+            $('#runner-wrapper').show();
+            $('#mold_id').combobox('enableValidation');
+
+            $('#item_fg_id').combogrid({
+                url: '<?php echo base_url('master/menu_loadings/readItemMachines/'); ?>'+ btoa(row.machine_id),
+                required: true,
+                panelWidth: 500,
+                idField: 'item_fg_id',
+                textField: 'item_fg_number',
+                valueField: 'item_fg_id',
+                mode: 'remote',
+                fitColumns: true,
+                prompt: 'Choose Product No',
+                columns: [
+                    [{
+                        field: 'item_fg_id',
+                        title: 'Product ID',
+                        width: 120
+                    }, {
+                        field: 'item_fg_number',
+                        title: 'Product No.',
+                        width: 150
+                    }, {
+                        field: 'item_fg_name',
+                        title: 'Product Name',
+                        width: 200
+                    }]
+                ],
+                onSelect: function(index, row) {
+                    $('#cycle_time').numberbox('setValue', row.cycle_time || 0);
+
+                    $('#mold_id').combobox({
+                        url: '<?= base_url('master/menu_loadings/readSettingMolds/'); ?>' + btoa(row.item_fg_id) 
+                        + '/'+ btoa(machine_id),
+                        valueField: 'mold_id',
+                        textField: 'mold_id',
+                        prompt: 'Choose Mold ID',
+                        onLoadSuccess: function(data) {
+                            if (data.length === 1) {
+                                $('#mold_id').combobox('setValue', data[0].mold_id);
+                            }
+                        }
+                    });
+                },
+                onLoadSuccess: function(data) {
+                    if (row.item_fg_id) {
+                        $('#mold_id').combobox({
+                            url: '<?= base_url('master/menu_loadings/readSettingMolds/'); ?>' + window.btoa(row.item_fg_id) + '/' + window.btoa(row.machine_id),
+                            valueField: 'mold_id',
+                            textField: 'mold_id',
+                            prompt: 'Choose Mold ID',
+                            onLoadSuccess: function(data) {
+                                if (data.length === 1) {
+                                    $('#mold_id').combobox('setValue', data[0].mold_id);
+                                } else if (row.mold_id) {
+                                    $('#mold_id').combobox('setValue', row.mold_id);
+                                }
+                            }
+                        });
+                    }
+                }
+
+            });
+
+        }
+
+
+        $('#item_fg_id').combogrid('setValue', row.item_fg_id);
+        $('#item_fg_id').combogrid('setText', row.item_fg_number);
+
     }
     //DELETE DATA
     function deleted() {
@@ -170,6 +324,12 @@
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
+
+                                if(result.theme == "success") {
+                                    toastr.success(result.message);
+                                } else {
+                                    toastr.error(result.message);
+                                }
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
                                 toastr.error(jqXHR.statusText);
@@ -192,7 +352,7 @@
     }
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_menu_loadings_.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_menu_loadings.xls') ?>');
     }
     //PRINT PDF
     function pdf() {
@@ -429,40 +589,221 @@
     //     }
     // });
     
-    $('#item_fg_id').combogrid({
-        url: '<?php echo base_url('master/menu_loadings/readItems'); ?>',
-        required: true,
-        panelWidth: 500,
-        idField: 'item_fg_id',
-        textField: 'item_fg_number',
+    // $('#item_fg_id').combogrid({
+    //     url: '<?php echo base_url('master/menu_loadings/readItems'); ?>',
+    //     required: true,
+    //     panelWidth: 500,
+    //     idField: 'item_fg_id',
+    //     textField: 'item_fg_number',
+    //     mode: 'remote',
+    //     fitColumns: true,
+    //     prompt: 'Choose Product No',
+    //     columns: [
+    //         [{
+    //             field: 'item_fg_id',
+    //             title: 'Product ID',
+    //             width: 120
+    //         }, {
+    //             field: 'item_fg_number',
+    //             title: 'Product No.',
+    //             width: 150
+    //         }, {
+    //             field: 'item_fg_name',
+    //             title: 'Product Name',
+    //             width: 200
+    //         }]
+    //     ],
+    //     onSelect: function(index, row) {
+    //         let { item_family_number } = row;
+
+    //         if (item_family_number === 'CD') {
+    //             // $('#mold_id').combobox('disable');
+
+    //             $('#mold_id').combobox('clear');
+    //             $('#mold_id').combobox('disableValidation'); 
+    //             $('#mold_wrapper').hide();
+    //             $('#runner-wrapper').hide();
+    //         } else {
+    //             // $('#mold_id').combobox('enable');
+                
+    //             $('#mold_wrapper').show();
+    //             $('#runner-wrapper').show();
+    //             $('#mold_id').combobox('enableValidation');
+
+    //             $('#mold_id').combobox({
+    //                 url: '<?= base_url('master/menu_loadings/readSettingMolds/'); ?>' + btoa(row.item_fg_id),
+    //                 valueField: 'mold_id',
+    //                 textField: 'mold_id',
+    //                 prompt: 'Choose Mold ID',
+    //                 onLoadSuccess: function(data) {
+    //                     if (data.length === 1) {
+    //                         $('#mold_id').combobox('setValue', data[0].mold_id);
+    //                     }
+    //                 }
+    //             });
+    //         }
+
+    //         $('#machine_id').combobox({
+    //             url: '<?= base_url('master/menu_loadings/readMachines/'); ?>' + btoa(row.item_fg_id) + '/' + btoa(item_family_number),
+    //             valueField: 'machine_id',
+    //             textField: 'number',
+    //             prompt: 'Choose Machine No.',
+    //             onLoadSuccess: function(data) {
+    //                 console.log('Data :  ', data);
+    //                 if (data.length === 1) {
+    //                     $('#machine_id').combobox('setValue', data[0].machine_id);
+    //                 }
+
+    //                 $('#cycle_time').numberbox('setValue', data[0].cycle_time ? data[0].cycle_time : 0);
+    //             }
+    //         });
+    //     }
+    // });
+
+
+    // $('#item_fg_id').combogrid({
+    //     url: '<?php echo base_url('master/menu_loadings/readItems'); ?>',
+    //     required: true,
+    //     panelWidth: 500,
+    //     idField: 'item_fg_id',
+    //     textField: 'item_fg_number',
+    //     mode: 'remote',
+    //     fitColumns: true,
+    //     prompt: 'Choose Product No',
+    //     columns: [
+    //         [{
+    //             field: 'item_fg_id',
+    //             title: 'Product ID',
+    //             width: 120
+    //         }, {
+    //             field: 'item_fg_number',
+    //             title: 'Product No.',
+    //             width: 150
+    //         }, {
+    //             field: 'item_fg_name',
+    //             title: 'Product Name',
+    //             width: 200
+    //         }]
+    //     ],
+    //     onSelect: function(index, row) {
+    //         let { item_family_number } = row;
+
+    //         if (item_family_number === 'CD') {
+    //             // $('#mold_id').combobox('disable');
+
+    //             $('#mold_id').combobox('clear');
+    //             $('#mold_id').combobox('disableValidation'); 
+    //             $('#mold_wrapper').hide();
+    //             $('#runner-wrapper').hide();
+    //         } else {
+    //             // $('#mold_id').combobox('enable');
+                
+    //             $('#mold_wrapper').show();
+    //             $('#runner-wrapper').show();
+    //             $('#mold_id').combobox('enableValidation');
+
+    //             $('#mold_id').combobox({
+    //                 url: '<?= base_url('master/menu_loadings/readSettingMolds/'); ?>' + btoa(row.item_fg_id),
+    //                 valueField: 'mold_id',
+    //                 textField: 'mold_id',
+    //                 prompt: 'Choose Mold ID',
+    //                 onLoadSuccess: function(data) {
+    //                     if (data.length === 1) {
+    //                         $('#mold_id').combobox('setValue', data[0].mold_id);
+    //                     }
+    //                 }
+    //             });
+    //         }
+
+    //         $('#machine_id').combobox({
+    //             url: '<?= base_url('master/menu_loadings/readMachines/'); ?>' + btoa(row.item_fg_id) + '/' + btoa(item_family_number),
+    //             valueField: 'machine_id',
+    //             textField: 'number',
+    //             prompt: 'Choose Machine No.',
+    //             onLoadSuccess: function(data) {
+    //                 console.log('Data :  ', data);
+    //                 if (data.length === 1) {
+    //                     $('#machine_id').combobox('setValue', data[0].machine_id);
+    //                 }
+
+    //                 $('#cycle_time').numberbox('setValue', data[0].cycle_time ? data[0].cycle_time : 0);
+    //             }
+    //         });
+    //     }
+    // });
+
+    $('#machine_id').combogrid({
+        url: '<?= base_url('master/menu_loadings/readMachines/'); ?>',
+        panelWidth: 450,
+        idField: 'machine_id',
+        valueField: 'machine_id',
+        textField: 'number',
         mode: 'remote',
         fitColumns: true,
-        prompt: 'Choose Product No',
+        prompt: 'Choose Machine No.',
         columns: [
             [{
-                field: 'item_fg_id',
-                title: 'Product ID',
-                width: 120
-            }, {
-                field: 'item_fg_number',
-                title: 'Product No.',
+                field: 'number',
+                title: 'Machine No',
                 width: 150
             }, {
-                field: 'item_fg_name',
-                title: 'Product Name',
-                width: 200
+                field: 'type_process_name',
+                title: 'Process Type',
+                width: 150
+            }, {
+                field: 'toonage',
+                title: 'Tooneage of Machine',
+                width: 150
             }]
         ],
         onSelect: function(index, row) {
-            let { item_family_number } = row;
+
+            let { item_family_number, machine_id } = row;
 
             if (item_family_number === 'CD') {
-                // $('#mold_id').combobox('disable');
-
                 $('#mold_id').combobox('clear');
                 $('#mold_id').combobox('disableValidation'); 
                 $('#mold_wrapper').hide();
                 $('#runner-wrapper').hide();
+
+                $('#item_fg_id').combogrid({
+                    url: '<?php echo base_url('master/menu_loadings/readItemMachines/'); ?>'+ btoa(row.machine_id),
+                    required: true,
+                    panelWidth: 500,
+                    idField: 'item_fg_id',
+                    textField: 'item_fg_number',
+                    mode: 'remote',
+                    fitColumns: true,
+                    prompt: 'Choose Product No',
+                    columns: [
+                        [{
+                            field: 'item_fg_id',
+                            title: 'Product ID',
+                            width: 120
+                        }, {
+                            field: 'item_fg_number',
+                            title: 'Product No.',
+                            width: 150
+                        }, {
+                            field: 'item_fg_name',
+                            title: 'Product Name',
+                            width: 200
+                        }]
+                    ],
+                    onSelect: function(index, row) {
+                        $('#cycle_time').numberbox('setValue', row.cycle_time || 0);
+                    },
+                    onLoadSuccess: function(data) {
+                        console.log('Data', data);
+
+                        if (data.rows && data.rows.length === 1) {
+                            $('#item_fg_id').combogrid('grid').datagrid('selectRow', 0);
+                            $('#item_fg_id').combogrid('setValue', data.rows[0].item_fg_id);
+                        }
+
+                    }
+                });
+
             } else {
                 // $('#mold_id').combobox('enable');
                 
@@ -470,42 +811,51 @@
                 $('#runner-wrapper').show();
                 $('#mold_id').combobox('enableValidation');
 
-                $('#mold_id').combobox({
-                    url: '<?= base_url('master/menu_loadings/readSettingMolds/'); ?>' + btoa(row.item_fg_id),
-                    valueField: 'mold_id',
-                    textField: 'mold_id',
-                    prompt: 'Choose Mold ID',
-                    onLoadSuccess: function(data) {
-                        if (data.length === 1) {
-                            $('#mold_id').combobox('setValue', data[0].mold_id);
-                        }
-                    }
+                $('#item_fg_id').combogrid({
+                    url: '<?php echo base_url('master/menu_loadings/readItemMachines/'); ?>'+ btoa(row.machine_id),
+                    required: true,
+                    panelWidth: 500,
+                    idField: 'item_fg_id',
+                    textField: 'item_fg_number',
+                    mode: 'remote',
+                    fitColumns: true,
+                    prompt: 'Choose Product No',
+                    columns: [
+                        [{
+                            field: 'item_fg_id',
+                            title: 'Product ID',
+                            width: 120
+                        }, {
+                            field: 'item_fg_number',
+                            title: 'Product No.',
+                            width: 150
+                        }, {
+                            field: 'item_fg_name',
+                            title: 'Product Name',
+                            width: 200
+                        }]
+                    ],
+                    onSelect: function(index, row) {
+                        $('#cycle_time').numberbox('setValue', row.cycle_time || 0);
+
+                        $('#mold_id').combobox({
+                            url: '<?= base_url('master/menu_loadings/readSettingMolds/'); ?>' + btoa(row.item_fg_id) 
+                            + '/'+ btoa(machine_id),
+                            valueField: 'mold_id',
+                            textField: 'mold_id',
+                            prompt: 'Choose Mold ID',
+                            onLoadSuccess: function(data) {
+                                if (data.length === 1) {
+                                    $('#mold_id').combobox('setValue', data[0].mold_id);
+                                }
+                            }
+                        });
+                    },
                 });
+
             }
-
-            $('#machine_id').combobox({
-                url: '<?= base_url('master/menu_loadings/readMachines/'); ?>' + btoa(row.item_fg_id) + '/' + btoa(item_family_number),
-                valueField: 'machine_id',
-                textField: 'number',
-                prompt: 'Choose Machine No.',
-                onLoadSuccess: function(data) {
-                    console.log('Data :  ', data);
-                    if (data.length === 1) {
-                        $('#machine_id').combobox('setValue', data[0].machine_id);
-                    }
-
-                    $('#cycle_time').numberbox('setValue', data[0].cycle_time ? data[0].cycle_time : 0);
-                }
-            });
         }
     });
-
-    // $('#machine_id').combobox({
-    //     url: '<?= base_url('master/machines/reads/'); ?>',
-    //     valueField: 'id',
-    //     textField: 'number',
-    //     prompt: 'Choose Machine No.',
-    // });
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({

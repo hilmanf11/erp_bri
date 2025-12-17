@@ -1,8 +1,39 @@
+<style>
+    .datagrid-wrap {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .datagrid-view {
+        overflow-y: auto !important;
+        max-height: 500px;
+    }
+
+    .datagrid-header {
+        position: sticky !important;
+        top: 0;
+        z-index: 20;
+        background: #f4f4f4;
+    }
+
+    .datagrid-header-inner {
+        border-bottom: 1px solid #d0d0d0;
+    }
+
+    .swal2-container {
+        z-index: 9999 !important;
+    }
+    .swal2-popup {
+        z-index: 99999 !important;
+    }
+</style>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar">
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
+            <th rowspan="2" data-options="field:'printed',width:100,align:'center', formatter:btnPrint">Print</th>
             <th rowspan="2" data-options="field:'period',width:150,halign:'center',align:'center'">Period</th>
             <th rowspan="2" data-options="field:'trans_date',width:200,align:'center'">Production Date</th>
             <th rowspan="2" data-options="field:'number',width:200,align:'center'">Document No</th>
@@ -28,24 +59,23 @@
 <div id="toolbar" style="height: 265px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-        <fieldset style="width: 70%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+        <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Period</span>
                     <input style="width:60%;" name="filter_period" id="filter_period" class="easyui-combobox" required>
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Production Date</span>
+                    <input style="width:29.75%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    <input style="width:29.8%;" id="filter_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                </div>
 
                 <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">Production Date</span>
-                    <input style="width:30%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
-                    <input style="width:30%;" id="filter_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
-                </div> -->
-
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Production Date</span>
                     <input style="width:60%;" id="filter_trans_date" value="<?= date("Y-m-d") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
-                </div>
+                </div> -->
 
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Doc No</span>
@@ -95,6 +125,9 @@
             </div>
         </fieldset>
         <?= $button ?>
+
+        <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="updateMachineOnly()"><i class="fa fa-edit"></i> Update by Machine</a>
+
     </div>
 </div>
 
@@ -137,10 +170,25 @@
                     </select>
                 </div>
 
-                <div class="fitem">
+                <div class="fitem" id="machine_no_insert_wrapper">
+                    <span style="width:35%; display:inline-block;">Unscheduled Machine No</span>
+                    <input style="width:60%;" id="machine_no_insert" class="easyui-combogrid">
+                </div>
+
+                <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">PIC</span>
                     <input style="width:60%;" name="pic" id="pic" class="easyui-textbox">
+                </div> -->
+
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">PIC</span>
+                    <select style="width:60%;" name="pic" id="pic" class="easyui-combobox" panelHeight="auto" editable="false" required>
+                        <option value="ASEP">ASEP</option>
+                        <option value="BAYU">BAYU</option>
+                        <option value="RONAL">RONAL</option>
+                    </select>
                 </div>
+
             </div>
 
         </fieldset>
@@ -168,12 +216,34 @@
     </div>
 </div>
 
+<!-- POPUP PRINT -->
+<div id="dlgPrint" class="easyui-dialog" title="Print Label Output Production"
+     style="width:900px;height:500px;padding:10px"
+     closed="true" modal="true">
+
+    <table id="dgPrint" class="easyui-datagrid" style="width:100%;height:100%;"></table>
+
+</div>
+
+<!-- <div id="dlgCustomer" class="easyui-dialog" title="Customer List" closed="true" modal="true" style="width:400px;padding:10px">
+    <table id="dgCustomer" class="easyui-datagrid" style="width:100%; height:200px;"
+           singleSelect="true"></table>
+
+    <div style="text-align:right; margin-top:10px;">
+        <a class="easyui-linkbutton" onclick="selectCustomer()" iconCls="icon-ok">Choose</a>
+    </div>
+</div> -->
+
+
 <!-- PDF -->
 <iframe id="printout" src="<?= base_url('control/output_production_press/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
+    let currentMode = '';
+
     //ADD DATA
     function add() {
+        currentMode = 'add';
         // $('#dlg_insert').dialog('open');
 
         $('#dlg_insert').dialog({
@@ -188,13 +258,30 @@
         $('#dg2').datagrid('loadData', []);
         url_save = '<?= base_url('control/output_production_press/create') ?>';
         $('#frm_insert').form('clear');
-        $("#trans_date").datebox('setValue', "<?= date("Y-m-d") ?>");
+        $("#machine_no_insert").combogrid('clear');
+        $('#machine_no_insert_wrapper').show();
         $("#trans_date").datebox('enable');
         $("#number").textbox('enable');
         $("#period").combobox('enable');
         $("#wp").combobox('enable');
         $("#shift").combobox('enable');
-        autonumber();
+        // $("#trans_date").datebox('setValue', "<?= date("Y-m-d") ?>");
+        // autonumber();
+
+        $("#trans_date").datebox({
+            formatter: myformatter,
+            parser: myparser,
+            editable: false,
+            onSelect: function(date){
+                var d = $.fn.datebox.defaults.formatter(date);
+                autonumber(d);
+            }
+        });
+
+        var today = "<?= date('Y-m-d') ?>";
+        $("#trans_date").datebox('setValue', today);
+
+        autonumber(today);
 
         $("#period").combobox({
             url: '<?= base_url('planning/production_schedule_press/readPeriod') ?>',
@@ -233,10 +320,11 @@
         // });
     }
 
-    function autonumber() {
+    function autonumber(trans_date) {
         $.ajax({
             type: "post",
             url: "<?= base_url('control/output_production_press/autonumber') ?>",
+            data: { trans_date: trans_date },
             dataType: "html",
             success: function(result) {
                 $("#number").textbox('setValue', result);
@@ -244,12 +332,15 @@
         });
     }
 
+    // 
+
     function addTable(link = "") {
         $('#dg2').datagrid({
             url: link,
             singleSelect: true,
             // fit: true,
-            // fitColumns: true,
+            height: 480,
+            fitColumns: true,
             columns: [
                 [{
                     field: 'id',
@@ -261,7 +352,9 @@
                         type: 'textbox'
                     },
                     hidden: true
-                }, {
+                },
+
+                {
                     field: 'machine_number',
                     width: 100,
                     rowspan: 2,
@@ -321,28 +414,51 @@
                                 var r = dg.datagrid('getSelected');
                                 var idx = dg.datagrid('getRowIndex', r);
 
-                                var ed = dg.datagrid('getEditor', {
-                                    index: idx,
-                                    field: 'machine_id'
+                                var ed = dg.datagrid('getEditor', { 
+                                    index: idx, 
+                                    field: 'machine_id' 
                                 });
 
-                                $(ed.target).textbox('setValue', row.machine_id);
+                                if (ed) $(ed.target).textbox('setValue', row.machine_id);
+
+                                r.machine_id = row.machine_id;
+                                r.machine_number = row.number;
+                                dg.datagrid('updateRow', { index: idx, row: r });
 
                                 var edWO = dg.datagrid('getEditor', { index: idx, field: 'item_fg_number' });
                                 if (edWO) {
-                                    // reload WO sesuai machine terpilih
+                                    $(edWO.target).combogrid('setValue', '');
                                     $(edWO.target).combogrid('grid').datagrid('load', {
                                         machine_id: window.btoa(row.machine_id),
                                         period: window.btoa($('#period').textbox('getValue')),
                                         wp: window.btoa($('#wp').textbox('getValue'))
                                     });
-                                    
+                                }
+                            },
+                            onHidePanel: function() {
+                                var t = $(this).combogrid('getText');
+                                var g = $(this).combogrid('grid');
+                                var rows = g.datagrid('getRows');
+                                var exists = false;
+
+                                for (var i = 0; i < rows.length; i++) {
+                                    if (rows[i].number === t) {
+                                        exists = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!exists) {
+                                    $(this).combogrid('setValue', '');
+                                    var grid = $(this).combogrid('grid');
+                                    grid.datagrid('load', {});
                                 }
                             }
                         }
                     }
 
-                }, {
+                }, 
+                {
                     field: 'item_fg_number',
                     width: 150,
                     rowspan: 2,
@@ -353,71 +469,49 @@
                         options: {
                             url: '<?= base_url('control/output_production_press/readItemFg/'); ?>',
                             required: true,
-                            panelWidth: 650,
-                            idField: 'number',
+                            panelWidth: 750,
+                            idField: 'item_fg_id',
                             textField: 'number',
-                            valueField: 'item_fg_id',
+                            // valueField: 'item_fg_id',
                             mode: 'remote',
                             fitColumns: true,
                             prompt: 'Choose Product No',
-                            columns: [
-                                [{
-                                    field: 'number',
-                                    title: 'Product No',
-                                    width: 200
-                                }, {
-                                    field: 'name',
-                                    title: 'Product Name',
-                                    width: 150
-                                }, {
-                                    field: 'planning_qty',
-                                    title: 'Planning/day (pcs)',
-                                    width: 150
-                                }, {
-                                    field: 'workorder',
-                                    title: 'Workorder',
-                                    width: 150
-                                }]
-                            ],
-
-                            // onLoadSuccess: function(data) {
-                            //     var dg = $('#dg2');
-                            //     var row = dg.datagrid('getSelected');
-                            //     if (!row) return;
-                            //     var idx = dg.datagrid('getRowIndex', row);
-
-                            //     var edId = dg.datagrid('getEditor', { index: idx, field: 'item_fg_id' });
-                            //     var edNo = dg.datagrid('getEditor', { index: idx, field: 'item_fg_number' });
-                            //     var edName = dg.datagrid('getEditor', { index: idx, field: 'item_fg_name' });
-                            //     var edPlanning_qty = dg.datagrid('getEditor', { index: idx, field: 'planning_qty' });
-                            //     var edWorkorder = dg.datagrid('getEditor', { index: idx, field: 'workorder' });
-
-                            //     if (edId && edNo) {
-                            //         if (row.item_fg_id) {
-                            //             $(edId.target).textbox('setValue', row.item_fg_id);
-                            //             $(edNo.target).combogrid('setValue', row.item_fg_number);
-                            //             $(edName.target).textbox('setValue', row.item_fg_name);
-                            //             $(edPlanning_qty.target).numberbox('setValue', row.planning_qty);
-                            //             $(edWorkorder.target).numberbox('setValue', row.workorder);
-                            //         }
-                            //     }
-                            // },
-
+                            columns: [[
+                                { field: 'number', title: 'Product No', width: 200 },
+                                { field: 'name', title: 'Product Name', width: 150 },
+                                { field: 'planning_qty', title: 'Planning/day (pcs)', width: 150 },
+                                { field: 'workorder', title: 'Workorder', width: 150 },
+                                { field: 'mold_id', title: 'Mold ID', width: 150 }
+                            ]],
+                            onBeforeLoad: function(param) {
+                                param.period = window.btoa($('#period').textbox('getValue'));
+                                param.wp = window.btoa($('#wp').textbox('getValue'));
+                                const dg = $('#dg2');
+                                const row = dg.datagrid('getSelected');
+                                param.machine_id = row && row.machine_id ? window.btoa(row.machine_id) : '';
+                            },
                             onLoadSuccess: function(data) {
-                                var dg = $('#dg2');
-                                var row = dg.datagrid('getSelected');
+                                const dg = $('#dg2');
+                                const row = dg.datagrid('getSelected');
                                 if (!row) return;
-                                var idx = dg.datagrid('getRowIndex', row);
+                                const idx = dg.datagrid('getRowIndex', row);
 
-                                var edId   = dg.datagrid('getEditor', { index: idx, field: 'item_fg_id' });
-                                var edNo   = dg.datagrid('getEditor', { index: idx, field: 'item_fg_number' });
-                                var edName = dg.datagrid('getEditor', { index: idx, field: 'item_fg_name' });
-                                var edPlan = dg.datagrid('getEditor', { index: idx, field: 'planning_qty' });
-                                var edPlnShift = dg.datagrid('getEditor', { index: idx, field: 'planning_qty_shift' });
-                                var edWO   = dg.datagrid('getEditor', { index: idx, field: 'workorder' });
+                                const edId = dg.datagrid('getEditor', { index: idx, field: 'item_fg_id' });
+                                const edNo = dg.datagrid('getEditor', { index: idx, field: 'item_fg_number' });
+                                const edName = dg.datagrid('getEditor', { index: idx, field: 'item_fg_name' });
+                                const edPlan = dg.datagrid('getEditor', { index: idx, field: 'planning_qty' });
+                                const edPlnShift = dg.datagrid('getEditor', { index: idx, field: 'planning_qty_shift' });
+                                const edWO = dg.datagrid('getEditor', { index: idx, field: 'workorder' });
+                                const edMold = dg.datagrid('getEditor', { index: idx, field: 'mold_id' });
 
-                                let pln_qty = row.planning_qty ? Math.ceil(row.planning_qty / 3) : 0
-                                let planning_qty = rows.planning_qty ? Math.round(rows.planning_qty) : 0;
+                                // Auto pilih kalau cuma satu data
+                                if (data.rows && data.rows.length === 1) {
+                                    const item = data.rows[0];
+                                    $(edNo.target).combogrid('grid').datagrid('selectRecord', item.item_fg_id);
+                                }
+
+                                let pln_qty = row.planning_qty ? Math.ceil(row.planning_qty / 3) : 0;
+                                let planning_qty = row.planning_qty ? Math.round(row.planning_qty) : 0;
 
                                 if (row.item_fg_id) {
                                     if (edId) $(edId.target).textbox('setValue', row.item_fg_id);
@@ -425,52 +519,54 @@
                                     if (edName) $(edName.target).textbox('setValue', row.item_fg_name);
                                     if (edPlan) $(edPlan.target).numberbox('setValue', row.planning_qty);
                                     if (edPlnShift) $(edPlnShift.target).numberbox('setValue', pln_qty);
-                                    if (edWO)   $(edWO.target).textbox('setValue', row.workorder);
+                                    if (edWO) $(edWO.target).textbox('setValue', row.workorder);
+                                    if (edMold) $(edMold.target).textbox('setValue', row.mold_id);
                                 }
                             },
+                            onSelect: function(index, rows) {
+                                const dg = $('#dg2');
+                                const row = dg.datagrid('getSelected');
+                                const rowIndex = dg.datagrid('getRowIndex', row);
 
-                            onSelect: function(value, rows) {
-                                var dg = $('#dg2');
-                                var row = dg.datagrid('getSelected');
-                                var rowIndex = dg.datagrid('getRowIndex', row);
-                                var ed1 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'item_fg_id'
-                                });
-                                var ed2 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'item_fg_number'
-                                });
-                                var ed3 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'item_fg_name'
-                                });
-                                var ed4 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'planning_qty'
-                                });
-                                var ed5 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'workorder'
-                                });
-                                var ed6 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'planning_qty_shift'
-                                });
+                                const ed1 = dg.datagrid('getEditor', { index: rowIndex, field: 'item_fg_id' });
+                                const ed2 = dg.datagrid('getEditor', { index: rowIndex, field: 'item_fg_number' });
+                                const ed3 = dg.datagrid('getEditor', { index: rowIndex, field: 'item_fg_name' });
+                                const ed4 = dg.datagrid('getEditor', { index: rowIndex, field: 'planning_qty' });
+                                const ed5 = dg.datagrid('getEditor', { index: rowIndex, field: 'workorder' });
+                                const ed6 = dg.datagrid('getEditor', { index: rowIndex, field: 'planning_qty_shift' });
+                                const ed7 = dg.datagrid('getEditor', { index: rowIndex, field: 'mold_id' });
 
                                 let pln_qty = rows.planning_qty ? Math.ceil(rows.planning_qty / 3) : 0;
                                 let planning_qty = rows.planning_qty ? Math.round(rows.planning_qty) : 0;
 
                                 $(ed1.target).textbox('setValue', rows.item_fg_id);
-                                $(ed2.target).textbox('setValue', rows.number);
+                                $(ed2.target).combogrid('setValue', rows.number);
                                 $(ed3.target).textbox('setValue', rows.name);
                                 $(ed4.target).textbox('setValue', planning_qty);
                                 $(ed5.target).textbox('setValue', rows.workorder);
                                 $(ed6.target).textbox('setValue', pln_qty);
+                                $(ed7.target).textbox('setValue', rows.mold_id);
                             },
+                            onHidePanel: function() {
+                                const cg = $(this);
+                                const g = cg.combogrid('grid');
+                                const text = cg.combogrid('getText').trim();
+                                const rows = g.datagrid('getRows');
+                                const exists = rows.some(r => r.number === text);
+
+                                if (!exists && text !== '') {
+                                    cg.combogrid('setValue', '');
+                                    // g.datagrid('loadData', { total: 0, rows: [] }); // reset list
+
+                                    var grid = $(this).combogrid('grid');
+                                    grid.datagrid('load', {});
+                                }
+                            }
                         }
                     }
-                }, {
+                },
+
+                {
                     field: 'item_fg_id',
                     width: 150,
                     rowspan: 2,
@@ -542,18 +638,131 @@
                         }
                     }
                 }, {
+                    field: 'mold_id',
+                    width: 150,
+                    rowspan: 2,
+                    halign: 'center',
+                    align: 'center',
+                    title: "Mold ID",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, 
+
+                // {
+                //     field: 'operator',
+                //     width: 130,
+                //     rowspan: 2,
+                //     halign: 'center',
+                //     title: "Operator <br>Name",
+                //     editor: {
+                //         type: 'combogrid',
+                //         options: {
+                //             url: '<?= base_url('api/hris_bri/getOperatorName') ?>',
+                //             method: 'get',
+                //             mode: 'remote',
+                //             idField: 'name',
+                //             textField: 'name',
+                //             valueField: 'name',
+                //             prompt: 'Choose Operator Name',
+                //             panelWidth: 265,
+                //             fitColumns: true,
+                //             required: true,
+                //             queryParams: {},
+                //             onShowPanel: function() {
+                //                 var grid = $(this).combogrid('grid');
+                //                 if (!grid.data('loaded')) {
+                //                     grid.datagrid('load', {});
+                //                     grid.data('loaded', true);
+                //                 }
+                //             },
+                //             columns: [[
+                //                 { field: 'name', title: 'Operator Name', width: 250 },
+                //             ]],
+                //             loadFilter: function(data){
+                //                 return Array.isArray(data) ? data : [];
+                //             },
+                //             onHidePanel: function() {
+                //                 var t = $(this).combogrid('getText');
+                //                 var g = $(this).combogrid('grid');
+                //                 var rows = g.datagrid('getRows');
+                //                 var exists = false;
+
+                //                 for (var i = 0; i < rows.length; i++) {
+                //                     if (rows[i].name === t) {
+                //                         exists = true;
+                //                         break;
+                //                     }
+                //                 }
+
+                //                 if (!exists) {
+                //                     $(this).combogrid('setValue', '');
+                //                     g.datagrid('loadData', []);
+                //                     g.removeData('loaded');
+                //                 }
+                //             }
+                //         }
+                //     }
+                // }, 
+
+                {
                     field: 'operator',
-                    width: 60,
+                    width: 130,
                     rowspan: 2,
                     halign: 'center',
                     title: "Operator <br>Name",
                     editor: {
-                        type: 'textbox',
-                        options : {
-                            // required: true,
+                        type: 'combogrid',
+                        options: {
+                            url: '<?= base_url('master/man_powers/reads') ?>',
+                            // method: 'get',
+                            mode: 'remote',
+                            idField: 'name',
+                            textField: 'name',
+                            valueField: 'name',
+                            prompt: 'Choose Operator Name',
+                            panelWidth: 265,
+                            fitColumns: true,
+                            required: true,
+                            queryParams: {},
+                            onShowPanel: function() {
+                                var grid = $(this).combogrid('grid');
+                                if (!grid.data('loaded')) {
+                                    grid.datagrid('load', {});
+                                    grid.data('loaded', true);
+                                }
+                            },
+                            columns: [[
+                                { field: 'name', title: 'Operator Name', width: 250 },
+                            ]],
+                            loadFilter: function(data){
+                                return Array.isArray(data) ? data : [];
+                            },
+                            onHidePanel: function() {
+                                var t = $(this).combogrid('getText');
+                                var g = $(this).combogrid('grid');
+                                var rows = g.datagrid('getRows');
+                                var exists = false;
+
+                                for (var i = 0; i < rows.length; i++) {
+                                    if (rows[i].name === t) {
+                                        exists = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!exists) {
+                                    $(this).combogrid('setValue', '');
+                                    g.datagrid('loadData', []);
+                                    g.removeData('loaded');
+                                }
+                            }
                         }
                     }
-                }, {   
+                }, {
                     title: 'Output', 
                     colspan: 4,
                     halign: 'center', 
@@ -572,21 +781,25 @@
                             required: true,
                         }
                     }
-                }, {
-                    field: 'standard_curing_time',
-                    width: 110,
-                    rowspan: 2,
-                    align: 'center',
-                    title: "Standard Curing <br> Time (second)",
-                    formatter: numberFormatField,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 0,
-                            required: true,
-                        }
-                    }
-                }, {
+                }, 
+
+                // {
+                //     field: 'standard_curing_time',
+                //     width: 110,
+                //     rowspan: 2,
+                //     align: 'center',
+                //     title: "Standard Curing <br> Time (second)",
+                //     formatter: numberFormatField,
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             precision: 0,
+                //             required: true,
+                //         }
+                //     }
+                // }, 
+
+                {
                     field: 'actual_curing_time',
                     width: 100,
                     rowspan: 2,
@@ -614,21 +827,25 @@
                             required: true,
                         }
                     }
-                }, {
-                    field: 'target_shoot',
-                    width: 60,
-                    rowspan: 2,
-                    align: 'center',
-                    title: "Target <br>Shoot",
-                    formatter: numberFormatField,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 0,
-                            required: true,
-                        }
-                    }
-                }, {
+                }, 
+                
+                // {
+                //     field: 'target_shoot',
+                //     width: 60,
+                //     rowspan: 2,
+                //     align: 'center',
+                //     title: "Target <br>Shoot",
+                //     formatter: numberFormatField,
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             precision: 0,
+                //             required: true,
+                //         }
+                //     }
+                // }, 
+                
+                {
                     field: 'actual_shoot',
                     width: 60,
                     rowspan: 2,
@@ -670,22 +887,25 @@
                             // required: true,
                         }
                     }
-                }, {   
-                    title: 'Downtime', 
-                    colspan: 6, 
-                    halign: 'center',
-                    align: 'center',
-                }, {
-                    field: 'remarks',
-                    width: 80,
-                    rowspan: 2,
-                    align: 'center',
-                    halign: 'center',
-                    title: "Remarks",
-                    editor: {
-                        type: 'textbox',
-                    }
-                }],
+                }, 
+                
+                // {   
+                //     title: 'Downtime', 
+                //     colspan: 6, 
+                //     halign: 'center',
+                //     align: 'center',
+                // }, {
+                //     field: 'remarks',
+                //     width: 80,
+                //     rowspan: 2,
+                //     align: 'center',
+                //     halign: 'center',
+                //     title: "Remarks",
+                //     editor: {
+                //         type: 'textbox',
+                //     }
+                // }
+                ],
 
                 [{
                     
@@ -786,79 +1006,82 @@
                             precision: 0,
                         }
                     }
-                }, {
-                    field: 'mold_cleaning',
-                    width: 95,
-                    align: 'center',
-                    title: "Mold Cleaning",
-                    formatter: numberFormatField,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 0,
-                        }
-                    }
-                }, {
-                    field: 'trial',
-                    width: 50,
-                    align: 'center',
-                    title: "Trial",
-                    formatter: numberFormatField,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 0,
-                        }
-                    }
-                }, {
-                    field: 'mold_changing',
-                    width: 100,
-                    align: 'center',
-                    title: "Mold Changing",
-                    formatter: numberFormatField,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 0,
-                        }
-                    }
-                }, {
-                    field: 'machine_repair',
-                    width: 100,
-                    align: 'center',
-                    title: "Machine Repair",
-                    formatter: numberFormatField,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 0,
-                        }
-                    }
-                }, {
-                    field: 'mold_repair',
-                    width: 80,
-                    align: 'center',
-                    title: "Mold Repair",
-                    formatter: numberFormatField,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 0,
-                        }
-                    }
-                }, {
-                    field: 'others',
-                    width: 80,
-                    align: 'center',
-                    title: "Others",
-                    formatter: numberFormatField,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 0,
-                        }
-                    }
-                }]
+                }, 
+                
+                // {
+                //     field: 'mold_cleaning',
+                //     width: 95,
+                //     align: 'center',
+                //     title: "Mold Cleaning",
+                //     formatter: numberFormatField,
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             precision: 0,
+                //         }
+                //     }
+                // }, {
+                //     field: 'trial',
+                //     width: 50,
+                //     align: 'center',
+                //     title: "Trial",
+                //     formatter: numberFormatField,
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             precision: 0,
+                //         }
+                //     }
+                // }, {
+                //     field: 'mold_changing',
+                //     width: 100,
+                //     align: 'center',
+                //     title: "Mold Changing",
+                //     formatter: numberFormatField,
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             precision: 0,
+                //         }
+                //     }
+                // }, {
+                //     field: 'machine_repair',
+                //     width: 100,
+                //     align: 'center',
+                //     title: "Machine Repair",
+                //     formatter: numberFormatField,
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             precision: 0,
+                //         }
+                //     }
+                // }, {
+                //     field: 'mold_repair',
+                //     width: 80,
+                //     align: 'center',
+                //     title: "Mold Repair",
+                //     formatter: numberFormatField,
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             precision: 0,
+                //         }
+                //     }
+                // }, {
+                //     field: 'others',
+                //     width: 80,
+                //     align: 'center',
+                //     title: "Others",
+                //     formatter: numberFormatField,
+                //     editor: {
+                //         type: 'numberbox',
+                //         options: {
+                //             precision: 0,
+                //         }
+                //     }
+                // }
+            ]
             ],
             onClickCell: onClickCell,
 
@@ -1042,27 +1265,43 @@
             success: function(result) {
                 var result = eval('(' + result + ')');
                 toastr.success(result.message);
+
+                $('#dg2').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
+                editIndex = undefined;
             },
             error: function(jqXHR, textStatus, errorThrown) {
-                toastr.error(jqXHR.statusText);
-                $.messager.alert("Error", jqXHR.statusText, 'error');
+                // toastr.error(jqXHR.statusText);
+                // $.messager.alert("Error", jqXHR.statusText, 'error');
+
+                if (jqXHR.responseText && jqXHR.responseText.includes("Error Number: 1451")) {
+                    toastr.error("Cannot delete data that is still in use");
+                } else {
+                    toastr.error("Delete failed: " + jqXHR.statusText);
+                }
             },
             complete: function(data) {
                 $('#dg').datagrid('reload');
             }
         });
-
-        $('#dg2').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
-        editIndex = undefined;
     }
 
     //EDIT DATA
     function update() {
+        currentMode = 'update';
         var row = $('#dg').treegrid('getSelected');
         console.log('Row : ', row);
 
         if (row) {
-            $('#dlg_insert').dialog('open');
+            // $('#dlg_insert').dialog('open');
+
+            $('#dlg_insert').dialog({
+                title: 'Edit Data',
+                modal: true,
+                closed: false,
+                maximized: true,
+                resizable: true,
+            }).dialog('open');
+
             $('#frm_insert').form('load', row);
             $("#trans_date").datebox('disable');
             $("#number").textbox('disable');
@@ -1070,10 +1309,141 @@
             $("#wp").combobox('disable');
             $("#shift").combobox('disable');
 
+            $('#machine_no_insert_wrapper').hide();
+            // $("#machine_no_insert").combogrid('disable');
+            $("#machine_no_insert").combogrid('clear');
+
             addTable('<?= base_url('control/output_production_press/datatableUpdates?number=') ?>' + window.btoa(row.number));
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
+    }
+
+    // function updateMachineOnly() {
+    //     currentMode = 'updateMachineOnly';
+    //     var row = $('#dg').treegrid('getSelected');
+
+    //     console.log('Row : ', row);
+    //     if (row) {
+    //         if (row.machine_id) {
+    //             $('#dlg_insert').dialog({
+    //                 title: 'Update by Machine',
+    //                 modal: true,
+    //                 closed: false,
+    //                 maximized: true,
+    //                 resizable: true,
+    //             }).dialog('open');
+
+    //             $('#frm_insert').form('load', row);
+    //             $("#trans_date").datebox('disable');
+    //             $("#number").textbox('disable');
+    //             $("#period").combobox('disable');
+    //             $("#wp").combobox('disable');
+    //             $("#shift").combobox('disable');
+
+    //             $("#machine_no_insert").combogrid('clear');
+    //             $('#machine_no_insert_wrapper').show();
+    //             $("#machine_no_insert").combogrid('disable');
+
+    //             addTable('<?= base_url('control/output_production_press/datatableUpdateByMachines?number=') ?>'
+    //                 + window.btoa(row.number));
+
+    //             var urlMachines = "<?= base_url('control/output_production_press/readMachinesByNumber?number=') ?>" + window.btoa(row.number);
+            
+    //             $.ajax({
+    //                 url: urlMachines,
+    //                 type: "GET",
+    //                 dataType: "json",
+    //                 success: function(res) {
+    //                     console.log("Machines loaded:", res);
+    //                     if (Array.isArray(res) && res.length > 0) {
+    //                         $("#machine_no_insert").combogrid('setValues', res);
+    //                     } else {
+    //                         $("#machine_no_insert").combogrid('clear');
+    //                     }
+    //                 },
+    //                 error: function(xhr, status, error) {
+    //                     console.error("Error loading machine list:", error);
+    //                 }
+    //             });
+    //         } else {
+    //             toastr.warning("Please select one of the data in the table first!", "Information");
+    //         }
+    //     } else {
+    //         toastr.warning("Please select one of the data in the table first!", "Information");
+    //     }
+    // }
+
+    function updateMachineOnly() {
+        currentMode = 'updateMachineOnly';
+        var row = $('#dg').treegrid('getSelected');
+        // console.log('Row:', row);
+
+        if (!row) {
+            toastr.warning("Please select one of the data in the table first!", "Information");
+            return;
+        }
+
+        // Cek global apakah masih ada machine dengan item_fg_id kosong
+        const checkUrl = "<?= base_url('control/output_production_press/checkMachinesWithoutItemFg?number=') ?>" + window.btoa(row.number);
+
+        $.ajax({
+            url: checkUrl,
+            type: "GET",
+            dataType: "json",
+            success: function(res) {
+                // console.log("Check result:", res);
+
+                if (res.has_empty_machines) {
+                    // Masih ada mesin kosong
+                    $('#dlg_insert').dialog({
+                        title: 'Update by Machine',
+                        modal: true,
+                        closed: false,
+                        maximized: true,
+                        resizable: true,
+                    }).dialog('open');
+
+                    $('#frm_insert').form('load', row);
+                    $("#trans_date").datebox('disable');
+                    $("#number").textbox('disable');
+                    $("#period").combobox('disable');
+                    $("#wp").combobox('disable');
+                    $("#shift").combobox('disable');
+
+                    $("#machine_no_insert").combogrid('clear');
+                    $('#machine_no_insert_wrapper').show();
+                    $("#machine_no_insert").combogrid('disable');
+
+                    addTable('<?= base_url('control/output_production_press/datatableUpdateByMachines?number=') ?>' + window.btoa(row.number));
+
+                    const urlMachines = "<?= base_url('control/output_production_press/readMachinesByNumber?number=') ?>" + window.btoa(row.number);
+                    $.ajax({
+                        url: urlMachines,
+                        type: "GET",
+                        dataType: "json",
+                        success: function(res) {
+                            // console.log("Machines loaded:", res);
+                            if (Array.isArray(res) && res.length > 0) {
+                                $("#machine_no_insert").combogrid('setValues', res);
+                            } else {
+                                $("#machine_no_insert").combogrid('clear');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Error loading machine list:", error);
+                        }
+                    });
+                } else {
+                    // Tidak ada mesin kosong
+                    toastr.warning("All machines already have assigned item FG. No data to update!", "Information");
+                }
+            },
+            error: function(xhr, status, error) {
+                // console.error("Error checking machine condition:", error);
+                toastr.error("Failed to check machine condition!", "Error");
+            }
+        });
     }
 
     //DELETE DATA
@@ -1092,10 +1462,18 @@
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
+                                toastr.success(result.message);
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error(jqXHR.statusText);
-                                $.messager.alert("Error", jqXHR.statusText, 'error');
+                                // toastr.error(jqXHR.statusText);
+                                // $.messager.alert("Error", jqXHR.statusText, 'error');
+
+                                if (jqXHR.responseText && jqXHR.responseText.includes("Error Number: 1451")) {
+                                    toastr.error("Cannot delete data that is still in use");
+                                } else {
+                                    toastr.error("Delete failed: " + jqXHR.statusText);
+                                }
+
                             },
                             complete: function(data) {
                                 $('#dg').datagrid('reload');
@@ -1121,9 +1499,11 @@
     function filter() {
         // var filter_from = $("#filter_from").datebox('getValue');
         // var filter_to = $("#filter_to").datebox('getValue');
+        // var filter_trans_date = $("#filter_trans_date").datebox('getValue');
 
         var filter_period = $("#filter_period").datebox('getValue');
-        var filter_trans_date = $("#filter_trans_date").datebox('getValue');
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
         var filter_number = $("#filter_number").combobox('getValue');
         var filter_shift = $("#filter_shift").combobox('getValue');
         var filter_wp = $("#filter_wp").combobox('getValue');
@@ -1131,8 +1511,10 @@
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
-        // var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to +
-        var url = "?filter_period=" + filter_period + "&filter_trans_date=" + filter_trans_date + "&filter_number=" + filter_number + "&filter_shift=" + filter_shift + "&filter_wp=" + filter_wp + "&filter_workorder=" + filter_workorder + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
+        // var url = "?filter_period=" + filter_period + "&filter_trans_date=" + filter_trans_date + 
+
+        var url = "?filter_period=" + filter_period + "&filter_from=" + filter_from + "&filter_to=" + filter_to +
+        "&filter_number=" + filter_number + "&filter_shift=" + filter_shift + "&filter_wp=" + filter_wp + "&filter_workorder=" + filter_workorder + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
 
         $('#dg').datagrid({
             url: '<?= base_url('control/output_production_press/datatables') ?>' + url
@@ -1153,7 +1535,9 @@
         // var filter_to = $("#filter_to").datebox('getValue');
 
         var filter_period = $("#filter_period").datebox('getValue');
-        var filter_trans_date = $("#filter_trans_date").datebox('getValue');
+        // var filter_trans_date = $("#filter_trans_date").datebox('getValue');
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
         var filter_number = $("#filter_number").combobox('getValue');
         var filter_shift = $("#filter_shift").combobox('getValue');
         var filter_wp = $("#filter_wp").combobox('getValue');
@@ -1161,8 +1545,10 @@
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
-        // var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to +
-        var url = "?filter_period=" + filter_period + "&filter_trans_date=" + filter_trans_date + "&filter_number=" + filter_number + "&filter_shift=" + filter_shift + "&filter_wp=" + filter_wp + "&filter_workorder=" + filter_workorder + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
+        // var url = "?filter_period=" + filter_period + "&filter_trans_date=" + filter_trans_date + 
+
+        var url = "?filter_period=" + filter_period + "&filter_from=" + filter_from + "&filter_to=" + filter_to +
+        "&filter_number=" + filter_number + "&filter_shift=" + filter_shift + "&filter_wp=" + filter_wp + "&filter_workorder=" + filter_workorder + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
 
         window.location.assign('<?= base_url('control/output_production_press/print/excel') ?>' + url);
     }
@@ -1250,6 +1636,13 @@
                         }, {
                             field: 'workorder',
                             title: 'Work Order No',
+                            rowspan: 2,
+                            halign: 'center',
+                            align: 'center',
+                            width: 150
+                        }, {
+                            field: 'mold_id',
+                            title: 'Mold ID',
                             rowspan: 2,
                             halign: 'center',
                             align: 'center',
@@ -1402,18 +1795,6 @@
                             align: 'center',
                             width: 160,
                             formatter: numberformatPrecision
-                        }, {   
-                            title: 'Downtime',
-                            colspan: 6,
-                            halign: 'center',
-                            align: 'center'
-                        }, {
-                            field: 'remarks',
-                            title: 'Remarks',
-                            rowspan: 2,
-                            width: 100,
-                            halign: 'center',
-                            align: 'center',
                         }],
 
                         [{
@@ -1452,48 +1833,6 @@
                             editor: {
                                 type: 'numberbox',
                             }
-                        }, {
-                            field: 'mold_cleaning',
-                            title: 'Mold Cleaning',
-                            halign: 'center',
-                            align: 'center',
-                            width: 100,
-                            formatter: numberformat
-                        }, {
-                            field: 'trial',
-                            title: 'Trial',
-                            halign: 'center',
-                            align: 'center',
-                            width: 100,
-                            formatter: numberformat
-                        }, {
-                            field: 'mold_changing',
-                            title: 'Mold Changing',
-                            halign: 'center',
-                            align: 'center',
-                            width: 100,
-                            formatter: numberformat
-                        }, {
-                            field: 'machine_repair',
-                            title: 'Machine Repair',
-                            halign: 'center',
-                            align: 'center',
-                            width: 120,
-                            formatter: numberformat
-                        }, {
-                            field: 'mold_repair',
-                            title: 'Mold Repair',
-                            halign: 'center',
-                            align: 'center',
-                            width: 100,
-                            formatter: numberformat
-                        }, {
-                            field: 'others',
-                            title: 'Others',
-                            halign: 'center',
-                            align: 'center',
-                            width: 100,
-                            formatter: numberformat
                         }]
                     ],
                     onResize: function() {
@@ -1501,9 +1840,17 @@
                     },
                     onLoadSuccess: function(data) {
                         setTimeout(function() {
-                            console.log('Data : ', data.rows);
-
+                            // console.log('Data : ', data.rows);
                             $('#dg').datagrid('fixDetailRowHeight', index);
+
+                            var rows = ddv.datagrid('getRows');
+                            for (var i = 0; i < rows.length; i++) {
+                                var r = rows[i];
+                                if (r.machine_id && (!r.item_fg_id || r.item_fg_id === null || r.item_fg_id === "")) {
+                                    var row = ddv.datagrid('getPanel').find('tr[datagrid-row-index="' + i + '"]');
+                                    row.css('background-color', '#ffcccc');
+                                }
+                            }
                         }, 0);
                     }
                 });
@@ -1511,185 +1858,343 @@
             }
         });
 
-        //SAVE DATA
+        $('#trans_date').datebox().datebox('calendar').calendar({
+            validator: function(date){
+                var now = new Date();
+                var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                return date <= today;
+            }
+        });
+
+        // SAVE DATA
+        // $('#dlg_insert').dialog({
+        //     buttons: [{
+        //         text: 'Save All',
+        //         iconCls: 'icon-ok',
+        //         handler: function() {
+        //             var trans_date = $("#trans_date").datebox('getValue');
+        //             var number = $("#number").textbox('getValue');
+        //             var period = $("#period").combobox('getValue');
+        //             var wp = $("#wp").combobox('getValue');
+        //             var shift = $("#shift").combobox('getValue');
+        //             var pic = $("#pic").combobox('getValue');
+        //             var machine_no_insert = $("#machine_no_insert").combogrid('getValues'); // multiple machine id
+
+        //             console.log('Machine No Insert : ', machine_no_insert);
+
+        //             if (!trans_date || !number || !period || !wp || !shift) {
+        //                 toastr.error("Please complete all required fields before saving");
+        //                 return;
+        //             }
+
+        //             endEditing();
+        //             var rows = $('#dg2').datagrid('getRows') || [];
+        //             var totalrows = rows.length;
+                    
+
+        //             // Array semua data dari datagrid
+        //             var dataToSave = [];
+
+        //             for (let i = 0; i < totalrows; i++) {
+        //                 if (rows[i].item_fg_id) {
+        //                     dataToSave.push({
+        //                         trans_date: trans_date,
+        //                         number: number,
+        //                         period: period,
+        //                         wp: wp,
+        //                         shift: shift,
+        //                         pic: pic,
+        //                         id: rows[i].id,
+                                
+        //                         machine_number: rows[i].machine_number,
+        //                         item_fg_number: rows[i].item_fg_number,
+
+        //                         machine_id: rows[i].machine_id,
+        //                         item_fg_id: rows[i].item_fg_id,
+        //                         mold_id: rows[i].mold_id,
+        //                         planning_qty: rows[i].planning_qty,
+        //                         qty_ok: rows[i].qty_ok,
+        //                         qty_ng: rows[i].qty_ng,
+        //                         qty_ng_mold: rows[i].qty_ng_mold,
+        //                         workorder: rows[i].workorder,
+        //                         actual_cavity: rows[i].actual_cavity,
+        //                         operator: rows[i].operator,
+        //                         actual_curing_time: rows[i].actual_curing_time,
+        //                         shift_hour: rows[i].shift_hour,
+        //                         actual_shoot: rows[i].actual_shoot,
+        //                         total_compound_used: rows[i].total_compound_used,
+        //                         waste: rows[i].waste
+        //                     });
+        //                 }
+        //             }
+
+        //             // Tambahkan machine tambahan
+        //             // if (machine_no_insert.length > 0) {
+        //             //     for (let j = 0; j < machine_no_insert.length; j++) {
+        //             //         dataToSave.push({
+        //             //             trans_date: trans_date,
+        //             //             number: number,
+        //             //             period: period,
+        //             //             wp: wp,
+        //             //             shift: shift,
+        //             //             pic: pic,
+        //             //             machine_id: machine_no_insert[j],
+
+        //             //             // semua field lain kosong/null
+        //             //             item_fg_id: null,
+        //             //             planning_qty: null,
+        //             //             qty_ok: null,
+        //             //             qty_ng: null,
+        //             //             qty_ng_mold: null,
+        //             //             workorder: null,
+        //             //             actual_cavity: null,
+        //             //             operator: null,
+        //             //             actual_curing_time: null,
+        //             //             shift_hour: null,
+        //             //             actual_shoot: null,
+        //             //             total_compound_used: null,
+        //             //             waste: null
+        //             //         });
+        //             //     }
+        //             // }
+
+        //             if (currentMode === 'add' && machine_no_insert.length > 0) {
+        //                 for (let j = 0; j < machine_no_insert.length; j++) {
+        //                     dataToSave.push({
+        //                         trans_date: trans_date,
+        //                         number: number,
+        //                         period: period,
+        //                         wp: wp,
+        //                         shift: shift,
+        //                         pic: pic,
+        //                         machine_id: machine_no_insert[j],
+
+        //                         // semua field lain kosong/null
+        //                         item_fg_id: null,
+        //                         mold_id: null,
+        //                         planning_qty: null,
+        //                         qty_ok: null,
+        //                         qty_ng: null,
+        //                         qty_ng_mold: null,
+        //                         workorder: null,
+        //                         actual_cavity: null,
+        //                         operator: null,
+        //                         actual_curing_time: null,
+        //                         shift_hour: null,
+        //                         actual_shoot: null,
+        //                         total_compound_used: null,
+        //                         waste: null
+        //                     });
+        //                 }
+        //             }
+
+        //             console.log('Save Mode:', currentMode);
+        //             console.log('Machine No Insert:', machine_no_insert);
+
+        //             console.log('Final Data to Save:', dataToSave);
+
+        //             // Loop simpan semua ke server
+        //             if (dataToSave.length === 0) {
+        //                 toastr.error("No data to save");
+        //                 return;
+        //             }
+
+        //             let duplicateCheck = {};
+        //             let duplicateFound = false;
+
+        //             for (let i = 0; i < dataToSave.length; i++) {
+        //                 let row = dataToSave[i];
+
+        //                 let key = (row.item_fg_id || "") + "|" + (row.machine_id || "")
+        //                     + "|" + (row.workorder || "") + "|" + (row.mold_id || "");
+
+        //                 if (!duplicateCheck[key]) {
+        //                     duplicateCheck[key] = true;
+        //                 } else {
+        //                     duplicateFound = true;
+        //                     toastr.error(
+        //                         `Duplicate data found on:<br>
+        //                         Machine No: <b>${row.machine_number}</b><br>
+        //                         Product No: <b>${row.item_fg_number}</b><br>
+        //                         WO No: <b>${row.workorder}</b><br>
+        //                         Mold ID: <b>${row.mold_id}</b>`
+        //                     );
+        //                     break;
+        //                 }
+        //             }
+
+        //             if (duplicateFound) {
+        //                 return;
+        //             }
+
+        //             for (let i = 0; i < dataToSave.length; i++) {
+        //                 delete dataToSave[i].item_fg_number;
+        //                 delete dataToSave[i].machine_number;
+        //             }
+
+        //             var url_save = "<?= base_url('control/output_production_press/create') ?>";
+
+        //             let successCount = 0;
+        //             for (let k = 0; k < dataToSave.length; k++) {
+        //                 $.ajax({
+        //                     type: "post",
+        //                     url: url_save,
+        //                     data: dataToSave[k],
+        //                     dataType: "json",
+        //                     success: function(result) {
+        //                         if (result.theme === "error") {
+        //                             toastr.error(result.message);
+        //                         } else {
+        //                             successCount++;
+        //                             if (successCount === dataToSave.length) {
+        //                                 Swal.fire({
+        //                                     title: "All data saved successfully",
+        //                                     icon: "success",
+        //                                     confirmButtonText: 'Ok',
+        //                                     allowOutsideClick: false,
+        //                                 }).then(() => {
+        //                                     window.location.reload();
+        //                                 });
+
+        //                                 $('#dg').datagrid('reload');
+        //                                 $('#dlg_insert').dialog('close');
+        //                             }
+        //                         }
+        //                     },
+        //                     error: function(xhr, status, error) {
+        //                         toastr.error("Server error: " + error);
+        //                     }
+        //                 });
+        //             }
+        //         }
+        //     }]
+        // });
+
         $('#dlg_insert').dialog({
             buttons: [{
                 text: 'Save All',
                 iconCls: 'icon-ok',
                 handler: function() {
+
                     var trans_date = $("#trans_date").datebox('getValue');
                     var number = $("#number").textbox('getValue');
                     var period = $("#period").combobox('getValue');
                     var wp = $("#wp").combobox('getValue');
                     var shift = $("#shift").combobox('getValue');
-                    var pic = $("#pic").textbox('getValue');
+                    var pic = $("#pic").combobox('getValue');
+                    var machine_no_insert = $("#machine_no_insert").combogrid('getValues');
 
                     if (!trans_date || !number || !period || !wp || !shift) {
                         toastr.error("Please complete all required fields before saving");
                         return;
                     }
 
-                    var rows = $('#dg2').datagrid('getRows');
-                    var totalrows = rows.length;
                     endEditing();
+                    var rows = $('#dg2').datagrid('getRows') || [];
 
-                    console.log(JSON.stringify(rows));
-                    
+                    let items = [];
 
-                    for (let i = 0; i < totalrows; i++) {
-                        if (rows[i].item_fg_id) {
-
-                            var dataFinal = {
+                    // ✔ Ambil semua baris dg2 → masukkan ke items[]
+                    rows.forEach(row => {
+                        if (row.item_fg_id) {
+                            items.push({
                                 trans_date: trans_date,
                                 number: number,
                                 period: period,
                                 wp: wp,
                                 shift: shift,
                                 pic: pic,
-                                id: rows[i].id,
-                                machine_id: rows[i].machine_id,
-                                item_fg_id: rows[i].item_fg_id,
-                                planning_qty: rows[i].planning_qty,
-                                qty_ok: rows[i].qty_ok,
-                                qty_ng: rows[i].qty_ng,
-                                qty_ng_mold: rows[i].qty_ng_mold,
-                                workorder: rows[i].workorder,
-                                actual_cavity: rows[i].actual_cavity,
-                                operator: rows[i].operator,
-                                standard_curing_time: rows[i].standard_curing_time,
-                                actual_curing_time: rows[i].actual_curing_time,
-                                shift_hour: rows[i].shift_hour,
-                                target_shoot: rows[i].target_shoot,
-                                actual_shoot: rows[i].actual_shoot,
-                                total_compound_used: rows[i].total_compound_used,
-                                waste: rows[i].waste,
-                                mold_cleaning: rows[i].mold_cleaning,
-                                trial: rows[i].trial,
-                                mold_changing: rows[i].mold_changing,
-                                machine_repair: rows[i].machine_repair,
-                                mold_repair: rows[i].mold_repair,
-                                others: rows[i].others,
-                                remarks: rows[i].remarks
-                            };
 
-                            var url_save = "<?= base_url('control/output_production_press/create') ?>";
-
-                            $.ajax({
-                                type: "post",
-                                url: url_save,
-                                data: dataFinal,
-                                dataType: "json",
-                                success: function(result) {
-                                    if (result.theme === "error") {
-                                        toastr.error(result.message);
-                                    }else{
-                                        if (i == (totalrows - 1)) {
-                                            Swal.fire({
-                                                title: result.message,
-                                                icon: result.theme,
-                                                confirmButtonText: 'Ok',
-                                                allowOutsideClick: false,
-                                            }).then((result) => {
-                                                if (result.isConfirmed) {
-                                                    window.location.reload();
-                                                }
-                                            });
-                                        }
-                                    }
-                                },
-                                error: function(xhr, status, error) {
-                                    toastr.error("Server error: " + error);
-                                }
+                                id: row.id || null,
+                                machine_id: row.machine_id,
+                                item_fg_id: row.item_fg_id,
+                                mold_id: row.mold_id,
+                                planning_qty: row.planning_qty,
+                                qty_ok: row.qty_ok,
+                                qty_ng: row.qty_ng,
+                                qty_ng_mold: row.qty_ng_mold,
+                                workorder: row.workorder,
+                                actual_cavity: row.actual_cavity,
+                                operator: row.operator,
+                                actual_curing_time: row.actual_curing_time,
+                                shift_hour: row.shift_hour,
+                                actual_shoot: row.actual_shoot,
+                                total_compound_used: row.total_compound_used,
+                                waste: row.waste
                             });
                         }
+                    });
+
+                    // ✔ Mode ADD → Tambah baris kosong berdasarkan machine_no_insert
+                    if (currentMode === 'add' && machine_no_insert.length > 0) {
+                        machine_no_insert.forEach(mid => {
+                            items.push({
+                                trans_date: trans_date,
+                                number: number,
+                                period: period,
+                                wp: wp,
+                                shift: shift,
+                                pic: pic,
+
+                                id: null,
+                                machine_id: mid,
+                                item_fg_id: null,
+                                mold_id: null,
+                                planning_qty: null,
+                                qty_ok: null,
+                                qty_ng: null,
+                                qty_ng_mold: null,
+                                workorder: null,
+                                actual_cavity: null,
+                                operator: null,
+                                actual_curing_time: null,
+                                shift_hour: null,
+                                actual_shoot: null,
+                                total_compound_used: null,
+                                waste: null
+                            });
+                        });
                     }
 
-                    $('#dg').datagrid('reload');
-                    $('#dlg_insert').dialog('close');
+                    if (items.length === 0) {
+                        toastr.error("No data to save");
+                        return;
+                    }
+
+                    // ✔ Kirim 1x saja
+                    $.ajax({
+                        type: "POST",
+                        url: "<?= base_url('control/output_production_press/create') ?>",
+                        data: { items: items },
+                        dataType: "json",
+                        success: function(res) {
+                            toastr.clear();
+                            if (res.theme === "success") {
+                                Swal.fire({
+                                    title: res.message,
+                                    icon: 'success',
+                                    confirmButtonText: 'OK',
+                                    allowOutsideClick: false,
+                                }).then(() => {
+                                    window.location.reload();
+                                });
+
+                                $('#dg').datagrid('reload');
+                                $('#dlg_insert').dialog('close');
+                            } else {
+                                toastr.error(res.message, res.title || "Error");
+                            }
+                        },
+                        error: function() {
+                            toastr.error("Server error while saving");
+                        }
+                    });
+
                 }
             }]
         });
+
     });
-
-    // UPLOAD DATA
-    // $('#dlg_upload').dialog({
-    //     buttons: [{
-    //         text: 'List Failed',
-    //         handler: function() {
-    //             window.open('<?= base_url('control/output_production_press/uploadDownloadFailed') ?>', '_blank');
-    //         }
-    //     }, {
-    //         text: 'Upload',
-    //         iconCls: 'icon-ok',
-    //         handler: function() {
-    //             $('#frm_upload').form('submit', {
-    //                 url: '<?= base_url('control/output_production_press/upload') ?>',
-    //                 onSubmit: function() {
-    //                     if ($(this).form('validate') == false) {
-    //                         return $(this).form('validate');
-    //                     } else {
-    //                         $.messager.progress({
-    //                             title: 'Please Wait',
-    //                             msg: 'Importing Excel to Database'
-    //                         });
-    //                     }
-    //                 },
-    //                 success: function(result) {
-    //                     $.messager.progress('close');
-    //                     //Clear File
-    //                     $.ajax({
-    //                         url: "<?= base_url('control/output_production_press/uploadclearFailed') ?>"
-    //                     });
-    //                     var json = eval('(' + result + ')');
-    //                     requestData(json.total, json);
-
-    //                     function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-    //                         if (value < 100) {
-    //                             value = Math.floor((number / total) * 100);
-    //                             $('#p_upload').progressbar('setValue', value);
-    //                             $('#p_start').html(number);
-    //                             $('#p_finish').html(total);
-
-    //                             $.ajax({
-    //                                 type: "POST",
-    //                                 async: true,
-    //                                 url: "<?= base_url('control/output_production_press/uploadCreate') ?>",
-    //                                 data: {
-    //                                     "data": json[number - 1]
-    //                                 },
-    //                                 cache: false,
-    //                                 dataType: "json",
-    //                                 success: function(result) {
-    //                                     if (result.theme == "success") {
-    //                                         $('#p_success').html(success);
-    //                                         var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-    //                                         requestData(total, json, number + 1, value, success + 1, failed + 0);
-    //                                     } else {
-    //                                         $('#p_failed').html(failed);
-    //                                         var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-    //                                         //Json Failed
-    //                                         $.ajax({
-    //                                             type: "POST",
-    //                                             async: true,
-    //                                             url: "<?= base_url('control/output_production_press/uploadcreateFailed') ?>",
-    //                                             data: {
-    //                                                 data: json[number - 1],
-    //                                                 message: result.message
-    //                                             },
-    //                                             cache: false
-    //                                         });
-    //                                         requestData(total, json, number + 1, value, success + 0, failed + 1);
-    //                                     }
-    //                                     $("#p_remarks").append(title + "<br>");
-    //                                 }
-    //                             });
-    //                         }
-    //                     }
-    //                 }
-    //             });
-    //         }
-    //     }]
-    // });
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
@@ -1801,7 +2306,6 @@
         }]
     });
 
-
     // $('#filter_division').combobox({
     //     url: '<?= base_url('master/divisions/reads'); ?>',
     //     valueField: 'id',
@@ -1821,7 +2325,23 @@
             $("#filter_period").combobox('select', defaultVal);
         },
         onSelect: function (data) {
-            var period = data.period;
+            var period = data.period; // 202509
+
+            var year = parseInt(period.substring(0, 4));
+            var month = parseInt(period.substring(4, 6));
+
+            var firstDay = new Date(year, month - 1, 1);
+            var lastDay = new Date(year, month, 0);
+
+            function pad(num) {
+                return num < 10 ? '0' + num : num;
+            }
+
+            var filter_from_value = `${year}-${pad(month)}-01`;
+            var filter_to_value = `${year}-${pad(month)}-${pad(lastDay.getDate())}`;
+
+            $("#filter_from").datebox('setValue', filter_from_value);
+            $("#filter_to").datebox('setValue', filter_to_value);
 
             $("#filter_wp").combobox({
                 url: '<?= base_url('planning/production_schedule_press/readWp?period=') ?>' + btoa(period),
@@ -1842,7 +2362,7 @@
         url: '<?= base_url('control/output_production_press/readNumber'); ?>',
         valueField: 'number',
         textField: 'number',
-        prompt: 'Choose Wo No',
+        prompt: 'Choose Doc No',
         icons: [{
             iconCls: 'icon-clear',
             handler: function(e) {
@@ -1872,6 +2392,12 @@
         mode: 'remote',
         fitColumns: true,
         prompt: "Choose Product No",
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
         columns: [
             [{
                 field: 'number',
@@ -1883,12 +2409,34 @@
                 width: 250
             }, ]
         ],
+    });
+
+    $("#machine_no_insert").combogrid({
+        url: '<?= base_url('planning/production_schedule_press/readMachinePressMolds') ?>',
+        panelWidth: 420,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        multiple: true,
+        prompt: "Choose Machine No",
         icons: [{
             iconCls: 'icon-clear',
             handler: function(e) {
                 $(e.data.target).combogrid('clear').combogrid('textbox').focus();
             }
         }],
+        columns: [
+            [{
+                field: 'number',
+                title: 'Machine No',
+                width: 100
+            }, {
+                field: 'name',
+                title: 'Machine Name',
+                width: 100
+            }, ]
+        ],
     });
 
     //Format Datepicker
@@ -1954,5 +2502,394 @@
             $(edTot.target).numberbox('setValue', total);
         }
     }
+
+    // function hitungTotal(target) {
+    //     var dg = $('#dg2');
+    //     var row = dg.datagrid('getSelected');
+    //     if (!row) return;
+
+    //     var idx = dg.datagrid('getRowIndex', row);
+
+    //     var edOK   = dg.datagrid('getEditor', { index: idx, field: 'qty_ok' });
+    //     var edNG   = dg.datagrid('getEditor', { index: idx, field: 'qty_ng' });
+    //     var edNGM  = dg.datagrid('getEditor', { index: idx, field: 'qty_ng_mold' });
+    //     var edPlan = dg.datagrid('getEditor', { index: idx, field: 'planning_qty_shift' });
+    //     var edTotal = dg.datagrid('getEditor', { index: idx, field: 'total_qty' });
+
+    //     var plan = edPlan ? parseFloat($(edPlan.target).numberbox('getValue')) || 0 : 0;
+    //     var ok   = edOK ? parseFloat($(edOK.target).numberbox('getValue')) || 0 : 0;
+    //     var ng   = edNG ? parseFloat($(edNG.target).numberbox('getValue')) || 0 : 0;
+    //     var ngm  = edNGM ? parseFloat($(edNGM.target).numberbox('getValue')) || 0 : 0;
+
+    //     if (ok > plan) {
+    //         $(edOK.target).numberbox('setValue', '');
+    //         toastr.warning("Qty OK must not exceed Planning Qty/Shift");
+    //         ok = '';
+    //         return;
+    //     }
+    //     if (ng > plan) {
+    //         $(edNG.target).numberbox('setValue', '');
+    //         toastr.warning("Qty NG must not exceed Planning Qty/Shift");
+    //         ng = '';
+    //         return;
+    //     }
+    //     if (ngm > plan) {
+    //         $(edNGM.target).numberbox('setValue', '');
+    //         toastr.warning("Qty NG Mold must not exceed Planning Qty/Shift");
+    //         ngm = '';
+    //         return;
+    //     }
+
+    //     var total = ok + ng + ngm;
+
+    //     if (total > plan) {
+    //         toastr.warning("Total Qty (OK + NG + NG Mold) must not exceed Planning Qty/Shift");
+
+    //         $(target).value = 0;
+    //         $(target).numberbox('setValue', 0);
+
+    //         ok   = edOK ? parseFloat($(edOK.target).numberbox('getValue')) : 0;
+    //         ng   = edNG ? parseFloat($(edNG.target).numberbox('getValue')) : 0;
+    //         ngm  = edNGM ? parseFloat($(edNGM.target).numberbox('getValue')) : 0;
+    //         total = ok + ng + ngm;
+    //     }
+
+    //     // Set total qty
+    //     if (edTotal) {
+    //         $(edTotal.target).numberbox('setValue', total);
+    //     }
+    // }
+
+
+
+    var editIndexPrint = undefined;
+
+    function endEditingPrint() {
+        if (editIndexPrint === undefined) return true;
+
+        if ($('#dgPrint').datagrid('validateRow', editIndexPrint)) {
+            $('#dgPrint').datagrid('endEdit', editIndexPrint);
+            editIndexPrint = undefined;
+            return true;
+        } 
+        return false;
+    }
+
+    function onClickCellPrint(index, field) {
+        var dg = $('#dgPrint');
+        var row = dg.datagrid('getRows')[index];
+
+        if (field === 'qty_packing') {
+
+            if (row.qty_packing == 0) {
+                if (endEditingPrint()) {
+                    dg.datagrid('selectRow', index)
+                    .datagrid('beginEdit', index);
+
+                    var ed = dg.datagrid('getEditor', {
+                        index: index,
+                        field: field
+                    });
+
+                    if (ed) {
+                        $(ed.target).numberbox('textbox').focus();
+                    }
+
+                    editIndexPrint = index;
+                }
+            } else {
+                toastr.warning('Qty Packing cannot be edited because the value is greater than 0');
+            }
+
+        } else {
+            endEditingPrint();
+        }
+    }
+
+    function btnPrint(val, row) {
+        var print = "dialog_output_press('" + row.number + "')";
+
+        // if(row.printed==0){
+            return '<a class="btn btn-primary w-100" onClick="' + print + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-print"></i></a>';
+        // }else{
+        //     return '<a class="btn btn-secondary w-100" onClick="' + print + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-print"></i></a>';
+
+        // }
+    }
+
+    function btnPrintItem(val, row) {
+        if(row.printed==0){
+            return `
+                <a class="btn btn-primary w-100"
+                onClick="handlePrintPress('${row.number}','${row.workorder}','${row.item_fg_id}','${row.qty_label}','${row.qty_packing}','${row.qty_ok}','${row.printed}')"
+                style="pointer-events: visible; opacity:1;">
+                <i class="fa fa-print"></i>
+                </a>`;
+        } else {
+            return `
+                <a class="btn btn-secondary w-100"
+                onClick="handlePrintPress('${row.number}','${row.workorder}','${row.item_fg_id}','${row.qty_label}','${row.qty_packing}','${row.qty_ok}','${row.printed}')"
+                style="pointer-events: visible; opacity:1;">
+                <i class="fa fa-print"></i>
+                </a>`;
+        }
+    }
+
+    function handlePrintPress(number, workorder, item_fg_id, qty_label, qty_packing, qty_ok, printed) {
+
+        if (parseInt(qty_packing) === 0) {
+            toastr.warning("Qty Packing cannot be zero");
+            return;
+        }
+
+        if (parseInt(printed) === 1) {
+            Swal.fire({
+                title: 'Reprint?',
+                text: 'The label has already been printed. Do you want to reprint it?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, reprint',
+                cancelButtonText: 'Cancel',
+                // reverseButtons: true,
+                focusCancel: true,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    print_output_press(number, workorder, item_fg_id, qty_label, qty_packing, qty_ok);
+                }
+            });
+            return;
+        }
+
+        print_output_press(number, workorder, item_fg_id, qty_label, qty_packing, qty_ok);
+    }
+
+    // function btnPrintItem(val, row) {
+    //     return `
+    //         <a class="btn btn-primary w-100"
+    //         onClick="handlePrintPress('${row.number}','${row.workorder}','${row.item_fg_id}','${row.qty_label}','${row.qty_packing}','${row.qty_ok}','${row.shift}')"
+    //         style="pointer-events: visible; opacity:1;">
+    //         <i class="fa fa-print"></i>
+    //         </a>`;
+    // }
+
+    // function handlePrintPress(number, workorder, item_fg_id, qty_label, qty_packing, qty_ok, shift) {
+
+    //     if (parseInt(qty_packing) === 0) {
+    //         toastr.warning("Qty Packing cannot be zero");
+    //         return;
+    //     }
+
+    //     $.ajax({
+    //         url: "<?= base_url('control/output_production_press/checkExistingCustomer') ?>",
+    //         type: "GET",
+    //         data: { number: number, workorder: workorder, shift: shift },
+    //         dataType: "json",
+    //         success: function(resExist) {
+
+    //             if (resExist.exists) {
+    //                 print_output_press(
+    //                     number, workorder, item_fg_id,
+    //                     qty_label, qty_packing, qty_ok,
+    //                     resExist.customer_code
+    //                 );
+    //                 return;
+    //             }
+
+    //             $.ajax({
+    //                 url: "<?= base_url('control/output_production_press/checkCustomers') ?>",
+    //                 type: "GET",
+    //                 data: { item_fg_id: item_fg_id },
+    //                 dataType: "json",
+    //                 success: function(res) {
+
+    //                     if (res.count === 0) {
+    //                         toastr.error("No customer mapping found for this product");
+    //                         return;
+    //                     }
+
+    //                     if (res.count === 1) {
+    //                         print_output_press(
+    //                             number, workorder, item_fg_id,
+    //                             qty_label, qty_packing, qty_ok,
+    //                             res.customers[0].customer_code
+    //                         );
+    //                     } else {
+    //                         openCustomerDialog(
+    //                             res.customers,
+    //                             function(selectedCustomerCode){
+    //                                 print_output_press(
+    //                                     number, workorder, item_fg_id,
+    //                                     qty_label, qty_packing, qty_ok,
+    //                                     selectedCustomerCode
+    //                                 );
+    //                             }
+    //                         );
+    //                     }
+    //                 }
+    //             });
+
+    //         }
+    //     });
+    // }
+
+
+    function dialog_output_press(number) {
+        $('#dlgPrint').dialog('open').dialog('center');
+
+        $('#dgPrint').datagrid({
+            url: '<?= base_url('control/output_production_press/getDataPrint?number=') ?>' + encodeURIComponent(number),
+            method: 'get',
+            fitColumns: true,
+            singleSelect: true,
+            onClickCell: onClickCellPrint,
+            loadFilter: function(data) {
+                if (Array.isArray(data.rows)) {
+                    data.rows.forEach(r => calculateLabel(r));
+                }
+                return data;
+            },
+            onAfterEdit: function(index, row) {
+                calculateLabel(row);
+                $('#dgPrint').datagrid('refreshRow', index);
+            },
+            columns: [[
+                {
+                    field: 'no',
+                    title: 'No',
+                    width: 60,
+                    align: 'center',
+                    formatter: function(value, row, index) {
+                        return index + 1;
+                    }
+                },
+                { 
+                    field: 'item_fg_id', 
+                    title: 'Product ID', 
+                    width: 120 
+                }, { 
+                    field: 'item_fg_number', 
+                    title: 'Product No', 
+                    width: 180 
+                }, { 
+                    field: 'item_fg_name', 
+                    title: 'Product Name', 
+                    width: 200 
+                }, { 
+                    field: 'workorder', 
+                    title: 'WO No', 
+                    width: 150, 
+                    align: 'center' 
+                }, { 
+                    field: 'qty_ok', 
+                    title: 'OK', 
+                    width: 100, 
+                    align: 'center',
+                    formatter: numberformat 
+                }, { 
+                    field: 'qty_packing', 
+                    title: 'Qty Packing', 
+                    width: 120, 
+                    align: 'center',
+                    formatter: numberformat,
+                    editor: { 
+                                type: 'numberbox', 
+                                options: { 
+                                            precision: 0, 
+                                            min: 0 
+                                }
+                            }
+                }, { 
+                    field: 'qty_label', 
+                    title: 'Qty Label', 
+                    width: 100, 
+                    align: 'center'
+                }, { 
+                    field: 'print', 
+                    title: 'Print', 
+                    width: 100, 
+                    align: 'center', 
+                    formatter: btnPrintItem 
+                }
+            ]],
+        });
+    }
+
+    function calculateLabel(row) {
+        if (row.qty_packing > 0) {
+            row.qty_label = Math.ceil(row.qty_ok / row.qty_packing);
+        } else {
+            row.qty_label = 0;
+        }
+    }
+
+    function print_output_press(number, workorder, item_fg_id, qty_label, qty_packing, qty_ok) {
+        const encodedNumber = window.btoa(number);
+        const encodedWorkorder = window.btoa(workorder);
+        const encodedItemFg = window.btoa(item_fg_id);
+        const encodedQtyLabel = window.btoa(qty_label);
+        const encodedPacking = window.btoa(qty_packing);
+        const encodedOK = window.btoa(qty_ok);
+
+        setTimeout(() => {
+            $('#dgPrint').datagrid('reload');
+        }, 500);
+
+        const url = "<?= base_url('control/output_production_press/print_label_press?number=') ?>" 
+                + encodedNumber + "&workorder=" + encodedWorkorder + "&item_fg_id=" + encodedItemFg + "&qty_label=" + encodedQtyLabel + "&qty_packing=" + encodedPacking + "&qty_ok=" + encodedOK;
+
+        window.open(url, "_blank");
+    }
+
+    // function print_output_press(number, workorder, item_fg_id, qty_label, qty_packing, qty_ok, customer_code) {
+    //     const encodedNumber = window.btoa(number);
+    //     const encodedWorkorder = window.btoa(workorder);
+    //     const encodedItemFg = window.btoa(item_fg_id);
+    //     const encodedQtyLabel = window.btoa(qty_label);
+    //     const encodedPacking = window.btoa(qty_packing);
+    //     const encodedOK = window.btoa(qty_ok);
+    //     const encodedCustomerCode = window.btoa(customer_code);
+
+    //     const url = "<?= base_url('control/output_production_press/print_output_press?number=') ?>" 
+    //             + encodedNumber + "&workorder=" + encodedWorkorder + "&item_fg_id=" + encodedItemFg + "&qty_label=" + encodedQtyLabel + "&qty_packing=" + encodedPacking + "&qty_ok=" + encodedOK  + "&customer_code=" + encodedCustomerCode;
+
+    //     window.open(url, "_blank");
+    // }
+
+    // var customerSelectCallback = null;
+
+    // function openCustomerDialog(customers, callback) {
+    //     customerSelectCallback = callback;
+
+    //     $('#dgCustomer').datagrid({
+    //         data: customers,
+    //         columns: [[
+    //             { 
+    //                 field: 'customer_code', 
+    //                 title: 'Customer Code', 
+    //                 width: 120 
+    //             }, { 
+    //                 field: 'customer_name', 
+    //                 title: 'Customer Name', 
+    //                 width: 240 
+    //             }
+    //         ]]
+    //     });
+
+    //     $('#dlgCustomer').dialog('open').dialog('center');
+    // }
+
+    // function selectCustomer() {
+    //     var row = $('#dgCustomer').datagrid('getSelected');
+    //     if (!row) {
+    //         toastr.warning("Please select a customer");
+    //         return;
+    //     }
+
+    //     $('#dlgCustomer').dialog('close');
+    //     if (customerSelectCallback) {
+    //         customerSelectCallback(row.customer_code);
+    //     }
+    // }
+
 
 </script>

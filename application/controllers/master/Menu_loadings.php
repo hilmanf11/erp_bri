@@ -44,44 +44,184 @@ class Menu_loadings extends CI_Controller
     }
 
     //GET DATA
-    public function readSettingMolds($item_fg)
-    {
-        $item_fg_id = base64_decode($item_fg);
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
+    // public function readItemMachines($machine_id)
+    // {
+    //     $post = isset($_POST['q']) ? $_POST['q'] : "";
 
-        $send = $this->crud->query("SELECT * FROM setting_molds WHERE item_fg_id = '$item_fg_id' AND mold_id LIKE '%$post%' GROUP BY mold_id");
+    //     $send = $this->crud->query("
+    //         SELECT 
+    //             id as item_fg_id, 
+    //             number as item_fg_number, 
+    //             name as item_fg_name, 
+    //             item_family_number 
+    //         FROM item_fg
+    //         WHERE (number LIKE '%$post%' OR name LIKE '%$post%' OR id LIKE '%$post%') 
+    //         AND status = 0
+    //     ");
+
+    //     echo json_encode($send);
+    // }
+
+
+    public function readItemMachines($machine_id)
+    {
+        $machine_id = base64_decode($machine_id);
+        $post = $this->input->post('q') ?? "";
+
+        $send = $this->crud->query("
+            SELECT 
+                fg.id AS item_fg_id,
+                fg.number AS item_fg_number,
+                fg.name AS item_fg_name,
+                fg.item_family_number,
+
+                CASE 
+                    WHEN fg.item_family_number = 'CD' THEN (
+                        SELECT snm.cycle_time
+                        FROM setting_non_molds snm
+                        WHERE snm.item_fg_id = fg.id
+                        AND snm.machine_id = '$machine_id'
+                        LIMIT 1
+                    )
+                    ELSE (
+                        SELECT sm.cycle_time
+                        FROM setting_molds sm
+                        WHERE sm.item_fg_id = fg.id
+                        AND sm.machine_id = '$machine_id'
+                        LIMIT 1
+                    )
+                END AS cycle_time
+
+            FROM item_fg fg
+            WHERE fg.status = 0
+            AND (
+                fg.number LIKE '%$post%' 
+                OR fg.name LIKE '%$post%' 
+                OR fg.id LIKE '%$post%'
+            )
+            AND (
+                (fg.item_family_number = 'CD' 
+                    AND EXISTS (
+                        SELECT 1 
+                        FROM setting_non_molds snm
+                        WHERE snm.item_fg_id = fg.id
+                        AND snm.machine_id = '$machine_id'
+                    )
+                )
+                OR
+                (fg.item_family_number <> 'CD'
+                    AND EXISTS (
+                        SELECT 1
+                        FROM setting_molds sm
+                        WHERE sm.item_fg_id = fg.id
+                        AND sm.machine_id = '$machine_id'
+                    )
+                )
+            )
+            ORDER BY fg.number
+        ");
 
         echo json_encode($send);
     }
 
-    public function readMachines($item_fg, $item_family_number)
+    //GET DATA
+    public function readSettingMolds($item_fg, $machine_id)
     {
         $item_fg_id = base64_decode($item_fg);
-        $item_family_number = base64_decode($item_family_number);
+        $machine_id = base64_decode($machine_id);
 
         $post = isset($_POST['q']) ? $_POST['q'] : "";
 
-        if($item_family_number == "CD") {
-            $send = $this->crud->query("
+        $send = $this->crud->query("
+            SELECT * FROM setting_molds
+            WHERE item_fg_id = '$item_fg_id'
+            AND machine_id = '$machine_id'
+            AND mold_id LIKE '%$post%' 
+            GROUP BY mold_id
+        ");
+
+        echo json_encode($send);
+    }
+
+    // public function readMachines($item_fg, $item_family_number)
+    // {
+    //     $item_fg_id = base64_decode($item_fg);
+    //     $item_family_number = base64_decode($item_family_number);
+
+    //     $post = isset($_POST['q']) ? $_POST['q'] : "";
+
+    //     if($item_family_number == "CD") {
+    //         $send = $this->crud->query("
+    //             SELECT 
+    //                 sm.*, 
+    //                 m.number
+    //             FROM setting_non_molds sm
+    //             JOIN machines m ON sm.machine_id = m.id
+    //             WHERE sm.item_fg_id = '$item_fg_id'
+    //             AND m.number LIKE '%$post%'
+    //         ");
+    //     } else {
+    //         $send = $this->crud->query("
+    //             SELECT 
+    //                 sm.*, 
+    //                 m.number
+    //             FROM setting_molds sm
+    //             JOIN machines m ON sm.machine_id = m.id
+    //             WHERE sm.item_fg_id = '$item_fg_id'
+    //             AND m.number LIKE '%$post%'
+    //         ");
+    //     }
+
+    //     echo json_encode($send);
+    // }
+
+
+    public function readMachines()
+    {
+        $post = $this->input->post('q');
+
+        $send = $this->crud->query("
+            SELECT *
+            FROM (
                 SELECT 
-                    sm.*, 
-                    m.number
+                    sm.item_fg_id,
+                    sm.machine_id,
+                    fg.item_family_number,
+                    m.number,
+                    m.toonage,
+                    tp.name as type_process_name,
+                    0 AS priority
                 FROM setting_non_molds sm
+                JOIN item_fg fg ON sm.item_fg_id = fg.id
                 JOIN machines m ON sm.machine_id = m.id
-                WHERE sm.item_fg_id = '$item_fg_id'
-                AND m.number LIKE '%$post%'
-            ");
-        } else {
-            $send = $this->crud->query("
+                JOIN type_process tp ON m.type_process_id = tp.id
+                WHERE m.number LIKE '%$post%'
+
+                UNION
+
                 SELECT 
-                    sm.*, 
-                    m.number
+                    sm.item_fg_id,
+                    sm.machine_id,
+                    fg.item_family_number,
+                    m.number,
+                    m.toonage,
+                    tp.name as type_process_name,
+                    1 AS priority
                 FROM setting_molds sm
+                JOIN item_fg fg ON sm.item_fg_id = fg.id
                 JOIN machines m ON sm.machine_id = m.id
-                WHERE sm.item_fg_id = '$item_fg_id'
-                AND m.number LIKE '%$post%'
-            ");
-        }
+                JOIN type_process tp ON m.type_process_id = tp.id
+                WHERE m.number LIKE '%$post%'
+            ) x
+            GROUP BY machine_id
+            ORDER BY
+                priority ASC,
+                CAST(SUBSTRING_INDEX(number, ' ', -1) AS UNSIGNED) ASC,
+                SUBSTRING(
+                    SUBSTRING_INDEX(number, ' ', -1),
+                    LENGTH(CAST(SUBSTRING_INDEX(number, ' ', -1) AS UNSIGNED)) + 1
+                ) ASC
+        ");
 
         echo json_encode($send);
     }
@@ -100,7 +240,7 @@ class Menu_loadings extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as machine_number, c.toonage as machine_toonage, d.model as mold_model, d.cavity_actual as mold_cavity_actual, d.cavity_standard as mold_cavity_standard');
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as machine_number, c.toonage as machine_toonage, d.model as mold_model, d.cavity_actual as mold_cavity_actual, d.cavity_standard as mold_cavity_standard, b.item_family_number');
             $this->db->from('menu_loadings a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('machines c', 'a.machine_id = c.id');
@@ -148,31 +288,332 @@ class Menu_loadings extends CI_Controller
     {
         if ($this->input->post()) {
             $post   = $this->input->post();
-            $send   = $this->crud->create('menu_loadings', $post);
-            echo $send;
+
+            if (!isset($post['mold_id']) || $post['mold_id'] === '' || $post['mold_id'] === 'null') {
+                $post['mold_id'] = null;
+            }
+
+            $menu_loading = $this->crud->read('menu_loadings', [], [
+                "item_fg_id" => $post['item_fg_id'],
+                "machine_id" => $post['machine_id']
+            ]);
+
+            $machines = $this->crud->read('machines', [], ["id" => $post['machine_id']]);
+            $item_fg = $this->crud->read('item_fg', [], ["id" => $post['item_fg_id']]);
+
+            if(!empty($menu_loading)) {
+               echo json_encode(
+                    array(
+                    "title" => "Duplicated", 
+                    "message" => "Product No. " . $item_fg->number ." on Machine No. " . $machines->number . " already exists.", 
+                    "theme" => "error"
+               ));
+            } else {
+                $send   = $this->crud->create('menu_loadings', $post);
+                echo $send;
+            }
         } else {
             show_error("Cannot Process your request");
         }
     }
+
     //UPDATE DATA
+    // public function update()
+    // {
+    //     if (!$this->input->post()) {
+    //         show_error("Cannot Process your request");
+    //     }
+
+    //     $id   = base64_decode($this->input->get('id'));
+    //     $post = $this->input->post();
+
+    //     $existing_data = $this->crud->read('menu_loadings', [], ["id" => $id]);
+
+    //     $oldMold = $existing_data->mold_id ?? '';
+    //     $newMold = $post['mold_id'] ?? '';
+
+    //     $isChanged =
+    //         ($existing_data->item_fg_id != $post['item_fg_id']) ||
+    //         ($existing_data->machine_id != $post['machine_id']) ||
+    //         ($oldMold != $newMold);
+
+
+    //     if ($isChanged) {
+
+    //         $used = $this->crud->read('production_capacities', [], [
+    //             "item_fg_id" => $existing_data->item_fg_id,
+    //             "machine_id" => $existing_data->machine_id,
+    //             "mold_id"    => $existing_data->mold_id,
+    //         ]);
+
+    //         if (!empty($used)) {
+    //             echo json_encode([
+    //                 "title"   => "Invalid Update",
+    //                 "message" => "Product No on Machine No with MOLD ID data have been used in Production Capacity",
+    //                 "theme"   => "error"
+    //             ]);
+    //             return;
+    //         }
+    //     }
+
+    //     // $duplicate = $this->crud->read('menu_loadings', [], [
+    //     //     "item_fg_id" => $post['item_fg_id'],
+    //     //     "machine_id" => $post['machine_id'],
+    //     //     // "id !="      => $id
+    //     // ]);
+
+    //     // $this->db->where('item_fg_id', $post['item_fg_id']);
+    //     // $this->db->where('machine_id', $post['machine_id']);
+    //     // $this->db->where('id', $id);
+    //     // $this->db->query('menu_loadings');
+
+    //     $this->db->where('item_fg_id', $post['item_fg_id']);
+    //     $this->db->where('machine_id', $post['machine_id']);
+    //     $this->db->where('id !=', $id);
+
+    //     $query = $this->db->get('menu_loadings');
+    //     $duplicate = $query->row();
+
+
+    //     if (!empty($duplicate)) {
+    //         $machine = $this->crud->read('machines', [], ["id" => $post['machine_id']]);
+    //         $item_fg = $this->crud->read('item_fg', [], ["id" => $post['item_fg_id']]);
+
+    //         echo json_encode([
+    //             "title"   => "Duplicated",
+    //             "message" => "Product No. {$item_fg->number} on Machine No. {$machine->number} already exists.",
+    //             "theme"   => "error"
+    //         ]);
+    //         return;
+    //     }
+
+    //     if ($existing_data && $post['mold_id'] != null) {
+
+    //         // UPDATE CYCLE TIME MENU LOADING
+    //         // $this->crud->update('menu_loadings', [
+    //         //     "id" => $id,
+    //         // ], [
+    //         //     "cycle_time" => $post['cycle_time']
+    //         // ]);
+
+    //         $pc = $this->crud->read("production_capacities", [], [
+    //             "machine_id" => $post['machine_id'],
+    //             "item_fg_id" => $post['item_fg_id'],
+    //         ]);
+
+    //         $mold = $this->crud->read("molds", [], [
+    //             "id" => $post['mold_id'],
+    //         ]);
+
+    //         if ($pc && $mold) {
+
+    //             // HITUNG ULANG KAPASITAS
+    //             $cycle         = (float)$post['cycle_time'];
+    //             $productivity  = (float)$post['productcivity'];
+    //             $shift_hour    = (int)$post['shift_hour'];
+    //             $shift         = (int)$post['shift'];
+    //             $actual_cavity = (int)$mold->cavity_actual;
+
+    //             $capacity_hour  = ceil((3600 / $cycle) * $actual_cavity * ($productivity / 100));
+    //             $capacity_shift = ceil($capacity_hour * $shift_hour);
+    //             $capacity_day   = ceil($capacity_shift * $shift);
+
+    //             $this->crud->update("production_capacities", [
+    //                 "machine_id" => $post['machine_id'],
+    //                 "item_fg_id" => $post['item_fg_id'],
+    //             ], [
+    //                 "capacity_hour"  => $capacity_hour,
+    //                 "capacity_shift" => $capacity_shift,
+    //                 "capacity_day"   => $capacity_day,
+    //             ]);
+    //         }
+    //     }
+
+    //     $send = $this->crud->update('menu_loadings', ["id" => $id], $post);
+    //     echo $send;
+    // }
+
     public function update()
     {
-        if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
-            $post = $this->input->post();
-            $send = $this->crud->update('menu_loadings', ["id" => $id], $post);
-            echo $send;
-        } else {
+        if (!$this->input->post()) {
             show_error("Cannot Process your request");
         }
+
+        $id   = base64_decode($this->input->get('id'));
+        $post = $this->input->post();
+
+        if (empty($post['mold_id'])) {
+            $post['mold_id'] = null;
+        }
+
+        $existing = $this->crud->read('menu_loadings', [], ["id" => $id]);
+        if (!$existing) {
+            show_error("Data not found");
+        }
+
+        $oldMold = $existing->mold_id;
+        $newMold = $post['mold_id'] ?? null;
+
+        $useMold = !empty($newMold);
+
+        $isChanged =
+            $existing->item_fg_id != $post['item_fg_id'] ||
+            $existing->machine_id != $post['machine_id'] ||
+            ($useMold && $oldMold != $newMold);
+
+        if ($isChanged) {
+
+            $used = $this->crud->read('production_capacities', [], [
+                "item_fg_id" => $existing->item_fg_id,
+                "machine_id" => $existing->machine_id,
+            ]);
+
+            if (!empty($used)) {
+                echo json_encode([
+                    "title"   => "Invalid Update",
+                    "message" => "Data already used in Production Capacity",
+                    "theme"   => "error"
+                ]);
+                return;
+            }
+        }
+
+        $this->db->where('item_fg_id', $post['item_fg_id']);
+        $this->db->where('machine_id', $post['machine_id']);
+        $this->db->where('id !=', $id);
+
+        if ($useMold) {
+            $this->db->where('mold_id', $newMold);
+        } else {
+            $this->db->where('mold_id IS NULL', null, false);
+        }
+
+        $duplicate = $this->db->get('menu_loadings')->row();
+
+        if ($duplicate) {
+            $machine = $this->crud->read('machines', [], ["id" => $post['machine_id']]);
+            $item_fg = $this->crud->read('item_fg', [], ["id" => $post['item_fg_id']]);
+
+            echo json_encode([
+                "title"   => "Duplicated",
+                "message" => "Product No. {$item_fg->number} on Machine No. {$machine->number} already exists.",
+                "theme"   => "error"
+            ]);
+            return;
+        }
+
+        $pc = $this->crud->read("production_capacities", [], [
+            "machine_id" => $post['machine_id'],
+            "item_fg_id" => $post['item_fg_id'],
+        ]);
+
+        $mold = $this->crud->read("molds", [], ["id" => $newMold]);
+
+        if ($pc && $mold) {
+
+            $cycle         = (float)$post['cycle_time'];
+            $productivity  = (float)$post['productcivity'];
+            $shift_hour    = (int)$post['shift_hour'];
+            $shift         = (int)$post['shift'];
+            $actual_cavity = (int)$mold->cavity_actual;
+
+            $capacity_hour  = ceil((3600 / $cycle) * $actual_cavity * ($productivity / 100));
+            $capacity_shift = ceil($capacity_hour * $shift_hour);
+            $capacity_day   = ceil($capacity_shift * $shift);
+
+            $this->crud->update("production_capacities", [
+                "machine_id" => $post['machine_id'],
+                "item_fg_id" => $post['item_fg_id'],
+                // "mold_id"    => $newMold,
+            ], [
+                "capacity_hour"  => $capacity_hour,
+                "capacity_shift" => $capacity_shift,
+                "capacity_day"   => $capacity_day,
+            ]);
+
+        } else if($pc) {
+
+            $cycle         = (float)$post['cycle_time'];
+            $productivity  = (float)$post['productcivity'];
+            $shift_hour    = (int)$post['shift_hour'];
+            $shift         = (int)$post['shift'];
+
+            $capacity_hour  = ceil((3600 / $cycle) * ($productivity / 100));
+            $capacity_shift = ceil($capacity_hour * $shift_hour);
+            $capacity_day   = ceil($capacity_shift * $shift);
+
+            $this->crud->update("production_capacities", [
+                "machine_id" => $post['machine_id'],
+                "item_fg_id" => $post['item_fg_id'],
+                // "mold_id"    => $newMold,
+            ], [
+                "capacity_hour"  => $capacity_hour,
+                "capacity_shift" => $capacity_shift,
+                "capacity_day"   => $capacity_day,
+            ]);
+        }
+
+        $send = $this->crud->update('menu_loadings', ["id" => $id], $post);
+        echo $send;
     }
+
+
     //DELETE DATA
+    // public function delete()
+    // {
+    //     $data = $this->input->post();
+    //     $send = $this->crud->delete('menu_loadings', $data);
+    //     echo $send;
+    // }
+
     public function delete()
     {
         $data = $this->input->post();
+
+        if (empty($data['id'])) {
+            echo json_encode(
+                array(
+                "title" => "Error", 
+                "message" => "Invalid request", 
+                "theme" => "error"
+            ));
+            return;
+        }
+
+        $menu = $this->crud->read('menu_loadings', [], ['id' => $data['id']]);
+
+        if (empty($menu)) {
+            echo json_encode(
+                array(
+                "title" => "Data Not Found", 
+                "message" => "Menu Loading data not found", 
+                "theme" => "error"
+            ));
+            return;
+        }
+
+        $used = $this->db
+            ->where('item_fg_id', $menu->item_fg_id)
+            ->where('machine_id', $menu->machine_id)
+            ->where('deleted', 0)
+            ->limit(1)
+            ->get('production_capacities')
+            ->num_rows();
+
+        if ($used > 0) {
+            echo json_encode(
+                array(
+                "title" => "Cannot Delete Data", 
+                "message" => "Cannot delete data that is still in use",
+                "theme" => "error"
+            ));
+            return;
+        }
+
         $send = $this->crud->delete('menu_loadings', $data);
         echo $send;
     }
+
     //UPLOAD DATA
     public function upload()
     {
@@ -196,11 +637,11 @@ class Menu_loadings extends CI_Controller
                 'shift' => $data->val($i, 5),
                 'shift_hour' => $data->val($i, 6),
                 'productcivity' => $data->val($i, 7),
-                'cycle_time' => $data->val($i, 8),
-                'manpower' => $data->val($i, 9),
-                'runner' => $data->val($i, 10),
-                'priority' => $data->val($i, 11),
-                'remarks' => $data->val($i, 12),
+                // 'cycle_time' => $data->val($i, 8),
+                'manpower' => $data->val($i, 8),
+                'runner' => $data->val($i, 9),
+                'priority' => $data->val($i, 10),
+                // 'remarks' => $data->val($i, 12),
             );
         }
 
@@ -254,18 +695,16 @@ class Menu_loadings extends CI_Controller
             foreach ($data_list as $index => $data) {
                 $processed_count++;
                 if (
-                    empty($data['item_fg_id']) || 
+                    empty($data['item_fg_id']) ||
                     empty($data['machine_id']) ||
                     empty($data['shift']) ||
                     empty($data['shift_hour']) ||
                     empty($data['productcivity']) ||
-                    empty($data['cycle_time']) ||
                     empty($data['manpower']) ||
                     $data['priority'] == "" || $data['priority'] == null ||
                     !is_numeric($data['shift']) ||
                     !is_numeric($data['shift_hour']) ||
-                    !is_numeric($data['productcivity']) ||
-                    !is_numeric($data['cycle_time'])
+                    !is_numeric($data['productcivity'])
                    ) {
                         $results[] = [
                             "status" => "failed",
@@ -274,117 +713,6 @@ class Menu_loadings extends CI_Controller
                         ];
                         continue;
                 }
-
-                // $line = $index + 1;
-
-                // if (empty($data['item_fg_id'])) {
-                //     $results[] = [
-                //         "status"  => "failed",
-                //         "item"    => "Line $line",
-                //         "message" => "item_fg_id kosong"
-                //     ];
-                //     continue;
-                // }
-
-                // if (empty($data['machine_id'])) {
-                //     $results[] = [
-                //         "status"  => "failed",
-                //         "item"    => "Line $line",
-                //         "message" => "machine_id kosong"
-                //     ];
-                //     continue;
-                // }
-
-                // if (empty($data['shift'])) {
-                //     $results[] = [
-                //         "status"  => "failed",
-                //         "item"    => "Line $line",
-                //         "message" => "shift kosong"
-                //     ];
-                //     continue;
-                // }
-
-                // if (!is_numeric($data['shift'])) {
-                //     $results[] = [
-                //         "status"  => "failed",
-                //         "item"    => "Line $line",
-                //         "message" => "shift harus angka"
-                //     ];
-                //     continue;
-                // }
-
-                // if (empty($data['shift_hour'])) {
-                //     $results[] = [
-                //         "status"  => "failed",
-                //         "item"    => "Line $line",
-                //         "message" => "shift_hour kosong"
-                //     ];
-                //     continue;
-                // }
-
-                // if (!is_numeric($data['shift_hour'])) {
-                //     $results[] = [
-                //         "status"  => "failed",
-                //         "item"    => "Line $line",
-                //         "message" => "shift_hour harus angka"
-                //     ];
-                //     continue;
-                // }
-
-                // if (empty($data['productcivity'])) {
-                //     $results[] = [
-                //         "status"  => "failed",
-                //         "item"    => "Line $line",
-                //         "message" => "productcivity kosong"
-                //     ];
-                //     continue;
-                // }
-
-                // if (!is_numeric($data['productcivity'])) {
-                //     $results[] = [
-                //         "status"  => "failed",
-                //         "item"    => "Line $line",
-                //         "message" => "productcivity harus angka"
-                //     ];
-                //     continue;
-                // }
-
-                // if (empty($data['cycle_time'])) {
-                //     $results[] = [
-                //         "status"  => "failed",
-                //         "item"    => "Line $line",
-                //         "message" => "cycle_time kosong"
-                //     ];
-                //     continue;
-                // }
-
-                // if (!is_numeric($data['cycle_time'])) {
-                //     $results[] = [
-                //         "status"  => "failed",
-                //         "item"    => "Line $line",
-                //         "message" => "cycle_time harus angka"
-                //     ];
-                //     continue;
-                // }
-
-                // if (empty($data['manpower'])) {
-                //     $results[] = [
-                //         "status"  => "failed",
-                //         "item"    => "Line $line",
-                //         "message" => "manpower kosong"
-                //     ];
-                //     continue;
-                // }
-
-                // if (empty($data['priority'])) {
-                //     $results[] = [
-                //         "status"  => "failed",
-                //         "item"    => "Line $line",
-                //         "message" => "priority kosong"
-                //     ];
-                //     continue;
-                // }
-
 
                 $item_fg_id = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
                 if (empty($item_fg_id)) {
@@ -416,6 +744,117 @@ class Menu_loadings extends CI_Controller
                     continue;
                 }
 
+                $cycle_time = "";
+
+                if($item_fg_id->item_family_number != "CD") {
+
+                    $setting_mold = $this->crud->read('setting_molds', [], [
+                        "item_fg_id" => $data['item_fg_id'],
+                        "machine_id" => $data['machine_id'],
+                        "mold_id" => $data['mold_id'],
+                    ]);
+
+                    if(empty($setting_mold) && $item_fg_id->item_family_number != "CD") {
+                        $results[] = [
+                            "status"  => "failed",
+                            "item"    => "Line " . ($index + 1),
+                            "message" => "Setting Mold for Product ID " . $data['item_fg_id'] . " on Machine No " . $data['machine_id'] . " Mold ID ". $data['mold_id'] ." Not Found "
+                        ];
+                        continue;
+                    }
+
+                    $cycle_time = $setting_mold->cycle_time;
+
+                    $menu = $this->crud->read('menu_loadings', [
+                        'item_fg_id' => $data['item_fg_id'],
+                        'machine_id' => $data['machine_id'],
+                        'mold_id'    => $data['mold_id'],
+                    ]);
+
+                    if ($menu) {
+
+                        $pc = $this->crud->read("production_capacities", [], [
+                            "machine_id" => $data['machine_id'],
+                            "item_fg_id" => $data['item_fg_id'],
+                        ]);
+
+                        if ($pc && $molds) {
+
+                            $cycle         = (float)$cycle_time;
+                            $productivity  = (float)$data['productcivity'];
+                            $shift_hour    = (int)$data['shift_hour'];
+                            $shift         = (int)$data['shift'];
+                            $actual_cavity = (int)$molds->cavity_actual;
+
+                            $capacity_hour  = ceil((3600 / $cycle) * $actual_cavity * ($productivity / 100));
+                            $capacity_shift = ceil($capacity_hour * $shift_hour);
+                            $capacity_day   = ceil($capacity_shift * $shift);
+
+                            $this->crud->update("production_capacities", [
+                                "machine_id" => $data['machine_id'],
+                                "item_fg_id" => $data['item_fg_id'],
+                            ], [
+                                "capacity_hour"  => $capacity_hour,
+                                "capacity_shift" => $capacity_shift,
+                                "capacity_day"   => $capacity_day,
+                            ]);
+                        }
+                    }
+
+                } else if($item_fg_id->item_family_number == "CD") {
+
+                    $setting_non_mold = $this->crud->read('setting_non_molds', [], [
+                        "item_fg_id" => $data['item_fg_id'],
+                        "machine_id" => $data['machine_id'],
+                    ]);
+                    if(empty($setting_non_mold)) {
+                        $results[] = [
+                            "status"  => "failes",
+                            "item"    => "Line " . ($index + 1),
+                            "message" => "Setting Non Mold for Product ID " . $data['item_fg_id'] . " on Machine No " . $data['machine_id'] . " Not Found "
+                        ];
+                        continue;
+                    }
+
+                    $cycle_time = $setting_non_mold->cycle_time;
+
+
+                    $menu = $this->crud->read('menu_loadings', [
+                        'item_fg_id' => $data['item_fg_id'],
+                        'machine_id' => $data['machine_id'],
+                    ]);
+
+                    if ($menu) {
+
+                        $pc = $this->crud->read("production_capacities", [], [
+                            "machine_id" => $data['machine_id'],
+                            "item_fg_id" => $data['item_fg_id'],
+                        ]);
+
+                        if ($pc) {
+
+                            $cycle         = (float)$cycle_time;
+                            $productivity  = (float)$data['productcivity'];
+                            $shift_hour    = (int)$data['shift_hour'];
+                            $shift         = (int)$data['shift'];
+
+                            $capacity_hour  = ceil((3600 / $cycle) * ($productivity / 100));
+                            $capacity_shift = ceil($capacity_hour * $shift_hour);
+                            $capacity_day   = ceil($capacity_shift * $shift);
+
+                            $this->crud->update("production_capacities", [
+                                "machine_id" => $data['machine_id'],
+                                "item_fg_id" => $data['item_fg_id'],
+                            ], [
+                                "capacity_hour"  => $capacity_hour,
+                                "capacity_shift" => $capacity_shift,
+                                "capacity_day"   => $capacity_day,
+                            ]);
+                        }
+                    }
+
+                }
+
                 $rubberOrCD = $item_fg_id->item_family_number != "CD" ? $data['mold_id'] : null;
 
                 $checkMenuLoading = $this->crud->read('menu_loadings', [], [
@@ -424,39 +863,44 @@ class Menu_loadings extends CI_Controller
                     "machine_id" => $data['machine_id'],
                 ]);
 
+                // if (!empty($checkMenuLoading)) {
+                //     $results[] = [
+                //         "status" => "failed",
+                //         "item" => "Line " . ($index + 1), 
+                //         "message" => "Duplicate Data Product No. " . $item_fg_id->number ." on Machine No. " . $machine->number . " already exists",
+                //     ];
+                //     continue;
+                // }
+
                 $dataFinal = array(
                     //field
                     "item_fg_id" => $data['item_fg_id'],
                     "mold_id" => $rubberOrCD,
-                    "machine_id" => $machine->id,
+                    "machine_id" => $data['machine_id'],
                     "shift" => $data['shift'],
                     "shift_hour" => $data['shift_hour'],
                     "productcivity" => $data['productcivity'],
-                    "cycle_time" => $data['cycle_time'],
-                    // "cycle_time_process" => $data['cycle_time_process'],
+                    "cycle_time" => $cycle_time,
                     "manpower" => $data['manpower'],
                     "runner" => $data['runner'],
                     "priority" => $data['priority'],
-                    "remarks" => $data['remarks'],
                 );
 
                 try {
                     if (!empty($checkMenuLoading)) {
                         // Update
-                        $this->db->update('menu_loadings', [
+                        $this->crud->update('menu_loadings', [
+                            "item_fg_id" => $data['item_fg_id'],
+                            "mold_id" => $rubberOrCD,
+                            "machine_id" => $data['machine_id']
+                        ], [
                             "shift" => $data['shift'],
                             "shift_hour" => $data['shift_hour'],
                             "productcivity" => $data['productcivity'],
-                            "cycle_time" => $data['cycle_time'],
-                            "cycle_time_process" => $data['cycle_time_process'],
+                            "cycle_time" => $cycle_time,
                             "manpower" => $data['manpower'],
                             "runner" => $data['runner'],
                             "priority" => $data['priority'],
-                            "remarks" => $data['remarks'],
-                        ], [
-                            "item_fg_id" => $data['item_fg_id'],
-                            "mold_id" => $rubberOrCD,
-                            "machine_id" => $machine->id
                         ]);
 
                         $status = "update";
@@ -616,7 +1060,6 @@ class Menu_loadings extends CI_Controller
                 <th>Hour/Shift</th>
                 <th>Productivity Factor</th>
                 <th>Cycle Time (Second)</th>
-                <th>Cycle Time Second Process</th>
                 <th>Man Power</th>
                 <th>Runner/Shoot</th>
                 <th>Priority</th>
@@ -637,7 +1080,6 @@ class Menu_loadings extends CI_Controller
                     <td>' . $data['shift_hour'] . '</td>
                     <td>' . $data['productcivity'] . '</td>
                     <td>' . $data['cycle_time'] . '</td>
-                    <td>' . $data['cycle_time_process'] . '</td>
                     <td>' . $data['manpower'] . '</td>
                     <td>' . $data['runner'] . '</td>
                     <td>' . $data['priority'] . '</td>';

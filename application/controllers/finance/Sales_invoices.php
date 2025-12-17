@@ -494,34 +494,87 @@ class Sales_invoices extends CI_Controller
         // $records = $this->db->get()->result_array();
 
 
-        $this->db->select('a.delivery_note_no, 
+        // $this->db->select('a.delivery_note_no, 
+        //     a.customer_order_no, 
+        //     COALESCE(d.sales_order_no) as sales_order_no, 
+        //     a.item_fg_id, 
+        //     b.number as item_number, 
+        //     b.name as item_name, 
+        //     b.uom, 
+        //     e.account_number, 
+        //     e.account_name,
+        //     e.currency, 
+        //     a.qty, 
+        //     COALESCE(g.price) as price, 
+        //     (a.qty * COALESCE(g.price)) as total');
+
+        // $this->db->from('delivery_orders d');
+        // $this->db->join('item_fg b', 'd.item_fg_id = b.id');
+        // $this->db->join('customer_items c', 'd.customer_id = c.customer_id and d.item_fg_id = c.item_fg_id', 'left');
+        // $this->db->join('delivery_notes a', 'a.delivery_order_no = d.delivery_order_no and a.item_fg_id = d.item_fg_id');
+        // $this->db->join('customers e', 'a.customer_id = e.id');
+        // $this->db->join('sales_orders g', 'd.sales_order_no = g.sales_order_no and a.customer_id = g.customer_id and a.item_fg_id = g.item_fg_id and a.customer_order_no = g.customer_order_no', 'left');
+        // //$this->db->join('sales_order_rm g2', 'd.sales_order_no_rm = g2.sales_order_no and a.customer_id = g2.customer_id and a.item_fg_id = g2.item_fg_id and a.customer_order_no = g2.customer_order_no', 'left');
+        // $this->db->join('item_familys h', 'b.type = h.number', 'left');
+        // $this->db->join('account_coa i', 'h.account_number = i.account_number', 'left');
+        // //$this->db->join('sales_invoices j', 'a.delivery_note_no = j.delivery_note_no and a.item_fg_id = j.item_fg_id', 'left');
+
+        // $this->db->where_in('a.delivery_note_no', $delivery_note_no);
+        // $this->db->order_by('a.delivery_note_no', 'asc');
+
+        // $records = $this->db->get()->result_array();
+
+        $this->db->select('
+            a.delivery_note_no, 
             a.customer_order_no, 
-            COALESCE(d.sales_order_no) as sales_order_no, 
+            COALESCE(d.sales_order_no) AS sales_order_no, 
             a.item_fg_id, 
-            b.number as item_number, 
-            b.name as item_name, 
+            b.number AS item_number, 
+            b.name AS item_name, 
             b.uom, 
             e.account_number, 
             e.account_name,
             e.currency, 
             a.qty, 
-            COALESCE(g.price) as price, 
-            (a.qty * COALESCE(g.price)) as total');
+            COALESCE(g.price) AS price, 
+            (a.qty * COALESCE(g.price)) AS total
+        ');
 
         $this->db->from('delivery_orders d');
         $this->db->join('item_fg b', 'd.item_fg_id = b.id');
-        $this->db->join('customer_items c', 'd.customer_id = c.customer_id and d.item_fg_id = c.item_fg_id', 'left');
-        $this->db->join('delivery_notes a', 'a.delivery_order_no = d.delivery_order_no and a.item_fg_id = d.item_fg_id');
+
+        $this->db->join(
+            'delivery_notes a',
+            'a.delivery_order_no = d.delivery_order_no 
+            AND a.item_fg_id = d.item_fg_id',
+            'inner'
+        );
+
         $this->db->join('customers e', 'a.customer_id = e.id');
-        $this->db->join('sales_orders g', 'd.sales_order_no = g.sales_order_no and a.customer_id = g.customer_id and a.item_fg_id = g.item_fg_id and a.customer_order_no = g.customer_order_no', 'left');
-        //$this->db->join('sales_order_rm g2', 'd.sales_order_no_rm = g2.sales_order_no and a.customer_id = g2.customer_id and a.item_fg_id = g2.item_fg_id and a.customer_order_no = g2.customer_order_no', 'left');
+
+        $this->db->join(
+            'sales_orders g',
+            'd.sales_order_no = g.sales_order_no 
+            AND a.customer_id = g.customer_id 
+            AND a.item_fg_id = g.item_fg_id 
+            AND a.customer_order_no = g.customer_order_no',
+            'left'
+        );
+
+        $this->db->join(
+            'customer_items c',
+            'd.customer_id = c.customer_id 
+            AND d.item_fg_id = c.item_fg_id 
+            AND g.type_item = c.type_item',
+            'left'
+        );
+
         $this->db->join('item_familys h', 'b.type = h.number', 'left');
         $this->db->join('account_coa i', 'h.account_number = i.account_number', 'left');
-        //$this->db->join('sales_invoices j', 'a.delivery_note_no = j.delivery_note_no and a.item_fg_id = j.item_fg_id', 'left');
 
         $this->db->where_in('a.delivery_note_no', $delivery_note_no);
         $this->db->order_by('a.delivery_note_no', 'asc');
-
+        // $this->db->group_by(['a.delivery_note_no', 'a.item_fg_id']);
         $records = $this->db->get()->result_array();
 
         $total_sub = 0;
@@ -1013,7 +1066,8 @@ class Sales_invoices extends CI_Controller
                 } else {
                     $dpp_total = $sub_total * 11/12;
                 }
-                $vat_total = $dpp_total * ($record['taxes']/100);
+                // $vat_total = $dpp_total * ($record['taxes']/100);
+                $vat_total = $sub_total * ($record['taxes']/100);
                 $sales_invoices = $this->db->query("SELECT * FROM sales_invoice_journals WHERE account_number IN ('170.110.00', '170.230.00') AND number = ?", [$record['number']])->result();
                 // var_dump($sales_invoices);
                 
@@ -1418,7 +1472,8 @@ class Sales_invoices extends CI_Controller
                 } else {
                     $dpp_total = $sub_total * 11/12;
                 }
-                $vat_total = $dpp_total * ($record['taxes']/100);
+                // $vat_total = $dpp_total * ($record['taxes']/100);
+                $vat_total = $sub_total * ($record['taxes']/100);
                 $sales_invoices = $this->db->query("SELECT * FROM sales_invoice_journals WHERE account_number IN ('170.110.00', '170.230.00') AND number = ?", [$record['number']])->result();
                 // var_dump($sales_invoices);
                 

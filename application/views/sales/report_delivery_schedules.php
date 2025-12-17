@@ -58,6 +58,7 @@
                         <option value="OPEN">OPEN</option>
                         <option value="CLOSE">CLOSE</option>
                         <option value="ON GOING">ON GOING</option>
+                        <option value="OVER">OVER</option>
                     </select>
                 </div>
                 <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">

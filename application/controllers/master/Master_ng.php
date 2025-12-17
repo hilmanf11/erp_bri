@@ -40,6 +40,32 @@ class Master_ng extends CI_Controller
         echo json_encode($send);
     }
 
+    // public function getData()
+    // {
+    //     $this->db->select("id, code, name");
+    //     $this->db->from("master_ng");
+    //     $this->db->where("deleted", 0);
+
+    //     $this->db->order_by("code", "ASC");
+
+    //     echo json_encode($this->db->get()->result());
+    // }
+
+    public function getData()
+    {
+        $data = $this->db->select("id, code, name")
+                        ->from("master_ng")
+                        ->where("deleted", 0)
+                        ->order_by("code", "ASC")
+                        ->get()
+                        ->result();
+
+        echo json_encode([
+            "total" => count($data),
+            "rows" => $data
+        ]);
+    }
+
     //GET DATATABLES
     public function datatables()
     {

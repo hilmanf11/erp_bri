@@ -25,10 +25,39 @@
         </tr>
     </thead>
 </table>
-<!-- TOOLBAR DATAGRID -->
-<div id="toolbar" style="height: 35px;">
-    <?= $button ?>
+
+<div id="toolbar" style="height: 200px; padding: 10px;">
+    <div style="width: 100%;">
+        <fieldset style="width: 35%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+            <legend><b>Form Filter Data</b></legend>                
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Supply No</span>
+                    <input style="width:60%;" id="filter_request_no" class="easyui-combobox">
+                </div>
+
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product No</span>
+                    <input style="width:60%;" id="filter_item_rm_id" class="easyui-combogrid">
+                </div>
+
+                <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
+                    <span style="width:35%; display:inline-block;"></span>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                </div>
+        </fieldset>
+        <?= $button ?>
+
+        <a href="javascript:;" class="easyui-linkbutton" plain="true" onclick="calculate_balance()">
+            <i class="fa fa-calculator"></i> Calculate Balance
+        </a>
+
+    </div>
 </div>
+
+<!-- <div id="toolbar" style="height: 35px;">
+    <?= $button ?>
+</div> -->
+
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
@@ -70,6 +99,41 @@
     </form>
 </div>
 
+<div id="dlg_calculate" class="easyui-dialog" title="Form Calculate"
+     data-options="closed:true,modal:true"
+     style="width:500px; padding:10px; top:20px;">
+    <form id="frm_insert" method="post" novalidate>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom:10px; border-radius:4px;">
+            <legend><b>Calculate Balance</b></legend>
+
+            <div class="fitem" style="margin-bottom:10px;">
+                <span style="width:35%; display:inline-block;">Start Date</span>
+                <input style="width:60%;" id="calculate_from"
+                       name="start_date"
+                       value="<?= date("Y-m-01") ?>"
+                       data-options="formatter:myformatter,parser:myparser,editable:false"
+                       class="easyui-datebox">
+            </div>
+
+            <div class="fitem" style="margin-bottom:10px;">
+                <span style="width:35%; display:inline-block;">End Date</span>
+                <input style="width:60%;" id="calculate_to"
+                       name="end_date"
+                       value="<?= date("Y-m-t") ?>"
+                       data-options="formatter:myformatter,parser:myparser,editable:false"
+                       class="easyui-datebox">
+            </div>
+
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Item ID</span>
+                <input style="width:60%;" name="cal_item_rm_id"
+                       id="cal_item_rm_id"
+                       class="easyui-combogrid" required>
+            </div>
+        </fieldset>
+    </form>
+</div>
+
 <!-- Upload -->
 <div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
     <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
@@ -93,6 +157,11 @@
 <!-- PDF -->
 <iframe id="printout" src="<?= base_url('warehouse/wip_balances/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
+
+    function calculate_balance() {
+        $('#dlg_calculate').dialog('open');
+    }
+
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
@@ -142,6 +211,43 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
+
+
+    function filter() {
+        var filter_item_rm_id = $("#filter_item_rm_id").combogrid('getValue');
+        var filter_request_no = $("#filter_request_no").combobox('getValue');
+
+        url = "?filter_item_rm_id=" + filter_item_rm_id + "&filter_request_no=" + filter_request_no;
+
+        $('#dg').datagrid({
+            url: '<?= base_url('warehouse/wip_balances/datatables') ?>' + url,
+            fit: true,
+            pagination: true,
+            rownumbers: true,
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
+            onLoadSuccess : function(data){
+                console.log(data);
+                
+            }
+        });
+        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+        $("#printout").attr('src', '<?= base_url('warehouse/wip_balances/print') ?>' + url);
+    }
+
+    function pdf() {
+        $("#printout").get(0).contentWindow.print();
+    }
+
+    function excel() {
+        var filter_item_rm_id = $("#filter_item_rm_id").combogrid('getValue');
+        var filter_request_no = $("#filter_request_no").combobox('getValue');
+
+        url = "?filter_item_rm_id=" + filter_item_rm_id + "&filter_request_no=" + filter_request_no;
+
+        window.location.assign('<?= base_url('warehouse/wip_balances/print/excel') ?>' + url);
+    }
+
     //PRINT PDF
     function pdf() {
         $("#printout").get(0).contentWindow.print();
@@ -170,12 +276,79 @@
             url: '<?= base_url('warehouse/wip_balances/datatables') ?>',
             pagination: true,
             clientPaging: false,
-            remoteFilter: true,
+            // remoteFilter: true,
             rownumbers: true,
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
-        }).datagrid('enableFilter');
+        });
+        // }).datagrid('enableFilter');
+
+
+
+        $('#dlg_calculate').dialog({
+            buttons: [{
+                text: 'Start',
+                iconCls: 'icon-ok',
+                handler: function() {
+                    var start_date = $('#calculate_from').datebox('getValue');
+                    var end_date   = $('#calculate_to').datebox('getValue');
+                    var item_rm_id = $('#cal_item_rm_id').combogrid('getValue');
+
+                    if (!start_date || !end_date || !item_rm_id) {
+                        toastr.warning("Please fill all fields before starting.", "Warning");
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'Recalculating Balance...',
+                        html: 'Please wait 5-10 minutes while data is being processed.',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                            $('#dlg_calculate').dialog('close');
+                        }
+                    });
+
+                    $.ajax({
+                        url: "<?= base_url('warehouse/wip_balances/calculate_balance') ?>",
+                        type: "POST",
+                        dataType: "json",
+                        data: {
+                            start_date: start_date,
+                            end_date: end_date,
+                            cal_item_rm_id: item_rm_id
+                        },
+                        success: function(response) {
+                            Swal.close();
+
+                            if (response.status === "success") {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Balance Updated!',
+                                    text: response.message
+                                }).then(() => {
+                                    $('#dlg_calculate').dialog('close');
+                                    $('#dg_request').datagrid('reload');
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: response.message
+                                });
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            Swal.close();
+                            Swal.fire('Error', 'Failed to process request: ' + error, 'error');
+                        }
+                    });
+                }
+            }]
+        });
+
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
@@ -201,17 +374,37 @@
                 }
             }]
         });
-        $('#item_rm_id').combogrid({
+        $('#cal_item_rm_id').combogrid({
             url: '<?= base_url('master/item_rm/reads') ?>',
             panelWidth: 400,
             idField: 'id',
-            textField: 'number',
+            textField: 'number_internal',
             mode: 'remote',
             fitColumns: true,
             prompt: "Choose Product",
             columns: [
                 [{
-                    field: 'number',
+                    field: 'number_internal',
+                    title: 'Product No',
+                    width: 200
+                }, {
+                    field: 'name',
+                    title: 'Product Name',
+                    width: 200
+                }]
+            ],
+        });
+        $('#filter_item_rm_id').combogrid({
+            url: '<?= base_url('master/item_rm/reads') ?>',
+            panelWidth: 400,
+            idField: 'id',
+            textField: 'number_internal',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Product",
+            columns: [
+                [{
+                    field: 'number_internal',
                     title: 'Product No',
                     width: 200
                 }, {
@@ -230,7 +423,42 @@
             textField: 'request_no',
             prompt: "Choose Supply Sheet"
         });
+
+        $("#filter_request_no").combobox({
+            url: '<?= base_url('warehouse/wip_balances/readRequestNoWP') ?>',
+            valueField: 'request_no',
+            textField: 'request_no',
+            prompt: "Select Supply No",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }],
+        });
     });
+
+    // FORMAT tahun-bulan-tanggal
+    function myformatter(date) {
+        var y = date.getFullYear();
+        var m = date.getMonth() + 1;
+        var d = date.getDate();
+        return y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
+    }
+
+    function myparser(s) {
+        if (!s) return new Date();
+        var ss = (s.split('-'));
+        var y = parseInt(ss[0], 10);
+        var m = parseInt(ss[1], 10);
+        var d = parseInt(ss[2], 10);
+        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+            return new Date(y, m - 1, d);
+        } else {
+            return new Date();
+        }
+    }
+
     function numberformat(value, row) {
         if (value) {
             const formatter = new Intl.NumberFormat('id-ID', {

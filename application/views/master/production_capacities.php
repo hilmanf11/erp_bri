@@ -34,9 +34,11 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
+            <th rowspan="2" data-options="field:'item_fg_id',width:150,align:'center',sortable:true">Product ID</th>
             <th rowspan="2" data-options="field:'item_fg_number',width:150,align:'center',sortable:true">Product No.</th>
-            <th rowspan="2" data-options="field:'machine_number',width:150,align:'center',sortable:true">Machine No.</th>
             <th rowspan="2" data-options="field:'item_fg_name',width:150,halign:'center',sortable:true">Product Name</th>
+            <th rowspan="2" data-options="field:'machine_number',width:150,align:'center',sortable:true">Machine No.</th>
+            <th rowspan="2" data-options="field:'mold_id',width:150,align:'center',sortable:true">Mold ID</th>
             <th rowspan="2" data-options="field:'cycle_time',width:120,halign:'center',sortable:true">Cycle Time <br>(Second)</th>
             <th rowspan="2" data-options="field:'productcivity',width:120,halign:'center',sortable:true">Efficiency (%)</th>
             <th rowspan="2" data-options="field:'cavity_actual',width:120,halign:'center',sortable:true">Cavity Actual</th>
@@ -71,6 +73,10 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Machine No.</span>
+                <input style="width:60%;" id="machine_number" required="" class="easyui-textbox" data-options="editable:false">
+            </div>
+            <div class="fitem" hidden>
+                <span style="width:35%; display:inline-block;">Machine ID</span>
                 <input style="width:60%;" name="machine_id" id="machine_id" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
@@ -139,6 +145,23 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
+
+            $('#machine_number').textbox('setValue', row.machine_number);
+            $('#cycle_time').textbox('setValue', row.cycle_time);
+            $('#productcivity').textbox('setValue', row.productcivity);
+            $('#cavity_actual').textbox('setValue', row.cavity_actual);
+
+            editingUniqueKey = row.item_fg_id 
+                            + '_' + row.machine_id
+                            + '_' + row.mold_id
+                            + '_' + row.cavity_actual;
+
+            $('#item_fg_id').combogrid('setValue', editingUniqueKey);
+
+            setTimeout(() => {
+                $('#machine_number').textbox('enable');
+            }, 50);
+
             url_save = '<?= base_url('master/production_capacities/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
@@ -160,6 +183,12 @@
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
+
+                                if (result.theme == "success") {
+                                    toastr.success(result.message, result.title);
+                                } else {
+                                    toastr.error(result.message, result.title);
+                                }
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
                                 toastr.error(jqXHR.statusText);
@@ -240,25 +269,29 @@
     $('#item_fg_id').combogrid({
         url: '<?php echo base_url('master/production_capacities/readItems'); ?>',
         required: true,
-        panelWidth: 500,
-        idField: 'item_fg_id',
+        panelWidth: 550,
+        idField: 'unique_key',
         textField: 'item_fg_number',
         mode: 'remote',
         fitColumns: true,
         prompt: 'Choose Product No',
         columns: [
             [{
-                field: 'item_fg_id',
-                title: 'Product ID',
-                width: 120
-            }, {
                 field: 'item_fg_number',
                 title: 'Product No.',
+                width: 200
+            }, {
+                field: 'machine_number',
+                title: 'Machine No',
                 width: 150
             }, {
-                field: 'item_fg_name',
-                title: 'Product Name',
-                width: 200
+                field: 'mold_id',
+                title: 'Mold ID',
+                width: 150
+            }, {
+                field: 'cavity_actual',
+                title: 'Cavity Actual',
+                width: 100
             }]
         ],
         onSelect: function(val, rows) {
@@ -273,6 +306,7 @@
                 $('#cavity_actual').textbox('disableValidation');
                 $('#cavity_wrapper').hide();
 
+                $("#machine_number").textbox('setValue', rows.machine_number);
                 $("#machine_id").textbox('setValue', rows.machine_id);
                 $("#cycle_time").textbox('setValue', rows.cycle_time);
                 $("#productcivity").textbox('setValue', rows.productcivity);
@@ -297,6 +331,7 @@
                 $('#cavity_actual').textbox('enableValidation');
                 $('#cavity_wrapper').show();
 
+                $("#machine_number").textbox('setValue', rows.machine_number);
                 $("#machine_id").textbox('setValue', rows.machine_id);
                 $("#cycle_time").textbox('setValue', rows.cycle_time);
                 $("#productcivity").textbox('setValue', rows.productcivity);
@@ -312,6 +347,13 @@
                 $("#capacity_day").textbox('setValue', capacity_day);
             }
 
+        },
+        onLoadSuccess: function() {
+            if (editingUniqueKey) {
+                $('#item_fg_id').combogrid('setValue', editingUniqueKey);
+                $('#item_fg_id').combogrid('grid').datagrid('selectRecord', editingUniqueKey);
+                editingUniqueKey = null;
+            }
         }
     });
 

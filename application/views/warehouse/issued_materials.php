@@ -218,7 +218,9 @@
                 if (!request_no) {
                     request_no = null;
                 }
-                
+
+                $('#dg').datagrid('loading');
+
                 $.ajax({
                     type: "POST",
                     url: "<?= base_url('warehouse/issued_materials/getPoReceipt') ?>",
@@ -228,16 +230,50 @@
                         if (json.total > 0) {
                             console.log('Json OKE: ', json);
                             var row = json.rows;
+
+                            // for (let i = 0; i < json.total; i++) {
+                            //     creteLabel(request_no, receipt_id, row[i].item_rm_id, row[i].qty, row[i].eq_item_rm_id, row[i].qty_po);
+                            // }
+
+                            // $('#dg').datagrid({
+                            //     url: '<?= base_url('warehouse/issued_materials/datatables?request_no=') ?>' + window.btoa(request_no),
+                            //     rownumbers: true
+                            // });
+
+                            // if (request_no) {
+                            //     $('#dg').datagrid('reload', '<?= base_url('warehouse/issued_materials/datatables?request_no=') ?>' + window.btoa(request_no));
+                            // }
+
+                            let totalCalls = json.total;
+                            let completedCalls = 0;
+
                             for (let i = 0; i < json.total; i++) {
-                                creteLabel(request_no, receipt_id, row[i].item_rm_id, row[i].qty, row[i].eq_item_rm_id, row[i].qty_po);
+                                creteLabel(
+                                    request_no,
+                                    receipt_id,
+                                    row[i].item_rm_id,
+                                    row[i].qty,
+                                    row[i].eq_item_rm_id,
+                                    row[i].qty_po,
+                                    function() {
+                                        completedCalls++;
+                                        if (completedCalls === totalCalls) {
+                                            setTimeout(function() {
+                                                if (request_no) {
+
+                                                    $('#dg').datagrid('loaded');
+                                                
+                                                    $('#dg').datagrid('reload', '<?= base_url('warehouse/issued_materials/datatables?request_no=') ?>' + window.btoa(request_no));
+                                                }
+                                            }, 0);
+                                        }
+                                    }
+                                );
                             }
 
-                            $('#dg').datagrid({
-                                url: '<?= base_url('warehouse/issued_materials/datatables?request_no=') ?>' + window.btoa(request_no),
-                                rownumbers: true
-                            });
-                            
+
                         } else {
+                            $('#dg').datagrid('loaded');
                             serialNotFound.play();
                             toastr.warning("Label not found!");
                             $("#receipt_id").val('');
@@ -247,48 +283,51 @@
             }
         });
     });
-    function creteLabel(request_no, receipt_id, item_rm_id, qty, eq_item_rm_id, qty_po) {
-        console.log('Last : ', request_no, receipt_id, item_rm_id, qty, eq_item_rm_id, qty_po);
+
+    function creteLabel(request_no, receipt_id, item_rm_id, qty, eq_item_rm_id, qty_po, callback) {
+        // console.log('Last : ', request_no, receipt_id, item_rm_id, qty, eq_item_rm_id, qty_po);
 
         // Last :  SH-250625-0001 POR-20250312-0003-0010131 RMFLNA-0009 25.00 RMFLNA-0001 25.00
 
-
-                                $.ajax({
-                                    type: "POST",
-                                    url: "<?= base_url('warehouse/issued_materials/create_label') ?>",
-                                    data: "request_no=" + request_no +
-                                        "&label_no=" + receipt_id +
-                                        "&item_rm_id=" + item_rm_id +
-                                        "&qty=" + qty +
-                                        "&eq_item_rm_id=" + eq_item_rm_id +
-                                        "&qty_po=" + qty_po,
-                                    dataType: "json",
-                                    success: function(result) {
-                                        if (result.theme == "success") {
-                                            serialSuccess.play();
-                                            toastr.success(result.message, result.title);
-                                            $("#receipt_id").val('');
-                                            $('#receipt_id').focus();
-                                        } else {
-                                            if (result.title == "Not Scanned In" || result.title == "Not Registered") {
-                                                serialNotFound.play();
-                                            // } else if (result.title == "More Than Qty") {
-                                            //     // moreThanQty.play();
-                                            } else if(result.title == "FIFO Violation") {
-                                                FIFOValidation.play();
-                                            } else if (result.title == "Label Already Scan"){
-                                                labelAlreadyScan.play();
-                                            } else if (result.title == "Lock Item"){
-                                                lockItem.play();
-                                            } else {
-                                                serialDuplicate.play();
-                                            }
-                                            toastr.error(result.message, result.title);
-                                            $("#receipt_id").val('');
-                                            $('#receipt_id').focus();
-                                        }
-                                    }
-                                });
+        $.ajax({
+            type: "POST",
+            url: "<?= base_url('warehouse/issued_materials/create_label') ?>",
+            data: "request_no=" + request_no +
+                "&label_no=" + receipt_id +
+                "&item_rm_id=" + item_rm_id +
+                "&qty=" + qty +
+                "&eq_item_rm_id=" + eq_item_rm_id +
+                "&qty_po=" + qty_po,
+            dataType: "json",
+            success: function(result) {
+                if (result.theme == "success") {
+                    serialSuccess.play();
+                    toastr.success(result.message, result.title);
+                    $("#receipt_id").val('');
+                    $('#receipt_id').focus();
+                } else {
+                    if (result.title == "Not Scanned In" || result.title == "Not Registered") {
+                        serialNotFound.play();
+                    // } else if (result.title == "More Than Qty") {
+                    //     // moreThanQty.play();
+                    } else if(result.title == "FIFO Violation") {
+                        FIFOValidation.play();
+                    } else if (result.title == "Label Already Scan"){
+                        labelAlreadyScan.play();
+                    } else if (result.title == "Lock Item"){
+                        lockItem.play();
+                    } else {
+                        serialDuplicate.play();
+                    }
+                    toastr.error(result.message, result.title);
+                    $("#receipt_id").val('');
+                    $('#receipt_id').focus();
+                }
+            },
+            complete: function() {
+                if (typeof callback === "function") callback();
+            }
+        });
     }
     function numberformat(value, row) {
         const formatter = new Intl.NumberFormat('id-ID', {

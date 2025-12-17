@@ -77,6 +77,24 @@ class Supply_sheets extends CI_Controller
         echo json_encode($records);
     }
 
+    public function readRequestNoAll()
+    {
+        // $period = base64_decode($this->input->get('period'));
+        // $wp = base64_decode($this->input->get('wp'));
+        // if ($period != "") {
+        //     $w_period = "and b.period = '$period'";
+        // } else {
+        //     $w_period = "";
+        // }
+        // if ($wp != "") {
+        //     $w_wp = "and b.wp = '$wp'";
+        // } else {
+        //     $w_wp = "";
+        // }
+        $records = $this->crud->query("SELECT a.request_no FROM supply_sheets a JOIN production_schedules b ON a.workorder = b.workorder WHERE a.status = '0' GROUP BY a.request_no");
+        echo json_encode($records);
+    }
+
     public function request_no($trans_date)
     {
         $trans_date = base64_decode($trans_date);
@@ -155,7 +173,8 @@ class Supply_sheets extends CI_Controller
                                                   UNION
                                                   SELECT eq_5 FROM equivalents WHERE item_rm_id = a.item_rm_id
                                                 )
-                                              GROUP BY request_no, item_rm_id
+                                                GROUP BY request_no, item_rm_id
+                                                LIMIT 1
                                             )
                                     , 0 ) - a.qty_req
                 ) 
@@ -401,6 +420,7 @@ class Supply_sheets extends CI_Controller
                                                   SELECT eq_5 FROM equivalents WHERE item_rm_id = a.item_rm_id
                                                 )
                                               GROUP BY request_no, item_rm_id
+                                              LIMIT 1
                                             )
                                     , 0 ) - a.qty_req
                             )
@@ -959,399 +979,436 @@ class Supply_sheets extends CI_Controller
         echo json_encode($records);
     }
 
+    // public function create()
+    // {
+    //     if ($this->input->post()) {
+    //         if ($this->form_validation->run() == TRUE) {
+    //             $post = $this->input->post();
+    //             // $filter_from="2025-01-01";
+    //             // $filter_to = date('Y-m-d');
+    //             $request_no = $post['request_no'];
+    //             $request_name = $post['request_name'];
+    //             $request_date = $post['request_date'];
+    //             $item_rm_id = $post['item_rm_id'];
+    //             $item_fg_id = $post['item_fg_id'];
+    //             $qty_need = floatval($post['qty_req']);
+    //             $mpq = floatval($post['mpq']);
+
+    //             $supply_sheets = $this->crud->reads("supply_sheets", [], [
+    //                 "request_no" => $request_no, 
+    //                 "item_fg_id" => $item_fg_id, 
+    //                 "item_rm_id" => $item_rm_id
+    //             ]);
+
+    //             $supply_sheetsRM = $this->crud->reads("supply_sheets", [], [
+    //                 "item_rm_id" => $item_rm_id
+    //             ]);
+
+    //             $wip_balances = $this->crud->read("wip_balances", [], ["item_rm_id" => $item_rm_id], "", "id", "desc");
+    //             // $resultIM = $this->crud->read("issued_materials", [], ["request_no" => $request_no, "item_rm_id" => $item_rm_id], "", "id", "desc");
+    //             //$resultPOLabels = $this->crud->read("purchase_order_labels", [], ["request_no" => $request_no, "item_rm_id" => $item_rm_id], "", "id", "desc");
+
+    //             $item_rm = $this->crud->read("item_rm", [], ["id" => $item_rm_id], "", "id", "desc");
+                
+                
+    //             $this->db->select('SUM(qty) as issued_qty');
+    //             $this->db->from('issued_material_details');
+    //             $this->db->where('request_no', $request_no);
+    //             $this->db->where('item_rm_id', $item_rm_id);
+    //             $this->db->group_by('request_no');
+    //             $this->db->group_by('item_rm_id');
+    //             $queryPOLabels = $this->db->get();
+    //             $resultPOLabels = $queryPOLabels->row();
+
+    //             if (count($supply_sheets) > 0) {
+    //                 show_error("Duplicate");
+    //             }else{
+
+    //                 $begin = 0;
+    //                 $issued = 0;
+    //                 $balance = 0;
+    //                 $need = floatval($qty_need);
+    //                 $qty_supply = 0;
+    //                 if ($queryPOLabels->num_rows() > 0) {
+    //                     $issued= $resultPOLabels->issued_qty;
+    //                 }
+
+    //                 if(count($supply_sheetsRM) > 0){
+    //                         // var_dump('$wip_balances->balance');
+    //                         // var_dump($wip_balances->balance);
+    //                         if(floatval($wip_balances->balance)<floatval($qty_need)){
+    //                             $roundingUpResult = ceil(floatval($qty_need) / floatval($post["mpq"]));
+    //                             $qty_supply=floatval($post["mpq"]) * $roundingUpResult;
+    //                             // var_dump('$qty_suuply');
+    //                             // var_dump($qty_supply);
+    //                         }
+    //                         $begin = floatval($wip_balances->balance);
+    //                         $issued = (floatval($qty_supply) == 0) ? 0 : $issued;
+    //                         // var_dump('$beginss');
+    //                         // var_dump($begin);
+
+    //                 }
+
+    //                 //  var_dump('$begin');
+    //                 //  var_dump($begin);
+    //                 //  var_dump('$issued');
+    //                 //  var_dump($issued);
+
+    //                 $balance = ($begin + $issued) - $need;
+
+    //                 $post = [
+    //                     'item_fg_id' => $item_fg_id,
+    //                     'item_rm_id' => $item_rm_id,
+    //                     'workorder' => $post["workorder"],
+    //                     'request_date' => $request_date,
+    //                     'request_no' => $request_no,
+    //                     'request_name' => $request_name,
+    //                     'mpq' => floatval($post["mpq"]),
+    //                     'qty_req' => $qty_supply,
+    //                     'qty_act' => $need,
+    //                     'qty_issued' => $issued,
+    //                     'qty_bal' => $balance
+    //                 ]; //var_dump($post);
+
+    //                 // if($item_rm->item_family_id !='P06'){
+
+    //                 //     if($item_rm->item_family_id == 'P04' || $item_rm->item_family_id == 'P05' || $item_rm->item_family_id == 'P07' ){
+
+    //                 //         $post['mpq'] = 0;
+    //                 //         $post['qty_req'] = $need;
+
+    //                 //     }else{
+    //                 //         $this->crud->create("wip_balances", [
+    //                 //             "item_rm_id" => $item_rm_id,
+    //                 //             "request_no" => $request_no,
+    //                 //             "begin" => $begin,
+    //                 //             "need" => $need,
+    //                 //             "issued" => $issued,
+    //                 //             "balance" => $balance,
+    //                 //             "warehouse" => $EndingStock, // dari inventory berdasarkan stok terakhir saat supply sheet dibuat / historical transaction rm pada column ending stock dari rm id tersebut
+    //                 //         ]);
+    //                 //     }
+
+    //                 //     $supplySheetId = $this->crud->create_return_id('supply_sheets', $post);
+    //                 // }else{
+    //                 //     $supplySheetId = $this->crud->create_return_id('supply_chemical', $post);
+    //                 // }
+
+
+    //                 if($item_rm->item_family_id == 'P04' || $item_rm->item_family_id == 'P05' || $item_rm->item_family_id == 'P07' ) {
+
+    //                         // $this->crud->create("wip_balances", [
+    //                         //     "item_rm_id" => $item_rm_id,
+    //                         //     "request_no" => $request_no,
+    //                         //     "begin" => $begin,
+    //                         //     "need" => $need,
+    //                         //     "issued" => $issued,
+    //                         //     "balance" => $balance,
+    //                         //     "warehouse" => $EndingStock, // dari inventory berdasarkan stok terakhir saat supply sheet dibuat / historical transaction rm pada column ending stock dari rm id tersebut
+    //                         // ]);
+
+    //                     $supplySheetId = $this->crud->create_return_id('supply_sheets', $post);
+    //                 } else if($item_rm->item_family_id == 'P03') {
+    //                     $post['mpq'] = 0;
+    //                     $post['qty_req'] = $need;
+
+    //                     $supplySheetId = $this->crud->create_return_id('supply_sheets', $post);
+    //                 } else if($item_rm->item_family_id =='P06') {
+    //                     $supplySheetId = $this->crud->create_return_id('supply_chemical', $post);
+    //                 }
+
+    //                     // Tambahkan notifikasi jika berhasil
+    //                     if ($supplySheetId) {
+    //                         $notificationData = [
+    //                             'created_by' => $this->session->userdata('username'),
+    //                             'created_date' => date('Y-m-d H:i:s'),
+    //                             'approvals_id' => null,
+    //                             'users_id_from' => $this->session->userdata('username'),
+    //                             'users_id_to' => 'scmbri04',
+    //                             'table_id' => $supplySheetId,
+    //                             'table_name' => 'supply_sheets',
+    //                             'name' => 'Created',
+    //                             'description' => 'Data in Module Supply Sheets has been created',
+    //                             'status' => 0
+    //                         ];
+    //                         $this->crud->create('notifications', $notificationData);
+    //                     }
+
+    //                     $workorderExists = $this->db->get_where("production_schedules", ["workorder" => $post['workorder']])->num_rows();
+
+    //                     if ($workorderExists > 0) {
+    //                         $this->db->update("production_schedules", ["status" => 1], ["workorder" => $post['workorder']]);
+    //                     }
+    //                     echo $supplySheetId;
+
+    //             }
+
+    //         }
+
+
+
+
+
+
+
+    //             //Stock kWarehouse RM
+    //         //     $stockWarehouse = $this->crud->query("SELECT
+    //         //         a.id,
+    //         //         (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty,0) + COALESCE(h.qty_stock_rm, 0) - COALESCE(f.qty, 0)) as end_stock
+    //         //     FROM item_rm a 
+    //         //     JOIN item_familys b ON a.item_family_id = b.id
+    //         //     JOIN uom c ON a.uom = c.name
+    //         //     LEFT JOIN purchase_order_receipts d ON a.id = d.item_rm_id and d.receipt_date <= '$dateNow'
+    //         //     LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
+    //         //     LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') <= '$dateNow' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
+    //         //     LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty
+    //         //         FROM return_materials a 
+    //         //         JOIN return_material_labels b ON a.return_id = b.return_id
+    //         //         JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
+    //         //         WHERE a.return_date <= '$dateNow'
+    //         //         GROUP BY a.id) g ON a.id = g.item_rm_id
+    //         //     LEFT JOIN (SELECT a.item_rm_id, SUM(a.qty) as qty_stock_rm
+    //         //     FROM os_rm a
+    //         //     JOIN item_rm b ON a.item_rm_id = b.id
+    //         //     WHERE a.trans_date < '$dateNow'
+    //         //     GROUP BY a.item_rm_id) h ON a.id = h.item_rm_id
+    //         //     WHERE a.id like '$item_rm_id'
+    //         //     GROUP BY a.id
+    //         //     ORDER BY a.number");
+
+    //         //     if (count($supply_sheets) > 0) {
+    //         //         show_error("Duplicate");
+    //         //     } else {
+    //         //         $qIssued = $this->db->query("SELECT COALESCE(SUM(a.qty), 0) as balance 
+    //         //             FROM scan_item_receipts a 
+    //         //             JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id
+    //         //             WHERE b.item_rm_id = '$item_rm_id' 
+    //         //             GROUP BY b.item_rm_id");
+    //         //         $dIssued = $qIssued->row();
+
+    //         //         if (!empty($wip_balances->balance)) {
+    //         //             if ($qty_act >= $wip_balances->balance) {
+    //         //                 //kalo items di hitung mpq
+    //         //                 if (@$supplier_items->calculate == 'YES') {
+    //         //                     $begin = $wip_balances->balance;
+    //         //                     $need = $qty_act;
+    //         //                     $issued = 0;
+    //         //                     $balance = 0;
+    //         //                     $warehouse = !empty($wip_balances->warehouse) ? $wip_balances->warehouse : @$stockWarehouse[0]->end_stock;
+    //         //                 } elseif (@$supplier_items->calculate == 0) {
+    //         //                     $begin = $wip_balances->balance;
+    //         //                     $need = $qty_act;
+    //         //                     $issued = 0;
+    //         //                     $balance = 0;
+    //         //                     $warehouse = !empty($wip_balances->warehouse) ? $wip_balances->warehouse : @$stockWarehouse[0]->end_stock;
+    //         //                 } else {
+    //         //                     $begin = $wip_balances->balance;
+    //         //                     $need = $qty_act;
+    //         //                     $issued = 0;
+    //         //                     $balance = 0;
+    //         //                     $warehouse = !empty($wip_balances->warehouse) ? $wip_balances->warehouse : @$stockWarehouse[0]->end_stock;
+    //         //                 }
+    //         //             } else {
+    //         //                 $begin = $wip_balances->balance;
+    //         //                 $need = $qty_act;
+    //         //                 $issued = 0;
+    //         //                 $balance = 0;
+    //         //                 $warehouse = !empty($wip_balances->warehouse) ? $wip_balances->warehouse : @$stockWarehouse[0]->end_stock;
+    //         //             }
+    //         //         } else {
+    //         //             if ($qty_act >= @$post['mpq']) {
+    //         //                 $begin = 0;
+    //         //                 $need = $qty_act;
+    //         //                 $issued = 0;
+    //         //                 $balance = 0;
+    //         //                 $warehouse = @$stockWarehouse[0]->end_stock;
+    //         //             } else {
+    //         //                 if (@$supplier_items->calculate == 'YES') {
+    //         //                     $begin = 0;
+    //         //                     $need = $qty_act;
+    //         //                     $issued = 0;
+    //         //                     $balance = 0;
+    //         //                     $warehouse = @$stockWarehouse[0]->end_stock;
+    //         //                 }else{
+    //         //                     $begin = 0;
+    //         //                     $need = $qty_act;
+    //         //                     $issued = 0;
+    //         //                     $balance = 0;
+    //         //                     $warehouse = @$stockWarehouse[0]->end_stock;
+    //         //                 }
+    //         //             }
+    //         //         }
+
+    //         //         if ($post['qty_req'] == 0) {
+    //         //             echo json_encode(array("title" => "Qty 0", "message" => $post['item_rm_no'] . " Qty 0", "theme" => "error"));
+    //         //         } else {
+    //         //             $balance = $this->crud->create("wip_balances", [
+    //         //                 "item_rm_id" => $item_rm_id,
+    //         //                 "request_no" => $post['request_no'],
+    //         //                 "begin" => $begin,
+    //         //                 "need" => $need,
+    //         //                 "issued" => $issued,
+    //         //                 "balance" => $balance,
+    //         //                 "warehouse" => $warehouse,
+    //         //             ]);
+
+    //         //             // Ambil data dari tabel item_rm
+    //         //             $item_rm = $this->crud->read("item_rm", [], ["id" => $item_rm_id]);
+
+    //         //             // Logika untuk menyimpan ke supply_chemical atau supply_sheets
+    //         //             if ($item_rm->supply == 0 && $item_rm->item_family_id == 'P06') {
+    //         //                 $send = $this->crud->create_return_id('supply_chemical', array_merge($post, ["qty_issued" => $issued]));
+    //         //                 $supplySheetId = $send;
+    //         //             } else {
+    //         //                 // Jika tidak, simpan ke `supply_sheets`
+    //         //                 $send = $this->crud->create_return_id('supply_sheets', array_merge($post, ["qty_issued" => $issued]));
+    //         //                 $supplySheetId = $send;
+    //         //             }
+
+    //         //             // Tambahkan notifikasi jika berhasil
+    //         //             if ($supplySheetId) {
+    //         //                 $notificationData = [
+    //         //                     'created_by' => $this->session->userdata('username'),
+    //         //                     'created_date' => date('Y-m-d H:i:s'),
+    //         //                     'approvals_id' => null,
+    //         //                     'users_id_from' => $this->session->userdata('username'),
+    //         //                     'users_id_to' => 'scmbri04',
+    //         //                     'table_id' => $supplySheetId,
+    //         //                     'table_name' => 'supply_sheets',
+    //         //                     'name' => 'Created',
+    //         //                     'description' => 'Data in Module Supply Sheets has been created',
+    //         //                     'status' => 0
+    //         //                 ];
+    //         //                 $this->crud->create('notifications', $notificationData);
+    //         //             }
+    //         //             // if ($post['qty_bal'] == 0) {
+    //         //             //     $this->db->update("production_schedules", ["status" => 1], ["workorder" => $post['workorder']]);
+    //         //             //     echo $send;
+    //         //             // } else {
+    //         //             //     $this->db->update("production_schedules", ["status" => 0], ["workorder" => $post['workorder']]);
+    //         //             //     echo $send;
+    //         //             // }
+    //         //             $workorderExists = $this->db->get_where("production_schedules", ["workorder" => $post['workorder']])->num_rows();
+
+    //         //             if ($workorderExists > 0) {
+    //         //                 $this->db->update("production_schedules", ["status" => 1], ["workorder" => $post['workorder']]);
+    //         //             }
+
+    //         //             echo $supplySheetId;
+    //         //         }
+    //         //     }
+    //         // } else {
+    //         //     show_error(validation_errors());
+    //         // }
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+
     public function create()
     {
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post = $this->input->post();
-                // $filter_from="2025-01-01";
-                // $filter_to = date('Y-m-d');
-                $request_no = $post['request_no'];
+
+                $request_no   = $post['request_no'];
                 $request_name = $post['request_name'];
                 $request_date = $post['request_date'];
-                $item_rm_id = $post['item_rm_id'];
-                $item_fg_id = $post['item_fg_id'];
-                $qty_need = floatval($post['qty_req']);
-                // $qty_wo = floatval(['qty']);
-                $supply_sheets = $this->crud->reads("supply_sheets", [], ["request_no" => $request_no, "item_fg_id" => $item_fg_id, "item_rm_id" => $item_rm_id]);
-                $supply_sheetsRM = $this->crud->reads("supply_sheets", [], ["item_rm_id" => $item_rm_id]);
-                $wip_balances = $this->crud->read("wip_balances", [], ["item_rm_id" => $item_rm_id], "", "id", "desc");
-                // $resultIM = $this->crud->read("issued_materials", [], ["request_no" => $request_no, "item_rm_id" => $item_rm_id], "", "id", "desc");
-                //$resultPOLabels = $this->crud->read("purchase_order_labels", [], ["request_no" => $request_no, "item_rm_id" => $item_rm_id], "", "id", "desc");
+                $item_rm_id   = $post['item_rm_id'];
+                $item_fg_id   = $post['item_fg_id'];
+                $qty_need     = floatval($post['qty_req']);
+                $mpq          = floatval($post['mpq']);
+
+                $supply_sheets = $this->crud->reads("supply_sheets", [], [
+                    "request_no" => $request_no,
+                    "item_fg_id" => $item_fg_id,
+                    "item_rm_id" => $item_rm_id
+                ]);
+                if (count($supply_sheets) > 0) {
+                    show_error("Duplicate");
+                    return;
+                }
+
                 $item_rm = $this->crud->read("item_rm", [], ["id" => $item_rm_id], "", "id", "desc");
-                
-                
+
                 $this->db->select('SUM(qty) as issued_qty');
                 $this->db->from('issued_material_details');
                 $this->db->where('request_no', $request_no);
                 $this->db->where('item_rm_id', $item_rm_id);
-                $this->db->group_by('request_no');
-                $this->db->group_by('item_rm_id');
-                $queryPOLabels = $this->db->get();
-                $resultPOLabels = $queryPOLabels->row();
+                $this->db->group_by(['request_no', 'item_rm_id']);
+                $queryIssued = $this->db->get();
 
-                // $this->db->select("(
-                //                     COALESCE(SUM(e.qty),0) +
-                //                     COALESCE(g.return_qty, 0) +
-                //                     COALESCE(h.qty_stock_rm, 0) +
-                //                     COALESCE(i.qty_in, 0)
-                //                 ) - (
-                                    
-                //                     COALESCE(f.qty, 0) +
-                //                     COALESCE(j.qty_out, 0)
-                //                 ) as begin_stock");
-                // $this->db->from('item_rm a');
-                // $this->db->join("purchase_order_receipts d","a.id = d.item_rm_id and d.receipt_date < '$filter_from'","left");
-                // $this->db->join("scan_item_receipts e","d.receipt_id = e.receipt_id","left");
-                // $this->db->join("(SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty
-                //                     FROM issued_material_details
-                //                     WHERE DATE_FORMAT(created_date, '%Y-%m-%d') < '$filter_from'
-                //                     GROUP BY item_rm_id) f","a.id = f.item_rm_id","left");
-                // $this->db->join("(SELECT a.item_rm_id, SUM(c.qty) as return_qty
-                //                     FROM return_materials a 
-                //                     JOIN return_material_labels b ON a.return_id = b.return_id
-                //                     JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
-                //                     WHERE a.return_date < '$filter_from'
-                //                     GROUP BY a.item_rm_id) g","a.id = g.item_rm_id","left");
-                // $this->db->join("(SELECT a.item_rm_id, SUM(a.qty) as qty_stock_rm
-                //                     FROM os_rm a
-                //                     JOIN item_rm b ON a.item_rm_id = b.id
-                //                     WHERE a.trans_date < '$filter_from'
-                //                     GROUP BY a.item_rm_id) h","a.id = h.item_rm_id","left");
-                // $this->db->join("(SELECT item_rm_id, SUM(qty) as qty_in 
-                //                     FROM transaction_rm 
-                //                     WHERE transaction_type LIKE 'RE%' 
-                //                     AND request_date < '$filter_from'
-                //                     GROUP BY item_rm_id) i","a.id = i.item_rm_id","left");
-                // $this->db->join("(SELECT item_rm_id, SUM(qty) as qty_out 
-                //                     FROM transaction_rm 
-                //                     WHERE transaction_type LIKE 'IS%' 
-                //                     AND request_date < '$filter_from'
-                //                     GROUP BY item_rm_id) j","a.id = j.item_rm_id","left");
-                // $this->db->where('a.id', $item_rm_id);
-                // $this->db->group_by('a.id');
-                // $queryBegin = $this->db->get();
-                // $resultBeginStock = $queryBegin->row();
-
-                // $this->db->select("(COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty, 0) + COALESCE(h.qty_stock_rm, 0) + COALESCE(i.qty_in, 0)) as qty_in,
-                //                     (COALESCE(f.qty, 0) + COALESCE(j.qty_out, 0)) as qty_out");
-                // $this->db->from('item_rm a');
-                // $this->db->join("purchase_order_receipts d","a.id = d.item_rm_id and d.receipt_date between '$filter_from' and '$filter_to'","left");
-                // $this->db->join("scan_item_receipts e","d.receipt_id = e.receipt_id","left");
-                // $this->db->join("(SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty
-                //                     FROM issued_material_details
-                //                     WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
-                //                     GROUP BY item_rm_id) f","a.id = f.item_rm_id","left");
-                // $this->db->join("(SELECT a.item_rm_id, SUM(c.qty) as return_qty
-                //                     FROM return_materials a 
-                //                     JOIN return_material_labels b ON a.return_id = b.return_id
-                //                     JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
-                //                     WHERE a.return_date between '$filter_from' and '$filter_to'
-                //                     GROUP BY a.item_rm_id) g","a.id = g.item_rm_id","left");
-                // $this->db->join("(SELECT a.item_rm_id, SUM(a.qty) as qty_stock_rm
-                //                     FROM os_rm a
-                //                     JOIN item_rm b ON a.item_rm_id = b.id
-                //                     WHERE a.trans_date between '$filter_from' and '$filter_to'
-                //                     GROUP BY a.item_rm_id) h","a.id = h.item_rm_id","left");
-                // $this->db->join("(SELECT item_rm_id, SUM(qty) as qty_in 
-                //                     FROM transaction_rm 
-                //                     WHERE transaction_type LIKE 'RE%' 
-                //                     AND request_date between '$filter_from' and '$filter_to'
-                //                     GROUP BY item_rm_id) i","a.id = i.item_rm_id","left");
-                // $this->db->join("(SELECT item_rm_id, SUM(qty) as qty_out 
-                //                     FROM transaction_rm 
-                //                     WHERE transaction_type LIKE 'IS%' 
-                //                     AND request_date between '$filter_from' and '$filter_to'
-                //                     GROUP BY item_rm_id) j","a.id = j.item_rm_id","left");
-                // $this->db->where('a.id', $item_rm_id);
-                // $this->db->group_by('a.id');
-                // $queryInOut = $this->db->get();
-                // $resultInOut = $queryInOut->row();
-
-                // $EndingStock = (floatval($resultBeginStock->begin_stock) + floatval($resultInOut->qty_in)) - floatval($resultInOut->qty_out);
-
-                if (count($supply_sheets) > 0) {
-                    show_error("Duplicate");
-                }else{
-                        
-                    $begin = 0;
-                    $issued = 0;
-                    $balance = 0;
-                    $need = floatval($qty_need);
-                    $qty_supply = 0;
-                    if ($queryPOLabels->num_rows() > 0) {
-                        $issued= $resultPOLabels->issued_qty;
-                    }
-
-                    if(count($supply_sheetsRM) > 0){
-                            // var_dump('$wip_balances->balance');
-                            // var_dump($wip_balances->balance);
-                            if(floatval($wip_balances->balance)<floatval($qty_need)){
-                                $roundingUpResult = ceil(floatval($qty_need) / floatval($post["mpq"]));
-                                $qty_supply=floatval($post["mpq"]) * $roundingUpResult;
-                                // var_dump('$qty_suuply');
-                                // var_dump($qty_supply);
-                            }
-                            $begin = floatval($wip_balances->balance);
-                            $issued = (floatval($qty_supply) == 0) ? 0 : $issued;
-                            // var_dump('$beginss');
-                            // var_dump($begin);
-
-                    }
-
-                    //  var_dump('$begin');
-                    //  var_dump($begin);
-                    //  var_dump('$issued');
-                    //  var_dump($issued);
-
-                    $balance = ($begin + $issued) - $need;
-
-                    $post = [
-                        'item_fg_id' => $item_fg_id,
-                        'item_rm_id' => $item_rm_id,
-                        'workorder' => $post["workorder"],
-                        'request_date' => $request_date,
-                        'request_no' => $request_no,
-                        'request_name' => $request_name,
-                        'mpq' => floatval($post["mpq"]),
-                        'qty_req' => $qty_supply,
-                        'qty_act' => $need,
-                        'qty_issued' => $issued,
-                        'qty_bal' => $balance
-                    ]; //var_dump($post);
-
-                    // if($item_rm->item_family_id !='P06'){
-
-                    //     if($item_rm->item_family_id == 'P04' || $item_rm->item_family_id == 'P05' || $item_rm->item_family_id == 'P07' ){
-
-                    //         $post['mpq'] = 0;
-                    //         $post['qty_req'] = $need;
-
-                    //     }else{
-                    //         $this->crud->create("wip_balances", [
-                    //             "item_rm_id" => $item_rm_id,
-                    //             "request_no" => $request_no,
-                    //             "begin" => $begin,
-                    //             "need" => $need,
-                    //             "issued" => $issued,
-                    //             "balance" => $balance,
-                    //             "warehouse" => $EndingStock, // dari inventory berdasarkan stok terakhir saat supply sheet dibuat / historical transaction rm pada column ending stock dari rm id tersebut
-                    //         ]);
-                    //     }
-
-                    //     $supplySheetId = $this->crud->create_return_id('supply_sheets', $post);
-                    // }else{
-                    //     $supplySheetId = $this->crud->create_return_id('supply_chemical', $post);
-                    // }
-
-
-                    if($item_rm->item_family_id == 'P04' || $item_rm->item_family_id == 'P05' || $item_rm->item_family_id == 'P07' ) {
-
-                            // $this->crud->create("wip_balances", [
-                            //     "item_rm_id" => $item_rm_id,
-                            //     "request_no" => $request_no,
-                            //     "begin" => $begin,
-                            //     "need" => $need,
-                            //     "issued" => $issued,
-                            //     "balance" => $balance,
-                            //     "warehouse" => $EndingStock, // dari inventory berdasarkan stok terakhir saat supply sheet dibuat / historical transaction rm pada column ending stock dari rm id tersebut
-                            // ]);
-
-                        $supplySheetId = $this->crud->create_return_id('supply_sheets', $post);
-                    } else if($item_rm->item_family_id == 'P03') {
-                        $post['mpq'] = 0;
-                        $post['qty_req'] = $need;
-
-                        $supplySheetId = $this->crud->create_return_id('supply_sheets', $post);
-                    } else if($item_rm->item_family_id =='P06') {
-                        $supplySheetId = $this->crud->create_return_id('supply_chemical', $post);
-                    }
-
-                        // Tambahkan notifikasi jika berhasil
-                        if ($supplySheetId) {
-                            $notificationData = [
-                                'created_by' => $this->session->userdata('username'),
-                                'created_date' => date('Y-m-d H:i:s'),
-                                'approvals_id' => null,
-                                'users_id_from' => $this->session->userdata('username'),
-                                'users_id_to' => 'scmbri04',
-                                'table_id' => $supplySheetId,
-                                'table_name' => 'supply_sheets',
-                                'name' => 'Created',
-                                'description' => 'Data in Module Supply Sheets has been created',
-                                'status' => 0
-                            ];
-                            $this->crud->create('notifications', $notificationData);
-                        }
-
-                        $workorderExists = $this->db->get_where("production_schedules", ["workorder" => $post['workorder']])->num_rows();
-
-                        if ($workorderExists > 0) {
-                            $this->db->update("production_schedules", ["status" => 1], ["workorder" => $post['workorder']]);
-                        }
-                        echo $supplySheetId;
-
+                $issued = 0;
+                if ($queryIssued->num_rows() > 0) {
+                    $issued = floatval($queryIssued->row()->issued_qty);
                 }
 
+                if ($mpq > 0) {
+                    $roundingUpResult = ceil($qty_need / $mpq);
+                    $qty_supply = $mpq * $roundingUpResult;
+                } else {
+                    $qty_supply = $qty_need;
+                }
+
+                $begin = 0;
+                $balance = ($begin + $issued) - $qty_need;
+
+                $data = [
+                    'item_fg_id'  => $item_fg_id,
+                    'item_rm_id'  => $item_rm_id,
+                    'workorder'   => $post["workorder"],
+                    'request_date'=> $request_date,
+                    'request_no'  => $request_no,
+                    'request_name'=> $request_name,
+                    'mpq'         => $mpq,
+                    'qty_req'     => $qty_supply,
+                    'qty_act'     => $qty_need,
+                    'qty_issued'  => $issued,
+                    'qty_bal'     => $balance
+                ];
+
+                if (in_array($item_rm->item_family_id, ['P04', 'P05', 'P07'])) {
+                    $supplySheetId = $this->crud->create_return_id('supply_sheets', $data);
+
+                } else if ($item_rm->item_family_id == 'P03') {
+                    $data['mpq'] = 0;
+                    $data['qty_req'] = $qty_need;
+                    $supplySheetId = $this->crud->create_return_id('supply_sheets', $data);
+
+                } else if ($item_rm->item_family_id == 'P06') {
+                    $supplySheetId = $this->crud->create_return_id('supply_chemical', $data);
+                }
+
+                if ($supplySheetId) {
+                    $notificationData = [
+                        'created_by'   => $this->session->userdata('username'),
+                        'created_date' => date('Y-m-d H:i:s'),
+                        'approvals_id' => null,
+                        'users_id_from'=> $this->session->userdata('username'),
+                        'users_id_to'  => 'scmbri04',
+                        'table_id'     => $supplySheetId,
+                        'table_name'   => 'supply_sheets',
+                        'name'         => 'Created',
+                        'description'  => 'Data in Module Supply Sheets has been created',
+                        'status'       => 0
+                    ];
+                    $this->crud->create('notifications', $notificationData);
+                }
+
+                $workorderExists = $this->db
+                    ->get_where("production_schedules", ["workorder" => $post['workorder']])
+                    ->num_rows();
+
+                if ($workorderExists > 0) {
+                    $this->db->update("production_schedules", ["status" => 1], ["workorder" => $post['workorder']]);
+                }
+
+                echo $supplySheetId;
+            } else {
+                show_error(validation_errors());
             }
-
-
-
-
-
-
-
-                //Stock kWarehouse RM
-            //     $stockWarehouse = $this->crud->query("SELECT
-            //         a.id,
-            //         (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty,0) + COALESCE(h.qty_stock_rm, 0) - COALESCE(f.qty, 0)) as end_stock
-            //     FROM item_rm a 
-            //     JOIN item_familys b ON a.item_family_id = b.id
-            //     JOIN uom c ON a.uom = c.name
-            //     LEFT JOIN purchase_order_receipts d ON a.id = d.item_rm_id and d.receipt_date <= '$dateNow'
-            //     LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
-            //     LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') <= '$dateNow' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
-            //     LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty
-            //         FROM return_materials a 
-            //         JOIN return_material_labels b ON a.return_id = b.return_id
-            //         JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
-            //         WHERE a.return_date <= '$dateNow'
-            //         GROUP BY a.id) g ON a.id = g.item_rm_id
-            //     LEFT JOIN (SELECT a.item_rm_id, SUM(a.qty) as qty_stock_rm
-            //     FROM os_rm a
-            //     JOIN item_rm b ON a.item_rm_id = b.id
-            //     WHERE a.trans_date < '$dateNow'
-            //     GROUP BY a.item_rm_id) h ON a.id = h.item_rm_id
-            //     WHERE a.id like '$item_rm_id'
-            //     GROUP BY a.id
-            //     ORDER BY a.number");
-
-            //     if (count($supply_sheets) > 0) {
-            //         show_error("Duplicate");
-            //     } else {
-            //         $qIssued = $this->db->query("SELECT COALESCE(SUM(a.qty), 0) as balance 
-            //             FROM scan_item_receipts a 
-            //             JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id
-            //             WHERE b.item_rm_id = '$item_rm_id' 
-            //             GROUP BY b.item_rm_id");
-            //         $dIssued = $qIssued->row();
-
-            //         if (!empty($wip_balances->balance)) {
-            //             if ($qty_act >= $wip_balances->balance) {
-            //                 //kalo items di hitung mpq
-            //                 if (@$supplier_items->calculate == 'YES') {
-            //                     $begin = $wip_balances->balance;
-            //                     $need = $qty_act;
-            //                     $issued = 0;
-            //                     $balance = 0;
-            //                     $warehouse = !empty($wip_balances->warehouse) ? $wip_balances->warehouse : @$stockWarehouse[0]->end_stock;
-            //                 } elseif (@$supplier_items->calculate == 0) {
-            //                     $begin = $wip_balances->balance;
-            //                     $need = $qty_act;
-            //                     $issued = 0;
-            //                     $balance = 0;
-            //                     $warehouse = !empty($wip_balances->warehouse) ? $wip_balances->warehouse : @$stockWarehouse[0]->end_stock;
-            //                 } else {
-            //                     $begin = $wip_balances->balance;
-            //                     $need = $qty_act;
-            //                     $issued = 0;
-            //                     $balance = 0;
-            //                     $warehouse = !empty($wip_balances->warehouse) ? $wip_balances->warehouse : @$stockWarehouse[0]->end_stock;
-            //                 }
-            //             } else {
-            //                 $begin = $wip_balances->balance;
-            //                 $need = $qty_act;
-            //                 $issued = 0;
-            //                 $balance = 0;
-            //                 $warehouse = !empty($wip_balances->warehouse) ? $wip_balances->warehouse : @$stockWarehouse[0]->end_stock;
-            //             }
-            //         } else {
-            //             if ($qty_act >= @$post['mpq']) {
-            //                 $begin = 0;
-            //                 $need = $qty_act;
-            //                 $issued = 0;
-            //                 $balance = 0;
-            //                 $warehouse = @$stockWarehouse[0]->end_stock;
-            //             } else {
-            //                 if (@$supplier_items->calculate == 'YES') {
-            //                     $begin = 0;
-            //                     $need = $qty_act;
-            //                     $issued = 0;
-            //                     $balance = 0;
-            //                     $warehouse = @$stockWarehouse[0]->end_stock;
-            //                 }else{
-            //                     $begin = 0;
-            //                     $need = $qty_act;
-            //                     $issued = 0;
-            //                     $balance = 0;
-            //                     $warehouse = @$stockWarehouse[0]->end_stock;
-            //                 }
-            //             }
-            //         }
-
-            //         if ($post['qty_req'] == 0) {
-            //             echo json_encode(array("title" => "Qty 0", "message" => $post['item_rm_no'] . " Qty 0", "theme" => "error"));
-            //         } else {
-            //             $balance = $this->crud->create("wip_balances", [
-            //                 "item_rm_id" => $item_rm_id,
-            //                 "request_no" => $post['request_no'],
-            //                 "begin" => $begin,
-            //                 "need" => $need,
-            //                 "issued" => $issued,
-            //                 "balance" => $balance,
-            //                 "warehouse" => $warehouse,
-            //             ]);
-
-            //             // Ambil data dari tabel item_rm
-            //             $item_rm = $this->crud->read("item_rm", [], ["id" => $item_rm_id]);
-
-            //             // Logika untuk menyimpan ke supply_chemical atau supply_sheets
-            //             if ($item_rm->supply == 0 && $item_rm->item_family_id == 'P06') {
-            //                 $send = $this->crud->create_return_id('supply_chemical', array_merge($post, ["qty_issued" => $issued]));
-            //                 $supplySheetId = $send;
-            //             } else {
-            //                 // Jika tidak, simpan ke `supply_sheets`
-            //                 $send = $this->crud->create_return_id('supply_sheets', array_merge($post, ["qty_issued" => $issued]));
-            //                 $supplySheetId = $send;
-            //             }
-
-            //             // Tambahkan notifikasi jika berhasil
-            //             if ($supplySheetId) {
-            //                 $notificationData = [
-            //                     'created_by' => $this->session->userdata('username'),
-            //                     'created_date' => date('Y-m-d H:i:s'),
-            //                     'approvals_id' => null,
-            //                     'users_id_from' => $this->session->userdata('username'),
-            //                     'users_id_to' => 'scmbri04',
-            //                     'table_id' => $supplySheetId,
-            //                     'table_name' => 'supply_sheets',
-            //                     'name' => 'Created',
-            //                     'description' => 'Data in Module Supply Sheets has been created',
-            //                     'status' => 0
-            //                 ];
-            //                 $this->crud->create('notifications', $notificationData);
-            //             }
-            //             // if ($post['qty_bal'] == 0) {
-            //             //     $this->db->update("production_schedules", ["status" => 1], ["workorder" => $post['workorder']]);
-            //             //     echo $send;
-            //             // } else {
-            //             //     $this->db->update("production_schedules", ["status" => 0], ["workorder" => $post['workorder']]);
-            //             //     echo $send;
-            //             // }
-            //             $workorderExists = $this->db->get_where("production_schedules", ["workorder" => $post['workorder']])->num_rows();
-
-            //             if ($workorderExists > 0) {
-            //                 $this->db->update("production_schedules", ["status" => 1], ["workorder" => $post['workorder']]);
-            //             }
-
-            //             echo $supplySheetId;
-            //         }
-            //     }
-            // } else {
-            //     show_error(validation_errors());
-            // }
         } else {
-            show_error("Cannot Process your request");
+            show_error("Cannot process your request");
         }
     }
 

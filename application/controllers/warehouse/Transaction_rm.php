@@ -256,33 +256,94 @@ class Transaction_rm extends CI_Controller
         }
     }
 
-    public function create()
+    public function createv1()
     {
         if ($this->input->post()) {
-            // if ($this->form_validation->run() == TRUE) {
-                $post   = $this->input->post();
-                if ($post['qty'] == 0) {
-                    echo json_encode(array("title" => "Qty 0", "message" => " Qty is 0", "theme" => "error"));
-                } else {
-                    $request_no = $post['request_no'];
-                    $item_rm_id = $post['item_rm_id'];
+            $post   = $this->input->post();
+            if ($post['qty'] == 0) {
+                echo json_encode(array("title" => "Qty 0", "message" => " Qty is 0", "theme" => "error"));
+            } else {
+                $request_no = $post['request_no'];
+                $item_rm_id = $post['item_rm_id'];
 
-                    $datas = $this->crud->reads('transaction_rm', [], ["request_no" => $request_no, "item_rm_id" => $item_rm_id]);
+                $datas = $this->crud->reads('transaction_rm', [], ["request_no" => $request_no, "item_rm_id" => $item_rm_id]);
 
-                    if(count($datas) > 0){
-                        $send = $this->crud->update('transaction_rm', ["request_no" => $request_no, "item_rm_id" => $item_rm_id], $post);
-                        echo $send;
-                    }else{
-                        $send = $this->crud->create('transaction_rm', $post);
-                        echo $send;
-                    }
+                if(count($datas) > 0){
+                    $send = $this->crud->update('transaction_rm', ["request_no" => $request_no, "item_rm_id" => $item_rm_id], $post);
+                    echo $send;
+                }else{
+                    $send = $this->crud->create('transaction_rm', $post);
+                    echo $send;
                 }
-            // } else {
-            //     show_error(validation_errors());
-            // }
+            }
         } else {
             show_error("Cannot Process your request");
         }
+    }
+
+    public function create()
+    {
+        if (!$this->input->post('items')) {
+            show_error("Cannot Process your request");
+        }
+
+        $items = $this->input->post('items');
+        $errors = [];
+        $success_count = 0;
+
+
+        $this->db->trans_begin();
+
+        foreach ($items as $post) {
+            if (empty($post['qty'])) {
+                $errors[] = "Qty cannot be empty or 0";
+                continue;
+            }
+
+            $request_no = $post['request_no'];
+            $item_rm_id = $post['item_rm_id'];
+
+
+            // Cek existing data
+            $datas = $this->crud->reads('transaction_rm', [], [
+                "request_no" => $request_no,
+                "item_rm_id" => $item_rm_id
+            ]);
+
+            if (count($datas) > 0) {
+                // Update
+                $result = $this->crud->update('transaction_rm', [
+                        "request_no" => $request_no, 
+                        "item_rm_id" => $item_rm_id
+                    ], $post);
+            } else {
+                // Create
+                $result = $this->crud->create('transaction_rm', $post);
+            }
+
+            if ($result) {
+                $success_count++;
+            } else {
+                $errors[] = "Failed to save Request No: {$post['request_no']} with Item RM ID: {$post['item_rm_id']}.";
+            }
+        }
+
+        if ($this->db->trans_status() === FALSE || !empty($errors)) {
+            $this->db->trans_rollback();
+            echo json_encode([
+                "title"   => "Failed",
+                "message" => implode("\n", array_unique($errors)),
+                "theme"   => "error"
+            ]);
+            return;
+        }
+
+        $this->db->trans_commit();
+        echo json_encode([
+            "title"   => "Success",
+            "message" => "Data has been saved successfully.",
+            "theme"   => "success"
+        ]);
     }
 
     public function delete()

@@ -12,7 +12,7 @@ class item_fg extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[item_fg.number]');
+        $this->form_validation->set_rules('number', 'Product No.', 'required|min_length[1]|max_length[30]|is_unique[item_fg.number]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -32,7 +32,19 @@ class item_fg extends CI_Controller
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         //$send = $this->crud->query("SELECT * FROM item_fg WHERE number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%'");
-        $send = $this->crud->query("SELECT * FROM item_fg WHERE (number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%') AND status = 0");
+
+        // $send = $this->crud->query("SELECT * FROM item_fg WHERE (number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%') AND status = 0");
+
+        $send = $this->crud->query("SELECT * FROM item_fg WHERE (number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%')");
+        echo json_encode($send);
+    }
+
+    //GET DATA
+    public function readsAll()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        //$send = $this->crud->query("SELECT * FROM item_fg WHERE number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%'");
+        $send = $this->crud->query("SELECT * FROM item_fg WHERE (number like '%$post%' or number_customer like '%$post%' or name like '%$post%' or id like '%$post%')");
         echo json_encode($send);
     }
 

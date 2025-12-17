@@ -139,6 +139,9 @@ class Bom extends CI_Controller
             $this->db->where('b.number', $number);
             $this->db->like('a.item_rm_id', $filter_item_rm_id);
             $this->db->group_by('a.id');
+            $this->db->order_by('e.name', 'ASC');
+            $this->db->order_by('d.name', 'ASC');
+            $this->db->order_by('b.name', 'ASC');
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
             foreach ($records as &$record) {
