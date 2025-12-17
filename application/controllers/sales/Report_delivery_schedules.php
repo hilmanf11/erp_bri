@@ -314,7 +314,10 @@ class Report_delivery_schedules extends CI_Controller
                 e.name as plant_name
             ');
 
-            $this->db->from('sales_order_deliveries a');
+            // $this->db->from('sales_order_deliveries a');
+
+            $this->db->from('(SELECT sales_order_no, customer_order_no, trans_date, customer_id, item_fg_id, SUM(qty) AS qty FROM sales_order_deliveries GROUP BY sales_order_no, customer_order_no, customer_id, item_fg_id) a');
+            
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('sales_orders c', 'a.sales_order_no = c.sales_order_no and a.customer_id = c.customer_id and a.item_fg_id = c.item_fg_id');
             $this->db->join('item_fg d', 'a.item_fg_id = d.id');
@@ -359,6 +362,8 @@ class Report_delivery_schedules extends CI_Controller
                         $calculated_status = 'ON GOING';
                     } else if ($data['qty_del'] == $data['qty_plan']) {
                         $calculated_status = 'CLOSE';
+                    } else if($data['qty_del'] > $data['qty_plan']) {
+                        $calculated_status = 'OVER';
                     } else {
                         $calculated_status = 'OPEN';
                     }
@@ -397,15 +402,23 @@ class Report_delivery_schedules extends CI_Controller
                 if($data['qty_outstanding'] != 0 && ($data['closing_reason'] != '' || $data['type_closing'] != '') ){
                     $status = 'CLOSE';
                     $color = 'red';
+                    $bgColor = '';
                 } else if ($data['qty_del'] < $data['qty_plan'] && $data['qty_del'] > 0) {
                     $status = 'ON GOING';
                     $color = '#FF9B17';
+                    $bgColor = '';
                 } elseif ($data['qty_del'] == $data['qty_plan']) {
                     $status = 'CLOSE';
                     $color = 'red';
+                    $bgColor = '';
+                } else if($data['qty_del'] > $data['qty_plan']) {
+                    $status = 'OVER';
+                    $color = 'black';
+                    $bgColor = 'white';
                 } else {
                     $status = 'OPEN';
                     $color = 'green';
+                    $bgColor = '';
                 }
 
 
@@ -422,7 +435,7 @@ class Report_delivery_schedules extends CI_Controller
                             <td align="center">' . number_format($data['qty_plan'], 0, '.', '.') . '</td>
                             <td align="center">' . number_format($data['qty_del'], 0, '.', '.') . '</td>
                             <td align="center">' . number_format(($data['qty_plan'] - $data['qty_del']), 0, '.', '.') . '</td>
-                            <td align="center" style="color:' . $color . '; font-weight:bold;">' . $status . '</td>
+                            <td align="center" style="color:' . $color . '; background-color: ' . $bgColor . '; font-weight:bold;">' . $status . '</td>
                         </tr>';
                 $no++;
             }
