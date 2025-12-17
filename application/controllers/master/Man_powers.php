@@ -43,6 +43,24 @@ class man_powers extends CI_Controller
         echo json_encode($send);
     }
 
+    //GET DATA
+    public function readVisualCheckers()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+
+        $send = $this->crud->query("
+            SELECT DISTINCT nik, name 
+            FROM man_powers 
+            WHERE (nik LIKE '%{$post}%' 
+                OR name LIKE '%{$post}%') 
+            AND position = 'Visual Checker'
+            AND status = 0
+            ORDER BY name ASC
+        ");
+
+        echo json_encode($send);
+    }
+
     //GET DATATABLES
     public function datatables()
     {

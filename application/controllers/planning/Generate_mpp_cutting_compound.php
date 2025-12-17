@@ -2,7 +2,7 @@
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class Generate_mpp extends CI_Controller{
+class Generate_mpp_cutting_compound extends CI_Controller{
     public function __construct(){
         parent::__construct();
         $this->load->helper('url');
@@ -13,7 +13,7 @@ class Generate_mpp extends CI_Controller{
         //$this->load->model('banshu');
         //$this->pg = $this->load->database('pg', TRUE);
         //Validasi Form
-        // $this->form_validation->set_rules('product_no', 'Product No', 'required|min_length[2]|max_length[50]|is_unique[generate_mpp.product_no]');
+        // $this->form_validation->set_rules('product_no', 'Product No', 'required|min_length[2]|max_length[50]|is_unique[generate_mpp_cutting_compound.product_no]');
     }
 
     public function index(){
@@ -23,7 +23,7 @@ class Generate_mpp extends CI_Controller{
             $data['button'] = $this->getbutton($this->id_menu());
             $data['approval'] = $this->crud->read('signatures');
             $this->load->view('template/header', $data);
-            $this->load->view('planning/generate_mpp');
+            $this->load->view('planning/generate_mpp_cutting_compound');
         } else {
             redirect('error_access');
         }
@@ -66,6 +66,30 @@ class Generate_mpp extends CI_Controller{
         echo json_encode($arr);
     }
 
+    public function checkMppCompound()
+    {
+        $filter_month = base64_decode($this->input->get('filter_month'));
+        $filter_year = base64_decode($this->input->get('filter_year'));
+        $filter_revision = base64_decode($this->input->get('filter_revision'));
+
+        //Select Query
+        $this->db->select('*');
+        $this->db->from('generate_mpp_compound');
+        //$this->db->where('approved_to', '');
+        if ($filter_month != "" or $filter_year != "") {
+            $this->db->where('p_month', $filter_month);
+            $this->db->where('p_year', $filter_year);
+        }
+        $this->db->where('revision', intval($filter_revision));
+        $records = $this->db->get()->result_array();
+
+        if (count($records) > 0) {
+            echo json_encode(array("theme" => "success"));
+        } else {
+            echo json_encode(array("theme" => "error"));
+        }
+    }
+
     public function datatableNotMps(){
         $filter_month = base64_decode($this->input->get('filter_month'));
         $filter_year = base64_decode($this->input->get('filter_year'));
@@ -78,7 +102,7 @@ class Generate_mpp extends CI_Controller{
         $this->db->from('generate_mps_details a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         // $this->db->join('mst_customer b', 'a.customer_id = b.number');
-        $this->db->where('b.item_family_number !=', 'CD');
+        $this->db->where('b.item_family_number =', 'CD');
         $this->db->where('a.p_month', (int)$filter_month);
         $this->db->where('a.p_year', $filter_year);
         $this->db->where('a.prod_plan >', 0);
@@ -90,11 +114,11 @@ class Generate_mpp extends CI_Controller{
         $data = array();
         foreach ($records as $record) {
             $this->db->select('a.*, b.number, b.name as product_name');
-            $this->db->from('generate_mpp a');
+            $this->db->from('generate_mpp_cutting_compound a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->where('a.p_month', $filter_month);
             $this->db->where('a.p_year', $filter_year);
-            $this->db->where('b.item_family_number !=', 'CD');
+            $this->db->where('b.item_family_number =', 'CD');
             $this->db->where('a.item_fg_id', $record['item_fg_id']);
             $this->db->group_by('a.revision');
             $this->db->order_by('a.revision', 'desc');
@@ -115,263 +139,15 @@ class Generate_mpp extends CI_Controller{
         die(json_encode($data));
     }
 
-    // public function datatablesv1(){
-    //     $this->dummy = $this->load->database('dummy', TRUE);
-
-    //     $filter_month = base64_decode($this->input->get('filter_month'));
-    //     $filter_year = base64_decode($this->input->get('filter_year'));
-    //     $filter_revision = base64_decode($this->input->get('filter_revision'));
-    //     $filter_line_no = base64_decode($this->input->get('filter_line_no'));
-    //     $filter_product_no = base64_decode($this->input->get('filter_product_no'));
-
-    //     $this->db->select('revision');
-    //     $this->db->from('generate_mpp');
-    //     $this->db->where('p_month', $filter_month);
-    //     $this->db->where('p_year', $filter_year);
-    //     $this->db->group_by('revision');
-    //     $this->db->order_by('revision', 'desc');
-    //     $revisions = $this->db->get()->row();
-
-    //     $page = $this->input->post('page');
-    //     $rows = $this->input->post('rows');
-
-    //     //Pagination 1-10
-    //     $page   = isset($page) ? intval($page) : 1;
-    //     $rows   = isset($rows) ? intval($rows) : 10;
-    //     $offset = ($page - 1) * $rows;
-    //     $result = array();
-
-    //     //Select Query
-    //     $this->db->select('a.*, e.item_alias, e.capacity, e.lot, (a.date_1 + a.date_2 + a.date_3 + a.date_4 + a.date_5 + a.date_6 + a.date_7 + a.date_8 + a.date_9 + a.date_10 + a.date_11 + a.date_12 + a.date_13 + a.date_14 + a.date_15 + a.date_16 + a.date_17 + a.date_18 + a.date_19 + a.date_20 + a.date_21 + a.date_22 + a.date_23 + a.date_24 + a.date_25 + a.date_26 + a.date_27 + a.date_28 + a.date_29 + a.date_30 + a.date_31) as floating,  b.name as customer_name, d.prod_plan as mpsprod, f.circuit_no as cct');
-    //     $this->db->from('generate_mpp a');
-    //     $this->db->join('mst_customer b', 'a.customer_id = b.number');
-    //     $this->db->join('generate_mps c', "a.p_month = c.p_month and a.p_year = c.p_year and c.revision = '$filter_revision' and a.product_no = c.product_no");
-    //     $this->db->join("(SELECT * FROM generate_mps_detail ORDER BY ltpp_month2 ASC) d", "d.p_month = '$filter_month' and d.p_year = '$filter_year' and d.revision = '$filter_revision' and a.product_no = d.product_no");
-    //     $this->db->join("mst_item e", "a.product_no = e.item_id");
-    //     $this->db->join("wip_mst_wos_cct f", "e.item_id = f.mstwos_assyno", "left");
-    //     $this->db->where('a.p_month', $filter_month);
-    //     $this->db->where('a.p_year', $filter_year);
-    //     $this->db->where('a.revision', $revisions->revision);
-    //     $this->db->like('a.line_no', $filter_line_no);
-    //     $this->db->like('a.product_no', $filter_product_no);
-    //     $this->db->group_by('a.product_no', 'ASC');
-    //     $this->db->order_by('a.product_no', 'ASC');
-
-    //     //Total Data
-    //     $totalRows = $this->db->count_all_results('', false);
-
-    //     //Limit 1 - 10
-    //     $this->db->limit($rows, $offset);
-
-    //     //Get Data Array
-    //     $records = $this->db->get()->result_array();
-
-    //     foreach ($records as $record) {
-    //         $periode = $record['p_year'] . $record['p_month'];
-    //         $revision = $record['revision'];
-    //         $assy_no = $record['product_no'];
-    //         $line = $record['line_no'];
-
-    //         $firstDate = date('Y-m-01', strtotime($record['p_year'] . "-" . $record['p_month'] . "-01"));
-    //         $endDate = date('Y-m-t', strtotime($record['p_year'] . "-" . $record['p_month'] . "-01"));
-
-    //         $no = 1;
-    //         $arr = array();
-    //         $arr_date = array();
-    //         while (strtotime($firstDate) <= strtotime($endDate)) {
-    //             $working_date = date('Y-m-d', strtotime($firstDate));
-    //             $day = date('j', strtotime($firstDate));
-
-    //             $this->db->select('remarks');
-    //             $this->db->from('working_calendar');
-    //             $this->db->where('working_date', $working_date);
-    //             $holiday = $this->db->get()->row();
-
-    //             $this->dummy->select('a.*');
-    //             $this->dummy->from("wip_trx_mpp a");
-    //             $this->dummy->join("wip_trx_wds b", "a.serial_mpp = b.serial_mpp");
-    //             $this->dummy->where("a.periode", $periode);
-    //             $this->dummy->where("a.assy_no", $assy_no);
-    //             $this->dummy->where("a.line", $line);
-    //             $this->dummy->where("a.wp_date", $working_date);
-    //             $wip_trx_mpp = $this->dummy->get()->result_array();
-
-    //             if(count($wip_trx_mpp) > 0){
-    //                 $status_wds = "F";
-    //             }else{
-    //                 $status_wds = $record["date_".$day];
-    //             }
-
-    //             $arr = array("wds_".$no => $status_wds, "log_".$no => json_encode($wip_trx_mpp));
-    //             $arr_date = array_merge($arr, $arr_date);
-
-    //             $no++;
-    //             $firstDate = date("Y-m-d", strtotime("+1 day", strtotime($firstDate)));
-    //         }
-    //         $finals[] = array_merge($arr_date, $record);
-    //     }
-    //     //Mapping Data
-    //     $result['total'] = $totalRows;
-    //     $result = array_merge($result, ['rows' => @$finals]);
-    //     echo json_encode($result);
-    // }
-
-    // public function datatablesv2(){
-    //     $filter_month = base64_decode($this->input->get('filter_month'));
-    //     $filter_year = base64_decode($this->input->get('filter_year'));
-    //     $filter_revision = base64_decode($this->input->get('filter_revision'));
-    //     // $filter_line_no = base64_decode($this->input->get('filter_line_no'));
-    //     $filter_product_no = base64_decode($this->input->get('filter_product_no'));
-
-    //     $this->db->select('revision');
-    //     $this->db->from('generate_mpp');
-    //     $this->db->where('p_month', $filter_month);
-    //     $this->db->where('p_year', $filter_year);
-    //     $this->db->group_by('revision');
-    //     $this->db->order_by('revision', 'desc');
-    //     $revisions = $this->db->get()->row();
-
-    //     $page = $this->input->post('page');
-    //     $rows = $this->input->post('rows');
-
-    //     //Pagination 1-10
-    //     $page   = isset($page) ? intval($page) : 1;
-    //     $rows   = isset($rows) ? intval($rows) : 10;
-    //     $offset = ($page - 1) * $rows;
-    //     $result = array();
-
-    //     $monthh = (int)$filter_month;
-
-    //     $ltpp_month2 = "$filter_year-$monthh-01";
-
-    //     //Select Query
-    //     // $this->db->select('a.*, e.item_alias, e.capacity, e.lot, (a.date_1 + a.date_2 + a.date_3 + a.date_4 + a.date_5 + a.date_6 + a.date_7 + a.date_8 + a.date_9 + a.date_10 + a.date_11 + a.date_12 + a.date_13 + a.date_14 + a.date_15 + a.date_16 + a.date_17 + a.date_18 + a.date_19 + a.date_20 + a.date_21 + a.date_22 + a.date_23 + a.date_24 + a.date_25 + a.date_26 + a.date_27 + a.date_28 + a.date_29 + a.date_30 + a.date_31) as floating,  b.name as customer_name, d.prod_plan as mpsprod, f.circuit_no as cct');
-    //     // $this->db->from('generate_mpp a');
-
-    //     $this->db->select('a.*, e.number as product_no, e.name as product_name, e.lot, 
-    //     COALESCE(ml.cycle_time, 0) as cycle_time, 
-    //     COALESCE(mo.cavity_actual, 0) as cavity_actual,
-    //     ml.shift,
-    //     mch.number as machine_no,
-    //     COALESCE(pc.capacity_shift, 0) as cap_shift,
-    //     (a.date_1 + a.date_2 + a.date_3 + a.date_4 + a.date_5 + a.date_6 + a.date_7 + a.date_8 + a.date_9 + a.date_10 + a.date_11 + a.date_12 + a.date_13 + a.date_14 + a.date_15 + a.date_16 + a.date_17 + a.date_18 + a.date_19 + a.date_20 + a.date_21 + a.date_22 + a.date_23 + a.date_24 + a.date_25 + a.date_26 + a.date_27 + a.date_28 + a.date_29 + a.date_30 + a.date_31) as floating, d.prod_plan as mpsprod');
-    //     $this->db->from('generate_mpp a');
-
-    //     // $this->db->join('generate_mps c', 
-    //     //     "a.p_month = LPAD(c.p_month, 2, '0')
-    //     //     and a.p_year = c.p_year 
-    //     //     and c.revision = '$filter_revision' 
-    //     //     and a.item_fg_id = c.item_fg_id"
-    //     // );
-
-    //     $this->db->join("(SELECT * FROM generate_mps_details WHERE ltpp_month2 = '$ltpp_month2') d", "LPAD(d.p_month, 2, '0') = '$filter_month' and d.p_year = '$filter_year' and d.revision = '$filter_revision' and a.item_fg_id = d.item_fg_id");
-    //     $this->db->join("item_fg e", "a.item_fg_id = e.id");
-
-    //     $this->db->join("menu_loadings ml", "ml.item_fg_id = a.item_fg_id");
-    //     $this->db->join("molds mo", "ml.mold_id = mo.id");
-    //     $this->db->join("production_capacities pc", "pc.item_fg_id = a.item_fg_id AND pc.machine_id = ml.machine_id");
-    //     $this->db->join('machines mch', 'pc.machine_id = mch.id', 'left');
-
-    //     $this->db->where('a.p_month', $filter_month);
-    //     $this->db->where('a.p_year', $filter_year);
-    //     $this->db->where('e.item_family_number !=', 'CD');
-    //     $this->db->where('a.revision', $revisions->revision);
-    //     // $this->db->like('a.line_no', $filter_line_no);
-    //     $this->db->like('e.number', $filter_product_no);
-    //     // $this->db->group_by('a.item_fg_id');
-    //     $this->db->order_by('a.item_fg_id', 'ASC');
-    //     // $this->db->order_by('ml.machine_id', 'ASC');
-    //     // $this->db->order_by('ml.shift', 'ASC');
-
-    //     // $this->db->order_by('a.item_fg_id','ASC');
-    //     // $this->db->order_by('ml.shift','ASC');
-
-    //     //Total Data
-    //     $totalRows = $this->db->count_all_results('', false);
-
-    //     //Limit 1 - 10
-    //     $this->db->limit($rows, $offset);
-
-    //     //Get Data Array
-    //     $records = $this->db->get()->result_array();
-
-    //     foreach ($records as $record) {
-    //         $periode = $record['p_year'] . $record['p_month'];
-    //         $revision = $record['revision'];
-    //         $assy_no = $record['item_fg_id'];
-    //         // $line = $record['line_no'];
-
-    //         $firstDate = date('Y-m-01', strtotime($record['p_year'] . "-" . $record['p_month'] . "-01"));
-    //         $endDate = date('Y-m-t', strtotime($record['p_year'] . "-" . $record['p_month'] . "-01"));
-
-    //         $no = 1;
-    //         $arr = array();
-    //         $arr_date = array();
-
-    //         while (strtotime($firstDate) <= strtotime($endDate)) {
-    //             // $working_date = date('Y-m-d', strtotime($firstDate));
-    //             $day = date('j', strtotime($firstDate));
-    //             $weekday = date('w', strtotime($firstDate));
-
-    //             // $this->db->select('remarks');
-    //             // $this->db->from('working_calendar');
-    //             // $this->db->where('working_date', $working_date);
-    //             // $holiday = $this->db->get()->row();
-
-    //             $status_wds = $record["date_".$day];
-
-    //             if ($weekday == 0 || $weekday == 6) {
-    //                 $arr = [
-    //                     "wds_".$no => $status_wds
-    //                 ];
-    //             } else {
-    //                 // $hasil = round($status_wds * $cycle_time / 3600);
-
-    //                 if (is_numeric($status_wds) && $record['cavity_actual'] > 0) {
-    //                     $hasil = round(($status_wds * $record['cycle_time'] / $record['cavity_actual']) / 3600);
-    //                 } else {
-    //                     $hasil = 0;
-    //                 }
-
-
-    //                 $arr = [
-    //                     "wds_".$no => $status_wds,
-    //                     "log_".$no => $hasil
-    //                 ];
-    //             }
-
-    //             $arr_date = array_merge($arr_date, $arr);
-
-    //             $no++;
-    //             $firstDate = date("Y-m-d", strtotime("+1 day", strtotime($firstDate)));
-    //         }
-
-    //         // $finals = [];            
-
-    //         // foreach ($records as $record) {
-    //         //     for ($s = 1; $s <= (int)$record['shift']; $s++) {
-    //         //         $newRecord = $record;
-    //         //         $newRecord['shift'] = $s;
-    //         //         $finals[] = $newRecord;
-    //         //     }
-    //         // }
-
-    //         $finals[] = array_merge($arr_date, $record);
-    //     }
-
-    //     //Mapping Data
-    //     $result['total'] = $totalRows;
-    //     $result = array_merge($result, ['rows' => @$finals]);
-    //     echo json_encode($result);
-    // }
-
     public function datatables(){
         $filter_month = base64_decode($this->input->get('filter_month'));
         $filter_year = base64_decode($this->input->get('filter_year'));
+        $filter_revision = base64_decode($this->input->get('filter_revision'));
+        // $filter_line_no = base64_decode($this->input->get('filter_line_no'));
         $filter_product_no = base64_decode($this->input->get('filter_product_no'));
 
         $this->db->select('revision');
-        $this->db->from('generate_mpp');
+        $this->db->from('generate_mpp_cutting_compound');
         $this->db->where('p_month', $filter_month);
         $this->db->where('p_year', $filter_year);
         $this->db->group_by('revision');
@@ -387,39 +163,27 @@ class Generate_mpp extends CI_Controller{
         $offset = ($page - 1) * $rows;
         $result = array();
 
-        $this->db->select("
-            a.id as mpp_id,
-            d.id as detail_id,
-            a.*, d.shift, d.plan_qty, 
-            d.date_1, d.date_2, d.date_3, d.date_4, d.date_5, d.date_6, d.date_7, d.date_8, d.date_9, d.date_10, d.date_11, d.date_12, d.date_13, d.date_14, d.date_15, d.date_16, d.date_17, d.date_18, d.date_19, d.date_20, d.date_21, d.date_22, d.date_23, d.date_24, d.date_25, d.date_26, d.date_27, d.date_28, d.date_29, d.date_30, d.date_31,
-            (d.date_1 + d.date_2 + d.date_3 + d.date_4 + d.date_5 + d.date_6 + d.date_7 + d.date_8 + d.date_9 + d.date_10 + d.date_11 + d.date_12 + d.date_13 + d.date_14 + d.date_15 + d.date_16 + d.date_17 + d.date_18 + d.date_19 + d.date_20 + d.date_21 + d.date_22 + d.date_23 + d.date_24 + d.date_25 + d.date_26 + d.date_27 + d.date_28 + d.date_29 + d.date_30 + d.date_31) as floating,
-            e.number as product_no, e.name as product_name, e.lot,
-            COALESCE(ml.cycle_time,0) as cycle_time,
-            COALESCE(mo.cavity_actual,0) as cavity_actual,
-            mch.number as machine_no,
-            COALESCE(pc.capacity_shift,0) as cap_shift,
-            a.prod_plan as mpsprod
-        ");
-        $this->db->from('generate_mpp a');
+        $this->db->select('a.*, e.number as product_no, e.name as product_name, e.lot, ml.cycle_time, (a.date_1 + a.date_2 + a.date_3 + a.date_4 + a.date_5 + a.date_6 + a.date_7 + a.date_8 + a.date_9 + a.date_10 + a.date_11 + a.date_12 + a.date_13 + a.date_14 + a.date_15 + a.date_16 + a.date_17 + a.date_18 + a.date_19 + a.date_20 + a.date_21 + a.date_22 + a.date_23 + a.date_24 + a.date_25 + a.date_26 + a.date_27 + a.date_28 + a.date_29 + a.date_30 + a.date_31) as floating, d.prod_plan as mpsprod');
+        $this->db->from('generate_mpp_cutting_compound a');
 
-        $this->db->join(
-            "generate_mpp_details d",
-            "a.p_month = d.p_month AND a.p_year = d.p_year AND a.revision = d.revision AND a.item_fg_id = d.item_fg_id",
-            "inner"
+        $this->db->join('generate_mps c', 
+            "a.p_month = LPAD(c.p_month, 2, '0')
+            and a.p_year = c.p_year 
+            and c.revision = '$filter_revision' 
+            and a.item_fg_id = c.item_fg_id"
         );
+
+        $this->db->join("(SELECT * FROM generate_mps_details ORDER BY ltpp_month2 ASC) d", "LPAD(d.p_month, 2, '0') = '$filter_month' and d.p_year = '$filter_year' and d.revision = '$filter_revision' and a.item_fg_id = d.item_fg_id");
         $this->db->join("item_fg e", "a.item_fg_id = e.id");
         $this->db->join("menu_loadings ml", "ml.item_fg_id = a.item_fg_id", "left");
-        $this->db->join("molds mo", "ml.mold_id = mo.id", "left");
-        $this->db->join("production_capacities pc", "pc.item_fg_id = a.item_fg_id AND pc.machine_id = ml.machine_id", "left");
-        $this->db->join('machines mch', 'pc.machine_id = mch.id', 'left');
         $this->db->where('a.p_month', $filter_month);
         $this->db->where('a.p_year', $filter_year);
+        $this->db->where('e.item_family_number =', 'CD');
         $this->db->where('a.revision', $revisions->revision);
-        $this->db->where('e.item_family_number !=', 'CD');
+        // $this->db->like('a.line_no', $filter_line_no);
         $this->db->like('e.number', $filter_product_no);
-        $this->db->order_by('mch.number', 'ASC');
+        $this->db->group_by('a.item_fg_id', 'ASC');
         $this->db->order_by('a.item_fg_id', 'ASC');
-        $this->db->order_by('d.shift', 'ASC');
 
         //Total Data
         $totalRows = $this->db->count_all_results('', false);
@@ -442,37 +206,71 @@ class Generate_mpp extends CI_Controller{
             $no = 1;
             $arr = array();
             $arr_date = array();
+            // while (strtotime($firstDate) <= strtotime($endDate)) {
+            //     $working_date = date('Y-m-d', strtotime($firstDate));
+            //     $day = date('j', strtotime($firstDate));
+
+            //     $this->db->select('remarks');
+            //     $this->db->from('working_calendar');
+            //     $this->db->where('working_date', $working_date);
+            //     $holiday = $this->db->get()->row();
+
+            //     $this->db->select('a.*');
+            //     $this->db->from("wip_trx_mpp a");
+            //     $this->db->join("wip_trx_wds b", "a.serial_mpp = b.serial_mpp");
+            //     $this->db->where("a.periode", $periode);
+            //     $this->db->where("a.assy_no", $assy_no);
+            //     // $this->db->where("a.line", $line);
+            //     $this->db->where("a.wp_date", $working_date);
+            //     $wip_trx_mpp = $this->db->get()->result_array();
+
+            //     if(count($wip_trx_mpp) > 0){
+            //         $status_wds = "F";
+            //     }else{
+            //         $status_wds = $record["date_".$day];
+            //     }
+
+            //     $arr = array("wds_".$no => $status_wds, "log_".$no => json_encode($wip_trx_mpp));
+            //     $arr_date = array_merge($arr, $arr_date);
+
+            //     $no++;
+            //     $firstDate = date("Y-m-d", strtotime("+1 day", strtotime($firstDate)));
+            // }
 
             while (strtotime($firstDate) <= strtotime($endDate)) {
-                $working_date = date('Y-m-d', strtotime($firstDate));
+                // $working_date = date('Y-m-d', strtotime($firstDate));
                 $day = date('j', strtotime($firstDate));
                 $weekday = date('w', strtotime($firstDate));
 
-                $this->db->select('remarks');
-                $this->db->from('working_calendar');
-                $this->db->where('working_date', $working_date);
-                $holiday = $this->db->get()->row();
+                // $this->db->select('remarks');
+                // $this->db->from('working_calendar');
+                // $this->db->where('working_date', $working_date);
+                // $holiday = $this->db->get()->row();
 
                 $status_wds = $record["date_".$day];
 
-                if ($weekday == 0 || $weekday == 6 || !empty($holiday->remarks)) {
+                // $arr = [
+                //     "wds_".$no => $status_wds,
+                //     "log_".$no => null
+                // ];
+
+                $cycle_time = (!empty($record['cycle_time']) && $record['cycle_time'] > 0) ? $record['cycle_time'] : 0;
+
+                if ($weekday == 0 || $weekday == 6) {
+                    // weekend → hanya tampil wds, tidak ada kolom hasil
                     $arr = [
                         "wds_".$no => $status_wds
                     ];
                 } else {
-                    // $hasil = round($status_wds * $cycle_time / 3600);
-
-                    if (is_numeric($status_wds) && $record['cavity_actual'] > 0) {
-                        $hasil = round(($status_wds * $record['cycle_time'] / $record['cavity_actual']) / 3600);
-                    } else {
-                        $hasil = 0;
-                    }
-
+                    // hari kerja → tambahkan hasil perkalian
+                    $hasil = round($status_wds * $cycle_time / 3600);
                     $arr = [
                         "wds_".$no => $status_wds,
                         "log_".$no => $hasil
                     ];
                 }
+
+                // $arr_date = array_merge($arr, $arr_date);
 
                 $arr_date = array_merge($arr_date, $arr);
 
@@ -482,407 +280,122 @@ class Generate_mpp extends CI_Controller{
 
             $finals[] = array_merge($arr_date, $record);
         }
-
         //Mapping Data
         $result['total'] = $totalRows;
         $result = array_merge($result, ['rows' => @$finals]);
         echo json_encode($result);
     }
 
-    // function getdata(){
-    //     //Filter Data
-    //     $filter_month = base64_decode($this->input->get('filter_month'));
-    //     $filter_year = base64_decode($this->input->get('filter_year'));
-    //     $filter_revision = base64_decode($this->input->get('filter_revision'));
-    //     // $ltppMonth = $filter_year . "-" . $filter_month . "-01";
-
-    //     $hkw = 0;
-    //     $ltppMonth = $filter_year . "-" . $filter_month . "-01";
-    //     $monthStart = strtotime($filter_year . "-" . $filter_month . "-01");
-    //     $start = strtotime(date('Y-m-01', $monthStart));
-    //     $finish = strtotime(date('Y-m-t', $monthStart));
-    //     for ($z = $start; $z <= $finish; $z += (60 * 60 * 24)) {
-    //         $working_date = date('Y-m-d', $z);
-
-    //         $this->db->select('remarks');
-    //         $this->db->from('working_calendar');
-    //         $this->db->where('working_date', $working_date);
-    //         $holiday = $this->db->get()->row();
-
-    //         if (date('w', $z) !== '0') {
-    //             if (@$holiday->remarks != null or @$holiday->remarks != "") {
-    //                 $hkw += 0;
-    //             } else {
-    //                 $hkw += 1;
-    //             }
-    //         } else {
-    //             $hkw += 0;
-    //         }
-    //     }
-
-    //     // $this->db->select("a.product_no, a.product_name, a.circuit_no, a.prod_plan, a.line_no, b.lot, b.id_customer");
-    //     $this->db->select("
-    //         a.item_fg_id,
-    //         b.number as product_name,
-    //         a.prod_plan,
-    //         b.lot,
-    //         COALESCE(ml.cycle_time, 0) as cycle_time,
-    //         COALESCE(mo.cavity_actual, 0) as cavity_actual,
-    //         ml.shift as total_shift,
-    //         COALESCE(pc.capacity_shift, 0) as cap_shift
-    //     ");
-    //     $this->db->from('generate_mps_details a');
-    //     $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-    //     $this->db->join('menu_loadings ml', 'ml.item_fg_id = a.item_fg_id');
-    //     $this->db->join('molds mo', 'ml.mold_id = mo.id');
-    //     $this->db->join('production_capacities pc', 'pc.item_fg_id = a.item_fg_id AND pc.machine_id = ml.machine_id');
-    //     $this->db->where('b.item_family_number !=', 'CD');
-    //     $this->db->where('a.p_month', (int)$filter_month);
-    //     $this->db->where('a.p_year', $filter_year);
-    //     $this->db->where('a.revision', $filter_revision);
-    //     $this->db->where('a.ltpp_month2', $ltppMonth);
-    //     $this->db->where('a.prod_plan > 0');
-    //     // $this->db->like('a.item_fg_id', $filter_product_no);
-    //     $this->db->group_by("a.item_fg_id");
-    //     $this->db->order_by("a.item_fg_id", "asc");
-    //     $recordDetails = $this->db->get()->result_array();
-
-    //     $mpp = array();
-
-    //     foreach ($recordDetails as $detail) {
-    //         $prodplan = $detail['prod_plan'];
-    //         $totalShift = max(1, (int)$detail['total_shift']);
-    //         $capShift = max(1, (int)$detail['cap_shift']);
-
-    //         // header info per item_fg_id (tidak menyertakan prod_plan ke detail)
-    //         $header = [
-    //             "p_month" => $filter_month,
-    //             "p_year"  => $filter_year,
-    //             "revision"=> $filter_revision,
-    //             "item_fg_id"=> $detail['item_fg_id'],
-    //             "prod_plan" => $prodplan
-    //         ];
-
-    //         // for ($s = 1; $s <= $totalShift; $s++) {
-    //         //     $rows = $header;
-    //         //     $rows['shift'] = $s;
-    //         //     $planQtyShift = ($s == $totalShift) ? $prodplanPerShift + $sisaShift : $prodplanPerShift;
-    //         //     $rows['plan_qty'] = $planQtyShift;
-
-    //         //     $sisaPlan = $planQtyShift;
-
-    //         //     // tanggal awal & akhir
-    //         //     $firstDate = date('Y-m-01', strtotime("$filter_year-$filter_month-01"));
-    //         //     $endDate   = date('Y-m-t', strtotime("$filter_year-$filter_month-01"));
-    //         //     $no = 1;
-
-    //         //     while (strtotime($firstDate) <= strtotime($endDate)) {
-    //         //         $working_date = date('Y-m-d', strtotime($firstDate));
-    //         //         $holiday = $this->db->select('remarks')->from('working_calendar')
-    //         //                     ->where('working_date', $working_date)->get()->row();
-
-    //         //         if (date('w', strtotime($firstDate)) != 0 && empty($holiday->remarks)) {
-    //         //             // alokasikan sesuai cap_shift
-    //         //             $qty = min($capShift, $sisaPlan);
-    //         //             $rows["date_$no"] = $qty;
-    //         //             $sisaPlan -= $qty;
-    //         //         } else {
-    //         //             $rows["date_$no"] = "W";
-    //         //         }
-
-    //         //         $firstDate = date("Y-m-d", strtotime("+1 day", strtotime($firstDate)));
-    //         //         $no++;
-    //         //     }
-
-    //         //     $mpp[] = $rows;
-    //         // }
-
-
-    //         // Siapkan baris (rows) untuk setiap shift terlebih dahulu (header + inisialisasi)
-    //         $rowsPerShift = [];
-    //         for ($s = 1; $s <= $totalShift; $s++) {
-    //             $rowsPerShift[$s] = $header;
-    //             $rowsPerShift[$s]['shift'] = $s;
-    //             $rowsPerShift[$s]['plan_qty'] = 0; // akan diisi kemudian dari jumlah tanggal
-    //         }
-
-    //         // Gunakan sisa plan total (bukan sisa per-shift)
-    //         $remainingPlan = $prodplan;
-
-    //         // tanggal awal & akhir
-    //         $firstDate = date('Y-m-01', strtotime("$filter_year-$filter_month-01"));
-    //         $endDate   = date('Y-m-t', strtotime("$filter_year-$filter_month-01"));
-    //         $no = 1;
-
-    //         while (strtotime($firstDate) <= strtotime($endDate)) {
-    //             $working_date = date('Y-m-d', strtotime($firstDate));
-    //             $holiday = $this->db->select('remarks')->from('working_calendar')
-    //                         ->where('working_date', $working_date)->get()->row();
-
-    //             if (date('w', strtotime($firstDate)) != 0 && empty(@$holiday->remarks)) {
-    //                 // Hari kerja: alokasikan per shift berurutan sampai remainingPlan habis
-    //                 for ($s = 1; $s <= $totalShift; $s++) {
-    //                     if ($remainingPlan > 0) {
-    //                         $qty = min($capShift, $remainingPlan);
-    //                         $rowsPerShift[$s]["date_$no"] = $qty;
-    //                         $rowsPerShift[$s]['plan_qty'] += $qty;
-    //                         $remainingPlan -= $qty;
-    //                     } else {
-    //                         $rowsPerShift[$s]["date_$no"] = 0;
-    //                     }
-    //                 }
-    //             } else {
-    //                 // Libur / weekend: tandai "W" untuk semua shift
-    //                 for ($s = 1; $s <= $totalShift; $s++) {
-    //                     $rowsPerShift[$s]["date_$no"] = "W";
-    //                 }
-    //             }
-
-    //             $firstDate = date("Y-m-d", strtotime("+1 day", strtotime($firstDate)));
-    //             $no++;
-    //         }
-
-    //         // Masukkan setiap shift ke hasil akhir
-    //         foreach ($rowsPerShift as $r) {
-    //             $mpp[] = $r;
-    //         }
-
-    //     }
-
-    //     echo json_encode($mpp);
-    // }
-
-    public function getdata(){
-        // Filter Data
+    function getdata(){
+        //Filter Data
         $filter_month = base64_decode($this->input->get('filter_month'));
         $filter_year = base64_decode($this->input->get('filter_year'));
         $filter_revision = base64_decode($this->input->get('filter_revision'));
+        // $filter_line_no = base64_decode($this->input->get('filter_line_no'));
+        // $filter_product_no = base64_decode($this->input->get('filter_product_no'));
+        // $ltppMonth = $filter_year . "-" . $filter_month . "-01";
 
+        $hkw = 0;
         $ltppMonth = $filter_year . "-" . $filter_month . "-01";
         $monthStart = strtotime($filter_year . "-" . $filter_month . "-01");
         $start = strtotime(date('Y-m-01', $monthStart));
         $finish = strtotime(date('Y-m-t', $monthStart));
-
-        // Building date list (tanggal + is_working)
-        $dateList = [];
-        $no = 1;
         for ($z = $start; $z <= $finish; $z += (60 * 60 * 24)) {
             $working_date = date('Y-m-d', $z);
-            $holiday = $this->db->select('remarks')->from('working_calendar')
-                        ->where('working_date', $working_date)->get()->row();
-            $is_working = (date('w', $z) != 0 && empty(@$holiday->remarks));
-            $dateList[] = [
-                'date' => $working_date,
-                'is_working' => $is_working
-            ];
-            $no++;
-        }
-        $totalDays = count($dateList);
 
-        // Ambil data (tambahkan machine_id)
-        $this->db->select("
-            a.item_fg_id,
-            b.number as product_name,
-            a.prod_plan,
-            b.lot,
-            COALESCE(ml.cycle_time, 0) as cycle_time,
-            COALESCE(mo.cavity_actual, 0) as cavity_actual,
-            ml.shift as total_shift,
-            COALESCE(pc.capacity_shift, 0) as cap_shift,
-            ml.machine_id,
-            MIN(sod.trans_date) as earliest_trans_date
-        ");
+            $this->db->select('remarks');
+            $this->db->from('working_calendar');
+            $this->db->where('working_date', $working_date);
+            $holiday = $this->db->get()->row();
+
+            if (date('w', $z) !== '0') {
+                if (@$holiday->remarks != null or @$holiday->remarks != "") {
+                    $hkw += 0;
+                } else {
+                    $hkw += 1;
+                }
+            } else {
+                $hkw += 0;
+            }
+        }
+
+        // $this->db->select("a.product_no, a.product_name, a.circuit_no, a.prod_plan, a.line_no, b.lot, b.id_customer");
+        $this->db->select("a.item_fg_id, b.number as product_name, a.prod_plan, b.lot");
         $this->db->from('generate_mps_details a');
+        // $this->db->join('mst_item b', 'a.product_no = b.item_id');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-        $this->db->join('menu_loadings ml', 'ml.item_fg_id = a.item_fg_id', 'left');
-        $this->db->join('molds mo', 'ml.mold_id = mo.id', 'left');
-        $this->db->join('production_capacities pc', 'pc.item_fg_id = a.item_fg_id AND pc.machine_id = ml.machine_id', 'left');
-        $this->db->join('sales_order_deliveries sod', 
-            "sod.item_fg_id = a.item_fg_id 
-            AND sod.status = 0 
-            AND MONTH(sod.trans_date) = " . $filter_month . " 
-            AND YEAR(sod.trans_date) = " . $filter_year, 
-            'left'
-        );  
-        $this->db->where('b.item_family_number !=', 'CD');
+        $this->db->where('b.item_family_number =', 'CD');
         $this->db->where('a.p_month', (int)$filter_month);
         $this->db->where('a.p_year', $filter_year);
         $this->db->where('a.revision', $filter_revision);
         $this->db->where('a.ltpp_month2', $ltppMonth);
         $this->db->where('a.prod_plan > 0');
-        // group by machine + item supaya dapat machine_id tiap baris
-        $this->db->group_by(["ml.machine_id", "a.item_fg_id"]);
-        $this->db->order_by("ml.machine_id", "asc");
+        // $this->db->like('a.line_no', $filter_line_no);
+        // $this->db->like('a.item_fg_id', $filter_product_no);
+        $this->db->group_by("a.item_fg_id");
         $this->db->order_by("a.item_fg_id", "asc");
         $recordDetails = $this->db->get()->result_array();
 
-        // Kelompokkan data per machine_id
-        $machines = [];
-        foreach ($recordDetails as $d) {
-            $machineId = $d['machine_id'] ?? 'NO_MACHINE';
-            if (!isset($machines[$machineId])) $machines[$machineId] = ['items'=>[], 'machine_total_shift' => 0];
+        $mpp = array();
+        foreach ($recordDetails as $detail) {
+            $rows = array(
+                "p_month" => $filter_month,
+                "p_year" => $filter_year,
+                "revision" => 0,
+                // "line_no" => $detail['line_no'],
+                // "customer_id" => $detail['id_customer'],
+                "item_fg_id" => $detail['item_fg_id'],
+                // "product_name" => $detail['product_name'],
+                // "circuit_no" => $detail['circuit_no'],
+                "prod_plan" => $detail['prod_plan'],
+            );
+            $prodplan = $detail['prod_plan'];
+            $prodplanHkw = ($prodplan / $hkw);
 
-            $item = [
-                'item_fg_id' => $d['item_fg_id'],
-                'product_name'=> $d['product_name'],
-                'prod_plan' => (int)$d['prod_plan'],
-                'remaining' => (int)$d['prod_plan'],
-                'cap_shift' => max(1, (int)$d['cap_shift']),
-                'total_shift' => max(1, (int)$d['total_shift']),
-                'lot' => $d['lot'],
-                "has_relation"=> ($d['cap_shift'] > 0 || $d['total_shift'] > 0) ? 1 : 0,
-                "earliest_trans_date" => $d['earliest_trans_date'] ?? null
-            ];
-            $machines[$machineId]['items'][] = $item;
-            // tentukan jumlah shift mesin sebagai max dari item-itemnya
-            $machines[$machineId]['machine_total_shift'] = max($machines[$machineId]['machine_total_shift'], $item['total_shift']);
-        }
-
-        $mpp = [];
-
-        // Untuk setiap mesin, jadwalkan item secara sekuensial per shift
-        foreach ($machines as $machineId => $mc) {
-            $items = $mc['items'];
-            usort($items, function($a, $b) {
-                // Kalau dua2nya tidak ada trans_date maka urutkan berdasarkan item_fg_id
-                if (empty($a['earliest_trans_date']) && empty($b['earliest_trans_date'])) {
-                    return $a['item_fg_id'] <=> $b['item_fg_id'];
-                }
-                if (empty($a['earliest_trans_date'])) return 1; // tanpa tanggal → di belakang
-                if (empty($b['earliest_trans_date'])) return -1;
-
-                $dateA = strtotime($a['earliest_trans_date']);
-                $dateB = strtotime($b['earliest_trans_date']);
-
-                if ($dateA == $dateB) {
-                    return $a['item_fg_id'] <=> $b['item_fg_id'];
-                }
-                return $dateA <=> $dateB; // yang lebih awal duluan
-            });
-
-            // usort($items, function($a, $b) use ($monthStart) {
-            //     // jika salah satu tidak ada trans_date, taruh di belakang
-            //     if (empty($a['earliest_trans_date']) && empty($b['earliest_trans_date'])) {
-            //         return $a['item_fg_id'] <=> $b['item_fg_id'];
-            //     };
-            //     if (empty($a['earliest_trans_date'])) return 1;
-            //     if (empty($b['earliest_trans_date'])) return -1;
-
-            //     $aTime = strtotime($a['earliest_trans_date']);
-            //     $bTime = strtotime($b['earliest_trans_date']);
-
-            //     $aDiff = abs($aTime - $monthStart);
-            //     $bDiff = abs($bTime - $monthStart);
-
-            //     return $aDiff <=> $bDiff;
-            // });
-
-            $machineShiftCount = max(1, $mc['machine_total_shift']);
-
-            // inisialisasi rows per item per shift, dan pre-populate date_x dengan default 0 atau 'W'
-            $rowsPerItem = [];
-            foreach ($items as $it) {
-                $header = [
-                    "p_month" => $filter_month,
-                    "p_year"  => $filter_year,
-                    "revision"=> $filter_revision,
-                    "item_fg_id"=> $it['item_fg_id'],
-                    "prod_plan" => $it['prod_plan'],
-                    "shift" => null,
-                    "plan_qty" => 0
-                ];
-                for ($s = 1; $s <= $it['total_shift']; $s++) {
-                    $r = $header;
-                    $r['shift'] = $s;
-                    // pre-populate date columns: default 0 or 'W' if holiday
-                    for ($d = 1; $d <= $totalDays; $d++) {
-                        $r["date_$d"] = $dateList[$d-1]['is_working'] ? 0 : "W";
-                    }
-                    $rowsPerItem[$it['item_fg_id']][$s] = $r;
-                }
+            if($detail['lot'] > 0) {
+                $lots = @(ceil($prodplanHkw / $detail['lot']) * $detail['lot']);
+            } else {
+                $lots = ceil($prodplanHkw);
             }
 
-            // pointer ke item yang sedang diproses
-            $currentIndex = 0;
-            $currentItem = ($currentIndex < count($items)) ? $items[$currentIndex] : null;
+            $firstDate2 = date('Y-m-01', strtotime($filter_year . "-" . $filter_month . "-01"));
+            $endDate2 = date('Y-m-t', strtotime($filter_year . "-" . $filter_month . "-01"));
+            $no = 1;
+            while (strtotime($firstDate2) <= strtotime($endDate2)) {
+                $working_date = date('Y-m-d', strtotime($firstDate2));
 
-            // iterasi tanggal dan shift — untuk tiap slot shift, alokasikan ke currentItem (jika working day)
-            for ($d = 1; $d <= $totalDays; $d++) {
-                $isWorking = $dateList[$d-1]['is_working'];
-                if (!$isWorking) {
-                    // sudah diisi 'W' saat pre-populate, lanjut
-                    continue;
+                $this->db->select('remarks');
+                $this->db->from('working_calendar');
+                $this->db->where('working_date', $working_date);
+                $holiday = $this->db->get()->row();
+
+                if ($prodplan >= $lots) {
+                    $qty = is_nan($lots) ? 0 : $lots;
+                } elseif ($prodplan < 0) {
+                    $qty = 0;
+                } else {
+                    $qty = $prodplan;
                 }
 
-                // untuk setiap shift pada hari itu
-                for ($s = 1; $s <= $machineShiftCount; $s++) {
-                    // jika tidak ada item tersisa -> biarkan 0
-                    if ($currentItem === null) {
-                        // nothing to allocate
-                        continue;
-                    }
-
-                    if ($currentItem['has_relation'] == 0) {
-                        // skip semua alokasi, langsung pindah ke item berikutnya
-                        $currentIndex++;
-                        $currentItem = ($currentIndex < count($items)) ? $items[$currentIndex] : null;
-                        continue;
-                    }
-
-                    // Jika shift index melebihi total shift item (kemungkinan item punya shift < machineShiftCount),
-                    // maka item tidak punya shift itu -> skip assign (biarkan 0).
-                    if ($s > $currentItem['total_shift']) {
-                        // tidak bisa diproses pada shift ini untuk item ini
-                        continue;
-                    }
-
-                    if ($currentItem['remaining'] > 0) {
-                        // satu slot shift hanya satu item dan tidak boleh diisi item lain
-                        $allocate = min($currentItem['cap_shift'], $currentItem['remaining']);
-
-                        // tulis ke baris item untuk shift $s pada tanggal $d
-                        $rowsPerItem[$currentItem['item_fg_id']][$s]["date_$d"] = $allocate;
-                        $rowsPerItem[$currentItem['item_fg_id']][$s]['plan_qty'] += $allocate;
-
-                        // kurangi sisa
-                        $currentItem['remaining'] -= $allocate;
-
-                        // update juga di array items (agar pointer mengambil remaining yang terbaru)
-                        $items[$currentIndex]['remaining'] = $currentItem['remaining'];
-
-                        // jika item habis -> pindah ke item berikutnya (bisa mulai pada shift selanjutnya)
-                        if ($currentItem['remaining'] <= 0) {
-                            $currentIndex++;
-                            $currentItem = ($currentIndex < count($items)) ? $items[$currentIndex] : null;
-                        }
+                if (date('w', strtotime($firstDate2)) !== '0') {
+                    if (@$holiday->remarks != null or @$holiday->remarks != "") {
+                        $rows = array_merge($rows, array("date_".$no => "W"));
                     } else {
-                        // item sudah habis, pindah
-                        $currentIndex++;
-                        $currentItem = ($currentIndex < count($items)) ? $items[$currentIndex] : null;
-                        // jika masih ada item dan shift masih berjalan pada hari yang sama, ulangi alokasi pada item baru
-                        if ($currentItem !== null && $s <= $currentItem['total_shift'] && $currentItem['remaining'] > 0) {
-                            $allocate = min($currentItem['cap_shift'], $currentItem['remaining']);
-                            $rowsPerItem[$currentItem['item_fg_id']][$s]["date_$d"] = $allocate;
-                            $rowsPerItem[$currentItem['item_fg_id']][$s]['plan_qty'] += $allocate;
-                            $items[$currentIndex]['remaining'] -= $allocate;
-                            $currentItem = ($items[$currentIndex]['remaining'] <= 0) ? (($currentIndex+1 < count($items))?$items[$currentIndex+1]:null) : $items[$currentIndex];
-                            if ($items[$currentIndex]['remaining'] <= 0) $currentIndex++;
-                        }
+                        $rows = array_merge($rows, array("date_".$no => "$qty"));
+                        $prodplan = ($prodplan - $lots);
                     }
-                } // end foreach shift
-            } // end foreach date
-
-            // append hasil rowsPerItem ke mpp
-            foreach ($rowsPerItem as $itemRows) {
-                foreach ($itemRows as $r) {
-                    $mpp[] = $r;
+                } else {
+                    $rows = array_merge($rows, array("date_".$no => "W"));
                 }
-            }
-        } // end foreach machine
 
+                $firstDate2 = date("Y-m-d", strtotime("+1 day", strtotime($firstDate2)));
+                $no++;
+            }
+            $mpp[] = $rows;
+        }
         echo json_encode($mpp);
     }
-
+    
     public function push_data(){
         $filter_month = base64_decode($this->input->get('filter_month'));
         $filter_year = base64_decode($this->input->get('filter_year'));
@@ -1732,100 +1245,30 @@ class Generate_mpp extends CI_Controller{
         }
     }
 
-    // public function createv1()
-    // {
-    //     if ($this->input->post('data')) {
-    //         $post = $this->input->post('data');
 
-    //         $post['p_month'] = str_pad($post['p_month'], 2, '0', STR_PAD_LEFT);
-
-    //         $read = $this->crud->read("generate_mpp", [], [
-    //             "p_month" => $post['p_month'],
-    //             "p_year" => $post['p_year'],
-    //             "revision" => $post['revision'],
-    //             "item_fg_id" => $post['item_fg_id']
-    //         ]);
-
-    //         if ($read) {
-    //             $send = $this->crud->update('generate_mpp', [
-    //                 "p_month" => $post['p_month'],
-    //                 "p_year" => $post['p_year'],
-    //                 "revision" => $post['revision'],
-    //                 "item_fg_id" => $post['item_fg_id']
-    //             ], $post);
-    //         } else {
-    //             $send = $this->crud->create('generate_mpp', $post, "MPP", "MPP");
-    //         }
-
-    //         echo $send;
-    //     } else {
-    //         show_error("Cannot Process your request");
-    //     }
-    // }
 
     public function create()
     {
         if ($this->input->post('data')) {
             $post = $this->input->post('data');
-
             $post['p_month'] = str_pad($post['p_month'], 2, '0', STR_PAD_LEFT);
 
-            // simpan header
-            $headerExist = $this->crud->read("generate_mpp", [], [
+            $read = $this->crud->read("generate_mpp_cutting_compound", [], [
                 "p_month" => $post['p_month'],
                 "p_year" => $post['p_year'],
                 "revision" => $post['revision'],
                 "item_fg_id" => $post['item_fg_id']
             ]);
 
-            if (!$headerExist) {
-                $this->crud->create('generate_mpp', [
+            if ($read) {
+                $send = $this->crud->update('generate_mpp_cutting_compound', [
                     "p_month" => $post['p_month'],
                     "p_year" => $post['p_year'],
                     "revision" => $post['revision'],
-                    "item_fg_id" => $post['item_fg_id'],
-                    "prod_plan" => $post['prod_plan'],
-                ], "MPP", "MPP");
-            }
-
-            $dataDetail = [
-                "p_month"    => $post['p_month'],
-                "p_year"     => $post['p_year'],
-                "revision"   => $post['revision'],
-                "item_fg_id" => $post['item_fg_id'],
-                "shift"      => $post['shift'],
-                "plan_qty"   => $post['plan_qty'],
-            ];
-
-            for ($i = 1; $i <= 31; $i++) {
-                $field = "date_$i";
-                if(isset($post[$field])){
-                    $dataDetail[$field] = $post[$field];
-                }
-            }
-
-            $existDetail = $this->crud->read("generate_mpp_details", [], [
-                "p_month"    => $post['p_month'],
-                "p_year"     => $post['p_year'],
-                "revision"   => $post['revision'],
-                "item_fg_id" => $post['item_fg_id'],
-                "shift"      => $post['shift']
-            ]);
-
-            if ($existDetail) {
-                $send = $this->crud->update(
-                    'generate_mpp_details',
-                    [
-                        "p_month"    => $post['p_month'],
-                        "p_year"     => $post['p_year'],
-                        "revision"   => $post['revision'],
-                        "item_fg_id" => $post['item_fg_id'],
-                        "shift"      => $post['shift']
-                    ],
-                    $dataDetail
-                );
+                    "item_fg_id" => $post['item_fg_id']
+                ], $post);
             } else {
-                $send = $this->crud->create('generate_mpp_details', $dataDetail, "MPPD", "MPPD");
+                $send = $this->crud->create('generate_mpp_cutting_compound', $post, "MPP", "MPP");
             }
 
             echo $send;
@@ -1839,7 +1282,7 @@ class Generate_mpp extends CI_Controller{
         if ($this->input->post()) {
             $id = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('generate_mpp_details', ["id" => $id], $post);
+            $send = $this->crud->update('_compound', ["id" => $id], $post);
             echo $send;
         } else {
             show_error("Cannot Process your request");
@@ -1848,14 +1291,14 @@ class Generate_mpp extends CI_Controller{
 
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/generate_mpp.txt');
+        @unlink('excel/failed/generate_mpp_cutting_compound.txt');
     }
 
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/generate_mpp.txt', 'a');
+            $textFailed = fopen('excel/failed/generate_mpp_cutting_compound.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -1863,7 +1306,7 @@ class Generate_mpp extends CI_Controller{
 
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/generate_mpp.txt";
+        $file = "excel/failed/generate_mpp_cutting_compound.txt";
 
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
@@ -1880,7 +1323,7 @@ class Generate_mpp extends CI_Controller{
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=generate_mpp_$format.xls");
+            header("Content-Disposition: attachment; filename=generate_mpp_cutting_compound_$format.xls");
         }
         //Config
         $this->db->select('*');
@@ -1890,12 +1333,12 @@ class Generate_mpp extends CI_Controller{
         //Filter Data
         $filter_month = base64_decode($this->input->get('filter_month'));
         $filter_year = base64_decode($this->input->get('filter_year'));
-        // $filter_revision2 = base64_decode($this->input->get('filter_revision'));
+        $filter_revision2 = base64_decode($this->input->get('filter_revision'));
         // $filter_line_no = base64_decode($this->input->get('filter_line_no'));
         $filter_product_no = base64_decode($this->input->get('filter_product_no'));
 
         $this->db->select('revision');
-        $this->db->from('generate_mpp');
+        $this->db->from('generate_mpp_cutting_compound');
         $this->db->where('p_month', $filter_month);
         $this->db->where('p_year', $filter_year);
         $this->db->group_by('revision');
@@ -2047,20 +1490,20 @@ class Generate_mpp extends CI_Controller{
         //     <th rowspan="2" width="50" style="text-align:center;">PRODPLAN</th>
         //     <th rowspan="2" width="50" style="text-align:center;">PLOTTING</th>';
 
+        // Inisialisasi header
         $header  = '<tr>
             <th style="text-align:center;" rowspan="2" width="50">NO</th>
-            <th style="text-align:center;" rowspan="2" width="200">MACHINE NO</th>
-            <th style="text-align:center;" rowspan="2" width="80">SHIFT</th>
             <th style="text-align:center;" rowspan="2" width="200">PRODUCT NO</th>
             <th style="text-align:center;" rowspan="2" width="150">PRODUCT NAME</th>
             <th style="text-align:center;" rowspan="2" width="80">PRODPLAN</th>
-            <th style="text-align:center;" rowspan="2" width="80">PLOTTING</th>
-            <th style="text-align:center;" rowspan="2" width="80">CAP/SHIFT</th>';
+            <th style="text-align:center;" rowspan="2" width="80">PLOTTING</th>';
 
+
+        // Row-1 : WP (dengan logika working_calendar)
         $wp = 0;
         $tgl = 1;
         $alfabet = "z";
-        $firstDate_loop = $firstDate;
+        $firstDate_loop = $firstDate; // simpan pointer asli
         while (strtotime($firstDate_loop) <= strtotime($endDate)) {
             $working_date = date('Y-m-d', strtotime($firstDate_loop));
 
@@ -2069,6 +1512,7 @@ class Generate_mpp extends CI_Controller{
             $this->db->where('working_date', $working_date);
             $holiday = $this->db->get()->row();
 
+            // LOGIKA WP
             if (date('w', strtotime($firstDate_loop)) !== '0' && date('w', strtotime($firstDate_loop)) !== '6') {
                 if (@$holiday->remarks != null && @$holiday->remarks != "") {
                     // hari libur
@@ -2166,11 +1610,12 @@ class Generate_mpp extends CI_Controller{
         $day = 1;
         while (strtotime($firstDate_loop) <= strtotime($endDate)) {
             $header .= '<th style="text-align:center;">'.$day.'</th>';
-            $header .= '<th style="text-align:center;">CT (hr)</th>';
+            $header .= '<th style="text-align:center;">CT</th>';
             $firstDate_loop = date("Y-m-d", strtotime("+1 day", strtotime($firstDate_loop)));
             $day++;
         }
         $header .= '</tr>';
+
 
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;font-size: 10px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;} .str{ mso-number-format:\@; } </style><body>
 
@@ -2192,7 +1637,7 @@ class Generate_mpp extends CI_Controller{
 
         <b>' . $config->name . '</b><br>
 
-        <small>Generate MPP - Rubber Part</small>
+        <small>Generate MPP - Cutting Compound</small>
 
         </td>
 
@@ -2278,133 +1723,133 @@ class Generate_mpp extends CI_Controller{
 
         //Total MPP
 
-        // $total_mpp_date_1 = 0;
+        $total_mpp_date_1 = 0;
 
-        // $total_mpp_date_2 = 0;
+        $total_mpp_date_2 = 0;
 
-        // $total_mpp_date_3 = 0;
+        $total_mpp_date_3 = 0;
 
-        // $total_mpp_date_4 = 0;
+        $total_mpp_date_4 = 0;
 
-        // $total_mpp_date_5 = 0;
+        $total_mpp_date_5 = 0;
 
-        // $total_mpp_date_6 = 0;
+        $total_mpp_date_6 = 0;
 
-        // $total_mpp_date_7 = 0;
+        $total_mpp_date_7 = 0;
 
-        // $total_mpp_date_8 = 0;
+        $total_mpp_date_8 = 0;
 
-        // $total_mpp_date_9 = 0;
+        $total_mpp_date_9 = 0;
 
-        // $total_mpp_date_10 = 0;
+        $total_mpp_date_10 = 0;
 
-        // $total_mpp_date_11 = 0;
+        $total_mpp_date_11 = 0;
 
-        // $total_mpp_date_12 = 0;
+        $total_mpp_date_12 = 0;
 
-        // $total_mpp_date_13 = 0;
+        $total_mpp_date_13 = 0;
 
-        // $total_mpp_date_14 = 0;
+        $total_mpp_date_14 = 0;
 
-        // $total_mpp_date_15 = 0;
+        $total_mpp_date_15 = 0;
 
-        // $total_mpp_date_16 = 0;
+        $total_mpp_date_16 = 0;
 
-        // $total_mpp_date_17 = 0;
+        $total_mpp_date_17 = 0;
 
-        // $total_mpp_date_18 = 0;
+        $total_mpp_date_18 = 0;
 
-        // $total_mpp_date_19 = 0;
+        $total_mpp_date_19 = 0;
 
-        // $total_mpp_date_20 = 0;
+        $total_mpp_date_20 = 0;
 
-        // $total_mpp_date_21 = 0;
+        $total_mpp_date_21 = 0;
 
-        // $total_mpp_date_22 = 0;
+        $total_mpp_date_22 = 0;
 
-        // $total_mpp_date_23 = 0;
+        $total_mpp_date_23 = 0;
 
-        // $total_mpp_date_24 = 0;
+        $total_mpp_date_24 = 0;
 
-        // $total_mpp_date_25 = 0;
+        $total_mpp_date_25 = 0;
 
-        // $total_mpp_date_26 = 0;
+        $total_mpp_date_26 = 0;
 
-        // $total_mpp_date_27 = 0;
+        $total_mpp_date_27 = 0;
 
-        // $total_mpp_date_28 = 0;
+        $total_mpp_date_28 = 0;
 
-        // $total_mpp_date_29 = 0;
+        $total_mpp_date_29 = 0;
 
-        // $total_mpp_date_30 = 0;
+        $total_mpp_date_30 = 0;
 
-        // $total_mpp_date_31 = 0;
+        $total_mpp_date_31 = 0;
 
 
 
         //Total Press
 
-        // $total_press_date_1 = 0;
+        $total_press_date_1 = 0;
 
-        // $total_press_date_2 = 0;
+        $total_press_date_2 = 0;
 
-        // $total_press_date_3 = 0;
+        $total_press_date_3 = 0;
 
-        // $total_press_date_4 = 0;
+        $total_press_date_4 = 0;
 
-        // $total_press_date_5 = 0;
+        $total_press_date_5 = 0;
 
-        // $total_press_date_6 = 0;
+        $total_press_date_6 = 0;
 
-        // $total_press_date_7 = 0;
+        $total_press_date_7 = 0;
 
-        // $total_press_date_8 = 0;
+        $total_press_date_8 = 0;
 
-        // $total_press_date_9 = 0;
+        $total_press_date_9 = 0;
 
-        // $total_press_date_10 = 0;
+        $total_press_date_10 = 0;
 
-        // $total_press_date_11 = 0;
+        $total_press_date_11 = 0;
 
-        // $total_press_date_12 = 0;
+        $total_press_date_12 = 0;
 
-        // $total_press_date_13 = 0;
+        $total_press_date_13 = 0;
 
-        // $total_press_date_14 = 0;
+        $total_press_date_14 = 0;
 
-        // $total_press_date_15 = 0;
+        $total_press_date_15 = 0;
 
-        // $total_press_date_16 = 0;
+        $total_press_date_16 = 0;
 
-        // $total_press_date_17 = 0;
+        $total_press_date_17 = 0;
 
-        // $total_press_date_18 = 0;
+        $total_press_date_18 = 0;
 
-        // $total_press_date_19 = 0;
+        $total_press_date_19 = 0;
 
-        // $total_press_date_20 = 0;
+        $total_press_date_20 = 0;
 
-        // $total_press_date_21 = 0;
+        $total_press_date_21 = 0;
 
-        // $total_press_date_22 = 0;
+        $total_press_date_22 = 0;
 
-        // $total_press_date_23 = 0;
+        $total_press_date_23 = 0;
 
-        // $total_press_date_24 = 0;
+        $total_press_date_24 = 0;
 
-        // $total_press_date_25 = 0;
+        $total_press_date_25 = 0;
 
-        // $total_press_date_26 = 0;
+        $total_press_date_26 = 0;
 
-        // $total_press_date_27 = 0;
+        $total_press_date_27 = 0;
 
-        // $total_press_date_28 = 0;
+        $total_press_date_28 = 0;
 
-        // $total_press_date_29 = 0;
+        $total_press_date_29 = 0;
 
-        // $total_press_date_30 = 0;
+        $total_press_date_30 = 0;
 
-        // $total_press_date_31 = 0;
+        $total_press_date_31 = 0;
 
 
 
@@ -2421,46 +1866,33 @@ class Generate_mpp extends CI_Controller{
             // $line_no = $record['line_no'];
             // $line_no = '1';
 
-            // $this->db->select("a.*, e.number as product_no, e.name as product_name, e.lot, COALESCE(ml.cycle_time, 0) as cycle_time, COALESCE(mo.cavity_actual, 0) as cavity_actual, d.prod_plan as prodplan, (d.date_1 + d.date_2 + d.date_3 + d.date_4 + d.date_5 + d.date_6 + d.date_7 + d.date_8 + d.date_9 + d.date_10 + d.date_11 + d.date_12 + d.date_13 + d.date_14 + d.date_15 + d.date_16 + d.date_17 + d.date_18 + d.date_19 + d.date_20 + d.date_21 + d.date_22 + d.date_23 + d.date_24 + d.date_25 + d.date_26 + d.date_27 + d.date_28 + d.date_29 + d.date_30 + d.date_31) as plotting");
+            $this->db->select("a.*, e.number as product_no, e.name as product_name, e.lot, COALESCE(ml.cycle_time, 0) as cycle_time, d.prod_plan as prodplan, (a.date_1 + a.date_2 + a.date_3 + a.date_4 + a.date_5 + a.date_6 + a.date_7 + a.date_8 + a.date_9 + a.date_10 + a.date_11 + a.date_12 + a.date_13 + a.date_14 + a.date_15 + a.date_16 + a.date_17 + a.date_18 + a.date_19 + a.date_20 + a.date_21 + a.date_22 + a.date_23 + a.date_24 + a.date_25 + a.date_26 + a.date_27 + a.date_28 + a.date_29 + a.date_30 + a.date_31) as plotting");
 
+            $this->db->from('generate_mpp_cutting_compound a');
 
-            $this->db->select("
-                a.id as mpp_id,
-                d.id as detail_id,
-                a.*, d.shift, d.plan_qty,
-                a.prod_plan as prodplan,
-                d.date_1, d.date_2, d.date_3, d.date_4, d.date_5, d.date_6, d.date_7, d.date_8, d.date_9, d.date_10, d.date_11, d.date_12, d.date_13, d.date_14, d.date_15, d.date_16, d.date_17, d.date_18, d.date_19, d.date_20, d.date_21, d.date_22, d.date_23, d.date_24, d.date_25, d.date_26, d.date_27, d.date_28, d.date_29, d.date_30, d.date_31,
-                (d.date_1 + d.date_2 + d.date_3 + d.date_4 + d.date_5 + d.date_6 + d.date_7 + d.date_8 + d.date_9 + d.date_10 + d.date_11 + d.date_12 + d.date_13 + d.date_14 + d.date_15 + d.date_16 + d.date_17 + d.date_18 + d.date_19 + d.date_20 + d.date_21 + d.date_22 + d.date_23 + d.date_24 + d.date_25 + d.date_26 + d.date_27 + d.date_28 + d.date_29 + d.date_30 + d.date_31) as plotting,
-                e.number as product_no, e.name as product_name, e.lot,
-                COALESCE(ml.cycle_time,0) as cycle_time,
-                COALESCE(mo.cavity_actual,0) as cavity_actual,
-                mch.number as machine_no,
-                COALESCE(pc.capacity_shift,0) as cap_shift,
-            ");
+            // $this->db->join('item_fg b', 'a.item_fg_id = b.id');
 
-            $this->db->from('generate_mpp a');
-            $this->db->join(
-                "generate_mpp_details d",
-                "a.p_month = d.p_month AND a.p_year = d.p_year AND a.revision = d.revision AND a.item_fg_id = d.item_fg_id",
-                "inner"
-            );
+            // $this->db->join('wip_mst_wos_cct c', 'a.item_fg_id = c.mstwos_assyno', 'left');
+
+            $this->db->join("(SELECT * FROM generate_mps_details ORDER BY ltpp_month2 ASC) d", "LPAD(d.p_month, 2, '0') = '$filter_month' and d.p_year = '$filter_year' and d.revision = '$filter_revision2' and a.item_fg_id = d.item_fg_id");
+
             $this->db->join("item_fg e", "a.item_fg_id = e.id");
-            $this->db->join("menu_loadings ml", "ml.item_fg_id = a.item_fg_id", "left");
-            $this->db->join("molds mo", "ml.mold_id = mo.id", "left");
-            $this->db->join("production_capacities pc", "pc.item_fg_id = a.item_fg_id AND pc.machine_id = ml.machine_id", "left");
-            $this->db->join('machines mch', 'pc.machine_id = mch.id', 'left');
+
+            $this->db->join("menu_loadings ml", "a.item_fg_id = ml.item_fg_id", "left");
+
             $this->db->where('a.p_month', $filter_month);
+
             $this->db->where('a.p_year', $filter_year);
+
             $this->db->where('a.revision', $filter_revision);
+
+            // $this->db->where('a.line_no', $line_no);
+
             $this->db->like('e.number', $filter_product_no);
             
             // $this->db->limit(6);
-            // $this->db->group_by('a.item_fg_id');
-            // $this->db->order_by('a.item_fg_id, d.shift');
 
-            $this->db->order_by('mch.number', 'ASC');
-            $this->db->order_by('a.item_fg_id', 'ASC');
-            $this->db->order_by('d.shift', 'ASC');
+            $this->db->group_by('a.item_fg_id');
 
             $recordDetails = $this->db->get()->result_array();
 
@@ -2474,227 +1906,282 @@ class Generate_mpp extends CI_Controller{
                 $total_ct_per_date[$i] = 0;
             }
 
-            // $grouped = [];
-            // foreach ($recordDetails as $d) {
-            //     $grouped[$d['machine_no']][] = $d;
-            // }
+            foreach ($recordDetails as $detail) {
 
-            // $no = 1;
-            // foreach ($grouped as $item_fg_id => $details) {
-            //     $rowspan = count($details);
+                // $total_mpp_prodplan += $detail['prodplan'];
 
-            //     $firstRow = true;
-            //     foreach ($details as $detail) {
-            //         $html .= "<tr>";
+                // $total_cct_cutting += 1;
 
-            //         // hanya tulis sekali dengan rowspan
-            //         if ($firstRow) {
-            //             $html .= "<td rowspan='{$rowspan}'>" . $no . "</td>";
-            //             $html .= "<td rowspan='{$rowspan}'>" . $detail['machine_no'] . "</td>";
-            //             $firstRow = false;
-            //         }
+                // $total_cct_prodplan += ($detail['prodplan'] * $detail['circuit_no']);
+                // $total_cct_prodplan += ($detail['prodplan'] * $detail['cycle_time'] / 3600);
+                // $total_cct_plotting += $detail['plotting'];
 
-            //         $html .= "<td>" . $detail['shift'] . "</td>";
-            //         $html .= "<td style='mso-number-format:\@;'>" . $detail['product_no'] . "</td>";
-            //         $html .= "<td>" . $detail['product_name'] . "</td>";
-            //         $html .= "<td>" . $detail['prodplan'] . "</td>";
-            //         $html .= "<td>" . $detail['plotting'] . "</td>";
+                $html .= "<tr>
 
-            //         // === Detail tanggal ===
-            //         $firstDate2 = date('Y-m-01', strtotime($filter_year . "-" . $filter_month . "-01"));
-            //         $endDate2   = date('Y-m-t', strtotime($filter_year . "-" . $filter_month . "-01"));
-            //         $day = 1;
+                <td>" . $no . "</td>
 
-            //         while (strtotime($firstDate2) <= strtotime($endDate2)) {
-            //             $field_day = "date_".$day;
-            //             $dayValue = isset($detail[$field_day]) ? $detail[$field_day] : 0;
+                <td style='mso-number-format:\@;'>" . $detail['product_no'] . "</td>
 
-            //             if ($dayValue === "W") {
-            //                 $ctValue = 0;
-            //                 $qtyField = "";
-            //                 $html .= "<td style='background:#FFC2C2;'>" . $ctValue . "</td>";
-            //                 $html .= "<td style='background:#FFC2C2;'>" . $qtyField . "</td>";
-            //                 $arr_total_press[$field_day] += $ctValue;
-            //                 $arr_total_mpp[$field_day]   += 0;
-            //             } else {
-            //                 $html .= "<td>" . $dayValue . "</td>";
 
-            //                 if (is_numeric($dayValue) && $detail['cavity_actual'] > 0) {
-            //                     $ctValue = round(($dayValue * $detail['cycle_time'] / $detail['cavity_actual']) / 3600);
-            //                 } else {
-            //                     $ctValue = 0;
-            //                 }
+                <td>" . $detail['product_name'] . "</td>
 
-            //                 $html .= "<td>" . $ctValue . "</td>";
+                <td>" . $detail['prodplan'] . "</td>
 
-            //                 $arr_total_press[$field_day] += $ctValue;
-            //                 $arr_total_mpp[$field_day]   += is_numeric($dayValue) ? round($dayValue) : 0;
-            //             }
+                <td>" . $detail['plotting'] . "</td>";
 
-            //             $total_ct_per_date[$day] += $ctValue;
 
-            //             $firstDate2 = date("Y-m-d", strtotime("+1 day", strtotime($firstDate2)));
-            //             $day++;
-            //         }
+                //Detail Data
 
-            //         $html .= "</tr>";
-            //     }
+                $firstDate2 = date('Y-m-01', strtotime($filter_year . "-" . $filter_month . "-01"));
+                $endDate2 = date('Y-m-t', strtotime($filter_year . "-" . $filter_month . "-01"));
+                $day = 1;
 
-            //     $no++;
-            // }
+                // $total_mpp_day = 0;
 
-            $groupedByItem = [];
-            foreach ($recordDetails as $d) {
-                $groupedByItem[$d['item_fg_id']][] = $d;
-            }
+                while (strtotime($firstDate2) <= strtotime($endDate2)) {
 
-            $no = 1;
-            foreach ($groupedByItem as $item_fg_id => $records) {
+                    $field_day = "date_".$day;
 
-                // GROUP BY machine_no di dalam item_fg_id
-                $groupedByMachine = [];
-                foreach ($records as $rec) {
-                    $groupedByMachine[$rec['machine_no']][] = $rec;
-                }
+                    $dayValue = isset($detail[$field_day]) ? $detail[$field_day] : 0;
 
-                foreach ($groupedByMachine as $machine_no => $details) {
-                    $rowspan = count($details);
-                    $firstRow = true;
 
-                    foreach ($details as $detail) {
-                        $html .= "<tr>";
+                    if (@$detail[$field_day] == "W") {
+                        $ctValue = 0;
+                        $qtyField = "";
 
-                        // tampilkan sekali untuk setiap machine
-                        if ($firstRow) {
-                            $html .= "<td style='text-align: center;' rowspan='{$rowspan}'>" . $no . "</td>";
-                            $machineDisplay = !empty($machine_no) ? $machine_no : "";
-                            $html .= "<td style='text-align: center;' rowspan='{$rowspan}'>" . $machineDisplay . "</td>";
-                            $firstRow = false;
+                        $html .= "<td style='background:#FFC2C2;'>" . $qtyField . "</td>";
+                        $html .= "<td style='background:#FFC2C2;'>" . $qtyField . "</td>";
+
+                        $arr_total_press[$field_day] += $ctValue;
+                        $arr_total_mpp[$field_day] += 0;
+                    } else {
+
+                        $html .= "<td>" . $detail[$field_day] . "</td>";
+                        
+                        $ctValue = 0;
+                        if(is_numeric($dayValue)) {
+                            $ctValue = round(($dayValue * $detail['cycle_time']) / 3600);
                         }
 
-                        $html .= "<td style='text-align: center;'>" . $detail['shift'] . "</td>";
-                        $html .= "<td style='mso-number-format:\@;'>" . $detail['product_no'] . "</td>";
-                        $html .= "<td>" . $detail['product_name'] . "</td>";
-                        $html .= "<td>" . format_number($detail['prodplan']) . "</td>";
-                        $html .= "<td>" . format_number($detail['plotting']) . "</td>";
-                        $html .= "<td>" . format_number($detail['cap_shift']) . "</td>";
+                        $html .= "<td>" . $ctValue . "</td>";
 
-                        // Detail tanggal
-                        $firstDate2 = date('Y-m-01', strtotime($filter_year . "-" . $filter_month . "-01"));
-                        $endDate2   = date('Y-m-t', strtotime($filter_year . "-" . $filter_month . "-01"));
-                        $day = 1;
-
-                        while (strtotime($firstDate2) <= strtotime($endDate2)) {
-                            $field_day = "date_".$day;
-                            $dayValue = isset($detail[$field_day]) ? $detail[$field_day] : 0;
-
-                            if ($dayValue === "W") {
-                                $ctValue = 0;
-                                $qtyField = "";
-                                $html .= "<td style='background:#FFC2C2;'></td>";
-                                $html .= "<td style='background:#FFC2C2;'>" . $qtyField . "</td>";
-                                $arr_total_press[$field_day] += $ctValue;
-                                $arr_total_mpp[$field_day]   += 0;
-                            } else {
-                                $html .= "<td>" . $dayValue . "</td>";
-
-                                if (is_numeric($dayValue) && $detail['cavity_actual'] > 0) {
-                                    $ctValue = round(($dayValue * $detail['cycle_time'] / $detail['cavity_actual']) / 3600);
-                                } else {
-                                    $ctValue = 0;
-                                }
-
-                                $html .= "<td>" . $ctValue . "</td>";
-
-                                $arr_total_press[$field_day] += $ctValue;
-                                $arr_total_mpp[$field_day]   += is_numeric($dayValue) ? round($dayValue) : 0;
-                            }
-
-                            $total_ct_per_date[$day] += $ctValue;
-
-                            $firstDate2 = date("Y-m-d", strtotime("+1 day", strtotime($firstDate2)));
-                            $day++;
-                        }
-
-                        $html .= "</tr>";
+                        $arr_total_press[$field_day] += $ctValue;
+                        $arr_total_mpp[$field_day] += is_numeric($dayValue) ? round($dayValue) : 0;
                     }
 
-                    $no++;
-                }
-            }
+                    $total_ct_per_date[$day] += $ctValue;
 
+                    $firstDate2 = date("Y-m-d", strtotime("+1 day", strtotime($firstDate2)));
+
+                    $day++;
+
+                }
+
+
+                //Total MPP Day
+
+                $total_mpp_date_1 += is_numeric($detail["date_1"]) ? $detail["date_1"] : 0;
+
+                $total_mpp_date_2 += is_numeric($detail["date_2"]) ? $detail["date_2"] : 0;
+
+                $total_mpp_date_3 += is_numeric($detail["date_3"]) ? $detail["date_3"] : 0;
+
+                $total_mpp_date_4 += is_numeric($detail["date_4"]) ? $detail["date_4"] : 0;
+
+                $total_mpp_date_5 += is_numeric($detail["date_5"]) ? $detail["date_5"] : 0;
+
+                $total_mpp_date_6 += is_numeric($detail["date_6"]) ? $detail["date_6"] : 0;
+
+                $total_mpp_date_7 += is_numeric($detail["date_7"]) ? $detail["date_7"] : 0;
+
+                $total_mpp_date_8 += is_numeric($detail["date_8"]) ? $detail["date_8"] : 0;
+
+                $total_mpp_date_9 += is_numeric($detail["date_9"]) ? $detail["date_9"] : 0;
+
+                $total_mpp_date_10 += is_numeric($detail["date_10"]) ? $detail["date_10"] : 0;
+
+                $total_mpp_date_11 += is_numeric($detail["date_11"]) ? $detail["date_11"] : 0;
+
+                $total_mpp_date_12 += is_numeric($detail["date_12"]) ? $detail["date_12"] : 0;
+
+                $total_mpp_date_13 += is_numeric($detail["date_13"]) ? $detail["date_13"] : 0;
+
+                $total_mpp_date_14 += is_numeric($detail["date_14"]) ? $detail["date_14"] : 0;
+
+                $total_mpp_date_15 += is_numeric($detail["date_15"]) ? $detail["date_15"] : 0;
+
+                $total_mpp_date_16 += is_numeric($detail["date_16"]) ? $detail["date_16"] : 0;
+
+                $total_mpp_date_17 += is_numeric($detail["date_17"]) ? $detail["date_17"] : 0;
+
+                $total_mpp_date_18 += is_numeric($detail["date_18"]) ? $detail["date_18"] : 0;
+
+                $total_mpp_date_19 += is_numeric($detail["date_19"]) ? $detail["date_19"] : 0;
+
+                $total_mpp_date_20 += is_numeric($detail["date_20"]) ? $detail["date_20"] : 0;
+
+                $total_mpp_date_21 += is_numeric($detail["date_21"]) ? $detail["date_21"] : 0;
+
+                $total_mpp_date_22 += is_numeric($detail["date_22"]) ? $detail["date_22"] : 0;
+
+                $total_mpp_date_23 += is_numeric($detail["date_23"]) ? $detail["date_23"] : 0;
+
+                $total_mpp_date_24 += is_numeric($detail["date_24"]) ? $detail["date_24"] : 0;
+
+                $total_mpp_date_25 += is_numeric($detail["date_25"]) ? $detail["date_25"] : 0;
+
+                $total_mpp_date_26 += is_numeric($detail["date_26"]) ? $detail["date_26"] : 0;
+
+                $total_mpp_date_27 += is_numeric($detail["date_27"]) ? $detail["date_27"] : 0;
+
+                $total_mpp_date_28 += is_numeric($detail["date_28"]) ? $detail["date_28"] : 0;
+
+                $total_mpp_date_29 += is_numeric($detail["date_29"]) ? $detail["date_29"] : 0;
+
+                $total_mpp_date_30 += is_numeric($detail["date_30"]) ? $detail["date_30"] : 0;
+
+                $total_mpp_date_31 += is_numeric($detail["date_31"]) ? $detail["date_31"] : 0;
+
+
+
+                //Total Cutting Day
+                $total_press_date_1 += is_numeric($detail["date_1"]) ? ($detail["date_1"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_2 += is_numeric($detail["date_2"]) ? ($detail["date_2"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_3 += is_numeric($detail["date_3"]) ? ($detail["date_3"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_4 += is_numeric($detail["date_4"]) ? ($detail["date_4"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_5 += is_numeric($detail["date_5"]) ? ($detail["date_5"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_6 += is_numeric($detail["date_6"]) ? ($detail["date_6"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_7 += is_numeric($detail["date_7"]) ? ($detail["date_7"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_8 += is_numeric($detail["date_8"]) ? ($detail["date_8"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_9 += is_numeric($detail["date_9"]) ? ($detail["date_9"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_10 += is_numeric($detail["date_10"]) ? ($detail["date_10"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_11 += is_numeric($detail["date_11"]) ? ($detail["date_11"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_12 += is_numeric($detail["date_12"]) ? ($detail["date_12"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_13 += is_numeric($detail["date_13"]) ? ($detail["date_13"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_14 += is_numeric($detail["date_14"]) ? ($detail["date_14"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_15 += is_numeric($detail["date_15"]) ? ($detail["date_15"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_16 += is_numeric($detail["date_16"]) ? ($detail["date_16"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_17 += is_numeric($detail["date_17"]) ? ($detail["date_17"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_18 += is_numeric($detail["date_18"]) ? ($detail["date_18"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_19 += is_numeric($detail["date_19"]) ? ($detail["date_19"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_20 += is_numeric($detail["date_20"]) ? ($detail["date_20"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_21 += is_numeric($detail["date_21"]) ? ($detail["date_21"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_22 += is_numeric($detail["date_22"]) ? ($detail["date_22"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_23 += is_numeric($detail["date_23"]) ? ($detail["date_23"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_24 += is_numeric($detail["date_24"]) ? ($detail["date_24"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_25 += is_numeric($detail["date_25"]) ? ($detail["date_25"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_26 += is_numeric($detail["date_26"]) ? ($detail["date_26"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_27 += is_numeric($detail["date_27"]) ? ($detail["date_27"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_28 += is_numeric($detail["date_28"]) ? ($detail["date_28"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_29 += is_numeric($detail["date_29"]) ? ($detail["date_29"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_30 += is_numeric($detail["date_30"]) ? ($detail["date_30"] * $detail["cycle_time"] / 3600) : 0;
+
+                $total_press_date_31 += is_numeric($detail["date_31"]) ? ($detail["date_31"] * $detail["cycle_time"] / 3600) : 0;
+
+                $no++;
+
+            }
 
             $html .= "</tr>";
 
         // }
 
-        // $arr_total_mpp = array(
-        //     "date_1" => $total_mpp_date_1,
-        //     "date_2" => $total_mpp_date_2,
-        //     "date_3" => $total_mpp_date_3,
-        //     "date_4" => $total_mpp_date_4,
-        //     "date_5" => $total_mpp_date_5,
-        //     "date_6" => $total_mpp_date_6,
-        //     "date_7" => $total_mpp_date_7,
-        //     "date_8" => $total_mpp_date_8,
-        //     "date_9" => $total_mpp_date_9,
-        //     "date_10" => $total_mpp_date_10,
-        //     "date_11" => $total_mpp_date_11,
-        //     "date_12" => $total_mpp_date_12,
-        //     "date_13" => $total_mpp_date_13,
-        //     "date_14" => $total_mpp_date_14,
-        //     "date_15" => $total_mpp_date_15,
-        //     "date_16" => $total_mpp_date_16,
-        //     "date_17" => $total_mpp_date_17,
-        //     "date_18" => $total_mpp_date_18,
-        //     "date_19" => $total_mpp_date_19,
-        //     "date_20" => $total_mpp_date_20,
-        //     "date_21" => $total_mpp_date_21,
-        //     "date_22" => $total_mpp_date_22,
-        //     "date_23" => $total_mpp_date_23,
-        //     "date_24" => $total_mpp_date_24,
-        //     "date_25" => $total_mpp_date_25,
-        //     "date_26" => $total_mpp_date_26,
-        //     "date_27" => $total_mpp_date_27,
-        //     "date_28" => $total_mpp_date_28,
-        //     "date_29" => $total_mpp_date_29,
-        //     "date_30" => $total_mpp_date_30,
-        //     "date_31" => $total_mpp_date_31
-        // );
+        $arr_total_mpp = array(
+            "date_1" => $total_mpp_date_1,
+            "date_2" => $total_mpp_date_2,
+            "date_3" => $total_mpp_date_3,
+            "date_4" => $total_mpp_date_4,
+            "date_5" => $total_mpp_date_5,
+            "date_6" => $total_mpp_date_6,
+            "date_7" => $total_mpp_date_7,
+            "date_8" => $total_mpp_date_8,
+            "date_9" => $total_mpp_date_9,
+            "date_10" => $total_mpp_date_10,
+            "date_11" => $total_mpp_date_11,
+            "date_12" => $total_mpp_date_12,
+            "date_13" => $total_mpp_date_13,
+            "date_14" => $total_mpp_date_14,
+            "date_15" => $total_mpp_date_15,
+            "date_16" => $total_mpp_date_16,
+            "date_17" => $total_mpp_date_17,
+            "date_18" => $total_mpp_date_18,
+            "date_19" => $total_mpp_date_19,
+            "date_20" => $total_mpp_date_20,
+            "date_21" => $total_mpp_date_21,
+            "date_22" => $total_mpp_date_22,
+            "date_23" => $total_mpp_date_23,
+            "date_24" => $total_mpp_date_24,
+            "date_25" => $total_mpp_date_25,
+            "date_26" => $total_mpp_date_26,
+            "date_27" => $total_mpp_date_27,
+            "date_28" => $total_mpp_date_28,
+            "date_29" => $total_mpp_date_29,
+            "date_30" => $total_mpp_date_30,
+            "date_31" => $total_mpp_date_31
+        );
 
-        // $arr_total_press = array(
-        //     "date_1" => $total_press_date_1,
-        //     "date_2" => $total_press_date_2,
-        //     "date_3" => $total_press_date_3,
-        //     "date_4" => $total_press_date_4,
-        //     "date_5" => $total_press_date_5,
-        //     "date_6" => $total_press_date_6,
-        //     "date_7" => $total_press_date_7,
-        //     "date_8" => $total_press_date_8,
-        //     "date_9" => $total_press_date_9,
-        //     "date_10" => $total_press_date_10,
-        //     "date_11" => $total_press_date_11,
-        //     "date_12" => $total_press_date_12,
-        //     "date_13" => $total_press_date_13,
-        //     "date_14" => $total_press_date_14,
-        //     "date_15" => $total_press_date_15,
-        //     "date_16" => $total_press_date_16,
-        //     "date_17" => $total_press_date_17,
-        //     "date_18" => $total_press_date_18,
-        //     "date_19" => $total_press_date_19,
-        //     "date_20" => $total_press_date_20,
-        //     "date_21" => $total_press_date_21,
-        //     "date_22" => $total_press_date_22,
-        //     "date_23" => $total_press_date_23,
-        //     "date_24" => $total_press_date_24,
-        //     "date_25" => $total_press_date_25,
-        //     "date_26" => $total_press_date_26,
-        //     "date_27" => $total_press_date_27,
-        //     "date_28" => $total_press_date_28,
-        //     "date_29" => $total_press_date_29,
-        //     "date_30" => $total_press_date_30,
-        //     "date_31" => $total_press_date_31
-        // );
+        $arr_total_press = array(
+            "date_1" => $total_press_date_1,
+            "date_2" => $total_press_date_2,
+            "date_3" => $total_press_date_3,
+            "date_4" => $total_press_date_4,
+            "date_5" => $total_press_date_5,
+            "date_6" => $total_press_date_6,
+            "date_7" => $total_press_date_7,
+            "date_8" => $total_press_date_8,
+            "date_9" => $total_press_date_9,
+            "date_10" => $total_press_date_10,
+            "date_11" => $total_press_date_11,
+            "date_12" => $total_press_date_12,
+            "date_13" => $total_press_date_13,
+            "date_14" => $total_press_date_14,
+            "date_15" => $total_press_date_15,
+            "date_16" => $total_press_date_16,
+            "date_17" => $total_press_date_17,
+            "date_18" => $total_press_date_18,
+            "date_19" => $total_press_date_19,
+            "date_20" => $total_press_date_20,
+            "date_21" => $total_press_date_21,
+            "date_22" => $total_press_date_22,
+            "date_23" => $total_press_date_23,
+            "date_24" => $total_press_date_24,
+            "date_25" => $total_press_date_25,
+            "date_26" => $total_press_date_26,
+            "date_27" => $total_press_date_27,
+            "date_28" => $total_press_date_28,
+            "date_29" => $total_press_date_29,
+            "date_30" => $total_press_date_30,
+            "date_31" => $total_press_date_31
+        );
 
 
         //TOTAL CUTTING
@@ -2711,9 +2198,10 @@ class Generate_mpp extends CI_Controller{
         }
 
 
+
         $html .= "  <tr>
 
-        <th colspan='8' style='text-align:center;'><b>TOTAL MPP</b></th>";
+        <th colspan='5' style='text-align:center;'><b>TOTAL MPP</b></th>";
 
         $firstDate2 = date('Y-m-01', strtotime($filter_year . "-" . $filter_month . "-01"));
 
@@ -2739,10 +2227,10 @@ class Generate_mpp extends CI_Controller{
             $symbol = $isHoliday ? "0" : "<center>-</center>";
 
             if($option == "excel") {
-                $html .= "<th style='text-align:right;'>".format_number($arr_total_mpp[$field_day])."</th>";
+                $html .= "<th style='text-align:right;'>".number_format($arr_total_mpp[$field_day])."</th>";
                 $html .= "<th style='text-align:right;'>{$symbol}</th>";
             } else {   
-                $html .= "<th>".format_number($arr_total_mpp[$field_day])."</th>";
+                $html .= "<th>".number_format($arr_total_mpp[$field_day])."</th>";
                 $html .= "<th>{$symbol}</th>";
             }
 
@@ -2758,9 +2246,9 @@ class Generate_mpp extends CI_Controller{
         // LOADING
         $total_ct_all = array_sum($total_ct_per_date);
         $html .= "<tr ".$style.">
-            <td rowspan='2' colspan='3' style='text-align:left; vertical-align:middle;'><b>TOTAL PRESS</b></td>
-            <td colspan='4'><b>LOADING</b></td>
-            <td><b>". format_number($total_ct_all) ."</b></td>";
+            <td rowspan='2' colspan='2' style='text-align:left; vertical-align:middle;'><b>TOTAL PRESS</b></td>
+            <td colspan='2'><b>LOADING</b></td>
+            <td><b>". number_format($total_ct_all) ."</b></td>";
 
         $firstDate2 = date('Y-m-01', strtotime($filter_year . "-" . $filter_month . "-01"));
         $endDate2   = date('Y-m-t', strtotime($filter_year . "-" . $filter_month . "-01"));
@@ -2769,7 +2257,7 @@ class Generate_mpp extends CI_Controller{
         while (strtotime($firstDate2) <= strtotime($endDate2)) {
             $field_day = "date_".$day;
             $totalCt = isset($total_ct_per_date[$day]) ? $total_ct_per_date[$day] : 0;
-            
+
             $working_date = date('Y-m-d', strtotime($firstDate2));
             $dayOfWeek    = date('w', strtotime($firstDate2));
 
@@ -2788,10 +2276,10 @@ class Generate_mpp extends CI_Controller{
 
             if ($option == "excel") {
                 $html .= "<th style='text-align:right;'>{$symbol}</th>";
-                $html .= "<th style='text-align:right;'>" . format_number($totalCt) . "</th>";
+                $html .= "<th style='text-align:right;'>" . number_format($totalCt) . "</th>";
             } else {
                 $html .= "<th>{$symbol}</th>";
-                $html .= "<th>" . format_number($totalCt) . "</th>";
+                $html .= "<th>" . number_format($totalCt) . "</th>";
             }
 
             $firstDate2 = date("Y-m-d", strtotime("+1 day", strtotime($firstDate2)));
@@ -2800,7 +2288,7 @@ class Generate_mpp extends CI_Controller{
 
         // CAPACITY
         $html .= "<tr ".$style.">
-            <td colspan='5'><b>CAPACITY</b></td>
+            <td colspan='2'><b>CAPACITY</b></td>
             <td><b>0</b></td>";
 
         $firstDate2 = date('Y-m-01', strtotime($filter_year . "-" . $filter_month . "-01"));
@@ -2808,32 +2296,8 @@ class Generate_mpp extends CI_Controller{
         $day = 1;
 
         while (strtotime($firstDate2) <= strtotime($endDate2)) {
-            $field_day = "date_".$day;
-
-            // $working_date = date('Y-m-d', strtotime($firstDate2));
-            // $dayOfWeek    = date('w', strtotime($firstDate2));
-
-            // // cek libur
-            // $holiday = $this->db->select('remarks')
-            //                     ->from('working_calendar')
-            //                     ->where('working_date', $working_date)
-            //                     ->get()
-            //                     ->row();
-
-            // // tentukan apakah hari ini libur/weekend
-            // $isHoliday = ($dayOfWeek == 0 || $dayOfWeek == 6 || !empty($holiday->remarks));
-
-            // // pilih simbol
-            // $symbol = $isHoliday ? "0" : "<center>0</center>";
-
-            if ($option == "excel") {
-                $html .= "<td style='text-align:right;'><b>0</b></td>";
-                $html .= "<td style='text-align:right;'><b>0</b></td>";
-            } else {
-                $html .= "<td><b>0</b></td>";
-                $html .= "<td><b>0</b></td>";
-            }
-
+            $html .= "<td><b>0</b></td>";
+            $html .= "<td><b>0</b></td>";
             $firstDate2 = date("Y-m-d", strtotime("+1 day", strtotime($firstDate2)));
             $day++;
         }

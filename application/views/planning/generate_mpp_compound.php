@@ -3,9 +3,12 @@
         <th field="ck" checkbox="true"></th>
         <th data-options="field:'machine_no',width:120,halign:'center'">Machine</th>
         <th data-options="field:'shift',width:60,halign:'center',align:'center'">Shift</th>
-        <th data-options="field:'product_no',width:250,halign:'center'">Product No</th>
-        <th data-options="field:'product_name',width:250,halign:'center'">Product Name</th>
+        <th data-options="field:'compound_no',width:250,halign:'center'">Compound No</th>
+        <!-- <th data-options="field:'product_no',width:250,halign:'center'">Product No</th> -->
+        <th data-options="field:'compound_name',width:250,halign:'center',align:'center'">Product Name</th>
+        <th data-options="field:'mpq',width:80,halign:'center',align:'center'">LOT</th>
         <th data-options="field:'mpsprod',width:80,halign:'center',align:'right'">Prod Plan</th>
+        <th data-options="field:'maxprodplan',width:100,halign:'center',align:'right'">Max Prod Plan</th>
         <th data-options="field:'floating',width:80,halign:'center',align:'right',styler:floating">Plotting</th>
         <th data-options="field:'cap_shift',width:80,halign:'center',align:'right',formatter: numberFormat">Cap/Shift</th>
     </thead>
@@ -26,14 +29,14 @@
                     $filter_product_no = "";
                 }
 
-                $firstDate = date("Y-m-01", strtotime(date("$filter_year-$filter_month-01")));
-                $endDate = date("Y-m-t", strtotime(date("$filter_year-$filter_month")));
+                $firstDate = date("Y-m-d", strtotime("$filter_year-$filter_month-01 -3 days"));
+                $endDate   = date('Y-m-t', strtotime("$filter_year-$filter_month-01"));
 
                 $wp = 0;
                 $tgl = 1;
                 $alfabet = "z";
                 $form_input = "";
-                while (strtotime($firstDate) <= strtotime($endDate)) {
+                while (strtotime($firstDate) <= strtotime($endDate) && $tgl <= 31) {
                     $working_date = date('Y-m-d', strtotime($firstDate));
 
                     $this->db->select('remarks');
@@ -162,19 +165,6 @@
                         }
                     }
                     ?>
-                    <!-- <th data-options="field:'date_<?= $tgl ?>',width:60,halign:'center',align:'right',editor:'textbox',styler:dates,formatter:datef"><?= $tgl ?><br><?= $wpp ?></th> -->
-                    
-                    
-                    <!-- <th data-options="field:'date_<?= $tgl ?>',width:70,halign:'center',align:'right',editor:'textbox',styler:dates,formatter:datef">
-                        <?= $tgl ?>
-                    </th>
-                    
-                    <?php if (date('w', strtotime($firstDate)) != '0' && date('w', strtotime($firstDate)) != '6'): ?>
-                        <th data-options="field:'log_<?= $tgl ?>',width:70,halign:'center',align:'right'">
-                            CT
-                        </th>
-                    <?php endif; ?> -->
-
 
                     <th colspan="2"><?= $wpp ?></th>
 
@@ -199,26 +189,26 @@
 
         <tr>
             <?php 
-            $tgl = 1;
-            $firstDate = date("Y-m-01", strtotime(date("$filter_year-$filter_month-01")));
-            while (strtotime($firstDate) <= strtotime($endDate)) {
-            ?>
-                <th data-options="field:'date_<?= $tgl ?>',width:70,halign:'center',align:'right',editor:'textbox',styler:dates,formatter:datef">
-                    <?= date('d/m', strtotime($firstDate)) ?>
+            // $tgl = 1;
+            $firstDate = date('Y-m-d', strtotime("$filter_year-$filter_month-01 -3 days"));
+
+            $totalDays = (strtotime($endDate) - strtotime($firstDate)) / (60*60*24) + 1;
+            if ($totalDays > 31) $totalDays = 31;
+
+            for ($i = 1; $i <= $totalDays; $i++) {
+                $tglTampil = date("d/m", strtotime("+".($i-1)." days", strtotime($firstDate)));
+                ?>
+                <th data-options="field:'date_<?= $i ?>',width:70,halign:'center',align:'right',editor:'textbox',styler:dates,formatter:datef">
+                    <?= $tglTampil ?>
                 </th>
-                <th data-options="field:'log_<?= $tgl ?>',width:70,halign:'center',align:'right',
-                formatter:function(value,row){
-                      if (value == null || value === '') return '';
-                      return parseInt(value).toLocaleString('en-US');
-                  }">
+                <th data-options="field:'log_<?= $i ?>',width:70,halign:'center',align:'right'">
                     CT (hours)
                 </th>
-            <?php
-                $tgl++;
-                $firstDate = date("Y-m-d", strtotime("+1 day", strtotime($firstDate)));
+                <?php
             }
             ?>
         </tr>
+
     </thead>
 </table>
 
@@ -260,14 +250,14 @@
         </fieldset>
         <fieldset style="width: 30%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Process Generate Data</b></legend>
-            <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column;">
+            <div style="width: 100%; float: left; ">
                 <b>MPP GENERATE</b>
                 <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
                 <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
-
-                <!-- <b>MPP GENERATE</b>
-                <div id="p_upload_mpp_generate" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
-                <center><b id="p_start_mpp_generate">0</b> Of <b id="p_finish_mpp_generate">0</b></center> -->
+                
+                <div>
+                    <input class="easyui-checkbox" id="check_mpp_rp" value="on" readonly="true"> &nbsp; MPP Rubber Part
+                </div>
             </div>
             <div style="width: 50%; float: left;" hidden="">
                 <b>PLAN SCHEDULE</b>
@@ -317,19 +307,23 @@
                     <span style="width:35%; display:inline-block;">Product Name</span>
                     <input style="width:60%;" name="product_name" id="product_name" disabled="" class="easyui-textbox">
                 </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Prodplan</span>
-                    <input style="width:60%;" name="mpsprod" id="mpsprod" disabled="" class="easyui-textbox">
-                </div>
             </div>
             <div style="width: 50%; float: left;">
-                <div class="fitem">
+                <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">Customer</span>
                     <input style="width:60%;" name="customer_name" id="customer_name" disabled="" required="true" class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Circuit</span>
                     <input style="width:60%;" name="circuit_no" id="circuit_no" disabled="" class="easyui-textbox">
+                </div> -->
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Prodplan</span>
+                    <input style="width:60%;" name="mpsprod" id="mpsprod" disabled="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Max Prodplan</span>
+                    <input style="width:60%;" name="maxprodplan" id="maxprodplan" disabled="" class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Plotting</span>
@@ -375,7 +369,7 @@
 
         if (filter_month != "" && filter_year != "" && filter_revision != "") {
             $('#dg_mps').datagrid({
-                url: '<?= base_url('planning/generate_mpp/datatableNotMps') ?>' + url,
+                url: '<?= base_url('planning/generate_mpp_compound/datatableNotMps') ?>' + url,
                 rownumbers: true
             }).datagrid('enableFilter');
         }
@@ -390,7 +384,7 @@
                 $("#row_index").textbox('setValue', index);
                 $('#dlg_insert').dialog('open');
                 $('#frm_insert').form('load', row);
-                url_update = '<?= base_url('planning/generate_mpp/update'); ?>?id=' + btoa(row.detail_id);
+                url_update = '<?= base_url('planning/generate_mpp_compound/update'); ?>?id=' + btoa(row.detail_id);
 
                 if(row.wds_1 == "F"){ $("#date_1").textbox('disable'); }
                 if(row.wds_2 == "F"){ $("#date_2").textbox('disable'); }
@@ -438,102 +432,109 @@
         var filter_revision = $("#filter_revision").textbox('getValue');
         // var filter_line_no = $("#filter_line_no").combobox('getValue');
         var filter_product_no = $("#filter_product_no").combogrid('getValue');
+        var check_mpp_rp = $("#check_mpp_rp").checkbox('options');
 
         if (filter_month == "" || filter_year == "" || filter_revision == "") {
             toastr.warning("Please select filter month, year and revision", "Information");
         }else{
             $.messager.prompt('Generate MPP', 'Please input Password Generate', function(r){
-                if (r == "GENERATEMPP"){
-                    Swal.fire({
-                        title: 'Please Wait for Generating Data',
-                        showConfirmButton: false,
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        },
-                    });
-
-                    $.ajax({
-                        type: "get",
-                        url: "<?= base_url('planning/generate_mpp/getdata') ?>",
-                        data: "filter_month=" + window.btoa(filter_month) +
-                            "&filter_year=" + window.btoa(filter_year) +
-                            "&filter_revision=" + window.btoa(filter_revision) +
-                            // "&filter_line_no=" + window.btoa(filter_line_no) +
-                            "&filter_product_no=" + window.btoa(filter_product_no),
-                        dataType: "json",
-                        success: function(rows) {
-                            Swal.close();
-                            console.log('Data : ', rows);
-                            if(rows.length > 0){
-                                requestData(rows.length, rows);
-                            }else{
-                                Swal.fire('Not Found!', 'Data MPS not found!', 'error');
-                            }
-
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
-
-                                    $.post('<?= base_url('planning/generate_mpp/create') ?>', {
-                                        data: json[number - 1]
-                                    }, function(note) {
-                                        var result = eval('(' + note + ')');
-                                        if (result.theme == "success") {
-                                            Swal.close();
-                                            $('#p_success').html(success);
-                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                        } else {
-                                            $('#p_failed').html(failed);
-                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-
-                                            //Json Failed
-                                            $.ajax({
-                                                type: "POST",
-                                                async: true,
-                                                url: "<?= base_url('planning/generate_mpp/uploadcreateFailed') ?>",
-                                                data: {
-                                                    data: json[number - 1],
-                                                    message: result.message
-                                                },
-                                                cache: false
-                                            });
-
-                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                        }
-
-                                        if (value == 100) {
-                                            Swal.fire('Good job!', 'Process Save Data Completed!', 'success');
-                                        }
-
-                                        $("#p_remarks").append(title + "<br>");
-                                    }).fail(function(jqXHR, textStatus) {
-                                        if (textStatus == "error") {
-                                            Swal.fire({
-                                                title: 'Connection Time Out, Check Your Connection',
-                                                showConfirmButton: false,
-                                                allowOutsideClick: false,
-                                                allowEscapeKey: false,
-                                                didOpen: () => {
-                                                    Swal.showLoading();
-                                                },
-                                            });
-
-                                            requestData(total, json, number, value, success + 0, failed + 0);
-                                        }
-                                    });
+                
+                if(check_mpp_rp.checked == true) {
+                    if (r == "GENERATEMPP"){
+                        Swal.fire({
+                            title: 'Please Wait for Generating Data',
+                            showConfirmButton: false,
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            },
+                        });
+    
+                        $.ajax({
+                            type: "get",
+                            url: "<?= base_url('planning/generate_mpp_compound/getdata') ?>",
+                            data: "filter_month=" + window.btoa(filter_month) +
+                                "&filter_year=" + window.btoa(filter_year) +
+                                "&filter_revision=" + window.btoa(filter_revision),
+                                // "&filter_line_no=" + window.btoa(filter_line_no) +
+                                // "&filter_product_no=" + window.btoa(filter_product_no),
+                            dataType: "json",
+                            success: function(rows) {
+                                Swal.close();
+                                console.log('Data : ', JSON.stringify(rows));
+                                if(rows.length > 0){
+                                    requestData(rows.length, rows);
+                                }else{
+                                    Swal.fire('Not Found!', 'Data MPS not found!', 'error');
+                                }
+    
+                                function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                                    if (value < 100) {
+                                        value = Math.floor((number / total) * 100);
+                                        $('#p_upload').progressbar('setValue', value);
+                                        $('#p_start').html(number);
+                                        $('#p_finish').html(total);
+    
+                                        $.post('<?= base_url('planning/generate_mpp_compound/create') ?>', {
+                                            data: json[number - 1]
+                                        }, function(note) {
+                                            var result = eval('(' + note + ')');
+                                            if (result.theme == "success") {
+                                                Swal.close();
+                                                $('#p_success').html(success);
+                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                            } else {
+                                                $('#p_failed').html(failed);
+                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+    
+                                                //Json Failed
+                                                $.ajax({
+                                                    type: "POST",
+                                                    async: true,
+                                                    url: "<?= base_url('planning/generate_mpp_compound/uploadcreateFailed') ?>",
+                                                    data: {
+                                                        data: json[number - 1],
+                                                        message: result.message
+                                                    },
+                                                    cache: false
+                                                });
+    
+                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                            }
+    
+                                            if (value == 100) {
+                                                Swal.fire('Good job!', 'Process Save Data Completed!', 'success');
+                                            }
+    
+                                            $("#p_remarks").append(title + "<br>");
+                                        }).fail(function(jqXHR, textStatus) {
+                                            if (textStatus == "error") {
+                                                Swal.fire({
+                                                    title: 'Connection Time Out, Check Your Connection',
+                                                    showConfirmButton: false,
+                                                    allowOutsideClick: false,
+                                                    allowEscapeKey: false,
+                                                    didOpen: () => {
+                                                        Swal.showLoading();
+                                                    },
+                                                });
+    
+                                                requestData(total, json, number, value, success + 0, failed + 0);
+                                            }
+                                        });
+                                    }
                                 }
                             }
-                        }
-                    });
-                }else{
-                    Swal.fire('Wrong!', 'Password do not match!', 'error');
+                        });
+                    }else{
+                        Swal.fire('Wrong!', 'Password do not match!', 'error');
+                    }
+                } else {
+                    toastr.warning("MPP Rubber Part Check Not Complete ", "Information");
                 }
+
             });
         }
     }
@@ -560,7 +561,7 @@
 
                     $.ajax({
                         type: "get",
-                        url: "<?= base_url('planning/generate_mpp/push_data') ?>",
+                        url: "<?= base_url('planning/generate_mpp_compound/push_data') ?>",
                         data: "filter_month=" + window.btoa(filter_month) +
                             "&filter_year=" + window.btoa(filter_year) +
                             "&filter_revision=" + window.btoa(filter_revision) +
@@ -585,7 +586,7 @@
                                         $('#p_start').html(number);
                                         $('#p_finish').html(total);
 
-                                        $.post('<?= base_url('planning/generate_mpp/push_data_create') ?>', {
+                                        $.post('<?= base_url('planning/generate_mpp_compound/push_data_create') ?>', {
                                             data: json[number - 1]
                                         }, function(note) {
                                             var result = eval('(' + note + ')');
@@ -602,7 +603,7 @@
                                                 $.ajax({
                                                     type: "POST",
                                                     async: true,
-                                                    url: "<?= base_url('planning/generate_mpp/uploadcreateFailed') ?>",
+                                                    url: "<?= base_url('planning/generate_mpp_compound/uploadcreateFailed') ?>",
                                                     data: {
                                                         data: json[number - 1],
                                                         message: result.message
@@ -657,7 +658,7 @@
 
         $.ajax({
             type: "get",
-            url: "<?= base_url('planning/generate_mpp/push_data_mpp_generate') ?>",
+            url: "<?= base_url('planning/generate_mpp_compound/push_data_mpp_generate') ?>",
             data: "filter_month=" + window.btoa(filter_month) +
                 "&filter_year=" + window.btoa(filter_year) +
                 "&filter_revision=" + window.btoa(filter_revision) +
@@ -680,7 +681,7 @@
                             $('#p_start_mpp_generate').html(number);
                             $('#p_finish_mpp_generate').html(total);
 
-                            $.post('<?= base_url('planning/generate_mpp/push_data_create_mpp_generate') ?>', {
+                            $.post('<?= base_url('planning/generate_mpp_compound/push_data_create_mpp_generate') ?>', {
                                 data: json[number - 1]
                             }, function(note) {
                                 var result = eval('(' + note + ')');
@@ -697,7 +698,7 @@
                                     $.ajax({
                                         type: "POST",
                                         async: true,
-                                        url: "<?= base_url('planning/generate_mpp/uploadcreateFailed') ?>",
+                                        url: "<?= base_url('planning/generate_mpp_compound/uploadcreateFailed') ?>",
                                         data: {
                                             data: json[number - 1],
                                             message: result.message
@@ -755,7 +756,7 @@
 
         $.ajax({
             type: "get",
-            url: "<?= base_url('planning/generate_mpp/push_data_plan_schedule') ?>",
+            url: "<?= base_url('planning/generate_mpp_compound/push_data_plan_schedule') ?>",
             data: "filter_month=" + window.btoa(filter_month) +
                 "&filter_year=" + window.btoa(filter_year) +
                 "&filter_revision=" + window.btoa(filter_revision) +
@@ -778,7 +779,7 @@
                             $('#p_start_plan').html(number);
                             $('#p_finish_plan').html(total);
 
-                            $.post('<?= base_url('planning/generate_mpp/push_data_create_plan_schedule') ?>', {
+                            $.post('<?= base_url('planning/generate_mpp_compound/push_data_create_plan_schedule') ?>', {
                                 data: json[number - 1]
                             }, function(note) {
                                 var result = eval('(' + note + ')');
@@ -795,7 +796,7 @@
                                     $.ajax({
                                         type: "POST",
                                         async: true,
-                                        url: "<?= base_url('planning/generate_mpp/uploadcreateFailed') ?>",
+                                        url: "<?= base_url('planning/generate_mpp_compound/uploadcreateFailed') ?>",
                                         data: {
                                             data: json[number - 1],
                                             message: result.message
@@ -852,7 +853,7 @@
 
         $.ajax({
             type: "get",
-            url: "<?= base_url('planning/generate_mpp/push_data_plan_schedule_detail') ?>",
+            url: "<?= base_url('planning/generate_mpp_compound/push_data_plan_schedule_detail') ?>",
             data: "filter_month=" + window.btoa(filter_month) +
                 "&filter_year=" + window.btoa(filter_year) +
                 "&filter_revision=" + window.btoa(filter_revision) +
@@ -875,7 +876,7 @@
                             $('#p_start_plan_detail').html(number);
                             $('#p_finish_plan_detail').html(total);
 
-                            $.post('<?= base_url('planning/generate_mpp/push_data_create_plan_schedule_detail') ?>', {
+                            $.post('<?= base_url('planning/generate_mpp_compound/push_data_create_plan_schedule_detail') ?>', {
                                 data: json[number - 1]
                             }, function(note) {
                                 var result = eval('(' + note + ')');
@@ -892,7 +893,7 @@
                                     $.ajax({
                                         type: "POST",
                                         async: true,
-                                        url: "<?= base_url('planning/generate_mpp/uploadcreateFailed') ?>",
+                                        url: "<?= base_url('planning/generate_mpp_compound/uploadcreateFailed') ?>",
                                         data: {
                                             data: json[number - 1],
                                             message: result.message
@@ -931,7 +932,7 @@
     }
 
     function downloadFailed() {
-        window.open('<?= base_url('planning/generate_mpp/uploadDownloadFailed') ?>', '_blank');
+        window.open('<?= base_url('planning/generate_mpp_compound/uploadDownloadFailed') ?>', '_blank');
     }
 
     function filter() {
@@ -951,7 +952,7 @@
             toastr.warning("Please select Period!", "Information");
         } else {
             window.location.assign(url);
-            // window.location.assign('<?= base_url('planning/generate_mpp/print') ?>' + url);
+            // window.location.assign('<?= base_url('planning/generate_mpp_compound/print') ?>' + url);
         }
     }
 
@@ -975,7 +976,7 @@
         if (filter_month == "" || filter_year == "" || filter_revision == "") {
             toastr.warning("Please select Period!", "Information");
         } else {
-            window.location.assign('<?= base_url('planning/generate_mpp/print/excel') ?>' + url);
+            window.location.assign('<?= base_url('planning/generate_mpp_compound/print/excel') ?>' + url);
         }
     }
 
@@ -1082,9 +1083,10 @@
 
     function savedata(){
         var mpsprod = $("#mpsprod").textbox('getValue');
+        var maxprodplan = $("#maxprodplan").textbox('getValue');
         var floating = $("#floating").textbox('getValue');
 
-        if(parseInt(mpsprod) < parseInt(floating)){
+        if(parseInt(maxprodplan) < parseInt(floating)){
             toastr.error("Plotting > Prodplan");
         }else{
             $('#frm_insert').form('submit', {
@@ -1101,16 +1103,41 @@
                         toastr.error(result.message, result.title);
                     }
 
-                    $('#dlg_insert').dialog('close');
-                    $('#dg').datagrid('reload');
+                    //$('#dlg_insert').dialog('close');
+                    // $('#dg').datagrid('reload');
                 }
             });
         }
+        
+        $('#dlg_insert').dialog('close');
+        // $('#dg').datagrid('reload');
     }
 
     function finishdata(){
         $('#dlg_insert').dialog('close');
         $('#dg').datagrid('reload');
+    }
+
+    function componentCheck(filter_month, filter_year, filter_revision) {
+        $.ajax({
+            type: "get",
+            url: "<?= base_url('planning/generate_mpp_compound/checkMppRp') ?>",
+            data: "filter_month=" + window.btoa(filter_month) +
+                "&filter_year=" + window.btoa(filter_year) +
+                "&filter_revision=" + window.btoa(filter_revision),
+            dataType: "json",
+            success: function(result) {
+                if (result.theme == "success") {
+                    $('#check_mpp_rp').checkbox({
+                        checked: true
+                    });
+                } else {
+                    $('#check_mpp_rp').checkbox({
+                        checked: false
+                    });
+                }
+            }
+        });
     }
 
     $(function() {
@@ -1121,7 +1148,7 @@
         var filter_revision = $("#filter_revision").textbox('getValue');
         // var filter_line_no = $("#filter_line_no").combobox('getValue');
         var filter_product_no = $("#filter_product_no").combogrid('getValue');
-
+        
         var url = "?filter_month=" + window.btoa(filter_month) +
             "&filter_year=" + window.btoa(filter_year) +
             "&filter_revision=" + window.btoa(filter_revision) +
@@ -1129,16 +1156,68 @@
             "&filter_product_no=" + window.btoa(filter_product_no);
 
         // if (filter_month != "" && filter_year != "" && (filter_line_no != "" || filter_product_no != "")) {
-
         if (filter_month != "" && filter_year != "" && filter_revision != "") {
+
+            componentCheck(filter_month, filter_year, filter_revision);
+
             $('#dg').datagrid({
-                url: '<?= base_url('planning/generate_mpp/datatables') ?>' + url,
+                url: '<?= base_url('planning/generate_mpp_compound/datatables') ?>' + url,
                 pagination: true,
                 rownumbers: true,
                 singleSelect: false,
                 fit: true,
                 pageList: [20, 50, 100, 500, 1000],
                 pageSize: 20,
+                // onLoadSuccess: function(data){
+
+                //     var dg = $(this);
+
+                //     for (var i=0; i<data.rows.length; i++){
+                //         var row = data.rows[i];
+
+                //         for (var field in row){
+                //             if (field.startsWith("date_") && row[field] == "W"){
+                //                 var logField = field.replace("date_", "log_");
+
+                //                 // gabungkan Tanggal + CT
+                //                 dg.datagrid('mergeCells',{
+                //                     index: i,
+                //                     field: field,
+                //                     colspan: 2
+                //                 });
+
+                //                 row[field] = "Weekend " + (i+1);
+                //                 row[logField] = "";
+                //             }
+                //         }
+                //     }
+                    
+                //     let rows = data.rows;
+                //     let totals = {};
+                //     let totalProdPlan = 0;
+                    
+                //     // Loop tiap row
+                //     rows.forEach(r => {
+                //         for (let key in r) {
+                //             // hanya proses kolom date_x dan log_x
+                //             if (key.startsWith("date_") || key.startsWith("log_")) {
+                //                 let val = parseFloat(r[key]) || 0;
+                //                 if (!totals[key]) totals[key] = 0;
+                //                 totals[key] += val;
+                //             }
+                //         }
+
+                //         totalProdPlan += parseFloat(r['mpsprod']) || 0;
+                //     });
+
+                //     // tambahkan label di kolom pertama
+                //     totals['compound_no'] = 'TOTAL';
+                //     totals['mpsprod'] = parseInt(totalProdPlan).toLocaleString('id-ID');
+
+                //     // reload footer
+                //     $('#dg').datagrid('reloadFooter', [totals]);
+                // }
+
                 onLoadSuccess: function(data){
 
                     console.log('DATA : ', data);
@@ -1185,7 +1264,7 @@
                     let totalProdPlan = 0;
 
                     rows.forEach(row => {
-                        totalProdPlan += Number(row.mpsprod) || 0;
+                        totalProdPlan += Number(row.maxprodplan) || 0;
                         for (let d = 1; d <= 31; d++) {
                             const df = 'date_'+d, lf = 'log_'+d;
                             totals[df] = (Number(totals[df]) || 0) + (Number(row[df]) || 0);
@@ -1197,231 +1276,14 @@
                     totals.cap_shift = '';
                     $('#dg').datagrid('reloadFooter', [totals]);
                 }
-
             });
 
             $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-            $("#printout").attr('src', '<?= base_url('planning/generate_mpp/print') ?>' + url);
+            $("#printout").attr('src', '<?= base_url('planning/generate_mpp_compound/print') ?>' + url);
         }
 
-        //         onLoadSuccess: function(data){
-
-        //             console.log('DATA : ', data);
-
-        //             if (!data.rows || data.rows.length === 0) return;
-
-        //             const dg = $(this);
-        //             const rows = data.rows;
-
-        //             let start = 0, span = 1;
-
-        //             const sameGroup = (i, j) => {
-        //                 return rows[i].item_fg_id === rows[j].item_fg_id &&
-        //                     rows[i].machine_no  === rows[j].machine_no;
-        //             };
-
-        //             for (let i = 1; i <= rows.length; i++) {
-        //                 if (i < rows.length && sameGroup(i, i-1)) {
-        //                     span++;
-        //                     continue;
-        //                 }
-        //                 if (span > 1) {
-        //                     dg.datagrid('mergeCells', {
-        //                         index: start,
-        //                         field: 'machine_no',
-        //                         rowspan: span
-        //                     });
-        //                 }
-        //                 start = i;
-        //                 span = 1;
-        //             }
-
-        //             for (let r = 0; r < rows.length; r++) {
-        //                 for (let d = 1; d <= 31; d++) {
-        //                     const df = 'date_'+d, lf = 'log_'+d;
-        //                     const v = rows[r][df];
-        //                     if (v === 'W') {
-        //                         dg.datagrid('mergeCells', { index: r, field: df, colspan: 2 });
-        //                     }
-        //                 }
-        //             }
-
-        //             const totals = { product_no: 'TOTAL' };
-        //             let totalProdPlan = 0;
-
-        //             rows.forEach(row => {
-        //                 totalProdPlan += Number(row.mpsprod) || 0;
-        //                 for (let d = 1; d <= 31; d++) {
-        //                     const df = 'date_'+d, lf = 'log_'+d;
-        //                     totals[df] = (Number(totals[df]) || 0) + (Number(row[df]) || 0);
-        //                     totals[lf] = (Number(totals[lf]) || 0) + (Number(row[lf]) || 0);
-        //                 }
-        //             });
-
-        //             totals.mpsprod = totalProdPlan.toLocaleString('en-US');
-        //             $('#dg').datagrid('reloadFooter', [totals]);
-        //         }
-
-        //     });
-
-        //     $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        //     $("#printout").attr('src', '<?= base_url('planning/generate_mpp/print') ?>' + url);
-        // }
-
-
-        // $('#dg').datagrid({
-        //     pagination: true,
-        //     rownumbers: true,
-        //     singleSelect: true,
-        //     onClickCell: function(index,field,value){
-        //         if(value == "F"){
-        //             $(this).datagrid('refreshRow', index);
-        //         }
-        //     },
-        //     onEndEdit:function(index,row){
-        //         Swal.fire({
-        //             title: 'Please Wait to Update Data',
-        //             showConfirmButton: false,
-        //             allowOutsideClick: false,
-        //             allowEscapeKey: false,
-        //             didOpen: () => {
-        //                 Swal.showLoading();
-        //             },
-        //         });
-
-        //         if($.isNumeric(row.date_1)){ var date_1 = row.date_1; }else{ var date_1 = 0; }
-        //         if($.isNumeric(row.date_2)){ var date_2 = row.date_2; }else{ var date_2 = 0; }
-        //         if($.isNumeric(row.date_3)){ var date_3 = row.date_3; }else{ var date_3 = 0; }
-        //         if($.isNumeric(row.date_4)){ var date_4 = row.date_4; }else{ var date_4 = 0; }
-        //         if($.isNumeric(row.date_5)){ var date_5 = row.date_5; }else{ var date_5 = 0; }
-        //         if($.isNumeric(row.date_6)){ var date_6 = row.date_6; }else{ var date_6 = 0; }
-        //         if($.isNumeric(row.date_7)){ var date_7 = row.date_7; }else{ var date_7 = 0; }
-        //         if($.isNumeric(row.date_8)){ var date_8 = row.date_8; }else{ var date_8 = 0; }
-        //         if($.isNumeric(row.date_9)){ var date_9 = row.date_9; }else{ var date_9 = 0; }
-        //         if($.isNumeric(row.date_10)){ var date_10 = row.date_10; }else{ var date_10 = 0; }
-        //         if($.isNumeric(row.date_11)){ var date_11 = row.date_11; }else{ var date_11 = 0; }
-        //         if($.isNumeric(row.date_12)){ var date_12 = row.date_12; }else{ var date_12 = 0; }
-        //         if($.isNumeric(row.date_13)){ var date_13 = row.date_13; }else{ var date_13 = 0; }
-        //         if($.isNumeric(row.date_14)){ var date_14 = row.date_14; }else{ var date_14 = 0; }
-        //         if($.isNumeric(row.date_15)){ var date_15 = row.date_15; }else{ var date_15 = 0; }
-        //         if($.isNumeric(row.date_16)){ var date_16 = row.date_16; }else{ var date_16 = 0; }
-        //         if($.isNumeric(row.date_17)){ var date_17 = row.date_17; }else{ var date_17 = 0; }
-        //         if($.isNumeric(row.date_18)){ var date_18 = row.date_18; }else{ var date_18 = 0; }
-        //         if($.isNumeric(row.date_19)){ var date_19 = row.date_19; }else{ var date_19 = 0; }
-        //         if($.isNumeric(row.date_20)){ var date_20 = row.date_20; }else{ var date_20 = 0; }
-        //         if($.isNumeric(row.date_21)){ var date_21 = row.date_21; }else{ var date_21 = 0; }
-        //         if($.isNumeric(row.date_22)){ var date_22 = row.date_22; }else{ var date_22 = 0; }
-        //         if($.isNumeric(row.date_23)){ var date_23 = row.date_23; }else{ var date_23 = 0; }
-        //         if($.isNumeric(row.date_24)){ var date_24 = row.date_24; }else{ var date_24 = 0; }
-        //         if($.isNumeric(row.date_25)){ var date_25 = row.date_25; }else{ var date_25 = 0; }
-        //         if($.isNumeric(row.date_26)){ var date_26 = row.date_26; }else{ var date_26 = 0; }
-        //         if($.isNumeric(row.date_27)){ var date_27 = row.date_27; }else{ var date_27 = 0; }
-        //         if($.isNumeric(row.date_28)){ var date_28 = row.date_28; }else{ var date_28 = 0; }
-        //         if($.isNumeric(row.date_29)){ var date_29 = row.date_29; }else{ var date_29 = 0; }
-        //         if($.isNumeric(row.date_30)){ var date_30 = row.date_30; }else{ var date_30 = 0; }
-        //         if($.isNumeric(row.date_31)){ var date_31 = row.date_31; }else{ var date_31 = 0; }
-
-
-        //         var total = (parseInt(date_1) + 
-        //             parseInt(date_2) + 
-        //             parseInt(date_3) + 
-        //             parseInt(date_4) +
-        //             parseInt(date_5) +
-        //             parseInt(date_6) +
-        //             parseInt(date_7) +
-        //             parseInt(date_8) +
-        //             parseInt(date_9) +
-        //             parseInt(date_10) +
-        //             parseInt(date_11) +
-        //             parseInt(date_12) +
-        //             parseInt(date_13) +
-        //             parseInt(date_14) +
-        //             parseInt(date_15) +
-        //             parseInt(date_16) +
-        //             parseInt(date_17) +
-        //             parseInt(date_18) +
-        //             parseInt(date_19) +
-        //             parseInt(date_20) +
-        //             parseInt(date_21) +
-        //             parseInt(date_22) +
-        //             parseInt(date_23) +
-        //             parseInt(date_24) +
-        //             parseInt(date_25) +
-        //             parseInt(date_26) +
-        //             parseInt(date_27) +
-        //             parseInt(date_28) +
-        //             parseInt(date_29) +
-        //             parseInt(date_30) +
-        //             parseInt(date_31));
-
-        //         if(row.date_1 != "F"){ var w_date_1 = "&date_1=" + row.date_1; }else{ var w_date_1 = ""; }
-        //         if(row.date_2 != "F"){ var w_date_2 = "&date_2=" + row.date_2; }else{ var w_date_2 = ""; }
-        //         if(row.date_3 != "F"){ var w_date_3 = "&date_3=" + row.date_3; }else{ var w_date_3 = ""; }
-        //         if(row.date_4 != "F"){ var w_date_4 = "&date_4=" + row.date_4; }else{ var w_date_4 = ""; }
-        //         if(row.date_5 != "F"){ var w_date_5 = "&date_5=" + row.date_5; }else{ var w_date_5 = ""; }
-        //         if(row.date_6 != "F"){ var w_date_6 = "&date_6=" + row.date_6; }else{ var w_date_6 = ""; }
-        //         if(row.date_7 != "F"){ var w_date_7 = "&date_7=" + row.date_7; }else{ var w_date_7 = ""; }
-        //         if(row.date_8 != "F"){ var w_date_8 = "&date_8=" + row.date_8; }else{ var w_date_8 = ""; }
-        //         if(row.date_9 != "F"){ var w_date_9 = "&date_9=" + row.date_9; }else{ var w_date_9 = ""; }
-        //         if(row.date_10 != "F"){ var w_date_10 = "&date_10=" + row.date_10; }else{ var w_date_10 = ""; }
-        //         if(row.date_11 != "F"){ var w_date_11 = "&date_11=" + row.date_11; }else{ var w_date_11 = ""; }
-        //         if(row.date_12 != "F"){ var w_date_12 = "&date_12=" + row.date_12; }else{ var w_date_12 = ""; }
-        //         if(row.date_13 != "F"){ var w_date_13 = "&date_13=" + row.date_13; }else{ var w_date_13 = ""; }
-        //         if(row.date_14 != "F"){ var w_date_14 = "&date_14=" + row.date_14; }else{ var w_date_14 = ""; }
-        //         if(row.date_15 != "F"){ var w_date_15 = "&date_15=" + row.date_15; }else{ var w_date_15 = ""; }
-        //         if(row.date_16 != "F"){ var w_date_16 = "&date_16=" + row.date_16; }else{ var w_date_16 = ""; }
-        //         if(row.date_17 != "F"){ var w_date_17 = "&date_17=" + row.date_17; }else{ var w_date_17 = ""; }
-        //         if(row.date_18 != "F"){ var w_date_18 = "&date_18=" + row.date_18; }else{ var w_date_18 = ""; }
-        //         if(row.date_19 != "F"){ var w_date_19 = "&date_19=" + row.date_19; }else{ var w_date_19 = ""; }
-        //         if(row.date_20 != "F"){ var w_date_20 = "&date_20=" + row.date_20; }else{ var w_date_20 = ""; }
-        //         if(row.date_21 != "F"){ var w_date_21 = "&date_21=" + row.date_21; }else{ var w_date_21 = ""; }
-        //         if(row.date_22 != "F"){ var w_date_22 = "&date_22=" + row.date_22; }else{ var w_date_22 = ""; }
-        //         if(row.date_23 != "F"){ var w_date_23 = "&date_23=" + row.date_23; }else{ var w_date_23 = ""; }
-        //         if(row.date_24 != "F"){ var w_date_24 = "&date_24=" + row.date_24; }else{ var w_date_24 = ""; }
-        //         if(row.date_25 != "F"){ var w_date_25 = "&date_25=" + row.date_25; }else{ var w_date_25 = ""; }
-        //         if(row.date_26 != "F"){ var w_date_26 = "&date_26=" + row.date_26; }else{ var w_date_26 = ""; }
-        //         if(row.date_27 != "F"){ var w_date_27 = "&date_27=" + row.date_27; }else{ var w_date_27 = ""; }
-        //         if(row.date_28 != "F"){ var w_date_28 = "&date_28=" + row.date_28; }else{ var w_date_28 = ""; }
-        //         if(row.date_29 != "F"){ var w_date_29 = "&date_29=" + row.date_29; }else{ var w_date_29 = ""; }
-        //         if(row.date_30 != "F"){ var w_date_30 = "&date_30=" + row.date_30; }else{ var w_date_30 = ""; }
-        //         if(row.date_31 != "F"){ var w_date_31 = "&date_31=" + row.date_31; }else{ var w_date_31 = ""; }
-
-        //         if(row.mpsprod >= total){
-        //             $.ajax({
-        //                 type: "post",
-        //                 url: "<?= base_url('planning/generate_mpp/update?id=') ?>" + window.btoa(row.id),
-        //                 data: "deleted_is=0" + w_date_1 + w_date_2 + w_date_3 + w_date_4 + w_date_5 + 
-        //                 w_date_6 + w_date_7 + w_date_8 + w_date_9 + w_date_10 + w_date_11 + w_date_12 + w_date_13 + w_date_14 +
-        //                 w_date_15 + w_date_16 + w_date_17 + w_date_18 + w_date_19 + w_date_20 + w_date_21 + w_date_22 + w_date_23 +
-        //                 w_date_24 + w_date_25 + w_date_26 + w_date_27 + w_date_28 + w_date_29 + w_date_30 + w_date_31,
-        //                 dataType: "json",
-        //                 success: function(response) {
-        //                     toastr.success(response.message, response.title);
-        //                     Swal.close();
-        //                     $('#dg').datagrid('reload');
-        //                 }
-        //             });
-        //         }else{
-        //             toastr.error("Total qty should not be bigger than prodplan | "+row.prod_plan+" == "+total, "Failed");
-        //             Swal.close();
-        //             $('#dg').datagrid('reload');
-        //         }
-        //     },
-        //     onBeforeEdit:function(index,row){
-        //         row.editing = false;
-        //         $(this).datagrid('refreshRow', index);
-        //     },
-        //     onAfterEdit:function(index,row){
-        //         row.editing = false;
-        //         $(this).datagrid('refreshRow', index);
-        //     },
-        // }).datagrid('enableCellEditing').datagrid('gotoCell', {
-        //     index: 0,
-        //     field: 'product_no'
-        // });
-
         $('#filter_month').combobox({
-            url: '<?php echo base_url('planning/mst_data/readMonths'); ?>',
+            url: '<?php echo base_url('planning/generate_mpp_compound/readMonths'); ?>',
             valueField: 'id',
             textField: 'name',
             prompt: 'Select Month',
@@ -1436,18 +1298,27 @@
 
                 $.ajax({
                     type: "get",
-                    url: '<?php echo base_url('planning/generate_mpp/readRevisions/'); ?>' + row.id + '/' + filter_year,
+                    url: '<?php echo base_url('planning/generate_mpp_compound/readRevisions/'); ?>' + row.id + '/' + filter_year,
                     dataType: "json",
                     success: function(rev) {
                         let revision = rev.revision ?? 0;
                         $('#filter_revision').textbox('setValue', revision);
                     }
                 });
+            },
+            onChange: function(row) {
+                var month = $("#filter_month").combobox('getValue');
+                var year = $("#filter_year").combobox('getValue');
+                var revision = $("#filter_revision").textbox('getValue');
+
+                if (year != "" || month != "" || revision != "") {
+                    componentCheck(month, year, revision);
+                }
             }
         });
 
         $('#filter_year').combobox({
-            url: '<?php echo base_url('planning/mst_data/readYears'); ?>',
+            url: '<?php echo base_url('planning/generate_mpp_compound/readYears'); ?>',
             valueField: 'id',
             textField: 'name',
             prompt: 'Select Year',
@@ -1462,13 +1333,22 @@
 
                 $.ajax({
                     type: "get",
-                    url: '<?php echo base_url('planning/generate_mpp/readRevisions/'); ?>' + filter_month + '/' + row.id,
+                    url: '<?php echo base_url('planning/generate_mpp_compound/readRevisions/'); ?>' + filter_month + '/' + row.id,
                     dataType: "json",
                     success: function(rev) {
                         let revision = rev.revision ?? 0;
                         $('#filter_revision').textbox('setValue', revision);
                     }
                 });
+            },
+            onChange: function(row) {
+                var month = $("#filter_month").combobox('getValue');
+                var year = $("#filter_year").combobox('getValue');
+                var revision = $("#filter_revision").textbox('getValue');
+
+                if (year != "" || month != "" || revision != "") {
+                    componentCheck(month, year, revision);
+                }
             }
         });
 
@@ -1489,8 +1369,7 @@
         // });
 
         $('#filter_product_no').combogrid({
-            // url: '<?= base_url('planning/mst_data/readProducts') ?>',
-            url: '<?= base_url('master/item_fg/reads') ?>',
+            url: '<?= base_url('master/item_fg/readCompounds') ?>',
             panelWidth: 400,
             idField: 'number',
             textField: 'number',
@@ -1563,9 +1442,9 @@
     }
 
     function floating(value, row, index) {
-        if (row.mpsprod < value) {
+        if (row.maxprodplan < value) {
             return 'background: #FFA5A5; color:white;';
-        }else if(row.mpsprod > value){
+        }else if(row.maxprodplan > value){
             return 'background: #FF9F00; color:white;';
         }else if(row.machine_no === "TOTAL") {
             return '';
@@ -1576,7 +1455,7 @@
 
     function numberFormat(value, row) {
         const formatter = new Intl.NumberFormat('id-ID', {
-            minimumFractionDigits: 0
+            minimumFractionDigits: 0,
         });
         return formatter.format(value);
     }

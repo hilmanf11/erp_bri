@@ -545,6 +545,84 @@
             // },
         });
 
+        // //Save Data
+        // $('#dlg_insert').dialog({
+        //     buttons: [{
+        //         text: 'Save All',
+        //         iconCls: 'icon-ok',
+        //         handler: function() {
+        //             var request_no = $("#request_no").textbox('getValue');
+        //             var request_date = $("#request_date").datebox('getValue');
+        //             var request_name = $("#request_name").textbox('getValue');
+        //             var transaction_type = $("#transaction_type").textbox('getValue');
+        //             var transaction_kind = $("#transaction_kind").textbox('getValue');
+        //             var transaction_id = $("#transaction_id").combobox('getValue');
+        //             var remarks = $("#remarks").textbox('getValue');
+        //             // var item_fg_id = $("#item_fg_id").textbox('getValue');
+        //             // var item_fg_number = $("#item_fg_number").textbox('getValue');
+        //             // var workorder = $("#workorder").textbox('getValue');
+        //             // var period = $("#period").combobox('getValue');
+        //             // var wp = $("#wp").combogrid('getValue');
+
+        //             // if (period == "" || item_fg_id == "" || totalrows <= 0) {
+        //             if (totalrows <= 0) {
+        //                 toastr.error("please complete your input data");
+        //             } else {
+
+        //                 $("#dg2").datagrid('acceptChanges');
+        //                 var rows = $('#dg2').datagrid('getRows');
+        //                 var totalrows = rows.length;
+        //                 endEditing();
+
+        //                 for (let i = 0; i < totalrows; i++) {
+        //                     if (rows[i].item_rm_id) {
+        //                         $.ajax({
+        //                             type: "post",
+        //                             url: '<?= base_url('warehouse/transaction_rm/create') ?>',
+        //                             data: {
+        //                                 // item_fg_id: item_fg_id,
+        //                                 // item_fg_number: item_fg_number,
+        //                                 request_date: request_date,
+        //                                 request_no: request_no,
+        //                                 request_name: request_name,
+        //                                 transaction_type: transaction_type,
+        //                                 transaction_id: transaction_id,
+        //                                 transaction_kind: transaction_kind,
+        //                                 remarks: remarks,
+        //                                 // period: period,
+        //                                 // wp: wp,
+        //                                 // workorder: workorder,
+        //                                 item_rm_id: rows[i].item_rm_id,
+        //                                 qty: rows[i].qty
+        //                             },
+        //                             dataType: "json",
+        //                             success: function(result) {
+        //                                 if (result.theme == "error") {
+        //                                     toastr.warning(result.message, "Error");
+        //                                 }
+        //                             }
+        //                         });
+        //                     }
+        //                 }
+
+        //                 Swal.fire({
+        //                     title: "Data Saved Successfully",
+        //                     icon: "success",
+        //                     confirmButtonText: 'Ok',
+        //                     allowOutsideClick: false,
+        //                 }).then((result) => {
+        //                     if (result.isConfirmed) {
+        //                         window.location.reload();
+        //                     }
+        //                 });
+        //                 $('#dg').treegrid('reload');
+        //                 $('#dlg_insert').dialog('close');
+        //             }
+        //         }
+        //     }]
+        // });
+
+
         //Save Data
         $('#dlg_insert').dialog({
             buttons: [{
@@ -558,13 +636,7 @@
                     var transaction_kind = $("#transaction_kind").textbox('getValue');
                     var transaction_id = $("#transaction_id").combobox('getValue');
                     var remarks = $("#remarks").textbox('getValue');
-                    // var item_fg_id = $("#item_fg_id").textbox('getValue');
-                    // var item_fg_number = $("#item_fg_number").textbox('getValue');
-                    // var workorder = $("#workorder").textbox('getValue');
-                    // var period = $("#period").combobox('getValue');
-                    // var wp = $("#wp").combogrid('getValue');
-
-                    // if (period == "" || item_fg_id == "" || totalrows <= 0) {
+                    
                     if (totalrows <= 0) {
                         toastr.error("please complete your input data");
                     } else {
@@ -574,53 +646,80 @@
                         var totalrows = rows.length;
                         endEditing();
 
+                        let items = [];
+
                         for (let i = 0; i < totalrows; i++) {
-                            if (rows[i].item_rm_id) {
-                                $.ajax({
-                                    type: "post",
-                                    url: '<?= base_url('warehouse/transaction_rm/create') ?>',
-                                    data: {
-                                        // item_fg_id: item_fg_id,
-                                        // item_fg_number: item_fg_number,
-                                        request_date: request_date,
-                                        request_no: request_no,
-                                        request_name: request_name,
-                                        transaction_type: transaction_type,
-                                        transaction_id: transaction_id,
-                                        transaction_kind: transaction_kind,
-                                        remarks: remarks,
-                                        // period: period,
-                                        // wp: wp,
-                                        // workorder: workorder,
-                                        item_rm_id: rows[i].item_rm_id,
-                                        qty: rows[i].qty
-                                    },
-                                    dataType: "json",
-                                    success: function(result) {
-                                        if (result.theme == "error") {
-                                            toastr.warning(result.message, "Error");
-                                        }
-                                    }
+                            let row = rows[i];
+
+                            if (row.item_rm_id) {
+                                items.push({
+                                    request_date: request_date,
+                                    request_no: request_no,
+                                    request_name: request_name,
+                                    transaction_type: transaction_type,
+                                    transaction_id: transaction_id,
+                                    transaction_kind: transaction_kind,
+                                    remarks: remarks,
+                                    item_rm_id: row.item_rm_id,
+                                    qty: row.qty
                                 });
                             }
                         }
 
-                        Swal.fire({
-                            title: "Data Saved Successfully",
-                            icon: "success",
-                            confirmButtonText: 'Ok',
-                            allowOutsideClick: false,
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                window.location.reload();
+                        console.log(JSON.stringify(items));
+                        
+
+                        $.ajax({
+                            type: "post",
+                            url: '<?= base_url('warehouse/transaction_rm/create') ?>',
+                            data: { items: items },
+                            dataType: "json",
+                            success: function(res) {
+                                toastr.clear();
+                                if (res.theme === 'success') {
+                                    Swal.fire({
+                                        title: res.message,
+                                        icon: res.theme,
+                                        confirmButtonText: 'Ok',
+                                        allowOutsideClick: false,
+                                    }).then((result) => {
+                                        if (result.isConfirmed) {
+                                            window.location.reload();
+                                        }
+                                    });
+
+                                    $('#dg').datagrid('reload');
+                                    $('#dlg_insert').dialog('close');
+                                } else {
+                                    toastr.clear();
+                                    toastr.error(res.message, res.title || 'error');
+                                }
+                            }, error: function (xhr) {
+                                toastr.clear();
+                                toastr.error('Server error occurred');
+
+                                $('#dg').datagrid('reload');
+                                $('#dlg_insert').dialog('close');
                             }
                         });
-                        $('#dg').treegrid('reload');
-                        $('#dlg_insert').dialog('close');
+
+                        // Swal.fire({
+                        //     title: "Data Saved Successfully",
+                        //     icon: "success",
+                        //     confirmButtonText: 'Ok',
+                        //     allowOutsideClick: false,
+                        // }).then((result) => {
+                        //     if (result.isConfirmed) {
+                        //         window.location.reload();
+                        //     }
+                        // });
+                        // $('#dg').treegrid('reload');
+                        // $('#dlg_insert').dialog('close');
                     }
                 }
             }]
         });
+
 
         // $('#item_fg_id').combogrid({
         //     url: '<?= base_url('master/item_fg/reads/001') ?>',
