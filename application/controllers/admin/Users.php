@@ -41,7 +41,8 @@ class Users extends CI_Controller
     //GET DATA
     public function reads()
     {
-        $users = $this->crud->reads('users');
+        $q = $this->input->post('q');
+        $users = $this->crud->reads('users', ['name' => $q]);
         echo json_encode($users);
     }
 
@@ -104,10 +105,62 @@ class Users extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post = $this->input->post();
-                $avatar = $this->crud->upload('avatar', ["jpg", "png", "jpeg"], 'assets/image/users/', ["username" => $post['username']], "users", "avatar");
-                $postFinal = array_merge($post, ["api_key" => $this->generate_api(), "avatar" => $avatar]);
+
+                $dataFinal = array(
+                    "number" => $post['number'],
+                    "name" => $post['name'],
+                    "username" => $post['username'],
+                    "password" => $post['password'],
+                    "position" => $post['position'],
+                    "email" => $post['email'],
+                    "phone" => $post['phone'],
+                    "actived" => $post['actived'],
+                );
+
+                $avatar = $this->crud->upload(
+                    'avatar', 
+                    ["jpg", "png", "jpeg"], 
+                    'assets/image/users/', 
+                    ["username" => $post['username']], 
+                    "users", 
+                    "avatar"
+                );
+
+                $postFinal = array_merge($dataFinal, ["api_key" => $this->generate_api(), "avatar" => $avatar]);
+                // $postFinal = array_merge($post, ["api_key" => $this->generate_api(), "avatar" => $avatar]);
+
                 $users = $this->crud->create('users', $postFinal);
+
                 //$email = $this->emails->emailRegistration($post['email'], $post['name'], $post['username'], $post['password']);
+
+                if ($post['filter_users'] == '') {
+                    // 
+                } else {
+                    $query_akses = $this->db->query("
+                        select *
+                        from setting_users 
+                        where users_id='" . $post['filter_users'] . "' 
+                    ")->result_array();
+                    // die($this->db->last_query());
+                    foreach ($query_akses as $dt_akses) {
+                        $postAkses = array(
+                            "users_id" => $post['username'],
+                            "menus_id" => $dt_akses['menus_id'],
+                            "v_view" => $dt_akses['v_view'],
+                            "v_add" => $dt_akses['v_add'],
+                            "v_edit" => $dt_akses['v_edit'],
+                            "v_delete" => $dt_akses['v_delete'],
+                            "v_upload" => $dt_akses['v_upload'],
+                            "v_download" => $dt_akses['v_download'],
+                            "v_print" => $dt_akses['v_print'],
+                            "v_excel" => $dt_akses['v_excel'],
+                            // "v_sidebar" => $dt_akses['v_sidebar'],
+                            "status" => $dt_akses['status']
+                        );
+                        $usersAkses = $this->crud->create('setting_users', $postAkses);
+                    }
+                }
+
                 echo $users;
             } else {
                 show_error(validation_errors());

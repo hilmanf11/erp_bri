@@ -62,6 +62,16 @@
                     <option value="1">Not Active</option>
                 </select>
             </div>
+
+            <div id="other-user" class="alert alert-success" role="alert">
+                <b>Copy setting access from other user</b><br>
+                <i>Note : this fitur just for a New user, if want to custom please visit menu <b>Setting Users</b></i>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Other Users</span>
+                <input style="width:60%;" name="filter_users" id="filter_users" class="easyui-combogrid">
+            </div>
+
         </fieldset>
     </form>
 </div>
@@ -74,6 +84,7 @@
         $('#number').textbox('enable');
         $('#username').textbox('enable');
         $('#password').textbox('enable');
+        $('#filter_users').combogrid('enable');
         url_save = '<?= base_url('admin/users/create') ?>';
         $('#frm_insert').form('clear');
     }
@@ -86,6 +97,7 @@
             $('#number').textbox('disable');
             $('#username').textbox('disable');
             $('#password').textbox('disable');
+            $('#filter_users').combogrid('disable');
             url_save = '<?= base_url('admin/users/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.info("Please select one of the data in the table first");
@@ -173,6 +185,34 @@
             }]
         });
     });
+
+    $('#filter_users').combogrid({
+        url: '<?= base_url('admin/users/reads') ?>',
+        panelWidth: 420,
+        idField: 'username',
+        textField: 'name',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Users",
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
+        columns: [
+            [{
+                field: 'username',
+                title: 'Username',
+                width: 100
+            }, {
+                field: 'name',
+                title: 'Name',
+                width: 250
+            }, ]
+        ]
+    });
+
     //CELLSTYLE STATUS
     function cellStyler(value, row, index) {
         if (value == 0) {

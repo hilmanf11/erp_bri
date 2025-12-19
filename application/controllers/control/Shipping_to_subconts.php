@@ -58,12 +58,14 @@ class Shipping_to_subconts extends CI_Controller
                             scan_id,
                             item_fg_id,
                             SUM(qty) AS shipping,
-                            MIN(workorder) as workorder
+                            MIN(workorder) as workorder,
+                            MAX(created_date) AS last_created_date
                         FROM shipping_to_subconts
                         WHERE type_status = 'scanning' AND status = 0
                         GROUP BY scan_id, item_fg_id, workorder
                         ) a");
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->order_by('a.last_created_date', 'DESC');
 
         $records = $this->db->get()->result_array();
 
