@@ -228,6 +228,23 @@ class Incoming_from_sc_tf extends CI_Controller
             }
         }
 
+        $isTF = strpos($source_id, 'TF') === 0;
+        $isS  = strpos($source_id, 'S') === 0;
+
+        $incomingFilter = "";
+
+        if ($isTF) {
+            $incomingFilter = "AND istf.delivery_note_no = '$delivery_note_no'";
+        }
+
+        if ($isS) {
+            $incomingFilter = "
+                AND istf.delivery_from = '$source_id'
+                AND istf.incoming_date BETWEEN '$dateFrom' AND '$dateTo'
+            ";
+        }
+
+
         $query = "
             SELECT
                 a.item_fg_id,
@@ -249,7 +266,7 @@ class Incoming_from_sc_tf extends CI_Controller
                     SUM(istf.qty_receive) AS qty_receive_total
                 FROM incoming_from_sc_tf istf
                 WHERE istf.deleted = 0
-                " . ($filterDeliveryNote ? "AND istf.delivery_note_no = '$delivery_note_no'" : "") . "
+                $incomingFilter
                 GROUP BY istf.item_fg_id, istf.workorder
             ) d ON d.item_fg_id = a.item_fg_id AND d.workorder = a.workorder
 

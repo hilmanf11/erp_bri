@@ -288,9 +288,16 @@
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
+                                toastr.success(result.message);
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error(jqXHR.statusText);
+                                // toastr.error(jqXHR.statusText);
+
+                                if (jqXHR.responseText && jqXHR.responseText.includes("Error Number: 1451")) {
+                                    toastr.error("Cannot delete data because it is still used in delivery orders");
+                                } else {
+                                    toastr.error("Delete failed: " + jqXHR.statusText);
+                                }
                             },
                             complete: function(data) {
                                 $('#dg2').datagrid('reload');

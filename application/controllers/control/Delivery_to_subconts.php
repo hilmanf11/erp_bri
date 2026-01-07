@@ -397,10 +397,10 @@ class Delivery_to_subconts extends CI_Controller
         }
 
         $sql = $this->db->query("
-            SELECT MAX(SUBSTRING_INDEX(delivery_note_no, '/', 1)) AS kode
+            SELECT MAX(CAST(SUBSTRING_INDEX(delivery_note_no, '/', 1) AS UNSIGNED)) AS kode
             FROM delivery_to_subconts
-            WHERE delivery_note_no LIKE '%/{$destination_code}/BRI/{$month}/{$year}'
-            AND delivery_date BETWEEN '{$period_start}' AND '{$period_end}'
+            WHERE delivery_date BETWEEN '{$period_start}' AND '{$period_end}'
+            AND delivery_note_no LIKE '%/{$destination_code}/BRI/%'
         ");
         $row = $sql->row();
 
@@ -469,6 +469,61 @@ class Delivery_to_subconts extends CI_Controller
     }
 
     //GET DATATABLES
+    // public function datatables()
+    // {
+    //     if ($this->input->post()) {
+    //         $get = $this->input->get();
+    //         $filter_from = @base64_decode($get['filter_from']);
+    //         $filter_to = @base64_decode($get['filter_to']);
+    //         $filter_delivery_to = @base64_decode($get['filter_delivery_to']);
+    //         $filter_item_fg = @base64_decode($get['filter_item_fg']);
+    //         $filter_delivery_note_no = @base64_decode($get['filter_delivery_note_no']);
+
+    //         $page = $this->input->post('page');
+    //         $rows = $this->input->post('rows');
+    //         //Pagination 1-10
+    //         $page   = isset($page) ? intval($page) : 1;
+    //         $rows   = isset($rows) ? intval($rows) : 10;
+    //         $offset = ($page - 1) * $rows;
+    //         $result = array();
+
+    //         //Select Query
+    //         $this->db->select("
+    //             a.*, 
+    //             COALESCE(c.name, d.name) as destination_name,
+    //             SUM(a.qty_delivery) as total_qty_delivery,
+    //             '0' as status_header
+    //         ");
+    //         $this->db->from('delivery_to_subconts a');
+    //         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+    //         $this->db->join('subconts c', 'a.destination = c.id', 'left');
+    //         $this->db->join('teaching_factory d', 'a.destination = d.id', 'left');
+    //         if ($filter_from != "" && $filter_to != "") {
+    //             $this->db->where('a.delivery_date >=', $filter_from);
+    //             $this->db->where('a.delivery_date <=', $filter_to);
+    //         }
+    //         if ($filter_delivery_to != "") {
+    //             $this->db->where('a.delivery_to', $filter_delivery_to);
+    //         }
+    //         if ($filter_item_fg != "") {
+    //             $this->db->where('a.item_fg_id', $filter_item_fg);
+    //         }
+    //         $this->db->like('a.delivery_note_no', $filter_delivery_note_no);
+    //         $this->db->group_by('a.delivery_note_no');
+    //         $this->db->order_by('a.delivery_note_no', 'ASC');
+    //         //Total Data
+    //         $totalRows = $this->db->count_all_results('', false);
+    //         //Limit 1 - 10
+    //         $this->db->limit($rows, $offset);
+    //         //Get Data Array
+    //         $records = $this->db->get()->result_array();
+    //         //Mapping Data
+    //         $result['total'] = $totalRows;
+    //         $result = array_merge($result, ['rows' => $records]);
+    //         echo json_encode($result);
+    //     }
+    // }
+
     public function datatables()
     {
         if ($this->input->post()) {
@@ -487,16 +542,59 @@ class Delivery_to_subconts extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
 
-            //Select Query
             $this->db->select("
                 a.*, 
                 COALESCE(c.name, d.name) as destination_name,
-                SUM(a.qty_delivery) as total_qty_delivery    
-            ");
+                SUM(a.qty_delivery) as total_qty_delivery,
+
+                CASE
+                    WHEN s.cnt_over > 0 THEN '3'
+                    WHEN s.cnt_ongoing > 0 THEN '2'
+                    WHEN s.cnt_closed = s.total_row THEN '1'
+                    ELSE '0'
+                END AS status_header
+            ", false);
+
             $this->db->from('delivery_to_subconts a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('subconts c', 'a.destination = c.id', 'left');
             $this->db->join('teaching_factory d', 'a.destination = d.id', 'left');
+
+            $this->db->join("(
+                SELECT
+                    d.delivery_note_no,
+                    SUM(CASE WHEN COALESCE(i.qty_incoming,0) > d.qty_delivery THEN 1 ELSE 0 END) AS cnt_over,
+                    SUM(CASE WHEN COALESCE(i.qty_incoming,0) > 0 
+                            AND COALESCE(i.qty_incoming,0) < d.qty_delivery THEN 1 ELSE 0 END) AS cnt_ongoing,
+                    SUM(CASE WHEN COALESCE(i.qty_incoming,0) = d.qty_delivery THEN 1 ELSE 0 END) AS cnt_closed,
+                    SUM(CASE WHEN COALESCE(i.qty_incoming,0) = 0 THEN 1 ELSE 0 END) AS cnt_open,
+                    COUNT(*) AS total_row
+                FROM (
+                    SELECT
+                        delivery_note_no,
+                        item_fg_id,
+                        workorder,
+                        SUM(qty_delivery) AS qty_delivery
+                    FROM delivery_to_subconts
+                    GROUP BY delivery_note_no, item_fg_id, workorder
+                ) d
+                LEFT JOIN (
+                    SELECT
+                        delivery_note_no,
+                        item_fg_id,
+                        workorder,
+                        SUM(qty) AS qty_incoming
+                    FROM scan_incoming_sctf
+                    WHERE incoming_type != 'BPM'
+                    AND type_status = 'completed'
+                    GROUP BY delivery_note_no, item_fg_id, workorder
+                ) i ON i.delivery_note_no = d.delivery_note_no
+                AND i.item_fg_id = d.item_fg_id
+                AND i.workorder = d.workorder
+                GROUP BY d.delivery_note_no
+            ) s", "s.delivery_note_no = a.delivery_note_no", "left");
+
+
             if ($filter_from != "" && $filter_to != "") {
                 $this->db->where('a.delivery_date >=', $filter_from);
                 $this->db->where('a.delivery_date <=', $filter_to);
@@ -523,68 +621,70 @@ class Delivery_to_subconts extends CI_Controller
         }
     }
 
-    //GET DATATABLES DETAILS
-    // public function datatableDetails()
-    // {
-    //     if ($this->input->get()) {
-    //         $delivery_note_no = base64_decode($this->input->get('delivery_note_no'));
-    //         // $product_family = base64_decode($this->input->get('product_family'));
-
-    //         $subquery = "(SELECT workorder, item_fg_id, MAX(trans_date) AS prod_date
-    //                   FROM output_production_press
-    //                   GROUP BY workorder, item_fg_id) c";
-
-    //         $this->db->select("a.*, b.number as item_fg_number, b.name as item_fg_name, c.trans_date as prod_date, b.uom");
-    //         $this->db->from('delivery_to_subconts a');
-    //         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-    //         $this->db->join($subquery, 'a.workorder = c.workorder AND a.item_fg_id = c.item_fg_id', 'left');
-
-    //         // $this->db->where('a.delivery_note_no', $delivery_note_no);
-    //         // if ($product_family != "") {
-    //         //     $this->db->where('b.item_family_number', $product_family);
-    //         // }
-    //         $this->db->order_by('a.workorder');
-    //         $records = $this->db->get()->result_array();
-
-    //         echo json_encode($records);
-    //     }
-    // }
-
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $delivery_note_no = base64_decode($this->input->get('delivery_note_no'));
-            // $product_family = base64_decode($this->input->get('product_family'));
 
-            // $this->db->select("a.*, b.number AS item_fg_number, b.name AS item_fg_name, b.uom");
+            $delivery_note_no = base64_decode($this->input->get('delivery_note_no'));
 
             $this->db->select("
-                a.item_fg_id,
-                a.workorder,
-                a.prod_date,
-                SUM(a.qty_delivery) AS qty_delivery,
-                a.remarks,
-                b.number AS item_fg_number,
-                b.name AS item_fg_name,
-                b.uom
-            ");
+                d.item_fg_id,
+                d.workorder,
+                d.prod_date,
+                d.qty_delivery,
+                COALESCE(i.qty_incoming, 0) AS qty_incoming,
+                d.remarks,
+                f.number AS item_fg_number,
+                f.name AS item_fg_name,
+                f.uom,
 
-            $this->db->from('delivery_to_subconts a');
-            $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-            $this->db->where('a.delivery_note_no', $delivery_note_no);
-            // if ($product_family != "") {
-            //     $this->db->where('b.item_family_number', $product_family);
-            // }
+                CASE
+                    WHEN COALESCE(i.qty_incoming, 0) = 0 THEN '0'
+                    WHEN COALESCE(i.qty_incoming, 0) > 0 
+                        AND COALESCE(i.qty_incoming, 0) < d.qty_delivery THEN '2'
+                    WHEN COALESCE(i.qty_incoming, 0) = d.qty_delivery THEN '1'
+                    WHEN COALESCE(i.qty_incoming, 0) > d.qty_delivery THEN '3'
+                END AS status_incoming
+            ", false);
 
-            $this->db->group_by([
-                'a.item_fg_id',
-                'a.workorder',
-            ]);
+            $this->db->from("(
+                SELECT
+                    delivery_note_no,
+                    item_fg_id,
+                    workorder,
+                    MAX(prod_date) AS prod_date,
+                    SUM(qty_delivery) AS qty_delivery,
+                    MAX(remarks) AS remarks
+                FROM delivery_to_subconts
+                WHERE delivery_note_no = ".$this->db->escape($delivery_note_no)."
+                AND deleted = 0
+                AND qty_delivery > 0
+                GROUP BY delivery_note_no, item_fg_id, workorder
+            ) d");
 
-            $this->db->order_by('a.workorder');
-            $records = $this->db->get()->result_array();
+            $this->db->join('item_fg f', 'd.item_fg_id = f.id');
 
-            echo json_encode($records);
+            $this->db->join(
+                "(
+                    SELECT
+                        delivery_note_no,
+                        item_fg_id,
+                        workorder,
+                        SUM(qty) AS qty_incoming
+                    FROM scan_incoming_sctf
+                    WHERE incoming_type != 'BPM'
+                    AND type_status = 'completed'
+                    GROUP BY delivery_note_no, item_fg_id, workorder
+                ) i",
+                "i.delivery_note_no = d.delivery_note_no
+                AND i.item_fg_id = d.item_fg_id
+                AND i.workorder = d.workorder",
+                'left'
+            );
+
+            $this->db->order_by('d.workorder');
+
+            echo json_encode($this->db->get()->result_array());
         }
     }
 
@@ -658,6 +758,68 @@ class Delivery_to_subconts extends CI_Controller
     }
 
     //DELETE DATA
+    public function deletev1()
+    {
+        $data = $this->input->post();
+
+        if (empty($data['delivery_note_no'])) {
+            echo json_encode(
+                array(
+                "title" => "Invalid request", 
+                "message" => "Invalid request, ID Not Found",
+                "theme" => "error"
+            ));
+            return;
+        }
+
+
+        $delivery_to_subcont = $this->crud->read('delivery_to_subconts', [], [
+            'delivery_note_no' => $data['delivery_note_no']
+        ]);
+
+        if (empty($delivery_to_subcont)) {
+            echo json_encode(
+                array(
+                "title" => "Data Not Found", 
+                "message" => "Delivery to Subcont data not found", 
+                "theme" => "error"
+            ));
+            return;
+        }
+
+        $used = $this->db
+            ->where('item_fg_id', $data->item_fg_id)
+            ->where('workorder', $data->workorder)
+            ->where('deleted', 0)
+            ->limit(1)
+            ->get('incoming_from_sc_tf')
+            ->num_rows();
+
+        if ($used > 0) {
+            echo json_encode(
+                array(
+                "title" => "Cannot Delete Data", 
+                "message" => "Cannot delete data that is still in use",
+                "theme" => "error"
+            ));
+            return;
+        }
+
+
+        // $this->crud->idupdate('output_production_press_detail', [
+        //     "workorder_label" => $data['workorder_label'], 
+        //     "status" => 1,
+        // ], ["status" => 0]);
+
+        // $this->crud->delete('shipping_to_subconts', [
+        //     "workorder_label" => $data['workorder_label'], 
+        //     "status" => 1,
+        // ]);
+
+        $send = $this->crud->delete('delivery_to_subconts', $data);
+        echo $send;
+    }
+
     public function delete()
     {
         $data = $this->input->post();
@@ -674,6 +836,129 @@ class Delivery_to_subconts extends CI_Controller
 
         $send = $this->crud->delete('delivery_to_subconts', $data);
         echo $send;
+    }
+
+
+    public function deleteAll()
+    {
+        $data = $this->input->post();
+
+        $delivery_note_no = $data['delivery_note_no'];
+        $scan_id          = $data['scan_id'];
+        // $item_fg_id          = $data['item_fg_id'];
+        // $workorder          = $data['workorder'];
+
+        if(empty($scan_id)) {
+            echo json_encode([
+                'title'   => 'Failed Delete',
+                'message' => 'Scan ID is empty!',
+                'theme'   => 'error'
+            ]);
+            return;
+
+        }
+
+        $this->db->select("a.item_fg_id, a.workorder, a.delivery_note_no");
+        $this->db->from('delivery_to_subconts a');
+        $this->db->where('a.delivery_note_no', $delivery_note_no);
+        $this->db->where('a.scan_id', $scan_id);
+        $this->db->where('a.approved_to', ''); // sudah di-approve
+
+        $checkApproval = $this->db->get()->row_array();
+
+        if (!empty($checkApproval)) {
+            echo json_encode([
+                'title'   => 'Failed Delete',
+                'message' => 'Cannot be deleted because it has been approved',
+                'theme'   => 'error'
+            ]);
+            return;
+        }
+
+        $this->db->select("a.scan_id");
+        $this->db->from('delivery_to_subconts a');
+        $this->db->join(
+            'shipping_to_subconts b',
+            'a.scan_id = b.scan_id'
+        );
+        $this->db->where('a.delivery_note_no', $delivery_note_no);
+        $this->db->where('a.scan_id', $scan_id);
+
+        $row = $this->db->get()->row_array();
+
+        if (empty($row)) {
+            echo json_encode([
+                'title'   => 'Failed Delete',
+                'message' => 'Data not found',
+                'theme'   => 'error'
+            ]);
+            return;
+        }
+
+        $this->db->trans_begin();
+
+        $this->crud->delete('delivery_to_subconts', [
+            'delivery_note_no' => $delivery_note_no,
+            'scan_id'          => $scan_id
+        ]);
+
+        $this->db->select("a.item_fg_id, a.workorder, a.workorder_label");
+        $this->db->from('shipping_to_subconts a');
+        $this->db->where('a.scan_id', $scan_id);
+
+        $checkShippingToSB = $this->db->get()->result_array();
+
+        foreach ($checkShippingToSB as $item) {
+            if($item['item_fg_id'] == "FGRPNA-0207") {
+
+                $this->crud->update(
+                    'output_production_press_detail',
+                    [
+                        'workorder_label' => $item['workorder_label'],
+                        'status'          => 1
+                    ],
+                    [
+                        'status' => 2
+                    ]
+                );
+
+            } else {
+                $this->crud->update(
+                    'output_production_press_detail',
+                    [
+                        'workorder_label' => $item['workorder_label'],
+                        'status'          => 1
+                    ],
+                    [
+                        'status' => 0
+                    ]
+                );
+            }
+        }
+
+        $this->crud->delete('shipping_to_subconts', [
+            'scan_id'         => $scan_id,
+            'type_status'     => 'completed'
+        ]);
+
+        if ($this->db->trans_status() === FALSE) {
+            $this->db->trans_rollback();
+
+            echo json_encode([
+                'title'   => 'Failed',
+                'message' => 'Delete failed, transaction rolled back',
+                'theme'   => 'error'
+            ]);
+            return;
+        }
+
+        $this->db->trans_commit();
+
+        echo json_encode([
+            'title'   => 'Success',
+            'message' => 'Data deleted successfully',
+            'theme'   => 'success'
+        ]);
     }
 
     public function print_dn_to_sc($delivery_note_no)
@@ -868,11 +1153,37 @@ class Delivery_to_subconts extends CI_Controller
         $no = 1;
         // $page = ceil(count($delivery_to_subconts) / $rows_per_page);
         // for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, b.uom, COALESCE(c.name, d.name) as destination_name, COALESCE(c.address, d.address) as address, h.name as created_by_name');
+
+            $this->db->select('
+                a.*, 
+                b.number as item_fg_number, 
+                b.name as item_fg_name, 
+                b.uom, 
+                COALESCE(c.name, d.name) as destination_name, 
+                COALESCE(c.address, d.address) as address, 
+                h.name as created_by_name,
+                COALESCE(e.qty_label, 0) AS qty_packing
+            ');
             $this->db->from('delivery_to_subconts a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('subconts c', 'a.destination = c.id', 'left');
             $this->db->join('teaching_factory d', 'a.destination = d.id', 'left');
+
+            $this->db->join("(
+                SELECT 
+                    scan_id,
+                    item_fg_id,
+                    workorder,
+                    COUNT(*) AS qty_label
+                FROM shipping_to_subconts
+                WHERE type_status = 'completed'
+                GROUP BY scan_id, item_fg_id, workorder
+            ) e", '
+                e.scan_id = a.scan_id
+                AND e.item_fg_id = a.item_fg_id
+                AND e.workorder = a.workorder
+            ', 'left');
+
             $this->db->where('a.delivery_note_no', $delivery_note_no);
             $this->db->order_by('a.workorder', 'asc');
             $this->db->join('users h', 'a.created_by = h.username');
@@ -962,10 +1273,12 @@ class Delivery_to_subconts extends CI_Controller
                                             <th>Product No</th>
                                             <th>Product Name</th>
                                             <th>WO No</th>
+                                            <th>Qty Packing</th>
                                             <th>Qty Delivery</th>
                                             <th>Remarks</th>
                                         </tr>';
             $total_qty_delivery = 0;
+            $total_qty_packing = 0;
 
             foreach ($records as $record) {
                 $html .= '<tr>
@@ -973,16 +1286,19 @@ class Delivery_to_subconts extends CI_Controller
                             <td>' . $record['item_fg_number'] . '</td>
                             <td>' . $record['item_fg_name'] . '</td>
                             <td>' . $record['workorder'] . '</td>
+                            <td style="text-align:center">' . number_format($record['qty_packing'], 0, ",", ".") . '</td>
                             <td style="text-align:center">' . number_format($record['qty_delivery'], 0, ",", ".") . '</td>
                             <td style="text-align:center">' . $record['remarks'] ?? '' . '</td>
                         </tr>';
                 $total_qty_delivery += $record['qty_delivery'];
+                $total_qty_packing += $record['qty_packing'];
                 $no++;
             }
 
             $html .= '
                     <tr>
-                        <td colspan="4" style="text-align:right; font-weight:bold;">Total Qty Delivery</td>
+                        <td colspan="4" style="text-align:right; font-weight:bold;">Total Qty</td>
+                        <td style="text-align:center; font-weight:bold;">' . number_format($total_qty_packing, 0, ",", ".") . '</td>
                         <td style="text-align:center; font-weight:bold;">' . number_format($total_qty_delivery, 0, ",", ".") . '</td>
                         <td></td>
                     </tr>
@@ -1068,12 +1384,38 @@ class Delivery_to_subconts extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, b.uom, COALESCE(c.name, d.name) as destination_name, COALESCE(c.address, d.address) as address');
+        $this->db->select('
+            a.*, 
+            b.number as item_fg_number, 
+            b.name as item_fg_name, 
+            b.uom, 
+            COALESCE(c.name, d.name) as destination_name, 
+            COALESCE(c.address, d.address) as address,
+            COALESCE(e.qty_label, 0) AS qty_packing
+        ');
         $this->db->from('delivery_to_subconts a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('subconts c', 'a.destination = c.id', 'left');
         $this->db->join('teaching_factory d', 'a.destination = d.id', 'left');
-        
+
+        $this->db->join("(
+            SELECT 
+                scan_id,
+                item_fg_id,
+                workorder,
+                COUNT(*) AS qty_label
+            FROM shipping_to_subconts
+            WHERE type_status = 'completed'
+            GROUP BY scan_id, item_fg_id, workorder
+        ) e", '
+            e.scan_id = a.scan_id
+            AND e.item_fg_id = a.item_fg_id
+            AND e.workorder = a.workorder
+        ', 'left');
+
+        $this->db->order_by('a.workorder', 'asc');
+        $this->db->order_by('b.number', 'asc');
+
         if ($filter_from != "" && $filter_to != "") {
             $this->db->where('a.delivery_date >=', $filter_from);
             $this->db->where('a.delivery_date <=', $filter_to);
@@ -1169,11 +1511,15 @@ class Delivery_to_subconts extends CI_Controller
                         <th style="width: 100px;">Product No</th>
                         <th style="width: 150px;">Product Name</th>
                         <th style="width: 80px;">WO No</th>
+                        <th style="width: 80px;">Qty Packing</th>
                         <th style="width: 80px;">Qty Delivery</th>
                         <th style="width: 100px;">Remarks</th>
                     </tr>';
 
         $no = 1;
+        $total_qty_delivery = 0;
+        $total_qty_packing = 0;
+
         foreach ($records as $row) {
             $html .= '<tr>
                         <td class="text-center">'.$no.'</td>
@@ -1183,13 +1529,26 @@ class Delivery_to_subconts extends CI_Controller
                         <td class="no-wrap" style="mso-number-format:&quot;@&quot;">'.$row['item_fg_number'].'</td>
                         <td class="no-wrap">'.$row['item_fg_name'].'</td>
                         <td class="no-wrap">'.$row['workorder'].'</td>
+                        <td style="text-align: center;">'.number_format($row['qty_packing'],0,".",".").'</td>
                         <td style="text-align: center;">'.number_format($row['qty_delivery'],0,".",".").'</td>
                         <td class="no-wrap" style="text-align: center;">'.$row['remarks'].'</td>
                     </tr>';
+
+            $total_qty_delivery += $row['qty_delivery'];
+            $total_qty_packing += $row['qty_packing'];
             $no++;
         }
 
-        $html .= '</table></div>';
+        $html .= '
+                <tr>
+                    <td colspan="7" style="text-align:right; font-weight:bold;">Total Qty</td>
+                    <td style="text-align:center; font-weight:bold;">' . number_format($total_qty_packing, 0, ",", ".") . '</td>
+                    <td style="text-align:center; font-weight:bold;">' . number_format($total_qty_delivery, 0, ",", ".") . '</td>
+                    <td></td>
+                </tr>
+            </table></div>';
+
+        // $html .= '</table></div>';
         echo $html;
     }
 }

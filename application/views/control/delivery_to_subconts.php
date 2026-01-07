@@ -21,7 +21,10 @@
             <th rowspan="2" data-options="field:'destination_name',width:220,halign:'center',sortable:true">Destination</th>
             <th rowspan="2" data-options="field:'total_qty_delivery',width:130,halign:'center',sortable:true, formatter:numberFormat, align:'center'">Total Qty Delivery</th>
             
+            <th rowspan="2" data-options="field:'status_header',width:130,halign:'center',align:'center',formatter:formatStatus,styler:styleStatus">Status</th>
+
             <th rowspan="2" data-options="field:'approved_to',width:130,halign:'center',align:'center',formatter:formatApproved,styler:styleApproved">Status <br>Approve</th>
+
             <th rowspan="2" data-options="field:'approved_by',width:130,halign:'center',align:'center'">Approve By</th>
             <th rowspan="2" data-options="field:'approved_date',width:130,halign:'center'">Approve Date</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -52,8 +55,8 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Delivery Date</span>
-                    <input style="width:29.8%;" id="filter_from" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
-                    <input style="width:29.8%;" id="filter_to" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
+                    <input style="width:29.8%;" id="filter_from" value="<?= date("Y-m-d") ?>" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
+                    <input style="width:29.8%;" id="filter_to" value="<?= date("Y-m-d") ?>" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
                 </div>
             </div>
             <div style="width: 50%; float: left;">
@@ -715,6 +718,8 @@
     //DELETE DATA
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
+        console.log('ROWS : ', rows);
+        
         if (rows.length > 0) {
             $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
                 if (r) {
@@ -722,14 +727,21 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('control/delivery_to_subconts/delete') ?>',
+                            url: '<?= base_url('control/delivery_to_subconts/deleteAll') ?>',
                             data: {
                                 delivery_note_no: row.delivery_note_no,
+                                scan_id: row.scan_id,
                                 // item_fg_id: row.item_fg_id,
                                 // workorder: row.workorder,
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
+
+                                if(result.theme == "success") {
+                                    toastr.success(result.message);
+                                } else {
+                                    toastr.error(result.message);
+                                }
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
                                 // toastr.error(jqXHR.statusText);
@@ -751,6 +763,61 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
+
+    // function deleted() {
+    //     var rows = $('#dg').datagrid('getSelections');
+
+    //     if (rows.length === 0) {
+    //         toastr.warning("Please select data first!");
+    //         return;
+    //     }
+
+    //     let items = [];
+
+    //     rows.forEach(row => {
+    //         items.push({
+    //             delivery_note_no: row.delivery_note_no,
+    //             scan_id: row.scan_id,
+    //             item_fg_id: row.item_fg_id,
+    //             workorder: row.workorder
+    //         });
+    //     });
+
+    //     if (items.length === 0) {
+    //         toastr.error("No data to delete");
+    //         return;
+    //     }
+
+    //     $.messager.confirm('Warning', 'Are you sure you want to delete selected data?', function (r) {
+    //         if (!r) return;
+
+    //         $.ajax({
+    //             type: 'POST',
+    //             url: '<?= base_url('control/delivery_to_subconts/deleteAll') ?>',
+    //             data: { items: items },
+    //             dataType: 'json',
+    //             success: function (res) {
+    //                 toastr.clear();
+
+    //                 if(result.theme == "success") {
+    //                     toastr.success(result.message);
+    //                 } else {
+    //                     toastr.error(result.message);
+    //                 }
+    //             },
+    //             error: function (jqXHR) {
+    //                 if (jqXHR.responseText && jqXHR.responseText.includes("Error Number: 1451")) {
+    //                     toastr.error("Cannot delete data that is still in use");
+    //                 } else {
+    //                     toastr.error("Server error while deleting");
+    //                 }
+    //             },
+    //             complete: function(data) {
+    //                 $('#dg').datagrid('reload');
+    //             }
+    //         });
+    //     });
+    // }
 
     //FILTER DATA
     function filter() {
@@ -822,25 +889,47 @@
                             align: 'right',
                             width: 100,
                             formatter: numberFormat
+                        },  
+
+                        // {
+                        //     field: 'remarks',
+                        //     title: 'Remarks',
+                        //     align: 'center',
+                        //     width: 150
+                        // },
+
+                        {
+                            field: 'qty_incoming',
+                            title: 'Qty Incoming',
+                            halign: 'center',
+                            align: 'right',
+                            width: 100,
+                            formatter: numberFormat
                         }, {
                             field: 'uom',
                             title: 'UOM',
                             align: 'center',
                             width: 100
                         }, {
-                            field: 'remarks',
-                            title: 'Remarks',
+                            field: 'status_incoming',
+                            title: 'Status Incoming',
+                            halign: 'center',
                             align: 'center',
-                            width: 150
+                            width: 150,
+                            formatter: formatStatusIncoming,
+                            styler: styleStatusIncoming,
                         }]
                     ],
                     onResize: function() {
                         $('#dg').datagrid('fixDetailRowHeight', index);
                     },
-                    onLoadSuccess: function() {
+                    onLoadSuccess: function(data) {
                         setTimeout(function() {
                             $('#dg').datagrid('fixDetailRowHeight', index);
                         }, 0);
+
+                        console.log(data);
+                        
                     }
                 });
                 $('#dg').datagrid('fixDetailRowHeight', index);
@@ -1222,9 +1311,63 @@
     //FORMATTER APPROVE
     function formatApproved(value) {
         if (value == "" || value === null) {
-            return 'Approved';
+            return '<b>Approved</b>';
         } else {
-            return 'Checking';
+            return '<b>Checking</b>';
+        }
+    }
+
+    function styleStatus(value, row, index) {
+        if(value == '0') {
+            return 'background: #53D636; color: white;';
+        } else if(value == '1') {
+            return 'background: #FF5F5F; color: white;';
+        } else if(value == '2') {
+            return 'background: #F3A26D; color: white;';
+        } else if(value == '3') {
+            return 'background: #B2A5FF; color: white;';
+        }
+    }
+
+    function formatStatus(value) {
+        // if(value == "" || value === null) {
+        //     return '<b>CLOSED</b>';
+        // } else {
+        //     return '<b>OPEN</b>';
+        // }
+
+        if(value == '0') {
+            return '<b>OPEN</b>';
+        } else if(value == '1') {
+            return '<b>CLOSED</b>';
+        } else if(value == '2') {
+            return '<b>ON GOING</b>';
+        } else if(value == '3') {
+            return '<b>OVER</b>';
+        }
+    }
+
+    function styleStatusIncoming(value, row, index) {
+        if(value == '0') {
+            return 'background: #53D636; color: white;';
+        } else if(value == '1') {
+            return 'background: #FF5F5F; color: white;';
+        } else if(value == '2') {
+            return 'background: #F3A26D; color: white;';
+        } else if(value == '3') {
+            return 'background: #B2A5FF; color: white;';
+        }
+    }
+
+    function formatStatusIncoming(value) {
+        if(value == '0') {
+            return '<b>OPEN</b>';
+        } else if(value == '1') {
+            return '<b>CLOSED</b>';
+        } else if(value == '2') {
+            return '<b>ON GOING</b>';
+        } else if(value == '3') {
+            return '<b>OVER</b>';
         }
     }
 

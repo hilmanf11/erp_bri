@@ -104,7 +104,9 @@ class Report_history_transactions_fg extends CI_Controller
         
         $cols3 = ($filter_display == "DETAIL") ? "3" : "1";
         $cols2 = ($filter_display == "DETAIL") ? "2" : "1";
-        $cols5 = ($filter_display == "DETAIL") ? "8" : "5";
+        // $cols5 = ($filter_display == "DETAIL") ? "8" : "5";
+        $cols5 = ($filter_display == "DETAIL") ? "9" : "6";
+        $cols_id = 1;
 
         //! Perhitungan qty_in untuk setiap item_fg_id
 
@@ -298,6 +300,7 @@ class Report_history_transactions_fg extends CI_Controller
             <table id="customers" border="1">
                 <tr>
                     <th width="20">No</th>
+                    <th width="150">Product ID</th>
                     <th colspan='.$cols3.'>Product No</th>
                     <th colspan='.$cols2.'>Product Name</th>
                     <th>Uom</th>
@@ -317,6 +320,7 @@ class Report_history_transactions_fg extends CI_Controller
 
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
+                            <td style="text-align:center">' . $record->id . '</td>
                             <td colspan='.$cols3.' style="mso-number-format:\@">' . $record->number . '</td>
                             <td colspan='.$cols2.' style="mso-number-format:\@">' . $record->name . '</td>
                             <td>' . $record->uom . '</td>
@@ -335,12 +339,12 @@ class Report_history_transactions_fg extends CI_Controller
 
             if ($filter_display == "DETAIL") {
                 $html .= '  <tr>
-                                <td colspan="12" style="background:#D1FFC6;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
+                                <td colspan="13" style="background:#D1FFC6;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
                             </tr>';
                 $html .= '  <tr>
                                 <th width="20"></th>
                                 <th width="20">No</th>
-                                <th>Trans Type</th>
+                                <th colspan="2">Trans Type</th>
                                 <th>Created By</th>
                                 <th>Trans Date</th>
                                 <th>Production Date</th>
@@ -525,7 +529,7 @@ class Report_history_transactions_fg extends CI_Controller
                     $html .= '<tr>
                                 <td></td>
                                 <td style="text-align:center">' . $nod . '</td>
-                                <td>' . $trans->trans_type . '</td>
+                                <td colspan="2">' . $trans->trans_type . '</td>
                                 <td>' . $trans->username . '</td>
                                 <td>' . $trans->trans_date . '</td>
                                 <td>' . $trans->prod_date . '</td>

@@ -173,9 +173,14 @@ class Sales_invoices extends CI_Controller
         $records = $this->crud->query("SELECT a.delivery_note_no, a.delivery_note_date, a.customer_order_no, b.plant
             FROM delivery_notes a
             LEFT JOIN customer_address b ON a.address_id = b.id
-            WHERE a.customer_id = '$customer_id' and a.status = '0' AND YEAR(a.delivery_note_date) = 2025 and a.delivery_note_no like '%$post%'
+            WHERE a.customer_id = '$customer_id' 
+            AND a.status = '0' 
+            -- AND YEAR(a.delivery_note_date) = 2025 
+            -- AND YEAR(a.delivery_note_date) IN (2025, 2026)
+            AND a.delivery_note_no like '%$post%'
             GROUP BY a.delivery_note_no 
-            ORDER BY a.delivery_note_date ASC, a.delivery_note_no ASC");
+            ORDER BY a.delivery_note_date ASC, a.delivery_note_no ASC
+        ");
 
         // Tambahkan nomor urut
         $data_with_no = [];

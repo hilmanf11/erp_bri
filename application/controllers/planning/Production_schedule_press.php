@@ -121,7 +121,162 @@ class Production_schedule_press extends CI_Controller
         echo json_encode($send);
     }
 
+    // public function getCapacity()
+    // {
+    //     $item_fg_id = $this->input->post('item_fg_id');
+    //     $machine_id = $this->input->post('machine_id');
+    //     $mold_id    = $this->input->post('mold_id');
+
+    //     $sql = "
+    //         SELECT 
+    //             pc.capacity_day
+    //         FROM setting_molds sm
+    //         JOIN menu_loadings ml 
+    //             ON ml.item_fg_id = sm.item_fg_id 
+    //             AND ml.machine_id = sm.machine_id 
+    //             AND ml.mold_id = sm.mold_id
+    //         JOIN production_capacities pc
+    //             ON pc.item_fg_id = sm.item_fg_id 
+    //             AND pc.machine_id = sm.machine_id
+    //         WHERE sm.item_fg_id = '$item_fg_id'
+    //         AND sm.machine_id = '$machine_id'
+    //         AND sm.mold_id = '$mold_id'
+    //         LIMIT 1
+    //     ";
+
+    //     $data = $this->db->query($sql)->row();
+
+    //     echo json_encode([
+    //         "capacity_day" => $data->capacity_day ?? 0
+    //     ]);
+    // }
+
     //GET DATA
+    // public function readSettingMolds($item_fg, $machine)
+    // {
+    //     $post = isset($_POST['q']) ? $_POST['q'] : "";
+
+    //     $item_fg_id = base64_decode($item_fg);
+    //     $machine_id = base64_decode($machine);
+
+    //     // $send = $this->crud->query("SELECT * FROM setting_molds 
+    //     //     WHERE item_fg_id = '$item_fg_id' 
+    //     //     AND machine_id = '$machine_id'
+    //     //     AND mold_id LIKE '%$post%' 
+    //     //     GROUP BY mold_id
+    //     // ");
+
+    //     $send = $this->crud->query("
+    //         SELECT 
+    //             sm.mold_id,
+    //             pc.capacity_day
+    //         FROM setting_molds sm
+    //         JOIN production_capacities pc
+    //             ON pc.item_fg_id = sm.item_fg_id
+    //             AND pc.machine_id = sm.machine_id
+    //         WHERE sm.item_fg_id = '$item_fg_id'
+    //         AND sm.machine_id = '$machine_id'
+    //         AND sm.mold_id LIKE '%$post%'
+    //         GROUP BY sm.mold_id
+    //     ");
+
+    //     echo json_encode($send);
+    // }
+
+    // public function getCapacity()
+    // {
+    //     $item_fg_id = $this->input->post('item_fg_id');
+    //     $machine_id = $this->input->post('machine_id');
+    //     $mold_id    = $this->input->post('mold_id');
+
+    //     $sql = "
+    //         SELECT 
+    //             pc.capacity_day
+    //         FROM menu_loadings ml
+    //         JOIN production_capacities pc
+    //             ON pc.item_fg_id = ml.item_fg_id
+    //         AND pc.machine_id = ml.machine_id
+    //         WHERE ml.item_fg_id = '$item_fg_id'
+    //         AND ml.machine_id = '$machine_id'
+    //         AND ml.mold_id = '$mold_id'
+    //         LIMIT 1
+    //     ";
+
+    //     $data = $this->db->query($sql)->row();
+
+    //     echo json_encode([
+    //         'capacity_day' => $data->capacity_day ?? 0
+    //     ]);
+    // }
+
+    // public function readSettingMolds($item_fg, $machine)
+    // {
+    //     $post = isset($_POST['q']) ? $_POST['q'] : "";
+
+    //     $item_fg_id = base64_decode($item_fg);
+    //     $machine_id = base64_decode($machine);
+
+    //     $sql = "
+    //         SELECT 
+    //             ml.mold_id,
+    //             pc.capacity_day
+    //         FROM menu_loadings ml
+    //         JOIN production_capacities pc
+    //             ON pc.item_fg_id = ml.item_fg_id
+    //         AND pc.machine_id = ml.machine_id
+    //         WHERE ml.item_fg_id = '$item_fg_id'
+    //         AND ml.machine_id = '$machine_id'
+    //         AND ml.mold_id LIKE '%$post%'
+    //         GROUP BY ml.mold_id
+    //     ";
+
+    //     $send = $this->db->query($sql)->result();
+
+    //     echo json_encode($send);
+    // }
+
+    public function getCapacity()
+    {
+        $item_fg_id = $this->input->post('item_fg_id');
+        $machine_id = $this->input->post('machine_id');
+        $mold_id    = $this->input->post('mold_id');
+
+        $sql = "
+            SELECT 
+                pc.capacity_day
+            FROM setting_molds sm
+            JOIN menu_loadings ml 
+                ON ml.item_fg_id = sm.item_fg_id 
+                AND ml.machine_id = sm.machine_id 
+                AND ml.mold_id = sm.mold_id
+            JOIN production_capacities pc
+                ON pc.item_fg_id = ml.item_fg_id
+                AND pc.machine_id = ml.machine_id
+            WHERE ml.item_fg_id = '$item_fg_id'
+                AND ml.machine_id = '$machine_id'
+                AND ml.mold_id = '$mold_id'
+                LIMIT 1
+        ";
+
+        $data = $this->db->query($sql)->row();
+
+        if(empty($data)) {
+
+            $sql2 = "SELECT * FROM setting_molds 
+                WHERE item_fg_id = '$item_fg_id' 
+                AND machine_id = '$machine_id'
+                AND mold_id LIKE '%$mold_id%' 
+                GROUP BY mold_id
+            ";
+
+            $data = $this->db->query($sql2)->row();
+        }
+
+        echo json_encode([
+            'capacity_day' => $data->capacity_day ?? 0
+        ]);
+    }
+
     public function readSettingMolds($item_fg, $machine)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
@@ -129,12 +284,37 @@ class Production_schedule_press extends CI_Controller
         $item_fg_id = base64_decode($item_fg);
         $machine_id = base64_decode($machine);
 
-        $send = $this->crud->query("SELECT * FROM setting_molds 
-            WHERE item_fg_id = '$item_fg_id' 
-            AND machine_id = '$machine_id'
-            AND mold_id LIKE '%$post%' 
-            GROUP BY mold_id
-        ");
+        $sql = "
+            SELECT 
+                sm.mold_id,
+                pc.capacity_day
+            FROM setting_molds sm
+            JOIN menu_loadings ml 
+                ON ml.item_fg_id = sm.item_fg_id 
+                AND ml.machine_id = sm.machine_id 
+                AND ml.mold_id = sm.mold_id
+            JOIN production_capacities pc
+                ON pc.item_fg_id = sm.item_fg_id
+                AND pc.machine_id = sm.machine_id
+            WHERE sm.item_fg_id = '$item_fg_id'
+                AND sm.machine_id = '$machine_id'
+                AND sm.mold_id LIKE '%$post%'
+            GROUP BY sm.mold_id
+        ";
+
+        $send = $this->db->query($sql)->result();
+
+        if (empty($send)) {
+                
+            $sql2 = "SELECT * FROM setting_molds 
+                WHERE item_fg_id = '$item_fg_id' 
+                AND machine_id = '$machine_id'
+                AND mold_id LIKE '%$post%' 
+                GROUP BY mold_id
+            ";
+
+            $send = $this->db->query($sql2)->result();
+        }
 
         echo json_encode($send);
     }
@@ -718,7 +898,7 @@ class Production_schedule_press extends CI_Controller
                 'trans_date' => $wp_trans_date,
                 'item_fg_id' => $sheet->getCellByColumnAndRow(5, $i)->getValue(),
                 'mold_id' => $sheet->getCellByColumnAndRow(6, $i)->getValue(),
-                'qty' => $sheet->getCellByColumnAndRow(7, $i)->getValue(),
+                // 'qty' => $sheet->getCellByColumnAndRow(7, $i)->getValue(),
             );
         }
 
@@ -879,10 +1059,12 @@ class Production_schedule_press extends CI_Controller
                     empty($data['machine_id']) ||
                     empty($data['trans_date']) ||
                     empty($data['item_fg_id']) ||
+
                     // empty($data['mold_id']) ||
-                    empty($data['qty']) ||
-                    !strtotime($data['trans_date']) ||
-                    !is_numeric($data['qty'])
+                    // empty($data['qty']) ||
+                    // !is_numeric($data['qty'])
+
+                    !strtotime($data['trans_date'])
                    ) {
                         $results[] = [
                             "status" => "failed",
@@ -916,14 +1098,14 @@ class Production_schedule_press extends CI_Controller
                 $wp = $this->_calculate_wp($data['trans_date']);
 
                 // Validasi qty tidak boleh kosong atau nol
-                if (!isset($data['qty']) || empty($data['qty']) || $data['qty'] <= 0) {
-                    $results[] = [
-                        "status" => "failed",
-                        "item" => "Line " . ($index + 1),
-                        "message" => "Quantity must be greater than 0"
-                    ];
-                    continue;
-                }
+                // if (!isset($data['qty']) || empty($data['qty']) || $data['qty'] <= 0) {
+                //     $results[] = [
+                //         "status" => "failed",
+                //         "item" => "Line " . ($index + 1),
+                //         "message" => "Quantity must be greater than 0"
+                //     ];
+                //     continue;
+                // }
 
                 $machine = $this->crud->read('machines', [], ["number" => $data['machine_id']]);
                 if (empty($machine)) {
@@ -970,49 +1152,55 @@ class Production_schedule_press extends CI_Controller
                     continue;
                 }
 
-                // $mold = $this->crud->read('molds', [], ["id" => $data['mold_id']]);
-                // if (empty($mold)) {
-                //     $results[] = [
-                //         "status" => "failed",
-                //         "item" => "Line " . ($index + 1),
-                //         "message" => "Mold ID " . $data['mold_id'] . " Not Found"
-                //     ];
-                //     continue;
-                // }
-
-                // $checkMoldSettingMolds = $this->crud->read('setting_molds', [], [
-                //     "machine_id" => $machine->id,
-                //     "item_fg_id" => $item_fg->id,
-                //     "mold_id"    => $mold->id,
-                // ]);
-
-                // if (empty($checkMoldSettingMolds)) {
-                //     $results[] = [
-                //         "status" => "failed",
-                //         "item" => "Line " . ($index + 1),
-                //         "message" => "Mold {$data['mold_id']} for Product {$data['item_fg_id']} not found in Machine {$data['machine_id']} settings."
-                //     ];
-                //     continue;
-                // }
-
-                $availableMolds = $this->db
-                    ->select("DISTINCT(mold_id)")
+                $availableMold = $this->db
+                    ->select("mold_id")
                     ->where('item_fg_id', $item_fg->id)
-                    ->get('setting_molds')
-                    ->result();
+                    ->where('machine_id', $machine->id)
+                    ->get('menu_loadings')
+                    ->row();
 
-                if (count($availableMolds) === 1) {
-                    $mold_id = $availableMolds[0]->mold_id;
+                if(!empty($availableMold)) {
+                    // if (count($availableMold) === 1) {
+                    $mold_id = $availableMold->mold_id;
+                    // } 
+                    
+                    // else {
+                    //     if (empty($data['mold_id'])) {
+                    //         $results[] = [
+                    //             "status" => "failed",
+                    //             "item" => "Line " . ($index + 1),
+                    //             "message" => "Product No. {$data['item_fg_id']} on Machine No. {$data['machine_id']} has multiple molds in Menu Loadings, please specify mold_id."
+                    //         ];
+                    //         continue;
+                    //     }
+                    //     $mold_id = $data['mold_id'];
+                    // }
+
                 } else {
-                    if (empty($data['mold_id'])) {
-                        $results[] = [
-                            "status" => "failed",
-                            "item" => "Line " . ($index + 1),
-                            "message" => "Product No. {$data['item_fg_id']} has multiple molds, please specify mold_id."
-                        ];
-                        continue;
+
+                    // if(count($availableMolds) < 1) {
+                    $availableMolds = $this->db
+                        ->select("DISTINCT(mold_id)")
+                        ->where('item_fg_id', $item_fg->id)
+                        ->where('machine_id', $machine->id)
+                        ->get('setting_molds')
+                        ->result();
+
+                    if (count($availableMolds) === 1) {
+                        $mold_id = $availableMolds[0]->mold_id;
+                    } else {
+                        if (empty($data['mold_id'])) {
+                            $results[] = [
+                                "status" => "failed",
+                                "item" => "Line " . ($index + 1),
+                                "message" => "Product No. {$data['item_fg_id']} has multiple molds, please specify mold_id."
+                            ];
+                            continue;
+                        }
+                        $mold_id = $data['mold_id'];
                     }
-                    $mold_id = $data['mold_id'];
+
+                    $qty = 0;
                 }
 
                 $mold = $this->db->get_where('molds', ['id' => $mold_id])->row();
@@ -1040,6 +1228,39 @@ class Production_schedule_press extends CI_Controller
                     ];
                     continue;
                 }
+
+                $checkMenuLoading = $this->db
+                    ->where('item_fg_id', $item_fg->id)
+                    ->where('machine_id', $machine->id)
+                    ->where('mold_id', $mold_id)
+                    ->get('menu_loadings')
+                    ->row();
+
+                if (empty($checkMenuLoading)) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Product No. {$data['item_fg_id']} on Machine No. {$data['machine_id']} with Mold {$mold_id} unsetting in Menu Loadings and Production Capacities."
+                    ];
+                    continue;
+                }
+
+                $checkCapacity = $this->db
+                    ->where('item_fg_id', $item_fg->id)
+                    ->where('machine_id', $machine->id)
+                    ->get('production_capacities')
+                    ->row();
+
+                if (empty($checkCapacity)) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Product No. {$data['item_fg_id']} on Machine {$data['machine_id']} unsetting in Production Capacities."
+                    ];
+                    continue;
+                }
+
+                $qty = $checkCapacity->capacity_day ?? 0;
 
                 $checkData = $this->crud->read('production_schedule_press', [], [
                     "item_fg_id" => $item_fg->id,
@@ -1083,7 +1304,7 @@ class Production_schedule_press extends CI_Controller
                     "year" => $year,
                     "month" => $month,
                     "wp" => $wp,
-                    "qty" => $data['qty']
+                    "qty" => $qty
                 );
 
                 try {
@@ -1594,7 +1815,7 @@ class Production_schedule_press extends CI_Controller
             'D2' => ['ISI DENGAN YYYY-MM-DD'],
             'E2' => ['ISI DENGAN PRODUCT NO (LIHAT DI SHEET Machines)'],
             'F2' => ['ISI DENGAN MOLD ID, JIKA ITEM MEMPUNYAI MOLD LEBIH DARI 1 (LIHAT DI SHEET Machines)'],
-            'G2' => ['ISI DENGAN ANGKA'],
+            // 'G2' => ['ISI DENGAN ANGKA'],
         ];
 
         $templateSheet = $spreadsheet->getActiveSheet();
@@ -1616,11 +1837,11 @@ class Production_schedule_press extends CI_Controller
         $templateSheet->setCellValue('D2', 'WP DATE');
         $templateSheet->setCellValue('E2', 'PRODUCT NO');
         $templateSheet->setCellValue('F2', 'MOLD ID');
-        $templateSheet->setCellValue('G2', 'PLANNING PCS/DAY');
-        $templateSheet->getStyle('A2:G2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        // $templateSheet->setCellValue('G2', 'PLANNING PCS/DAY');
+        $templateSheet->getStyle('A2:F2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
         $templateSheet->getStyle('A2')->getFont()->setBold(true);
-        $templateSheet->getStyle('B2:G2')->getFont()->setBold(true)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED);
-        $templateSheet->getStyle('A2:G2')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $templateSheet->getStyle('B2:F2')->getFont()->setBold(true)->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_RED);
+        $templateSheet->getStyle('A2:F2')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
         $templateSheet->getStyle('D:D')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_YYYYMMDD2);
         foreach ($comments as $cell => $commentLines) {
             $richText = new RichText();

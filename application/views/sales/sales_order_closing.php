@@ -150,6 +150,7 @@
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_customer_id = $("#filter_customer_id").combobox('getValue');
+        var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
         var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
@@ -157,6 +158,7 @@
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
             "&filter_status=" + window.btoa(filter_status);
 
         window.location.assign('<?= base_url('sales/sales_order_closing/print/excel') ?>' + url);
@@ -168,6 +170,7 @@
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_customer_id = $("#filter_customer_id").combobox('getValue');
+        var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
         var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
@@ -175,6 +178,7 @@
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
             "&filter_status=" + window.btoa(filter_status);
 
         $('#dg').datagrid({

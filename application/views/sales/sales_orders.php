@@ -590,40 +590,96 @@
                         options: {
                             required: true,
                             validType: 'nonZero',
+                            // onChange: function(qty) {
+                            //     var dg = $('#dg2');
+                            //     var row = dg.datagrid('getSelected');
+                            //     var rowIndex = dg.datagrid('getRowIndex', row);
+
+                            //     var ed = dg.datagrid('getEditor', {
+                            //         index: rowIndex,
+                            //         field: 'total'
+                            //     });
+
+                            //     var ed2 = dg.datagrid('getEditor', {
+                            //         index: rowIndex,
+                            //         field: 'price'
+                            //     });
+
+                            //     var ed3 = dg.datagrid('getEditor', {
+                            //         index: rowIndex,
+                            //         field: 'outstanding'
+                            //     });
+
+                            //     var ed4 = dg.datagrid('getEditor', {
+                            //         index: rowIndex,
+                            //         field: 'delivery'
+                            //     });
+
+                            //     var delivery = $(ed4.target).numberbox('getValue');
+                            //     var price = $(ed2.target).numberbox('getValue');
+
+                            //     var total = (parseInt(qty) * parseFloat(price));
+                            //     var outstanding = (parseInt(qty) - parseInt(delivery));
+
+                            //     $(ed3.target).numberbox('setValue', outstanding);
+                            //     $(ed.target).numberbox('setValue', total);
+                            // }
+
                             onChange: function(qty) {
                                 var dg = $('#dg2');
                                 var row = dg.datagrid('getSelected');
+                                if (!row) return;
+
                                 var rowIndex = dg.datagrid('getRowIndex', row);
 
-                                var ed = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'total'
-                                });
-
-                                var ed2 = dg.datagrid('getEditor', {
+                                var edPrice = dg.datagrid('getEditor', {
                                     index: rowIndex,
                                     field: 'price'
                                 });
-
-                                var ed3 = dg.datagrid('getEditor', {
+                                var edTotal = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'total'
+                                });
+                                var edOutstanding = dg.datagrid('getEditor', {
                                     index: rowIndex,
                                     field: 'outstanding'
                                 });
-
-                                var ed4 = dg.datagrid('getEditor', {
+                                var edDelivery = dg.datagrid('getEditor', {
                                     index: rowIndex,
                                     field: 'delivery'
                                 });
 
-                                var delivery = $(ed4.target).numberbox('getValue');
-                                var price = $(ed2.target).numberbox('getValue');
+                                var currentPrice = $(edPrice.target).numberbox('getValue');
+                                var delivery = $(edDelivery.target).numberbox('getValue');
 
-                                var total = (parseInt(qty) * parseFloat(price));
-                                var outstanding = (parseInt(qty) - parseInt(delivery));
+                                // ambil price terbaru
+                                $.ajax({
+                                    url: '<?= base_url("sales/sales_orders/getLatestPrice"); ?>',
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    data: {
+                                        item_fg_id: row.item_fg_id,
+                                        customer_id: customer_id,
+                                        sales_order_date: $('#sales_order_date').datebox('getValue')
+                                    },
+                                    success: function(res) {
+                                        var latestPrice = parseFloat(res.price || 0);
 
-                                $(ed3.target).numberbox('setValue', outstanding);
-                                $(ed.target).numberbox('setValue', total);
+                                        // jika price berbeda → update
+                                        if (latestPrice && latestPrice != currentPrice) {
+                                            $(edPrice.target).numberbox('setValue', latestPrice);
+                                            currentPrice = latestPrice;
+                                        }
+
+                                        var total = parseFloat(qty) * parseFloat(currentPrice);
+                                        var outstanding = parseFloat(qty) - parseFloat(delivery);
+
+                                        $(edTotal.target).numberbox('setValue', total);
+                                        $(edOutstanding.target).numberbox('setValue', outstanding);
+                                    }
+                                });
                             }
+
                         }
                     }
                 }, 

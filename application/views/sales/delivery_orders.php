@@ -336,6 +336,7 @@
 
 <script>
     //ADD DATA
+    var selectedCustomerNumber = null;
 
     function add() {
 
@@ -360,30 +361,29 @@
 
         $("#sales_order").combobox({
             onChange: function(sales_order) {
+                $('#customer_order_no').combobox({
+                    url: '<?= base_url('sales/delivery_orders/readsCustOrderNo/'); ?>' + sales_order,
+                    valueField: 'customer_order_no',
+                    textField: 'customer_order_no',
+                    //prompt: 'Choose Customer Order No',
+                    multiple: false,
+                    onSelect: function(delivery) {
+                        //console.log(delivery,"o");
 
-        $('#customer_order_no').combobox({
-            url: '<?= base_url('sales/delivery_orders/readsCustOrderNo/'); ?>' + sales_order,
-            valueField: 'customer_order_no',
-            textField: 'customer_order_no',
-            //prompt: 'Choose Customer Order No',
-            multiple: false,
-            onSelect: function(delivery) {
-                //console.log(delivery,"o");
+                        //$("#customer_id").combobox('setValue', delivery.id);
+                        $("#delivery_date").combobox({
+                            url: "<?= base_url('sales/delivery_orders/readSalesOrderDeliveries/') ?>" + sales_order + "/" + btoa(delivery.customer_order_no),
+                            valueField: 'trans_date',
+                            textField: 'trans_date',
+                            prompt: 'Choose Schedule Delivery Date',
+                            editable: false,
+                            onSelect: function(deliverys) {
+                                $("#actual_delivery_date").datebox('setValue',deliverys.trans_date);
+                                updateDeliveryOrderNo(deliverys.trans_date);
+                            }
+                        });
 
-                //$("#customer_id").combobox('setValue', delivery.id);
-                $("#delivery_date").combobox({
-                    url: "<?= base_url('sales/delivery_orders/readSalesOrderDeliveries/') ?>" + sales_order + "/" + btoa(delivery.customer_order_no),
-                    valueField: 'trans_date',
-                    textField: 'trans_date',
-                    prompt: 'Choose Schedule Delivery Date',
-                    editable: false,
-                    onSelect: function(deliverys) {
-                        $("#actual_delivery_date").datebox('setValue',deliverys.trans_date);
-                        updateDeliveryOrderNo(deliverys.trans_date);
-                    }
-                });
-
-                $('#customer_id').combobox({
+                        $('#customer_id').combobox({
                             url: '<?= base_url('sales/delivery_orders/readsCust/'); ?>' + sales_order + "/" + delivery.id,
                             //data: [delivery],
                             valueField: 'id',
@@ -392,12 +392,13 @@
                             onSelect: function(customer) {
                                 var delivery_order_date = $("#delivery_order_date").datebox('getValue');
                                 number(delivery_order_date, customer.id, customer.number);
+                                selectedCustomerNumber = customer.number;
                             }
                         });
-                
+                        
                         $('#customer_id').combobox('select', delivery.id);
-            }
-        });
+                    }
+                });
             }
         });
 
@@ -657,24 +658,51 @@
         return `<input type="checkbox" class="partial-checkbox" data-index="${index}" ${checked} onclick="event.stopPropagation()">`;
     }
 
-    function updateDeliveryOrderNo(date) {
-        const selectedDate = new Date(date);
-        const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-        const year = String(selectedDate.getFullYear()).slice(-2);
+    // function updateDeliveryOrderNo(date) {
+    //     const selectedDate = new Date(date);
+    //     const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    //     const year = String(selectedDate.getFullYear()).slice(-2);
 
-        let currentVal = $('#delivery_order_no').textbox('getValue');
-        let parts = currentVal.split('/');
-        if (parts.length === 4) {
-            parts[2] = month;
-            parts[3] = year;
-            let newVal = parts.join('/');
-            $('#delivery_order_no').textbox('setValue', newVal);
+    //     let currentVal = $('#delivery_order_no').textbox('getValue');
+    //     let parts = currentVal.split('/');
+    //     if (parts.length === 4) {
+    //         parts[2] = month;
+    //         parts[3] = year;
+    //         let newVal = parts.join('/');
+    //         $('#delivery_order_no').textbox('setValue', newVal);
+    //     }
+    // }
+
+    function updateDeliveryOrderNo(delivery_date) {
+        var selectedCustomerId   = $('#customer_id').combobox('getValue');
+
+        if (delivery_date && selectedCustomerId && selectedCustomerNumber) {
+            number(
+                delivery_date,
+                selectedCustomerId,
+                selectedCustomerNumber
+            );
         }
     }
 
+    // $('#actual_delivery_date').datebox({
+    //     onSelect: function(date) {
+    //         updateDeliveryOrderNo(date);
+    //     }
+    // });
+
+    // $('#actual_delivery_date').datebox({
+    //     onSelect: function() {
+    //         var d = $(this).datebox('getValue'); // STRING
+    //         updateDeliveryOrderNo(d);
+    //     }
+    // });
+
     $('#actual_delivery_date').datebox({
-        onSelect: function(date) {
-            updateDeliveryOrderNo(date);
+        onChange: function(newValue, oldValue) {
+            if (newValue) {
+                updateDeliveryOrderNo(newValue);
+            }
         }
     });
 
