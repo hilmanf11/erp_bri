@@ -58,6 +58,7 @@ class Shipping_to_subconts extends CI_Controller
                             scan_id,
                             item_fg_id,
                             SUM(qty) AS shipping,
+                            COUNT(*) AS qty_label,
                             MIN(workorder) as workorder,
                             MAX(created_date) AS last_created_date
                         FROM shipping_to_subconts
@@ -74,6 +75,53 @@ class Shipping_to_subconts extends CI_Controller
 
         echo json_encode($result);
     }
+
+    // public function getShippingSubconts()
+    // {
+    //     // Ambil scan_id terakhir (sesi aktif)
+    //     $last_scan = $this->db->select('scan_id')
+    //         ->from('shipping_to_subconts')
+    //         ->where('type_status', 'scanning')
+    //         ->where('status', 0)
+    //         ->order_by('created_date', 'DESC')
+    //         ->limit(1)
+    //         ->get()
+    //         ->row();
+
+    //     if (!$last_scan) {
+    //         echo json_encode(['total' => 0, 'rows' => []]);
+    //         return;
+    //     }
+
+    //     $scan_id = $last_scan->scan_id;
+
+    //     // Ambil data shipping + qty_label berdasarkan sesi terakhir
+    //     $this->db->select('
+    //         a.scan_id,
+    //         a.item_fg_id,
+    //         a.workorder,
+    //         SUM(a.qty) AS shipping,
+    //         COUNT(a.id) AS qty_label,
+    //         MAX(a.created_date) AS last_created_date,
+    //         b.number AS item_fg_number,
+    //         b.name AS item_fg_name,
+    //         b.uom
+    //     ');
+    //     $this->db->from('shipping_to_subconts a');
+    //     $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+    //     $this->db->where('a.scan_id', $scan_id);
+    //     $this->db->where('a.type_status', 'scanning');
+    //     $this->db->where('a.status', 0);
+    //     $this->db->group_by('a.scan_id, a.item_fg_id, a.workorder');
+    //     $this->db->order_by('last_created_date', 'DESC');
+
+    //     $records = $this->db->get()->result_array();
+
+    //     echo json_encode([
+    //         'total' => count($records),
+    //         'rows'  => $records
+    //     ]);
+    // }
 
     public function getChecksheetLabel()
     {
@@ -464,8 +512,9 @@ class Shipping_to_subconts extends CI_Controller
 
             if (!$items) {
                 echo json_encode([
+                    "title" => "Error",
+                    "message" => "Items data not received",
                     "theme" => "error",
-                    "message" => "Items data not received"
                 ]);
                 return;
             }
@@ -475,7 +524,11 @@ class Shipping_to_subconts extends CI_Controller
             ]);
 
             if ($exists) {
-                echo json_encode(["theme"=>"error","message"=>"Delivery Note already created"]);
+                echo json_encode([
+                    "title" => "Error",
+                    "message"=>"Delivery Note already created",
+                    "theme"=>"error",
+                ]);
                 return;
             }
 
@@ -483,12 +536,27 @@ class Shipping_to_subconts extends CI_Controller
 
             foreach ($items as $row) {
 
+                if(empty($post['delivery_note_no']) ||
+                   empty($post['delivery_date']) ||
+                   empty($post['delivery_category']) ||
+                   empty($post['delivery_to']) ||
+                   empty($post['destination'])
+                ) {
+                    echo json_encode([
+                        "title" => "Error",
+                        "message"=>"Please fill in all required fields first",
+                        "theme"=>"error",
+                    ]);
+                    return;
+                }
+
                 $summary = $this->getOutputPressSummary(
                     $row['item_fg_id'],
                     $row['workorder'],
                 );
 
                 $insert = [
+                    'scan_id'           => $row['scan_id'],
                     'item_fg_id'        => $row['item_fg_id'],
                     'workorder'         => $row['workorder'],
                     'qty_delivery'      => $row['shipping'],

@@ -62,6 +62,7 @@ class Sales_order_closing extends CI_Controller
             $filter_from = @base64_decode($get['filter_from']);
             $filter_to = @base64_decode($get['filter_to']);
             $filter_customer_id = @base64_decode($get['filter_customer_id']);
+            $filter_customer_order_no = @base64_decode($get['filter_customer_order_no']);
             $filter_sales_order_no = @base64_decode($get['filter_sales_order_no']);
             $filter_status = @base64_decode($get['filter_status']);
 
@@ -81,6 +82,7 @@ class Sales_order_closing extends CI_Controller
                 $this->db->where('a.sales_order_date <=', $filter_to);
             }
             $this->db->like('a.customer_id', $filter_customer_id);
+            $this->db->like('a.customer_order_no', $filter_customer_order_no);
             $this->db->like('a.sales_order_no', $filter_sales_order_no);
             $this->db->like('a.status', $filter_status);
             $this->db->group_by('a.sales_order_no');

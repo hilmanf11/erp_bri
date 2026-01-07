@@ -177,6 +177,39 @@ class Sales_orders extends CI_Controller
         echo $datenow . $autoID;
     }
 
+    public function getLatestPrice()
+    {
+        $item_fg_id  = $this->input->post('item_fg_id');
+        $customer_id = $this->input->post('customer_id');
+        // $so_date     = $this->input->post('sales_order_date');
+
+        $this->db->select('price');
+        $this->db->from('customer_items');
+        $this->db->where('customer_id', $customer_id);
+        $this->db->where('item_fg_id', $item_fg_id);
+
+        // valid date range
+        // $this->db->where('valid_from <=', $so_date);
+        // $this->db->where('valid_to >=', $so_date);
+
+        $this->db->order_by('valid_from', 'DESC');
+        $this->db->order_by('id', 'DESC');
+        $this->db->limit(1);
+
+        $row = $this->db->get()->row();
+
+        if ($row) {
+            echo json_encode([
+                'price'    => (float) $row->price,
+            ]);
+        } else {
+            echo json_encode([
+                'price'    => 0,
+            ]);
+        }
+    }
+
+    
     //GET DATATABLES
     public function datatables()
     {

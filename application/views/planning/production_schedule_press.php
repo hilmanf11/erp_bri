@@ -129,7 +129,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Machines</span>
-                <input style="width:60%;" name="machine_id" id="machine_id" required="" class="easyui-combobox">
+                <input style="width:60%;" name="machine_id" id="machine_id" required="" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
@@ -154,7 +154,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Planning Pcs</span>
-                <input style="width:50%;" name="qty" id="qty" required="" class="easyui-numberbox" data-options="formatter:numberformatInput">
+                <input style="width:60%;" name="qty" id="qty" required="" class="easyui-numberbox" readonly>
             </div>
         </fieldset>
     </form>
@@ -209,6 +209,12 @@
             var data = JSON.parse(res);
             $('#wp').textbox('setValue', data.wp);
         });
+
+        $('#machine_id').combogrid('clear');
+        $('#item_fg_id').combogrid('clear');
+        $('#mold_id').combobox('clear');
+        $('#process_id').combogrid('clear');
+        $('#qty').numberbox('clear');
     }
 
     $('#trans_date').datebox({
@@ -257,9 +263,6 @@
             // Set URL untuk update
             url_save = '<?= base_url('planning/production_schedule_press/update') ?>?id=' + btoa(row.id);
 
-            // =========================
-            // SET MACHINE
-            // =========================
             $('#machine_id').combogrid('setValue', row.machine_id);
             $('#machine_id').combogrid('setText', row.machine_number);
 
@@ -298,9 +301,6 @@
                         // $('#item_fg_id').combogrid('setValue', row.item_fg_id);
                         // $('#item_fg_id').combogrid('setText', row.item_number);
 
-                        // =========================
-                        // LOAD MOLD BERDASARKAN ITEM_FG_ID
-                        // =========================
                         $('#mold_id').combobox({
                             url: '<?= base_url('planning/production_schedule_press/readSettingMolds/'); ?>' + window.btoa(row.item_fg_id) + '/' + window.btoa(row.machine_id),
                             valueField: 'mold_id',
@@ -346,6 +346,7 @@
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
+                                toastr.success(result.message);
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
                                 // toastr.error(jqXHR.statusText);
@@ -476,6 +477,7 @@
                 }
             }]
         });
+
         //Get Customer
         $("#filter_machine_no").combogrid({
             url: '<?= base_url('planning/production_schedule_press/readMachinePressMolds') ?>',
@@ -503,6 +505,7 @@
                 }, ]
             ],
         });
+
         // $("#filter_month").combobox({
         //     url: '<?= base_url('planning/production_schedule_press/readMonth') ?>',
         //     valueField: 'number',
@@ -688,7 +691,12 @@
                             onLoadSuccess: function(data) {
                                 if (data.length === 1) {
                                     $('#mold_id').combobox('setValue', data[0].mold_id);
+
+                                    loadQtyAuto(row.id, row.machine_id, data[0].mold_id);
                                 }
+                            },
+                            onSelect: function(moldRow) {
+                                loadQtyAuto(row.id, row.machine_id, moldRow.mold_id);
                             }
                         });
 
@@ -697,6 +705,19 @@
 
             }
         });
+
+        function loadQtyAuto(item_fg_id, machine_id, mold_id) {
+            $.post("<?= base_url('planning/production_schedule_press/getCapacity') ?>",
+            {
+                item_fg_id: item_fg_id,
+                machine_id: machine_id,
+                mold_id: mold_id
+            },
+            function (res) {
+                var data = JSON.parse(res);
+                $('#qty').numberbox('setValue', data.capacity_day || '');
+            });
+        }
 
         // $("#item_fg_id").combogrid({
         //     url: '<?= base_url("planning/production_schedule_press/readItems2") ?>',
@@ -859,6 +880,7 @@
                             },
 
                             error: function (xhr, status, error) {
+                                toastr.error("Upload failed: " + error);
                                 $.messager.alert("Upload Error", "An error occurred while saving the data", "error");
                             }
                         });

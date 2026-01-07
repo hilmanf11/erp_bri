@@ -10,13 +10,16 @@
         font-size: 40px !important;
     }
 </style>
+
 <table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar">
     <thead>
         <tr>
             <th field="ck" checkbox="true"></th>
+            <!-- <th data-options="field:'scan_id',width:250,halign:'center',hidden:true">Scan ID</th> -->
             <th data-options="field:'item_fg_number',width:250,halign:'center',sortable:true">Product No</th>
             <th data-options="field:'item_fg_name',width:300,halign:'center',sortable:true">Product Name</th>
             <th data-options="field:'workorder',width:250,halign:'center',sortable:true">WO No</th>
+            <th data-options="field:'qty_label',width:150,halign:'center',align:'center',formatter:numberformatInt,sortable:true"> Qty Label</th>
             <th data-options="field:'shipping',width:150,halign:'center',align:'right',formatter:numberformat, styler:numberStyle2,sortable:true"> Qty Delivery</th>
             <th data-options="field:'uom',width:100,align:'center',sortable:true">UoM</th>
         </tr>
@@ -239,19 +242,39 @@
                 iconCls: 'icon-ok',
                 handler: function() {
 
+                    var delivery_date = $("#delivery_date").datebox('getValue');
+                    var delivery_note_no = $("#delivery_note_no").textbox('getValue');
+                    var delivery_category = $("#delivery_category").combobox('getValue');
+                    var delivery_to = $("#delivery_to_insert").combobox('getValue');
+                    var destination = $("#destination").combogrid('getValue');
+                    var destination_code = $("#destination_code").combogrid('getValue');
+
+                    if(delivery_date == "" ||
+                        delivery_note_no == "" ||
+                        delivery_category == "" ||
+                        delivery_to == "" ||
+                        destination == "" ||
+                        destination_code == ""
+                    ) {
+                        toastr.error("Please fill in all required fields first");
+                        return;
+                    }
+
                     var rows = $('#dg').datagrid('getRows');
                     if (rows.length === 0) {
                         toastr.warning("No rows found!");
                         return;
                     }
 
+                    console.log(rows);
+
                     var payload = {
-                        delivery_date: $("#delivery_date").datebox('getValue'),
-                        delivery_note_no: $("#delivery_note_no").textbox('getValue'),
-                        delivery_category: $("#delivery_category").combobox('getValue'),
-                        delivery_to: $("#delivery_to_insert").combobox('getValue'),
-                        destination: $("#destination").combogrid('getValue'),
-                        destination_code: $("#destination_code").combogrid('getValue'),
+                        delivery_date: delivery_date,
+                        delivery_note_no: delivery_note_no,
+                        delivery_category: delivery_category,
+                        delivery_to: delivery_to,
+                        destination: destination,
+                        destination_code: destination_code,
                         items: rows
                     };
 
@@ -378,6 +401,13 @@
     function numberformat(value, row) {
         const formatter = new Intl.NumberFormat('id-ID', {
             minimumFractionDigits: 2
+        });
+        return "<b>" + formatter.format(value) + "</b>";
+    }
+
+    function numberformatInt(value, row) {
+        const formatter = new Intl.NumberFormat('id-ID', {
+            minimumFractionDigits: 0
         });
         return "<b>" + formatter.format(value) + "</b>";
     }

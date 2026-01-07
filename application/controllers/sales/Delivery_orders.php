@@ -268,65 +268,38 @@ class Delivery_orders extends CI_Controller
         }
     }
 
-
-
     public function number($delivery_order_date, $customer_id, $customer_no)
-
     {
-        $current_date = date('Y-m-d');
-        $current_year = date('y'); // Last two digits of current year
-        $current_month = date('m');
-        $date_year = date('Y');
-        
-        // Format part of the sequence
-        $prefix = $customer_no . '/' . $current_month . '/' . $current_year;
-        // $query = $this->db->query("SELECT count(id) as kode,CAST(SUBSTRING_INDEX(delivery_order_no, '/', 1) AS UNSIGNED) AS first FROM delivery_orders WHERE customer_id='".$customer_id."' and YEAR(delivery_date) = '".$date_year."' group by delivery_order_no order by created_date DESC");
+        $delivery_order_date = base64_decode($delivery_order_date);
+        $dt = DateTime::createFromFormat('Y-m-d', $delivery_order_date);
+
+        if (!$dt) {
+            $dt = new DateTime(); // hari ini
+        }
+
+        $year       = $dt->format('Y');
+        $month      = $dt->format('m');
+        $year_short = $dt->format('y');
+
+        $prefix = $customer_no.'/'.$month.'/'.$year_short;
 
         $query = $this->db->query("
             SELECT 
-                CAST(SUBSTRING_INDEX(delivery_order_no, '/', 1) AS UNSIGNED) AS first
-            FROM delivery_orders 
+                CAST(SUBSTRING_INDEX(delivery_order_no, '/', 1) AS UNSIGNED) AS seq
+            FROM delivery_orders
             WHERE customer_id = '".$customer_id."'
-            AND YEAR(delivery_date) = '".$date_year."'
-            ORDER BY first DESC 
+            AND SUBSTRING_INDEX(delivery_order_no, '/', -1) = '".$year_short."'
+            ORDER BY seq DESC
             LIMIT 1
         ");
 
-        if ($query->num_rows() > 0) {
-            // Sequence exists for this year, get the latest sequence number
-            $row = $query->row();//$query->num_rows();//$query->row();
-            $new_sequence_number =sprintf("%04d", intval($row->first) + 1);// "0006";//sprintf("%04d", intval($row) + 1);
-            //$new_sequence_number = explode('/', $row->delivery_order_no)[0];
-        } else {
-            // No sequence exists for this year, insert a new one starting from 1
-            $new_sequence_number = '0001';
-        }
-        // Final sequence number
-        $final_sequence = $new_sequence_number . '/' . $prefix;
-        echo $final_sequence;
+        $new_seq = ($query->num_rows() > 0)
+            ? sprintf('%04d', ((int)$query->row()->seq + 1))
+            : '0001';
 
-        // $datenow    = "DO" . $customer_no . date("ym", strtotime(base64_decode($delivery_order_date)));
-
-        // $sqlGetID   = $this->db->query("SELECT max(`delivery_order_no`) as kode FROM delivery_orders WHERE `delivery_order_no` like '%$datenow%'");
-
-        // $rowID      = $sqlGetID->row();
-
-        // $kode       = $rowID->kode;
-
-        // if ($kode == NULL) {
-
-        //     $autoID = sprintf("%04s", $kode + 1);
-        // } else {
-
-        //     $urutan = (int) substr($kode, -3);
-
-        //     $urutan++;
-
-        //     $autoID = sprintf("%04s", $urutan);
-        // }
-
-        // echo $datenow . $autoID;
+        echo $new_seq.'/'.$prefix;
     }
+
 
 
 
@@ -1075,6 +1048,16 @@ class Delivery_orders extends CI_Controller
 
             $send = false;
 
+            $item_fg = $this->crud->read('item_fg', [], [
+                'id' => $post['item_fg_id']
+            ]);
+
+            if (!$item_fg) {
+                $errors[] = "Product ID not found {$post['item_fg_id']}";
+                continue;
+            }
+            $item_fg_number = $item_fg->number ?? $post['item_fg_id'];
+
             // Cek apakah sudah ada pengiriman sebelumnya untuk item ini di tanggal yang sama dengan partial = 1
             $existing_partial_do = $this->db->from('delivery_orders')
                 ->where([
@@ -1088,7 +1071,7 @@ class Delivery_orders extends CI_Controller
             $current_is_partial = $this->to_boolean($post['partial']) ? 1 : 0;
 
             if ($existing_partial_do && $current_is_partial === 0) {
-                $errors[] = "Item {$post['item_fg_id']} must be marked as partial because there was a previous partial delivery on {$post['delivery_date']}.";
+                $errors[] = "Product No. {$item_fg_number} must be marked as partial because there was a previous partial delivery on {$post['delivery_date']}.";
                 continue;
             }
 
@@ -1110,6 +1093,27 @@ class Delivery_orders extends CI_Controller
                 //     continue;
                 // }
                 // $send = $this->crud->create('delivery_orders', $post);
+
+                $parent_sod = $this->crud->read("sales_order_deliveries", [], [
+                    "sales_order_no"    => $post['sales_order_no'],
+                    "customer_order_no" => $post['customer_order_no'],
+                    "item_fg_id"        => $post['item_fg_id'],
+                    "customer_id"       => $post['customer_id'],
+                    "trans_date"        => $post['delivery_date']
+                ]);
+
+                $item_fg = $this->crud->read("item_fg", [], [
+                    "id"        => $post['item_fg_id'],
+                ]);
+
+                if (!$parent_sod) {
+                    $errors[] = sprintf(
+                        "Cannot create delivery order, delivery schedule not found for Product No. %s on %s",
+                        $item_fg_number,
+                        $post['delivery_date']
+                    );
+                    continue;
+                }
 
                 $post['partial'] = $this->to_boolean($post['partial']) ? 1 : 0;
 
@@ -1159,7 +1163,7 @@ class Delivery_orders extends CI_Controller
                         $new_total = $existing_qty + $post['qty_del'];
 
                         if ($new_total > $current_delivery->qty) {
-                            $errors[] = "Total delivery qty for item {$post['item_fg_id']} on {$post['delivery_date']} exceeds allocation\n";
+                            $errors[] = "Total delivery qty for Product No {$item_fg_number} on {$post['delivery_date']} exceeds allocation\n";
                             continue;
                         }
                     }
@@ -1285,7 +1289,7 @@ class Delivery_orders extends CI_Controller
 
                 $success_count++;
             } else {
-                $errors[] = "Failed to save item_fg_id: {$post['item_fg_id']}";
+                $errors[] = "Failed to save Product ID: {$post['item_fg_id']}";
             }
         }
 
