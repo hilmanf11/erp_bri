@@ -922,11 +922,15 @@ class Scan_incoming_subconts extends CI_Controller
                     throw new Exception("Delivery Note No not found");
                 }
 
-                if ($qty_label > $dn->qty_delivery) {
-                    throw new Exception("Qty label exceeds delivery quantity for label {$post['workorder_label']}");
-                }
+                // if ($qty_label > $dn->qty_delivery) {
+                //     throw new Exception("Qty label exceeds delivery quantity for label {$post['workorder_label']}");
+                // }
 
                 if ($post['incoming_type'] === 'BPM') {
+
+                    if ($qty_label > $dn->qty_delivery) {
+                        throw new Exception("Qty label exceeds delivery quantity for label {$post['workorder_label']}");
+                    }
 
                     $this->crud->delete('shipping_to_subconts', ['workorder_label' => $label_item->workorder_label]);
 

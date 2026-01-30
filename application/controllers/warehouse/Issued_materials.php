@@ -1110,7 +1110,8 @@ class Issued_materials extends CI_Controller
                     + COALESCE(stock_in.qty_in, 0)
                     - COALESCE(stock_out.qty_out, 0)
                 ) AS stock,
-                COALESCE(supp.mpq, 0) AS mpq
+                COALESCE(supp.mpq, 0) AS mpq,
+                COALESCE(hold.status_hold, 0) AS status_hold
             FROM (
                 SELECT eq_1 AS eq_id, 1 AS eq_priority, item_rm_id FROM equivalents
                 UNION ALL
@@ -1172,6 +1173,12 @@ class Issued_materials extends CI_Controller
                 FROM supplier_items
                 GROUP BY item_rm_id
             ) supp ON supp.item_rm_id = eq.eq_id
+            LEFT JOIN (
+                SELECT item_rm_id, MAX(status_hold) AS status_hold
+                FROM purchase_order_receipts
+                GROUP BY item_rm_id
+            ) hold ON hold.item_rm_id = b.id
+
             WHERE eq.item_rm_id = ?
             AND b.id IS NOT NULL
             ORDER BY eq.eq_priority ASC
