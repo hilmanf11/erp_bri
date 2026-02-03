@@ -29,11 +29,15 @@
             </p>
 
             <ul>
-                <li>Flow ID menunjukkan identitas konfigurasi process flow.</li>
-                <li>Flow Type merepresentasikan jenis atau model alur produksi.</li>
-                <li>Kolom Proses (misalnya Weighing, Mixing, Press, Finishing) menunjukkan tahapan proses produksi.</li>
-                <li>Nilai Angka menunjukkan urutan pelaksanaan proses.</li>
-                <li>Nilai 0 berarti proses tersebut tidak digunakan dalam flow.</li>
+                <li>Product ID / Product No / Product Name menunjukkan identitas produk jadi.</li>
+                <li>Machine ID / Machine No menunjukkan mesin yang digunakan dalam produksi.</li>
+                <li>Mold ID menunjukkan mold yang digunakan pada produk dan mesin tersebut.</li>
+                <li>Model menunjukkan model mold yang digunakan.</li>
+                <li>Cavity Standard mengacu pada nilai cavity standar dari modul Master Mold.</li>
+                <li>Cavity Actual menunjukkan nilai cavity aktual dan tersinkronisasi dengan modul Master Mold.</li>
+                <li>Cycle Time (shot/second) menunjukkan waktu siklus produksi.</li>
+                <li>Lot Size menunjukkan jumlah lot produksi.</li>
+                <li>Priority menentukan prioritas proses jika terdapat lebih dari satu konfigurasi.</li>
             </ul>
 
             <span>Data cavity pada modul ini tersinkronisasi secara otomatis dengan data di modul Master Mold.</span></br></br>
