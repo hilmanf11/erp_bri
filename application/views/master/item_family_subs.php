@@ -1,3 +1,50 @@
+<div id="dlg_info" class="easyui-dialog" title="Information" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" data-options="selected:false" style="width:100%; height: 100%;">
+        <div title="English" style="padding: 20px;">
+            <p>
+                <b>General Information:</b></br>
+                The Product Family Sub module stores master data for detailed item grouping under a specific Product Family.
+            </p>
+
+            <ul>
+                <li>ID identifies the product family subcategory record in the system.</li>
+                <li>Code represents the short code for the product family subcategory.</li>
+                <li>Name indicates the name of the subcategory.</li>
+                <li>Category defines the item category, such as Raw Material, Finish Good, or others.</li>
+                <li>Product Family indicates the parent product family to which the subcategory belongs.</li>
+                <li>Kind specifies the item type or characteristic, if applicable.</li>
+                <li>Density stores material density information when required.</li>
+                <li>Description provides additional information about the product family subcategory.</li>
+            </ul>
+
+            <span>Product Family Sub data is used as a reference in various transactions and processes that require more detailed classification based on Product Family.</span></br></br>
+
+            <span>Changes will apply only to transactions created after the changes are made and will not affect existing data.</span>
+        </div>
+        <div title="Indonesian" style="padding: 20px;">
+            <p>
+                <b>Informasi Umum:</b></br>
+                Modul Product Family Sub menyimpan data master pengelompokan item secara lebih detail yang berada di bawah Product Family.
+            </p>
+
+            <ul>
+                <li>ID menunjukkan identitas data sub product family di sistem.</li>
+                <li>Code merepresentasikan kode singkat sub product family.</li>
+                <li>Name menunjukkan nama sub product family.</li>
+                <li>Category menentukan kategori item, seperti Raw Material, Finish Good, dan lainnya.</li>
+                <li>Product Family menunjukkan product family induk dari subkategori tersebut.</li>
+                <li>Kind menjelaskan jenis atau karakteristik item, jika diperlukan.</li>
+                <li>Density berisi informasi densitas material apabila digunakan.</li>
+                <li>Description memberikan keterangan tambahan mengenai sub product family.</li>
+            </ul>
+
+            <span>Data Product Family Sub digunakan sebagai acuan pada berbagai transaksi dan proses yang membutuhkan klasifikasi item lebih detail berdasarkan Product Family.</span></br></br>
+
+            <span>Perubahan data hanya berlaku untuk transaksi yang dibuat setelah perubahan dilakukan dan tidak mempengaruhi data yang sudah ada.</span>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -25,6 +72,7 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_info').dialog('open');"><i class="fa fa-info"></i> Info</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">

@@ -1,3 +1,40 @@
+<div id="dlg_info" class="easyui-dialog" title="Information" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" data-options="selected:false" style="width:100%; height: 100%;">
+        <div title="English" style="padding: 20px;">
+            <p>
+                <b>General Information:</b></br>
+                The Master NG module stores master data for non-good (NG) or defect categories used in quality-related transactions.
+            </p>
+
+            <ul>
+                <li>Code identifies the NG or defect category.</li>
+                <li>Name represents the defect type name.</li>
+                <li>Description provides additional information about the defect, if required.</li>
+            </ul>
+
+            <span>Master NG data is used across various transactions, including Visual Checker output, to record, classify, and analyze product defects.</span></br></br>
+
+            <span>Changes will apply only to transactions created after the changes are made and will not affect existing data.</span>
+        </div>
+        <div title="Indonesian" style="padding: 20px;">
+            <p>
+                <b>Informasi Umum:</b></br>
+                Modul Master NG menyimpan data master kategori NG (cacat) yang digunakan dalam proses dan transaksi terkait kualitas produk.
+            </p>
+
+            <ul>
+                <li>Code menunjukkan kode kategori NG atau cacat.</li>
+                <li>Name merepresentasikan jenis cacat produk.</li>
+                <li>Description berisi keterangan tambahan mengenai cacat, jika diperlukan.</li>
+            </ul>
+
+            <span>Data Master NG digunakan pada berbagai transaksi, termasuk output Visual Checker, untuk pencatatan, pengelompokan, dan analisa cacat produk.</span></br></br>
+
+            <span>Perubahan data hanya berlaku untuk transaksi yang dibuat setelah perubahan dilakukan dan tidak mempengaruhi data yang sudah ada.</span>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -20,6 +57,7 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_info').dialog('open');"><i class="fa fa-info"></i> Info</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">

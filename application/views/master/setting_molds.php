@@ -1,3 +1,111 @@
+<div id="dlg_info" class="easyui-dialog" title="Information" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" data-options="selected:false" style="width:100%; height: 100%;">
+        <div title="English" style="padding: 20px;">
+            <p>
+                <b>General Information:</b></br>
+                The Setting Molds module defines mold configuration for specific products and machines during the production process.
+            </p>
+
+            <ul>
+                <li>Product ID / Product No / Product Name identify the finished product.</li>
+                <li>Machine ID / Machine No represent the machine used for production.</li>
+                <li>Mold ID indicates the mold assigned to the product and machine.</li>
+                <li>Model represents the mold model used.</li>
+                <li>Cavity Standard refers to the standard cavity value from the Master Mold module.</li>
+                <li>Cavity Actual represents the current cavity value and is synchronized with the Master Mold module.</li>
+                <li>Cycle Time (shot/second) defines the production cycle time.</li>
+                <li>Lot Size defines the production lot quantity.</li>
+                <li>Priority determines the processing priority when multiple settings exist.</li>
+            </ul>
+
+            <span>Cavity data in this module is synchronized automatically with Master Mold data.</span></br></br>
+
+            <span>Changes in Master Mold will be reflected here accordingly.</span>
+        </div>
+        <div title="Indonesian" style="padding: 20px;">
+            <p>
+                <b>Informasi Umum:</b></br>
+                Modul Setting Molds digunakan untuk mendefinisikan konfigurasi mold pada produk dan mesin tertentu dalam proses produksi.
+            </p>
+
+            <ul>
+                <li>Flow ID menunjukkan identitas konfigurasi process flow.</li>
+                <li>Flow Type merepresentasikan jenis atau model alur produksi.</li>
+                <li>Kolom Proses (misalnya Weighing, Mixing, Press, Finishing) menunjukkan tahapan proses produksi.</li>
+                <li>Nilai Angka menunjukkan urutan pelaksanaan proses.</li>
+                <li>Nilai 0 berarti proses tersebut tidak digunakan dalam flow.</li>
+            </ul>
+
+            <span>Data cavity pada modul ini tersinkronisasi secara otomatis dengan data di modul Master Mold.</span></br></br>
+
+            <span>Perubahan pada Master Mold akan langsung tercermin pada modul ini.</span>
+        </div>
+    </div>
+</div>
+
+<div id="dlg_help" class="easyui-dialog" title="Help" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" data-options="selected:false" style="width:100%; height: 100%;">
+        <div title="English" style="padding: 20px;">
+            <p>
+                <b>How Cavity Synchronization Works:</b></br>
+            </p>
+
+            <ul>
+                <li>
+                    Cavity Standard is referenced from Master Mold.
+                    <ul>
+                        <li>
+                            If the cavity standard value in Master Mold is changed, the value in this module will be updated automatically.
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    Cavity Actual is also referenced from Master Mold.
+                    <ul>
+                        <li>
+                            Updates will occur automatically if changes are made directly in Master Mold.
+                        </li>
+                        <li>
+                            Updates will also occur in real time if changes are triggered by input from the Production Press Output module.
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+
+            <span>No manual update is required for cavity values in this module.</span>
+        </div>
+        <div title="Indonesian" style="padding: 20px;">
+            <p>
+                <b>Mekanisme Sinkronisasi Cavity:</b></br>
+            </p>
+
+            <ul>
+                <li>
+                    Cavity Standard mengacu pada data di Master Mold.
+                    <ul>
+                        <li>
+                            Jika terjadi perubahan nilai cavity standar di Master Mold, maka data di modul ini akan ikut terupdate secara otomatis.
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    Cavity Actual juga mengacu pada data di Master Mold.
+                    <ul>
+                        <li>
+                            Data akan terupdate otomatis jika terjadi perubahan langsung di Master Mold.
+                        </li>
+                        <li>
+                            Data juga akan terupdate otomatis jika perubahan berasal dari input modul Output Production Press.
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+
+            <span>Tidak diperlukan penginputan manual untuk kolom cavity pada modul ini.</span>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -31,6 +139,8 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_info').dialog('open');"><i class="fa fa-info"></i> Info</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-question-circle"></i> Help</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">

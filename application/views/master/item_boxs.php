@@ -1,13 +1,46 @@
-<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
-    <div class="easyui-accordion" style="width:100%; height: 100%;">
-        <div title="RELATIONS" style="padding: 20px;">
+<div id="dlg_info" class="easyui-dialog" title="Information" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" data-options="selected:false" style="width:100%; height: 100%;">
+        <div title="English" style="padding: 20px;">
+            <p>
+                <b>General Information:</b></br>
+                The Boxes module stores master data for packaging types used in packing and related processes.
+            </p>
+
             <ul>
-                <li>The Data Kind of Box is taken from <b>Master Data > Engineering > Kind of Box</b></li>
-                <li>The Data Colors is taken from <b>Master Data > Engineering > Colors</b></li>
+                <li>ID identifies the box or packaging record in the system.</li>
+                <li>Kind of Box defines the packaging type (e.g., Plastic Bag).</li>
+                <li>Name represents the box size category or name.</li>
+                <li>Size specifies the physical dimensions of the box or packaging.</li>
+                <li>Color indicates the packaging color.</li>
+                <li>Material defines the material used for the box or packaging.</li>
             </ul>
+
+            <span>Boxes data is used as a reference in packing and related transactions.</span></br></br>
+
+            <span>Changes will apply only to transactions created after the changes are made and will not affect existing data.</span>
+        </div>
+        <div title="Indonesian" style="padding: 20px;">
+            <p>
+                <b>Informasi Umum:</b></br>
+                Modul Boxes menyimpan data master jenis kemasan yang digunakan dalam proses packing dan proses terkait.
+            </p>
+
+            <ul>
+                <li>ID menunjukkan identitas data box atau kemasan di sistem.</li>
+                <li>Kind of Box menentukan jenis kemasan (misalnya Plastic Bag).</li>
+                <li>Name merepresentasikan nama atau kategori ukuran kemasan.</li>
+                <li>Size menunjukkan ukuran fisik kemasan.</li>
+                <li>Color menunjukkan warna kemasan.</li>
+                <li>Material menunjukkan bahan kemasan.</li>
+            </ul>
+
+            <span>Data Boxes digunakan sebagai acuan dalam proses packing dan transaksi terkait.</span></br></br>
+
+            <span>Perubahan data hanya berlaku untuk transaksi yang dibuat setelah perubahan dilakukan dan tidak mempengaruhi data yang sudah ada.</span>
         </div>
     </div>
 </div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -33,7 +66,7 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
-    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_info').dialog('open');"><i class="fa fa-info"></i> Info</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">

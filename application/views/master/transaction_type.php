@@ -1,3 +1,42 @@
+<div id="dlg_info" class="easyui-dialog" title="Information" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" data-options="selected:false" style="width:100%; height: 100%;">
+        <div title="English" style="padding: 20px;">
+            <p>
+                <b>General Information:</b></br>
+                The Transaction Type module stores master data for defining transaction categories used in system processes.
+            </p>
+
+            <ul>
+                <li>Transaction Type identifies the transaction code used by the system.</li>
+                <li>Transaction Name represents the transaction name.</li>
+                <li>Description provides a brief explanation of the transaction purpose.</li>
+                <li>Status indicates whether the transaction type is active or inactive.</li>
+            </ul>
+
+            <span>Transaction Type data is used across various system transactions to determine transaction flow and processing behavior.</span></br></br>
+
+            <span>Changes will apply only to transactions created after the changes are made and will not affect existing data.</span>
+        </div>
+        <div title="Indonesian" style="padding: 20px;">
+            <p>
+                <b>Informasi Umum:</b></br>
+                Modul Transaction Type menyimpan data master jenis transaksi yang digunakan dalam proses sistem.
+            </p>
+
+            <ul>
+                <li>Transaction Type menunjukkan kode jenis transaksi yang digunakan oleh sistem.</li>
+                <li>Transaction Name merepresentasikan nama transaksi.</li>
+                <li>Description berisi penjelasan singkat mengenai tujuan transaksi.</li>
+                <li>Status menunjukkan status transaksi, aktif atau tidak aktif.</li>
+            </ul>
+
+            <span>Data Transaction Type digunakan pada berbagai transaksi sistem untuk menentukan alur dan perilaku proses transaksi.</span></br></br>
+
+            <span>Perubahan data hanya berlaku untuk transaksi yang dibuat setelah perubahan dilakukan dan tidak mempengaruhi data yang sudah ada.</span>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -22,6 +61,7 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_info').dialog('open');"><i class="fa fa-info"></i> Info</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:20px; top: 20px;">
