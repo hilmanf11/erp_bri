@@ -89,6 +89,7 @@ class Sales_orders extends CI_Controller
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $customer_order_no = isset($_POST['customer_order_no']) ? $_POST['customer_order_no'] : "";
         $type_item = isset($_POST['type_item']) ? $_POST['type_item'] : "";
+        $division = isset($_POST['division']) ? $_POST['division'] : "";
 
         $sql = "
             SELECT 
@@ -105,6 +106,9 @@ class Sales_orders extends CI_Controller
             FROM customer_items a 
             JOIN item_fg b 
                 ON a.item_fg_id = b.id AND b.type = 'FG'
+            JOIN divisions dv 
+                ON dv.number = '$division'
+                AND b.division_id = dv.id
             JOIN customers c 
                 ON a.customer_id = c.id
             LEFT JOIN delivery_orders d 

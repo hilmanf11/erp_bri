@@ -441,6 +441,7 @@
     function addTable(customer_id, link = "") {
         var customerOrderNo = $('#customer_order_no').textbox('getValue');
         var typeItem = $('#type_item').combobox('getValue');
+        var division = $('#division').combobox('getValue');
 
         // console.log(customerOrderNo);
         $('#dg2').datagrid({
@@ -463,10 +464,13 @@
                             mode: 'remote',
                             fitColumns: true,
                             prompt: 'Choose Product ID',
-                            queryParams: { 
-                                customer_order_no: customerOrderNo,
-                                type_item: typeItem,
-                            },
+
+                            // queryParams: { 
+                            //     customer_order_no: customerOrderNo,
+                            //     type_item: typeItem,
+                            //     division: division,
+                            // },
+
                             columns: [
                                 [{
                                     field: 'id',
@@ -544,8 +548,23 @@
                                         });
                                     }
                                 }
+                            },
+                            onBeforeLoad: function(param) {
+                                param.customer_order_no = $('#customer_order_no').textbox('getValue');
+                                param.type_item = $('#type_item').combobox('getValue');
+                                param.division = $('#division').combobox('getValue');
+                            },
+                            onBeginEdit: function(index, row) {
+                                var ed = $(this).datagrid('getEditor', {
+                                    index: index,
+                                    field: 'item_fg_id'
+                                });
+
+                                if (ed) {
+                                    $(ed.target).combogrid('clear');
+                                }
                             }
-                        }
+                        },
                     }
                 }, {
                     field: 'item_fg_number',
@@ -1370,6 +1389,9 @@
         textField: 'name',
         panelHeight: 'panelHeight',
         prompt: 'Choose Plant',
+        onChange: function() {
+            $('#dg2').datagrid('loadData', { total: 0, rows: [] });
+        }
     });
 
     $('#filter_product_family').combogrid({
