@@ -63,15 +63,43 @@ class Sales_order_deliveries extends CI_Controller
     public function readDeliveryLists() {
         if ($this->input->post()) {
             $post   = $this->input->post();
-            $this->db->select('a.item_fg_id, a.sales_order_no, a.order_type, b.number as item_number, b.name as item_name, a.qty, c.trans_date, c.qty as qty_delivery, c.status as status_delivery');
+            $this->db->select('
+                a.item_fg_id, 
+                a.sales_order_no, 
+                a.order_type, 
+                b.number as item_number, 
+                b.name as item_name, 
+                a.qty, 
+                c.trans_date, 
+                c.qty as qty_delivery, 
+                c.status as status_delivery,
+
+                IF(c.status = 1 OR do.id IS NOT NULL, 1, 0) as lock_status
+            ');
             $this->db->from('sales_orders a');
             $this->db->join('item_fg b','a.item_fg_id = b.id',"left");
-            $this->db->join('sales_order_deliveries c','a.sales_order_no = c.sales_order_no and a.customer_order_no = c.customer_order_no and a.item_fg_id = c.item_fg_id',"left");
+
+            $this->db->join(
+                'sales_order_deliveries c',
+                'a.sales_order_no = c.sales_order_no 
+                AND a.customer_order_no = c.customer_order_no 
+                AND a.item_fg_id = c.item_fg_id',
+                "left"
+            );
+            
+            $this->db->join(
+                'delivery_orders do',
+                'do.sales_order_no = a.sales_order_no
+                AND do.customer_order_no = a.customer_order_no
+                AND do.customer_id = a.customer_id
+                AND do.item_fg_id = a.item_fg_id
+                AND do.delivery_date = c.trans_date',
+                'left'
+            );
+
             $this->db->where('a.customer_id', $post['customer']);
             $this->db->where('a.customer_order_no', $post['customer_order_no']);
             $this->db->where('a.deleted', 0);
-            //$this->db->group_by('a.sales_order_no');
-            //$this->db->group_by('a.item_fg_id');
 
             $records = $this->db->get()->result_array();
             echo json_encode($records);
@@ -160,29 +188,44 @@ class Sales_order_deliveries extends CI_Controller
         $sales_order_no = base64_decode($sales_order_no);
         $item_fg_id = base64_decode($item_fg_id);
 
+        $so = $this->db
+            ->select('qty, type_closing, closing_reason, outstanding, status')
+            ->from('sales_orders')
+            ->where('customer_id', $customer_id)
+            ->where('sales_order_no', $sales_order_no)
+            ->where('item_fg_id', $item_fg_id)
+            ->get()
+            ->row_array();
+
         //Select Query
-        $this->db->select('a.*, b.qty as so_qty');
+        // $this->db->select('a.*, b.qty as so_qty, b.type_closing, b.closing_reason, b.outstanding');
+        $this->db->select('a.*');
         $this->db->from('sales_order_deliveries a');
-        $this->db->join('sales_orders b', 'a.sales_order_no = b.sales_order_no and a.item_fg_id = b.item_fg_id');
+        // $this->db->join('sales_orders b', 'a.sales_order_no = b.sales_order_no and a.item_fg_id = b.item_fg_id');
         $this->db->where('a.customer_id', $customer_id);
         $this->db->where('a.sales_order_no', $sales_order_no);
         $this->db->where('a.item_fg_id', $item_fg_id);
-        $this->db->order_by('trans_date', 'asc');
+        $this->db->order_by('a.trans_date', 'asc');
         $records = $this->db->get()->result_array();
 
         $balance = 0;
         $qty = 0;
         $data = array();
+        $so_qty = $so ? $so['qty'] : 0;
+        $so_status = $so ? $so['status'] : 0;
+
         foreach ($records as $record) {
             $qty += $record['qty'];
-            $balance = $record['so_qty'] - $qty;
+            $balance = $so_qty - $qty;
+            // $balance = $record['so_qty'] - $qty;
+
             $data[] = array(
                 "id" => $record['id'],
                 "customer_id" => $customer_id,
                 "sales_order_no" => $sales_order_no,
                 "item_fg_id" => $item_fg_id,
                 "trans_date" => $record['trans_date'],
-                "so_qty" => $record['so_qty'],
+                "so_qty" => $so_qty,
                 "qty" => $record['qty'],
                 "remain_qty" => $balance,
                 "status" => $record['status'],
@@ -191,9 +234,28 @@ class Sales_order_deliveries extends CI_Controller
             );
         }
 
-        //Mapping Data
-        $result['total'] = count(@$data);
-        $result = array_merge($result, ['rows' => $data]);
+        if (!empty($data)) {
+            $last_remain_qty = $balance;
+        } else {
+            $last_remain_qty = $so ? $so['qty'] : 0;
+        }
+
+        $type_closing = null;
+
+        if ($so) {
+            if ($so['outstanding'] != 0 && (!empty($so['closing_reason']) || !empty($so['type_closing']))) {
+                $type_closing = "CLOSING SO";
+            }
+        }
+
+        $result = array(
+            'total' => count($data),
+            'rows'  => $data,
+            'last_remain_qty' => $last_remain_qty,
+            'type_closing' => $type_closing,
+            'so_status' => $so_status,
+        );
+
         echo json_encode($result);
     }
 
@@ -487,6 +549,58 @@ class Sales_order_deliveries extends CI_Controller
                 "qty" => $post['qty'],
                 "id" => $post['id']
             );
+
+            $old = $this->db
+                ->get_where('sales_order_deliveries', ['id' => $id])
+                ->row();
+
+            if (!$old) {
+                show_error("Data not found", 404);
+                return;
+            }
+
+            $used_old = $this->db
+                ->select('1')
+                ->from('delivery_orders')
+                ->where('sales_order_no', $old->sales_order_no)
+                ->where('customer_order_no', $old->customer_order_no)
+                ->where('customer_id', $old->customer_id)
+                ->where('item_fg_id', $old->item_fg_id)
+                ->where('delivery_date', $old->trans_date)
+                ->limit(1)
+                ->get()
+                ->num_rows();
+
+            if ($used_old > 0) {
+                show_error(
+                    "Cannot update schedule because it is already used in Delivery Order (partial)",
+                    409
+                );
+                return;
+            }
+
+            $duplicate = $this->db
+                ->select('id')
+                ->from('sales_order_deliveries')
+                ->where('sales_order_no', $post['sales_order_no'])
+                ->where('customer_order_no', $post['customer_order_no'])
+                ->where('customer_id', $post['customer_id'])
+                ->where('item_fg_id', $post['item_fg_id'])
+                ->where('trans_date', $post['trans_date'])
+                ->where('id !=', $id)
+                ->limit(1)
+                ->get()
+                ->num_rows();
+
+            if ($duplicate > 0) {
+                show_error(
+                    "Duplicate delivery schedule detected for the same Product No and Delivery Date",
+                    409
+                );
+                return;
+            }
+
+
             $sales_orders = $this->crud->read("sales_orders", [], ["sales_order_no" => $sales_order_no, "item_fg_id" => $item_fg_id]);
             $sales_order_deliveries = $this->crud->read("sales_order_deliveries", [], ["sales_order_no" => $sales_order_no, "item_fg_id" => $item_fg_id]);//, "trans_date" => $post['trans_date']
             $sales_order_deliveries_totalby_id = $this->crud->query("SELECT qty FROM sales_order_deliveries WHERE id='$id'");
@@ -554,30 +668,6 @@ class Sales_order_deliveries extends CI_Controller
     {
         @unlink('failed/create_delivery_schedule/tmp_upload_delivery_schedules.xls');
     }
-
-    // public function uploadcreateFailed()
-    // {
-    //     if ($this->input->post()) {
-    //         $message = $this->input->post('message');
-    //         $textFailed = fopen('failed/tmp_delivery_schedules.txt', 'a');
-    //         fwrite($textFailed, $message . "\n");
-    //         fclose($textFailed);
-    //     }
-    // }
-
-    //UPLOAD DOWNLOAD FAILED
-    // public function uploadDownloadFailed()
-    // {
-    //     $file = "failed/tmp_delivery_schedules.txt";
-    //     header('Content-Description: File Failed');
-    //     header('Content-Disposition: attachment; filename=' . basename($file));
-    //     header('Expires: 0');
-    //     header('Cache-Control: must-revalidate');
-    //     header('Pragma: public');
-    //     header('Content-Length: ' . @filesize($file));
-    //     header("Content-Type: text/plain");
-    //     @readfile($file);
-    // }
 
     public function uploadDownloadFailed()
     {
@@ -670,7 +760,25 @@ class Sales_order_deliveries extends CI_Controller
                 $data['item_fg_id'] = $item_fg->id;
     
                 $sales_orders = $this->crud->read("sales_orders", [], ["sales_order_no" => $data['sales_order_no'], "item_fg_id" => $data['item_fg_id']]);
-                
+
+                if ($sales_orders->outstanding != 0 && (!empty($sales_orders->closing_reason) || !empty($sales_orders->type_closing))) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Sales Order already closed (Pemutihan)"
+                    ];
+                    continue;
+                }
+
+                if ($sales_orders->status != 0 && $sales_orders->status != 2) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Sales Order already closed"
+                    ];
+                    continue;
+                }
+
                 $sales_order_deliveries = $this->crud->read("sales_order_deliveries", [], ["sales_order_no" => $data['sales_order_no'], "item_fg_id" => $data['item_fg_id'], "trans_date" => $data['trans_date']]);
                 
                 $sales_order_deliveries_total = $this->crud->query("SELECT SUM(qty) as total FROM sales_order_deliveries WHERE sales_order_no='$custorderno->sales_order_no' and item_fg_id = '$custorderno->item_fg_id' GROUP BY sales_order_no, item_fg_id");

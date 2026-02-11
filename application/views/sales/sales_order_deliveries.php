@@ -188,6 +188,11 @@
 <!-- PDF -->
 <iframe id="printout" src="<?= base_url('sales/sales_order_deliveries/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
+
+    var last_remain_qty = 0;
+    var so_type_closing = null;
+    var so_status = 0;
+
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
@@ -198,15 +203,34 @@
         url_save = '<?= base_url('sales/sales_order_deliveries/create_schedule') ?>';
         editIndex = undefined;
     }
+
     function addDelivery() {
+
+        if (so_type_closing !== null && so_type_closing !== '') {
+            toastr.warning('Sales Order already closed (Pemutihan)');
+            return;
+        }
+
+        if (so_status != 0 && so_status != 2) {
+            toastr.warning('Sales Order already closed');
+            return;
+        }
+
+        if (last_remain_qty === 0) {
+            toastr.warning('Remain Qty is 0, cannot add delivery');
+            return;
+        }
+
         $('#dlg_update').dialog('open');
         $('#dlg_update').dialog('setTitle', 'Add New');
+
         var customer_id = $("#customer_id").textbox('getValue');
         var sales_order_no = $("#sales_order_no").textbox('getValue');
         var item_fg_id = $("#item_fg_id").textbox('getValue');
         var item_fg_number = $("#item_fg_number").textbox('getValue');
         var customer_order_no = $("#customer_order_no").textbox('getValue');
         var qty = $("#qty").textbox('getValue');
+
         $("#customer_id").textbox('setValue', customer_id);
         $("#sales_order_no").textbox('setValue', sales_order_no);
         $("#item_fg_id").textbox('setValue', item_fg_id);
@@ -228,20 +252,19 @@
                 $('#frm_update').form('load', rows);
                 id_update = rows[0].id;
 
-                            editIndex = undefined;
-                            setTimeout(function() {
-                                $('#customer_id').textbox('setValue', rows[0].customer_id);
-                                $("#sales_order_no").textbox('setValue', rows[0].sales_order_no);
-                                $('#item_fg_id').textbox('setValue', rows[0].item_fg_id);
-                                $('#trans_date').datebox('setValue', rows[0].trans_date);
-                                $('#qty').textbox('setValue', rows[0].qty);
-                            }, 500);
+                editIndex = undefined;
+                setTimeout(function() {
+                    $('#customer_id').textbox('setValue', rows[0].customer_id);
+                    $("#sales_order_no").textbox('setValue', rows[0].sales_order_no);
+                    $('#item_fg_id').textbox('setValue', rows[0].item_fg_id);
+                    $('#trans_date').datebox('setValue', rows[0].trans_date);
+                    $('#qty').textbox('setValue', rows[0].qty);
+                }, 500);
             //    }
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
-
 
     function btnDelivery(val, row) {
         var delivery = "delivery('" + row.customer_id + "','" + row.sales_order_no + "','" + row.customer_order_no + "','" + row.item_fg_id + "', '"+row.item_fg_number+"')"; //mengambil id dari customers kemudian di simpan di function details
@@ -267,6 +290,15 @@
                 if (rowData.status === '1') {
                     return false;
                 }
+            },
+            onLoadSuccess: function (data) {
+                last_remain_qty = parseFloat(data.last_remain_qty);
+                so_type_closing = data.type_closing;
+                so_status = data.so_status;
+
+                // console.log('Last Remain Qty :', last_remain_qty);
+                // console.log('Type Closing:', so_type_closing);
+                console.log('SO Status:', so_status);
             }
         });
     }
@@ -617,7 +649,9 @@
 
         // Jika field terkunci, cegah edit
         if (field.match(/^\d{4}-\d{2}-\d{2}$/) && row[`_lock_${field}`] == 1) {
-            toastr.info('This date is closed. Editing is disabled.', 'Locked');
+            // toastr.info('This date is closed. Editing is disabled.', 'Locked');
+            // toastr.info("This date is locked and cannot be edited.", "Locked");
+            toastr.info('This date is closed or already used in a delivery order.', 'Locked');
             return;
         }
 
@@ -730,21 +764,9 @@
                         },
                 dataType: "json",
                 success: function(result) {
+                    console.log('DATA : ', result);
+                    
                     let transformedData = [];
-            //         result.forEach(row => {
-            //     let groupName = row.item_number;
-            //     let date = row.trans_date;
-            //     let groupRow = transformedData.find(r => r.item_number === groupName);
-
-            //     // If group does not exist, create a new one
-            //     if (!groupRow) {
-            //         groupRow = {item_number: groupName, item_name: row.item_name, item_fg_id: row.item_fg_id,qty: row.qty, sales_order_no:row.sales_order_no};
-            //         transformedData.push(groupRow);
-            //     }
-
-            //     // Add the row's value under the correct date column
-            //     //groupRow[date] = row.field2;  // Or any other value you'd like to display
-            // });
 
                     result.forEach(row => {
                         let groupName = row.item_number;
@@ -767,47 +789,42 @@
                             groupRow[date] = row.qty_delivery;
 
                             // Simpan juga statusnya untuk keperluan lock
-                            groupRow[`_lock_${date}`] = row.status_delivery;
+                            // groupRow[`_lock_${date}`] = row.status_delivery;
+
+                            groupRow[`_lock_${date}`] = row.lock_status;
                         }
                     });
 
                     let date = new Date(order_date);//console.log(result[0].order_type)
-                            let year = date.getFullYear();
-                            let month = String(date.getMonth() + 1).padStart(2, '0');
-                            //console.log(month)
-                            if(result[0].order_type==1){
-                                date.setMonth(date.getMonth() + 1);
-                                year = date.getFullYear();
-                                month = String(date.getMonth()+1).padStart(2, '0');
-                            //  console.log(month,"i")
-                            }
+                    let year = date.getFullYear();
+                    let month = String(date.getMonth() + 1).padStart(2, '0');
+                    //console.log(month)
+                    if(result[0].order_type==1){
+                        date.setMonth(date.getMonth() + 1);
+                        year = date.getFullYear();
+                        month = String(date.getMonth()+1).padStart(2, '0');
+                    //  console.log(month,"i")
+                    }
 
-                            const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-                            let monthIndex = result[0].order_type==1? date.getMonth()+1 : date.getMonth();
-                            let monthName = result[0].order_type==1?monthNames[monthIndex-1]:monthNames[monthIndex];
-                            let days = getDaysInMonth(year, month);
-                                let dayColumns = days.map(day => ({
-                                    field: `${year}-${month}-${parseInt(day)<10?'0'+day:day}`,
-                                    title: day,
-                                    halign: 'center',
-                                    width: 80,
-                                    editor: {
-                                        type: 'numberbox',
-                                    }
-                                }));
+                    const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+                    let monthIndex = result[0].order_type==1? date.getMonth()+1 : date.getMonth();
+                    let monthName = result[0].order_type==1?monthNames[monthIndex-1]:monthNames[monthIndex];
+                    let days = getDaysInMonth(year, month);
+                    let dayColumns = days.map(day => ({
+                        field: `${year}-${month}-${parseInt(day)<10?'0'+day:day}`,
+                        title: day,
+                        halign: 'center',
+                        width: 80,
+                        editor: {
+                            type: 'numberbox',
+                        }
+                    }));
+
                     $('#dg_request').datagrid({
                         singleSelect: true,
                         data: transformedData,//result,
                         columns: [
-                            [
-                            //     {
-                            //     field: 'action',
-                            //     width: 80,
-                            //     halign: 'center',
-                            //     title: "Action",
-                            //     formatter: buttonEdit
-                            // }, 
-                            {
+                            [{
                                 field: 'item_number',
                                 width: 150,
                                 halign: 'center',
@@ -948,7 +965,8 @@
                                         row[item.trans_date] = item.qty_delivery;
 
                                         // Simpan status delivery ke field khusus supaya bisa dicek di onClickCell
-                                        row[`_lock_${item.trans_date}`] = item.status_delivery;
+                                        // row[`_lock_${item.trans_date}`] = item.status_delivery;
+                                        row[`_lock_${item.trans_date}`] = item.lock_status;
 
                                         $('#dg_request').datagrid('updateRow', {
                                             index: rowIndex,
@@ -960,32 +978,6 @@
                                 }
                             });
                         },
-
-                        // onLoadSuccess: function() {
-                        //     var rows = $('#dg_request').datagrid('getRows');
-                        //     endEditing();
-                        //     result.forEach(item => {
-                        //         if(item.trans_date!==null){
-                        //                 let rowIndex = $('#dg_request').datagrid('getRows').findIndex(row => row.item_number === item.item_number);
-                                        
-                        //                 if (rowIndex !== -1) {
-                        //                     try {
-                        //                         $('#dg_request').datagrid('updateRow', {
-                        //                             index: rowIndex, 
-                        //                             row: {
-                        //                                 [item.trans_date]: item.qty_delivery
-                        //                             }
-                        //                         });
-                                            
-                        //                     } catch (error) {
-                        //                         console.error("Error accessing editor for field:", item.trans_date, error);
-                        //                     }
-                        //                 } else {
-                        //                     console.error("Invalid rowIndex:", rowIndex);
-                        //                 }
-                        //             }
-                        //     });
-                        // }
 
                     });
 
