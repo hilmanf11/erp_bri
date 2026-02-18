@@ -9,6 +9,12 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\RichText\Run;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Settings;
 
 class Bom extends CI_Controller
 {
@@ -37,20 +43,37 @@ class Bom extends CI_Controller
             redirect('error_access');
         }
     }
-    private function format_number($number) {
-        //Check if the number contains a comma or period as decimal separator
-        if (strpos($number, '.') !== false) {
-            $formatted_number = str_replace(',', '.', $number);
-            $formatted_number = str_replace('.', ',', $formatted_number);
-        } elseif (strpos($number, ',') !== false) {
-            $formatted_number = str_replace('.', ',', $number);
-            $formatted_number = str_replace(',', '.', $formatted_number);
-        } else {
-            $formatted_number = $number;
-        }
+
+    // private function format_number($number) {
+    //     //Check if the number contains a comma or period as decimal separator
+    //     if (strpos($number, '.') !== false) {
+    //         $formatted_number = str_replace(',', '.', $number);
+    //         $formatted_number = str_replace('.', ',', $formatted_number);
+    //     } elseif (strpos($number, ',') !== false) {
+    //         $formatted_number = str_replace('.', ',', $number);
+    //         $formatted_number = str_replace(',', '.', $formatted_number);
+    //     } else {
+    //         $formatted_number = $number;
+    //     }
     
-        return $formatted_number;
+    //     return $formatted_number;
+    // }
+
+    private function format_number($number)
+    {
+        if ($number === null || $number === '') {
+            return '';
+        }
+
+        $number = (float) $number;
+
+        if ($number == (int) $number) {
+            return (string) (int) $number;
+        }
+
+        return number_format($number, 4, ',', '');
     }
+
     //GET DATA
     public function reads()
     {
@@ -129,7 +152,15 @@ class Bom extends CI_Controller
             $number = base64_decode($this->input->get('number'));
             $filter_item_rm_id = base64_decode($this->input->get('filter_item_rm_id'));
 
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.number_internal as item_rm_number_internal, c.name as item_rm_name, e.name as process_name, a.uom as uom, c.item_family_id as product_family, d.name as product_family_name, (CASE WHEN a.type = "1" THEN "ORIGINAL" WHEN a.type = "2" THEN "RECYCLE" WHEN a.type = "3" THEN "BOTH" ELSE "INVALID" END) as type_name, CASE WHEN a.composition = FLOOR(a.composition) THEN FORMAT(CAST(FLOOR(a.composition) AS CHAR),0) ELSE FORMAT(CAST(a.composition AS CHAR),2) END AS formatted_composition');
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.number_internal as item_rm_number_internal, c.name as item_rm_name, e.name as process_name, a.uom as uom, c.item_family_id as product_family, d.name as product_family_name, (CASE WHEN a.type = "1" THEN "ORIGINAL" WHEN a.type = "2" THEN "RECYCLE" WHEN a.type = "3" THEN "BOTH" ELSE "INVALID" END) as type_name, a.composition as formatted_composition');
+
+            // CASE 
+            //     WHEN a.composition = FLOOR(a.composition) 
+            //         THEN FORMAT(CAST(FLOOR(a.composition) AS CHAR),0) 
+            // ELSE 
+            //     FORMAT(CAST(a.composition AS CHAR),4) 
+            // END AS formatted_composition
+
             $this->db->from('bom a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
@@ -359,10 +390,14 @@ class Bom extends CI_Controller
     public function print($option = "")
     {
         if ($option == "excel") {
-            $format  = date("Ymd");
-            header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=bom_$format.xls");
+            // $format  = date("Ymd");
+            // header("Content-type: application/vnd-ms-excel");
+            // header("Content-Disposition: attachment; filename=bom_$format.xls");
+
+            return $this->export_excel();
         }
+
+        $is_excel = ($option == 'excel');
 
         $get = $this->input->get();
         $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
@@ -373,7 +408,15 @@ class Bom extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.number_internal as item_rm_number_internal, c.name as item_rm_name, e.name as process_name, c.item_family_id as product_family, a.uom as uom, , d.name as product_family_name, CASE WHEN a.composition = FLOOR(a.composition) THEN FORMAT(CAST(FLOOR(a.composition) AS CHAR),0) ELSE FORMAT(CAST(a.composition AS CHAR),2) END AS formatted_composition');
+        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.number_internal as item_rm_number_internal, c.name as item_rm_name, e.name as process_name, c.item_family_id as product_family, a.uom as uom, , d.name as product_family_name, a.composition as formatted_composition');
+
+        // CASE 
+        //     WHEN a.composition = FLOOR(a.composition) 
+        //         THEN FORMAT(CAST(FLOOR(a.composition) AS CHAR),0) 
+        // ELSE 
+        //     FORMAT(CAST(a.composition AS CHAR),2) 
+        // END AS formatted_composition
+
         $this->db->from('bom a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
@@ -381,8 +424,9 @@ class Bom extends CI_Controller
         $this->db->join('item_process e', 'a.process_id = e.id');
         $this->db->like('a.item_fg_id', $filter_item_fg_id);
         $this->db->like('a.item_rm_id', $filter_item_rm_id);
-        $this->db->order_by('a.id', 'ASC');
+        $this->db->order_by('b.number', 'ASC');
         $records = $this->db->get()->result_array();
+
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#bom {border-collapse: collapse;width: 100%;font-size: 12px;}#bom td, #bom th {border: 1px solid #ddd;padding: 2px;}#bom tr:nth-child(even){background-color: #f2f2f2;}#bom tr:hover {background-color: #ddd;}#bom th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">
@@ -426,6 +470,32 @@ class Bom extends CI_Controller
             </tr>';
         $no = 1;
         foreach ($records as $data) {
+
+            $composition_value = '';
+
+            if ($is_excel) {
+
+                // $composition_value = '
+                //     <td style="text-align:right; mso-number-format:&quot;@&quot;">
+                //         ' . str_replace('.', ',', $data['composition']) . '
+                //     </td>';
+
+                $composition_value = '
+                    <td style="
+                        text-align:right;
+                        mso-number-format:\'#,##0.0000\';
+                    ">
+                        ' . number_format((float)$data['composition'], 4, '.', '') . '
+                    </td>';
+
+            } else {
+
+                $composition_value = '
+                    <td>
+                        ' . $this->format_number($data['composition']) . '
+                    </td>';
+            }
+
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['item_fg_id'] . '</td>
@@ -439,13 +509,190 @@ class Bom extends CI_Controller
                     <td>' . $data['recyle'] . '</td>
                     <td>' . $data['product_family_name'] . '</td>
                     <td>' . $data['uom'] . '</td>
-                    <td>' . $this->format_number($data['formatted_composition']) . '</td>
+                        ' . $composition_value . '
                     <td>' . $data['priority'] . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';
         echo $html;
     }
+
+
+    public function export_excel()
+    {
+        $get = $this->input->get();
+        $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
+        $filter_item_rm_id = @base64_decode($get['filter_item_rm_id']);
+
+        Settings::setLocale('id_ID');
+        $config = $this->db->get('config')->row();
+
+        $this->db->select('
+            a.*,
+            b.number as item_fg_number,
+            b.name as item_fg_name,
+            c.number_internal as item_rm_number_internal,
+            c.name as item_rm_name,
+            e.name as process_name,
+            d.name as product_family_name
+        ');
+        $this->db->from('bom a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->join('item_rm c', 'a.item_rm_id = c.id');
+        $this->db->join('item_familys d', 'c.item_family_id = d.id');
+        $this->db->join('item_process e', 'a.process_id = e.id');
+        $this->db->like('a.item_fg_id', $filter_item_fg_id);
+        $this->db->like('a.item_rm_id', $filter_item_rm_id);
+        $this->db->order_by('b.number', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('BOM');
+
+        $logoPath = FCPATH . 'assets/image/bri_favicon.png';
+
+        if (file_exists($logoPath)) {
+
+            $sheet->mergeCells('A1:A2');
+            $sheet->getRowDimension(1)->setRowHeight(15);
+            $sheet->getRowDimension(2)->setRowHeight(15);
+            $sheet->getColumnDimension('A')->setWidth(6);
+
+            $drawing = new Drawing();
+            $drawing->setName('Logo');
+            $drawing->setDescription('Company Logo');
+            $drawing->setPath($logoPath);
+            $drawing->setHeight(30);
+            $drawing->setOffsetX(5);
+            $drawing->setOffsetY(5);
+            $drawing->setCoordinates('A1');
+            $drawing->setWorksheet($sheet);
+        }
+
+        $sheet->mergeCells('B1:D2');
+        $sheet->setCellValue('B1', $config->name);
+        $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('B1')->getAlignment()
+            ->setVertical(Alignment::VERTICAL_CENTER);
+
+        $sheet->mergeCells('L1:N1');
+        $sheet->mergeCells('L2:N2');
+        $sheet->setCellValue('L1', 'Print Date : '.date('d M Y H:i:s'));
+        $sheet->setCellValue('L2', 'Print By   : '.$this->session->username);
+        $sheet->getStyle('L1:L2')->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('L1:L2')->getFont()->setSize(10);
+
+        $sheet->mergeCells('A4:N4');
+        $sheet->setCellValue('A4', 'MASTER BILL OF MATERIAL');
+        $sheet->getStyle('A4')->getFont()->setBold(true)->setSize(16);
+        $sheet->getStyle('A4')->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $row = 6;
+        $headers = [
+            'No','Product ID','Product No','Product Name',
+            'Part ID','Part No Internal','Part Name',
+            'Process Name','Type of Product','% Recycle Part',
+            'Product Family','UOM','Composition','Priority'
+        ];
+
+        $col = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($col.$row, $header);
+            $sheet->getStyle($col.$row)->getFont()->setBold(true);
+            $sheet->getStyle($col.$row)->getAlignment()
+                ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            // $sheet->getColumnDimension($col)->setAutoSize(true);
+            $col++;
+        }
+
+        $sheet->getColumnDimension('A')->setWidth(8);
+        $sheet->getColumnDimension('B')->setWidth(20);
+        $sheet->getColumnDimension('C')->setWidth(18);
+        $sheet->getColumnDimension('D')->setWidth(30);
+        $sheet->getColumnDimension('E')->setWidth(20);
+        $sheet->getColumnDimension('F')->setWidth(20);
+        $sheet->getColumnDimension('G')->setWidth(30);
+        $sheet->getColumnDimension('H')->setWidth(18);
+        $sheet->getColumnDimension('I')->setWidth(18);
+        $sheet->getColumnDimension('J')->setWidth(18);
+        $sheet->getColumnDimension('K')->setWidth(22);
+        $sheet->getColumnDimension('L')->setWidth(14);
+        $sheet->getColumnDimension('M')->setWidth(16);
+        $sheet->getColumnDimension('N')->setWidth(12);
+
+        $sheet->getStyle('C:C')->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_LEFT);
+
+        $sheet->getStyle("A$row:N$row")
+            ->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setRGB('F2F2F2');
+
+        $row++;
+        $no = 1;
+
+        foreach ($records as $data) {
+
+            $sheet->setCellValue("A$row", $no++);
+            $sheet->setCellValue("B$row", $data['item_fg_id']);
+            $sheet->setCellValue("C$row", $data['item_fg_number']);
+            $sheet->setCellValue("D$row", $data['item_fg_name']);
+            $sheet->setCellValue("E$row", $data['item_rm_id']);
+            $sheet->setCellValue("F$row", $data['item_rm_number_internal']);
+            $sheet->setCellValue("G$row", $data['item_rm_name']);
+            $sheet->setCellValue("H$row", $data['process_name']);
+            $sheet->setCellValue("I$row", $data['type']);
+            $sheet->setCellValue("J$row", $data['recyle']);
+            $sheet->setCellValue("K$row", $data['product_family_name']);
+            $sheet->setCellValue("L$row", $data['uom']);
+
+            $sheet->setCellValueExplicit(
+                "M$row",
+                (float)$data['composition'],
+                DataType::TYPE_NUMERIC
+            );
+
+            $sheet->setCellValueExplicit(
+                "C$row",
+                $data['item_fg_number'],
+                DataType::TYPE_STRING
+            );
+
+            // $sheet->getStyle("M$row")
+            //     ->getNumberFormat()
+            //     ->setFormatCode('#,##0.0000');
+
+            $sheet->getStyle("M$row")
+                ->getNumberFormat()
+                ->setFormatCode('0.0000');
+
+
+            $sheet->setCellValue("N$row", $data['priority']);
+
+            $row++;
+        }
+
+        $sheet->getStyle("A6:N".($row-1))
+            ->getBorders()
+            ->getAllBorders()
+            ->setBorderStyle(Border::BORDER_THIN);
+
+        $sheet->freezePane('A7');
+
+        $filename = 'bom_' . date('Ymd') . '.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="'.$filename.'"');
+        header('Cache-Control: max-age=0');
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
+    }
+
     public function exportTemplate() {
         // $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $spreadsheet = new Spreadsheet();

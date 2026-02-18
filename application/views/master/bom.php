@@ -221,6 +221,8 @@
                                     $(ed4.target).textbox('setValue', rows.item_family_name);
                                     $(ed5.target).textbox('setValue', rows.uom);
                                     $(ed6.target).numberbox('setValue', calculatedComposition);
+
+                                    reloadUomEditor(dg, rowIndex, rows.item_family_name, rows.uom);
                                 });
                             }
                         }
@@ -351,7 +353,7 @@
                     editor: {
                         type: 'numberbox',
                         options: {
-                            precision: 2,
+                            precision: 4,
                         }
                     }
                 }, {
@@ -367,6 +369,37 @@
             onClickCell: onClickCell
         });
     }
+
+    function reloadUomEditor(dg, rowIndex, family, selectedUom = '') {
+        var edUom = dg.datagrid('getEditor', {
+            index: rowIndex,
+            field: 'uom'
+        });
+
+        if (!edUom) return;
+
+        var allowGR = (family === 'CHEMICAL' || family === 'COMPOUND');
+
+        $(edUom.target).combobox({
+            url: '<?= base_url('master/bom/readUoM'); ?>',
+            valueField: 'name',
+            textField: 'name',
+            loadFilter: function(data) {
+                if (allowGR) return data;
+                return $.grep(data, function(item) {
+                    return item.name !== 'GR';
+                });
+            },
+            onLoadSuccess: function() {
+                if (selectedUom) {
+                    $(this).combobox('setValue', selectedUom);
+                } else {
+                    $(this).combobox('clear');
+                }
+            }
+        });
+    }
+
 
     var editIndex = undefined;
 

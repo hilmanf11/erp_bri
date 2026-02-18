@@ -891,6 +891,7 @@ class Supply_sheets extends CI_Controller
         }
 
         // Query utama
+        // COALESCE((a.qty * b.composition),0) as qty_req,
         $this->db->select('
             c.id as item_rm_id,
             c.number as item_rm_no, 
@@ -900,24 +901,61 @@ class Supply_sheets extends CI_Controller
             COALESCE(f.uom_soft, b.uom) as uom,
             COALESCE(b.composition, 0) as qpa,
             a.qty,
-            COALESCE((a.qty * b.composition),0) as qty_req,
+            COALESCE(CAST(a.qty * b.composition AS DECIMAL(20,4)), 0) as qty_req,
             CASE 
-                WHEN c.item_family_id = "P06" AND c.supply = 0 THEN ROUND(a.qty * b.composition, 2)
-                ELSE CASE
-                    WHEN d.qty_bal IS NOT NULL AND d.qty_bal >= 
-                        CASE
-                            WHEN f.uom_soft IS NULL THEN ROUND(a.qty * b.composition)
-                            ELSE ROUND(a.qty * (b.composition * f.convertion))
-                        END THEN d.qty_bal
-                    ELSE CEIL(
-                        CASE
-                            WHEN f.uom_soft IS NULL THEN ROUND(a.qty * b.composition)
-                            ELSE ROUND(a.qty * (b.composition * f.convertion))
-                        END / h.mpq
-                    ) * h.mpq
-                END
-            END as qty_act,
+                WHEN c.item_family_id = "P06"
+                THEN CAST(a.qty * b.composition AS DECIMAL(20,4))
+
+                ELSE 
+                    CAST(
+                        CEIL(
+                            (
+                                CASE
+                                    WHEN f.uom_soft IS NULL 
+                                        THEN (a.qty * b.composition)
+                                    ELSE (a.qty * b.composition * f.convertion)
+                                END
+                            ) / COALESCE(NULLIF(h.mpq, 0), 1)
+                        ) 
+                        * COALESCE(NULLIF(h.mpq, 0), 1)
+                    AS DECIMAL(20,4))
+            END AS qty_act
         ');
+
+
+        // $this->db->select('
+        //     c.id as item_rm_id,
+        //     c.number as item_rm_no, 
+        //     c.number_internal as item_rm_no_internal, 
+        //     c.name as item_rm_name, 
+        //     h.mpq,
+        //     COALESCE(f.uom_soft, b.uom) as uom,
+        //     COALESCE(b.composition, 0) as qpa,
+        //     a.qty,
+        //     COALESCE(CAST(a.qty * b.composition AS DECIMAL(20,4)), 0) as qty_req,
+        //     CASE 
+        //         WHEN c.item_family_id = "P06" AND c.supply = 0 THEN ROUND(a.qty * b.composition, 4)
+        //         ELSE CASE
+        //             WHEN d.qty_bal IS NOT NULL AND d.qty_bal >= 
+        //                 CASE
+        //                     WHEN f.uom_soft IS NULL THEN 
+        //                         ROUND(a.qty * b.composition)
+        //                     ELSE 
+        //                         ROUND(a.qty * (b.composition * f.convertion))
+        //                 END THEN d.qty_bal
+        //             ELSE CEIL(
+        //                 CASE
+        //                     WHEN f.uom_soft IS NULL 
+        //                         THEN CAST(a.qty * b.composition AS DECIMAL(20,4))
+        //                     ELSE 
+        //                         CAST(a.qty * (b.composition * f.convertion) AS DECIMAL(20,4))
+        //                 END / h.mpq
+        //             ) * h.mpq
+        //         END
+        //     END as qty_act,
+        // ');
+
+
 
         // $this->db->select('
         //     c.id as item_rm_id,
