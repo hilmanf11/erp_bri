@@ -521,7 +521,7 @@
                                 $(ed3.target).textbox('setValue', rows.uom);
                                 $(ed4.target).numberbox('setValue', rows.price);
                                 $(ed5.target).textbox('setValue', rows.currency);
-                                $(ed6.target).textbox('setValue', rows.delivery);
+                                $(ed6.target).numberbox('setValue', rows.delivery);
 
                                 // CEK EXPIRED PRICE
                                 var validFrom = rows.valid_from;
@@ -668,8 +668,25 @@
                                     field: 'delivery'
                                 });
 
-                                var currentPrice = $(edPrice.target).numberbox('getValue');
-                                var delivery = $(edDelivery.target).numberbox('getValue');
+                                // var currentPrice = $(edPrice.target).numberbox('getValue');
+                                // var delivery = $(edDelivery.target).numberbox('getValue');
+
+                                // console.log('OUT 1 : ', edDelivery);
+
+                                var currentPrice = parseFloat($(edPrice.target).numberbox('getValue')) || 0;
+                                // var delivery = parseFloat($(edDelivery.target).numberbox('getValue')) || 0;
+
+                                var delivery = 0;
+                                if (edDelivery && edDelivery.target) {
+                                    delivery = parseFloat($(edDelivery.target).numberbox('getValue')) || 0;
+                                }
+                                if (!delivery) {
+                                    delivery = parseFloat(row.delivery) || 0;
+                                }
+
+                                qty = parseFloat(qty) || 0;
+
+                                // console.log('OUT 2 : ', delivery);
 
                                 // ambil price terbaru
                                 $.ajax({
@@ -690,8 +707,16 @@
                                             currentPrice = latestPrice;
                                         }
 
-                                        var total = parseFloat(qty) * parseFloat(currentPrice);
-                                        var outstanding = parseFloat(qty) - parseFloat(delivery);
+                                        // var total = parseFloat(qty) * parseFloat(currentPrice);
+                                        // var outstanding = parseFloat(qty) - parseFloat(delivery);
+
+                                        // $(edTotal.target).numberbox('setValue', total);
+                                        // $(edOutstanding.target).textbox('setValue', outstanding);
+
+                                        var total = qty * currentPrice;
+                                        var outstanding = qty - delivery;
+
+                                        // console.log('OUT 3 : ', outstanding);
 
                                         $(edTotal.target).numberbox('setValue', total);
                                         $(edOutstanding.target).numberbox('setValue', outstanding);
@@ -724,8 +749,7 @@
                             readonly: true
                         }
                     }
-                }, 
-                {
+                }, {
                     field: 'currency',
                     width: 80,
                     halign: 'center',
@@ -767,9 +791,15 @@
             ],
             onClickCell: onClickCell,
             onLoadSuccess: function(data) {
+                // console.log('Data : ', data);
+
                 // calculate();
                 if (data.rows && data.rows.length > 0) {
                     calculate();
+
+                    data.rows.forEach(function(row, i) {
+                        row.outstanding = (parseFloat(row.qty || 0) - parseFloat(row.delivery || 0));
+                    });                    
                 }
             }
         });
@@ -777,14 +807,47 @@
 
     var editIndex = undefined;
 
+    // function endEditing() {
+    //     if (editIndex == undefined) {
+    //         return true
+    //     }
+    //     if ($('#dg2').datagrid('validateRow', editIndex)) {
+    //         $('#dg2').datagrid('endEdit', editIndex);
+    //         editIndex = undefined;
+    //         return true;
+    //     } else {
+    //         return false;
+    //     }
+    // }
+
+
     function endEditing() {
         if (editIndex == undefined) {
-            return true
-        }
-        if ($('#dg2').datagrid('validateRow', editIndex)) {
-            $('#dg2').datagrid('endEdit', editIndex);
-            editIndex = undefined;
             return true;
+        }
+
+        if ($('#dg2').datagrid('validateRow', editIndex)) {
+
+            var dg = $('#dg2');
+
+            var edQty = dg.datagrid('getEditor', { index: editIndex, field: 'qty' });
+            var edDelivery = dg.datagrid('getEditor', { index: editIndex, field: 'delivery' });
+            var edOutstanding = dg.datagrid('getEditor', { index: editIndex, field: 'outstanding' });
+
+            if (edQty && edDelivery && edOutstanding) {
+                var qty = parseFloat($(edQty.target).numberbox('getValue')) || 0;
+                var delivery = parseFloat($(edDelivery.target).numberbox('getValue')) || 0;
+
+                var outstanding = qty - delivery;
+
+                $(edOutstanding.target).numberbox('setValue', outstanding);
+            }
+
+            dg.datagrid('endEdit', editIndex);
+            editIndex = undefined;
+
+            return true;
+
         } else {
             return false;
         }
@@ -1246,6 +1309,8 @@
                             let row = rows[i];
 
                             if (row.item_fg_id) {
+                                let qty_outstanding = parseFloat(row.qty) - parseFloat(row.delivery);
+
                                 items.push({
                                         customer_id: customer_id,
                                         customer_order_no: customer_order_no,
@@ -1270,7 +1335,7 @@
                                         uom: row.uom,
                                         qty: row.qty,
                                         delivery: row.delivery,
-                                        outstanding: row.outstanding,
+                                        outstanding: qty_outstanding,
                                         currency: row.currency,
                                         price: row.price,
                                         total: row.total,
