@@ -820,7 +820,6 @@
     //     }
     // }
 
-
     function endEditing() {
         if (editIndex == undefined) {
             return true;
@@ -833,14 +832,19 @@
             var edQty = dg.datagrid('getEditor', { index: editIndex, field: 'qty' });
             var edDelivery = dg.datagrid('getEditor', { index: editIndex, field: 'delivery' });
             var edOutstanding = dg.datagrid('getEditor', { index: editIndex, field: 'outstanding' });
+            var edPrice = dg.datagrid('getEditor', { index: editIndex, field: 'price' });
+            var edTotal = dg.datagrid('getEditor', { index: editIndex, field: 'total' });
 
-            if (edQty && edDelivery && edOutstanding) {
+            if (edQty && edDelivery && edOutstanding && edTotal) {
                 var qty = parseFloat($(edQty.target).numberbox('getValue')) || 0;
                 var delivery = parseFloat($(edDelivery.target).numberbox('getValue')) || 0;
+                var price = parseFloat($(edPrice.target).numberbox('getValue')) || 0;
 
                 var outstanding = qty - delivery;
+                var total = qty * price;
 
                 $(edOutstanding.target).numberbox('setValue', outstanding);
+                $(edTotal.target).numberbox('setValue', total);
             }
 
             dg.datagrid('endEdit', editIndex);

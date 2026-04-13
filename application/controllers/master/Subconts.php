@@ -33,7 +33,18 @@ class Subconts extends CI_Controller
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         // $send = $this->crud->reads('subconts', ["name" => $post]);
         
-        $send = $this->crud->query("SELECT * FROM subconts WHERE (number like '%$post%' or name like '%$post%' or id like '%$post%') AND status = 0");
+        // $send = $this->crud->query("SELECT * FROM subconts WHERE (number like '%$post%' or name like '%$post%' or id like '%$post%') AND status = 0");
+
+        $send = $this->crud->query("
+            SELECT * 
+            FROM subconts 
+            WHERE 
+                (number LIKE '%$post%' 
+                OR name LIKE '%$post%' 
+                OR id LIKE '%$post%')
+            AND status = 0
+            AND subcont_type_id = 'TS001'
+        ");
 
         echo json_encode($send);
     }

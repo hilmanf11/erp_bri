@@ -73,10 +73,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Delivery Category</span>
-                <select style="width:60%;" id="delivery_category" panelHeight="auto" class="easyui-combobox" data-options="editable:false" required>
-                    <option value="Regular">Regular</option>
-                    <option value="Rework">Rework</option>
-                </select>
+                <input style="width:60%;" name="delivery_category" id="delivery_category" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Delivery To</span>
@@ -114,6 +111,9 @@
 
         $('#dlg_insert').dialog('open');
         $('#frm_insert').form('clear');
+
+        $('#delivery_category').textbox('setValue', 'Regular');
+        $('#delivery_category').textbox('readonly', true);
 
         $("#delivery_date").datebox({
             formatter: myformatter,
@@ -244,7 +244,7 @@
 
                     var delivery_date = $("#delivery_date").datebox('getValue');
                     var delivery_note_no = $("#delivery_note_no").textbox('getValue');
-                    var delivery_category = $("#delivery_category").combobox('getValue');
+                    var delivery_category = $("#delivery_category").textbox('getValue');
                     var delivery_to = $("#delivery_to_insert").combobox('getValue');
                     var destination = $("#destination").combogrid('getValue');
                     var destination_code = $("#destination_code").combogrid('getValue');
@@ -280,7 +280,7 @@
 
                     var delivery_date = $("#delivery_date").datebox('getValue');
                     var delivery_note_no = $("#delivery_note_no").textbox('getValue');
-                    var delivery_category = $("#delivery_category").combobox('getValue');
+                    var delivery_category = $("#delivery_category").textbox('getValue');
                     var delivery_to_insert = $("#delivery_to_insert").combobox('getValue');
                     var destination = $("#destination").combogrid('getValue');
                     var destination_code = $("#destination_code").combogrid('getValue');
