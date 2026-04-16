@@ -64,16 +64,12 @@
             <legend><b>Form Data</b></legend>
 
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Delivery Note No.</span>
-                <input style="width:60%;" name="delivery_note_no" id="delivery_note_no" readonly required class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Delivery Category</span>
+                <input style="width:60%;" name="delivery_category" id="delivery_category" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Delivery Date</span>
                 <input style="width:60%;" name="delivery_date" id="delivery_date" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Delivery Category</span>
-                <input style="width:60%;" name="delivery_category" id="delivery_category" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Delivery To</span>
@@ -89,6 +85,10 @@
             <div class="fitem" hidden>
                 <span style="width:35%; display:inline-block;">Destination Code</span>
                 <input style="width:60%;" name="destination_code" id="destination_code" required="" class="easyui-combogrid">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Delivery Note No</span>
+                <input style="width:60%;" name="delivery_note_no" id="delivery_note_no" readonly required class="easyui-textbox">
             </div>
 
         </fieldset>

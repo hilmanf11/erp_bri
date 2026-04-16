@@ -85,6 +85,7 @@
             <th rowspan="2" data-options="field:'process_n',width:150,halign:'center',sortable:true">EXTRUSION</th>
             <th rowspan="2" data-options="field:'process_m',width:150,halign:'center',sortable:true">COOLING</th>
             <th rowspan="2" data-options="field:'process_o',width:150,halign:'center',sortable:true">OVEN</th>
+            <th rowspan="2" data-options="field:'process_r',width:150,halign:'center',sortable:true">CUTTING PUNCH</th>
             <th rowspan="2" data-options="field:'process_f',width:150,halign:'center',sortable:true">FINISHING</th>
             <th rowspan="2" data-options="field:'process_g',width:150,halign:'center',sortable:true">VISUAL CHECK</th>
             <!-- <th rowspan="2" data-options="field:'process_n',width:150,halign:'center',sortable:true">SEALER</th> -->
@@ -174,6 +175,10 @@
                     <input style="width:60%;" name="process_o" id="process_o" class="easyui-textbox">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">CUTTING PUNCH</span>
+                    <input style="width:60%;" name="process_r" id="process_r" class="easyui-textbox">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">FINISHING</span>
                     <input style="width:60%;" name="process_f" id="process_f" class="easyui-textbox">
                 </div>
@@ -239,6 +244,7 @@
         $('#process_o').textbox('textbox').attr('placeholder', '0');
         $('#process_p').textbox('textbox').attr('placeholder', '0');
         $('#process_q').textbox('textbox').attr('placeholder', '0');
+        $('#process_r').textbox('textbox').attr('placeholder', '0');
 
         $.ajax({
             type: "post",
