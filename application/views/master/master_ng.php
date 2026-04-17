@@ -42,6 +42,7 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'code',width:100,align:'center'">Code</th>
             <th rowspan="2" data-options="field:'name',width:150,align:'center'">Name</th>
+            <th rowspan="2" data-options="field:'type',width:270,align:'center'">Type</th>
             <th rowspan="2" data-options="field:'description',width:200,align:'center'">Description</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -60,17 +61,21 @@
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_info').dialog('open');"><i class="fa fa-info"></i> Info</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 450px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Add New Master NG</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Code</span>
-                <input style="width:60%;" name="code" class="easyui-textbox">
+                <input style="width:60%;" name="code" class="easyui-textbox" required>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Name</span>
-                <input style="width:60%;" name="name" class="easyui-textbox">
+                <input style="width:60%;" name="name" class="easyui-textbox" required>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Type</span>
+                <input style="width:60%;" name="type" id="type" class="easyui-combobox" required>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Description</span>
@@ -176,15 +181,78 @@
                             var result = eval('(' + result + ')');
                             if (result.theme == "success") {
                                 toastr.success(result.message, result.title);
+
+                                $('#dlg_insert').dialog('close');
+                                $('#dg').datagrid('reload');
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            $('#dlg_insert').dialog('close');
-                            $('#dg').datagrid('reload');
                         }
                     });
                 }
             }]
         });
+    });
+
+    var typeData = [
+        { type: 'RECEIVING RAW MATERIAL' },
+        { type: 'WAREHOUSE RAW MATERIAL' },
+        { type: 'SUPPLY RAW MATERIAL' },
+        { type: 'WEIGHING' },
+        { type: 'MIXING I' },
+        { type: 'MIXING II' },
+        { type: 'INSPECTION COMPOUND' },
+        { type: 'WAREHOUSE COMPOUND' },
+        { type: 'CUTTING' },
+        { type: 'SUPPLY COMPOUND' },
+        { type: 'MOLDING PRESS' },
+        { type: 'EXTRUSION' },
+        { type: 'RANDOM CHECK INSPECTION PRESS' },
+        { type: 'WIP' },
+        { type: 'FINISHING' },
+        { type: 'RANDOM CHECK INSPECTION VISUAL' },
+        { type: 'POSTCURE/SECONDCURE' },
+        { type: 'CHECKING' },
+        { type: 'PACKAGING' },
+        { type: 'RECEIVING FINISHED GOODS' },
+        { type: 'OUT GOING CHECK' },
+        { type: 'FINISHED GOODS WAREHOUSE AND DELIVERY' }
+    ];
+
+    $('#type').combobox({
+        data: typeData,
+        valueField: 'type',
+        textField: 'type',
+        mode: 'local',
+        panelHeight: 300,
+        panelWidth: 300,
+        prompt: 'Select Type',
+
+        filter: function(q, row){
+            return row.type.toLowerCase().indexOf(q.toLowerCase()) >= 0;
+        },
+
+        formatter: function(row){
+            return '<div style="white-space:normal;line-height:16px;">' + row.type + '</div>';
+        },
+
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+
+        onHidePanel: function() {
+            var t = $(this).combobox('getText');
+
+            var exists = typeData.some(function(row){
+                return row.type === t;
+            });
+
+            if (!exists) {
+                $(this).combobox('clear');
+            }
+        }
     });
 </script>

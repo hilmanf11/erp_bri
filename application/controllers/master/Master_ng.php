@@ -13,7 +13,8 @@ class Master_ng extends CI_Controller
         $this->load->model('crud');
 
         //VALIDASI FORM
-        $this->form_validation->set_rules('code', 'Code', 'max_length[30]');
+        // $this->form_validation->set_rules('code', 'Code', 'max_length[30]');
+        $this->form_validation->set_rules('code', 'Code', 'required|max_length[30]|callback_code_unique');
         $this->form_validation->set_rules('name', 'Name', 'max_length[100]');
         $this->form_validation->set_rules('description', 'Description', 'max_length[65535]');
     }
@@ -30,6 +31,26 @@ class Master_ng extends CI_Controller
         } else {
             redirect('error_access');
         }
+    }
+
+    public function code_unique($code)
+    {
+        $id = $this->input->get('id');
+        $id = $id ? base64_decode($id) : null;
+
+        if ($id) {
+            $this->db->where('id !=', $id);
+        }
+
+        $this->db->where('code', $code);
+        $check = $this->db->get('master_ng')->row();
+
+        if ($check) {
+            $this->form_validation->set_message('code_unique', 'Code already exists.');
+            return false;
+        }
+
+        return true;
     }
 
     //GET DATA
@@ -53,7 +74,7 @@ class Master_ng extends CI_Controller
 
     public function getData()
     {
-        $data = $this->db->select("id, code, name")
+        $data = $this->db->select("id, code, name, type")
                         ->from("master_ng")
                         ->where("deleted", 0)
                         ->order_by("code", "ASC")
@@ -121,10 +142,19 @@ class Master_ng extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
-            $post = $this->input->post();
-            $send = $this->crud->update('master_ng', ["id" => $id], $post);
-            echo $send;
+
+            if ($this->form_validation->run() == TRUE) {
+
+                $id   = base64_decode($this->input->get('id'));
+                $post = $this->input->post();
+
+                $send = $this->crud->update('master_ng', ["id" => $id], $post);
+                echo $send;
+
+            } else {
+                show_error(validation_errors());
+            }
+
         } else {
             show_error("Cannot Process your request");
         }
@@ -184,6 +214,7 @@ class Master_ng extends CI_Controller
                 <th width="20">No</th>
                 <th>Code</th>
                 <th>Name</th>
+                <th>Type</th>
                 <th>Description</th>
             </tr>';
         $no = 1;
@@ -192,6 +223,7 @@ class Master_ng extends CI_Controller
                     <td>' . $no . '</td>
                     <td>' . $data['code'] . '</td>
                     <td>' . $data['name'] . '</td>
+                    <td>' . $data['type'] . '</td>
                     <td>' . htmlspecialchars($data['description']) . '</td>';
             $no++;
         }
