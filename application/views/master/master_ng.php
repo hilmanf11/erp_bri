@@ -67,7 +67,7 @@
             <legend><b>Add New Master NG</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Code</span>
-                <input style="width:60%;" name="code" class="easyui-textbox" required>
+                <input style="width:60%;" name="code" id="code" class="easyui-textbox" required>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Name</span>
@@ -91,6 +91,7 @@
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
+        $('#code').textbox('readonly', false);
         url_save = '<?= base_url('master/master_ng/create') ?>';
         $('#frm_insert').form('clear');
     }
@@ -100,6 +101,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
+            $('#code').textbox('readonly', true);
             url_save = '<?= base_url('master/master_ng/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
@@ -121,9 +123,18 @@
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
+                                if(result.theme == "success") {
+                                    toastr.success(result.message);
+                                } else {
+                                    toastr.error(result.message);
+                                }
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error("This item cannot be deleted, Please make sure it didn't have any relation");
+                                if (jqXHR.responseText && jqXHR.responseText.includes("Error Number: 1451")) {
+                                    toastr.error("Cannot delete data that is still in use");
+                                } else {
+                                    toastr.error("Delete failed: " + jqXHR.statusText);
+                                }
                             },
                             complete: function(data) {
                                 $('#dg').datagrid('reload');

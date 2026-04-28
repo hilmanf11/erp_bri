@@ -61,16 +61,21 @@ class Master_ng extends CI_Controller
         echo json_encode($send);
     }
 
-    // public function getData()
-    // {
-    //     $this->db->select("id, code, name");
-    //     $this->db->from("master_ng");
-    //     $this->db->where("deleted", 0);
+    public function readByNames()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
 
-    //     $this->db->order_by("code", "ASC");
+        $send = $this->crud->query("
+            SELECT * 
+            FROM master_ng 
+            WHERE 
+                (code LIKE '%$post%' 
+                OR name LIKE '%$post%')
+            AND deleted = 0
+        ");
 
-    //     echo json_encode($this->db->get()->result());
-    // }
+        echo json_encode($send);
+    }
 
     public function getData()
     {
