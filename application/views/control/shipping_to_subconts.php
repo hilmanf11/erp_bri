@@ -64,19 +64,12 @@
             <legend><b>Form Data</b></legend>
 
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Delivery Note No.</span>
-                <input style="width:60%;" name="delivery_note_no" id="delivery_note_no" readonly required class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Delivery Category</span>
+                <input style="width:60%;" name="delivery_category" id="delivery_category" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Delivery Date</span>
                 <input style="width:60%;" name="delivery_date" id="delivery_date" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Delivery Category</span>
-                <select style="width:60%;" id="delivery_category" panelHeight="auto" class="easyui-combobox" data-options="editable:false" required>
-                    <option value="Regular">Regular</option>
-                    <option value="Rework">Rework</option>
-                </select>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Delivery To</span>
@@ -92,6 +85,10 @@
             <div class="fitem" hidden>
                 <span style="width:35%; display:inline-block;">Destination Code</span>
                 <input style="width:60%;" name="destination_code" id="destination_code" required="" class="easyui-combogrid">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Delivery Note No</span>
+                <input style="width:60%;" name="delivery_note_no" id="delivery_note_no" readonly required class="easyui-textbox">
             </div>
 
         </fieldset>
@@ -114,6 +111,9 @@
 
         $('#dlg_insert').dialog('open');
         $('#frm_insert').form('clear');
+
+        $('#delivery_category').textbox('setValue', 'Regular');
+        $('#delivery_category').textbox('readonly', true);
 
         $("#delivery_date").datebox({
             formatter: myformatter,
@@ -244,7 +244,7 @@
 
                     var delivery_date = $("#delivery_date").datebox('getValue');
                     var delivery_note_no = $("#delivery_note_no").textbox('getValue');
-                    var delivery_category = $("#delivery_category").combobox('getValue');
+                    var delivery_category = $("#delivery_category").textbox('getValue');
                     var delivery_to = $("#delivery_to_insert").combobox('getValue');
                     var destination = $("#destination").combogrid('getValue');
                     var destination_code = $("#destination_code").combogrid('getValue');
@@ -280,7 +280,7 @@
 
                     var delivery_date = $("#delivery_date").datebox('getValue');
                     var delivery_note_no = $("#delivery_note_no").textbox('getValue');
-                    var delivery_category = $("#delivery_category").combobox('getValue');
+                    var delivery_category = $("#delivery_category").textbox('getValue');
                     var delivery_to_insert = $("#delivery_to_insert").combobox('getValue');
                     var destination = $("#destination").combogrid('getValue');
                     var destination_code = $("#destination_code").combogrid('getValue');

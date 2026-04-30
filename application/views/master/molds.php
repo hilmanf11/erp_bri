@@ -1,9 +1,68 @@
-<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
-    <div class="easyui-accordion" style="width:100%; height: 100%;">
-        <div title="RELATIONS" style="padding: 20px;">
+<div id="dlg_info" class="easyui-dialog" title="Information" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" data-options="selected:false" style="width:100%; height: 100%;">
+        <div title="English" style="padding: 20px;">
+            <p>
+                <b>General Information:</b></br>
+                The Master Mold module stores master data for molds used in the production process.
+            </p>
+
             <ul>
-                <li>The Data Customer is taken from <b>Master Data > Marketing > Customer</b></li>
+                <li>Mold ID identifies the mold record in the system.</li>
+                <li>Mold Name represents the mold name or reference number.</li>
+                <li>Property of indicates mold ownership.</li>
+                <li>Customer Name shows the customer who owned the mold.</li>
+                <li>Project Year indicates the project start year related to the mold.</li>
+                <li>Total Mold shows the total number of molds available.</li>
+                <li>Mold No represents the mold sequence or number.</li>
+                <li>Mold Year indicates the year the mold was manufactured or registered.</li>
+                <li>Mold Size shows the physical size or capacity of the mold.</li>
+                <li>Standard Curing Time defines the standard curing time for the mold.</li>
+                <li>Standard Cavity defines the standard cavity capacity of the mold.</li>
+                <li>Actual Cavity displays the current cavity value and may be updated in real time based on input from the Production Press Output module.</li>
+                <li>Standard Shoot defines the maximum usage capacity (shoot) of the mold.</li>
+                <li>Actual Shoot shows the accumulated number of shoots from the beginning of mold usage until the current time.</li>
+                <li>Target Shoot defines the target number of shoots per work shift and is displayed in the Production Press Output module.</li>
+                <li>Mold Model represents the mold model classification.</li>
+                <li>Mold Type defines the mold type (e.g., Single, Multi).</li>
+                <li>Remarks provides additional notes related to the mold.</li>
+                <li>Status indicates whether the mold is active or inactive.</li>
             </ul>
+
+            <span>Master Mold data is used as a reference in production and related processes.</span></br></br>
+
+            <span>Changes to master data will apply only to transactions created after the changes are made.</span>
+        </div>
+        <div title="Indonesian" style="padding: 20px;">
+            <p>
+                <b>Informasi Umum:</b></br>
+                Modul Master Mold menyimpan data master mold yang digunakan dalam proses produksi.
+            </p>
+
+            <ul>
+                <li>Mold ID menunjukkan identitas mold di sistem.</li>
+                <li>Mold Name merepresentasikan nama atau nomor referensi mold.</li>
+                <li>Property of menunjukkan kepemilikan mold.</li>
+                <li>Customer Name menunjukkan pemilik mold tersebut.</li>
+                <li>Project Year menunjukkan tahun proyek yang berkaitan dengan mold.</li>
+                <li>Total Mold menunjukkan jumlah mold yang tersedia.</li>
+                <li>Mold No menunjukkan nomor atau urutan mold.</li>
+                <li>Mold Year menunjukkan tahun pembuatan atau pencatatan mold.</li>
+                <li>Mold Size menunjukkan ukuran atau kapasitas mold.</li>
+                <li>Standard Curing Time menunjukkan standar waktu curing mold.</li>
+                <li>Standard Cavity menunjukkan kapasitas cavity standar mold.</li>
+                <li>Actual Cavity menunjukkan nilai cavity aktual dan dapat berubah secara real time berdasarkan input dari modul Output Production Press.</li>
+                <li>Standard Shoot menunjukkan kapasitas maksimal penggunaan (shoot) mold.</li>
+                <li>Actual Shoot menunjukkan jumlah akumulasi penggunaan/shoot sejak mold pertama kali digunakan hingga saat ini.</li>
+                <li>Target Shoot menunjukkan jumlah target shoot dalam satu shift kerja dan akan ditampilkan pada modul Output Production Press.</li>
+                <li>Mold Model menunjukkan klasifikasi model mold.</li>
+                <li>Mold Type menunjukkan tipe mold (misalnya Single, Multi).</li>
+                <li>Remarks berisi catatan tambahan terkait mold.</li>
+                <li>Status menunjukkan status mold, aktif atau tidak aktif.</li>
+            </ul>
+
+            <span>Data Master Mold digunakan sebagai acuan dalam proses produksi dan proses terkait.</span></br></br>
+
+            <span>Perubahan data master hanya berlaku untuk transaksi yang dibuat setelah perubahan dilakukan.</span>
         </div>
     </div>
 </div>
@@ -46,7 +105,7 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
-    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_info').dialog('open');"><i class="fa fa-info"></i> Info</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; padding:10px; top: 20px;">

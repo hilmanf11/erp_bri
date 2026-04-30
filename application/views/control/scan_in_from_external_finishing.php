@@ -25,44 +25,58 @@
             <th data-options="field:'action',width:100,halign:'center',formatter: buttonEdit">Action</th>
             <th data-options="field:'item_fg_number',width:200,halign:'center'">Product No</th>
             <th data-options="field:'item_fg_name',width:250,halign:'center'">Product Name</th>
-            <th data-options="field:'workorder',width:200,halign:'center'">WO No</th>
-            <th data-options="field:'workorder_label',width:200,halign:'center'">Serial WO No</th>
+            <th data-options="field:'workorder',width:250,halign:'center'">WO No</th>
+            <th data-options="field:'workorder_label',width:250,halign:'center'">Serial WO No</th>
+            <th data-options="field:'serial_label',width:250,halign:'center'">Serial Label</th>
 
-            <th data-options="field:'is_partial', width:80, align:'center', formatter:partialFormatter, editor:{type:'checkbox',options:{on:1,off:0}}">Partial</th>
+            <!-- <th data-options="field:'is_partial', width:80, align:'center', formatter:partialFormatter, editor:{type:'checkbox',options:{on:1,off:0}}">Partial</th> -->
 
             <th data-options="field:'qty',width:150,halign:'center',align:'right',formatter:numberformat, styler:numberStyle2,sortable:true,editor:{type:'numberbox',options:{precision:2}}"> Qty</th>
         </tr>
     </thead>
 </table>
 
-<div id="toolbar" style="height: 250px;">
+<div id="toolbar" style="height: 283px;">
     <div style="width: 100%; padding: 10px;">
+
+        <a href="javascript:void(0)" onclick="backToMenu()" class="easyui-linkbutton" iconCls="icon-back">
+           Back to WIP Store
+        </a>
+
         <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;padding-top: 15px;">
 
-            <legend style="text-align: center;"><b>Form Scan Incoming</b></legend>
+            <legend style="text-align: center;"><b>Scan In From External Finishing</b></legend>
             <div style="width: 30%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Incoming Type</span>
-                    <!-- <select style="width:60%;" id="incoming_type" name="incoming_type" panelHeight="auto" class="easyui-combobox" data-options="editable:false" required>
+
+                    <!-- <select
+                        id="incoming_type"
+                        name="incoming_type"
+                        class="easyui-combobox"
+                        style="width:60%;"
+                        data-options="
+                            editable:false,
+                            onChange:function(val){
+                                togglePartialColumn(val);
+                            }
+                        "
+                    >
                         <option value="Finishing">Finishing</option>
                         <option value="BPM">BPM</option>
                     </select> -->
 
-                <select
-                    id="incoming_type"
-                    name="incoming_type"
-                    class="easyui-combobox"
-                    style="width:60%;"
-                    data-options="
-                        editable:false,
-                        onChange:function(val){
-                            togglePartialColumn(val);
-                        }
-                    "
-                >
-                    <option value="Finishing">Finishing</option>
-                    <option value="BPM">BPM</option>
-                </select>
+                    <select
+                        id="incoming_type"
+                        name="incoming_type"
+                        class="easyui-combobox"
+                        style="width:60%;"
+                        data-options="editable:false"
+                    >
+                        <option value="Finishing">Finishing</option>
+                        <option value="Rework">Rework</option>
+                        <option value="BPM">BPM</option>
+                    </select>
 
                 </div>
                 <div class="fitem">
@@ -75,7 +89,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Incoming From</span>
-                    <input style="width:60%;" id="incoming_from" name="incoming_from" class="easyui-combogrid" required>
+                    <input style="width:60%;" id="incoming_from" name="incoming_from" class="easyui-combogrid" data-options="editable:false" required>
                 </div>
 
                 <div class="fitem" hidden>
@@ -129,7 +143,7 @@
     <source src="<?= base_url('assets/audio/more_than_qty.mp3') ?>" type="audio/mpeg">
 </audio> -->
 
-<div id="dlgSummaryIncoming" class="easyui-dialog" title="Summary Incoming SC/TF" style="width:900px;height:500px;padding:10px" closed="true" modal="true" buttons="#dlgSummaryIncomingButtons">
+<div id="dlgSummaryIncoming" class="easyui-dialog" title="Summary WIP Store From External Finishing" style="width:900px;height:500px;padding:10px" closed="true" modal="true" buttons="#dlgSummaryIncomingButtons">
 
     <table id="dgSummaryIncoming" class="easyui-datagrid" style="width:100%;height:100%;"></table>
 </div>
@@ -178,12 +192,12 @@
     $(function() {
 
         $('#workorder_label').prop('disabled', true);
-        togglePartialColumn($('#incoming_type').combobox('getValue'));
+        // togglePartialColumn($('#incoming_type').combobox('getValue'));
     
         setTimeout(function() {
 
             $('#dg').datagrid({
-                url: '<?= base_url("control/scan_incoming_subconts/getScanIncoming") ?>',
+                url: '<?= base_url("control/scan_in_from_external_finishing/getScanIncoming") ?>',
                 rownumbers: true,
                 onLoadSuccess: function(data) {
                     if (data.total === 0) {
@@ -280,15 +294,16 @@
 
                 $.ajax({
                     type: "POST",
-                    url: "<?= base_url('control/scan_incoming_subconts/getChecksheetLabel') ?>",
+                    url: "<?= base_url('control/scan_in_from_external_finishing/getChecksheetLabel') ?>",
                     // data: "workorder_label=" + workorder_label,
                     data: {
                         workorder_label: workorder_label,
-                        incoming_from_code: incoming_from_code
+                        incoming_from_code: incoming_from_code,
+                        incoming_type: incoming_type,
                     },
                     dataType: "json",
-                    success: function(json) {
-                        // console.log('Response : ', json);
+                    success: function(json) {                        
+                        console.log('Response : ', json);
 
                         if (json.title === "Not Found") {
                             serialNotFound.play();
@@ -308,22 +323,25 @@
 
                         if (json.title === "success") {
 
-                            var row = json.data;
-                            // console.log('Row : ', row);
+                            var rows = json.data;
+
+                            var header = {
+                                incoming_doc_no: incoming_doc_no,
+                                incoming_date: incoming_date,
+                                incoming_from: incoming_from,
+                                incoming_from_code: incoming_from_code,
+                                incoming_type: incoming_type,
+                            }
+
+                            console.log('Header : ', header);
+                            console.log('Rows : ', rows);
+
                             $.ajax({
                                 type: "POST",
-                                url: "<?= base_url('control/scan_incoming_subconts/create') ?>",
+                                url: "<?= base_url('control/scan_in_from_external_finishing/create_bulk') ?>",
                                 data: {
-                                    incoming_type: incoming_type,
-                                    incoming_doc_no: incoming_doc_no,
-                                    incoming_date: incoming_date,
-                                    incoming_from: incoming_from_code,
-                                    item_fg_id: row.item_fg_id,
-                                    delivery_note_no: row.delivery_note_no,
-                                    workorder: row.workorder,
-                                    workorder_label: workorder_label,
-                                    qty: row.qty,
-                                    is_partial: row.is_partial
+                                    header: header,
+                                    rows: rows,
                                 },
                                 dataType: "json",
                                 success: function(result) {
@@ -389,7 +407,7 @@
         if (incoming_date && incoming_from) {
             $.ajax({
                 type: "post",
-                url: "<?= base_url('control/scan_incoming_subconts/incoming_doc_no') ?>",
+                url: "<?= base_url('control/scan_in_from_external_finishing/incoming_doc_no') ?>",
                 data: { incoming_date: incoming_date, incoming_from: incoming_from },
                 dataType: "html",
                 success: function(result) {
@@ -403,7 +421,7 @@
     }
 
     $('#incoming_from').combogrid({
-        url: '<?= base_url('control/scan_incoming_subconts/readIncomingFrom'); ?>',
+        url: '<?= base_url('control/scan_in_from_external_finishing/readIncomingFrom'); ?>',
         panelWidth: 440,
         idField: 'number',
         textField: 'name',
@@ -457,7 +475,6 @@
 
         var row = dg.datagrid('getRows')[index];
 
-        // Set is_partial checkbox disable saat edit manual
         var edPartial = dg.datagrid('getEditor', { index: index, field: 'is_partial' });
         if (edPartial) {
             $(edPartial.target).prop('disabled', true);
@@ -503,21 +520,7 @@
 
             dg.datagrid('beginEdit', index);
             return;
-        } 
-        
-        // else if(row.is_partial == 1 && newQty > parseFloat(row.old_qty)) {
-        //     toastr.warning('Product No. ' + row.item_fg_number + ' with Serial WO No. ' + row.workorder_label + ': Partial qty cannot exceed original qty!');
-
-        //     if (ed) {
-        //         $(ed.target).numberbox('setValue', row.old_qty);
-        //     } else {
-        //         row.qty = row.old_qty;
-        //         dg.datagrid('updateRow', { index: index, row: row });
-        //     }
-
-        //     dg.datagrid('beginEdit', index);
-        //     return;
-        // }
+        }
 
         dg.datagrid('endEdit', index);
     }
@@ -527,7 +530,7 @@
         // console.log('UPDATE QTY : ', JSON.stringify(row));
         $.ajax({
             type: 'POST',
-            url: '<?= base_url("control/scan_incoming_subconts/updateQty") ?>',
+            url: '<?= base_url("control/scan_in_from_external_finishing/updateQty") ?>',
             dataType: 'json',
             data: {
                 scan_id: row.scan_id,
@@ -571,7 +574,7 @@
         $('#dlgSummaryIncoming').dialog('open').dialog('center');
 
         $('#dgSummaryIncoming').datagrid({
-            url: '<?= base_url('control/scan_incoming_subconts/getSummaryIncoming') ?>',
+            url: '<?= base_url('control/scan_in_from_external_finishing/getSummaryIncoming') ?>',
             method: 'get',
             fitColumns: true,
             singleSelect: true,
@@ -692,7 +695,7 @@
 
                 $.ajax({
                     type: 'POST',
-                    url: '<?= base_url('control/scan_incoming_subconts/saveSummaryIncoming') ?>',
+                    url: '<?= base_url('control/scan_in_from_external_finishing/saveSummaryIncoming') ?>',
                     data: { items: items },
                     dataType: 'json',
                     beforeSend: function () {
@@ -787,18 +790,13 @@
         }
     }
 
-    // function partialFormatter(value, row, index) {
-    //     var checked = value == 1 ? 'checked' : '';
-    //     return '<input type="checkbox" class="dg-partial" data-index="'+index+'" '+checked+'>';
+    // function togglePartialColumn(type) {
+    //     if (type === 'BPM') {
+    //         $('#dg').datagrid('hideColumn', 'is_partial');
+    //     } else {
+    //         $('#dg').datagrid('showColumn', 'is_partial');
+    //     }
     // }
-
-    function togglePartialColumn(type) {
-        if (type === 'BPM') {
-            $('#dg').datagrid('hideColumn', 'is_partial');
-        } else {
-            $('#dg').datagrid('showColumn', 'is_partial');
-        }
-    }
 
     function partialFormatter(value, row, index) {
         var checked = parseInt(row.is_partial) === 1 == 1 ? 'checked' : '';
@@ -810,27 +808,6 @@
                 onchange="onPartialChange(this)">
         `;
     }
-
-    // function onPartialChange(el) {
-    //     var index = $(el).data('index');
-    //     var checked = $(el).is(':checked') ? 1 : 0;
-
-    //     var dg = $('#dg');
-    //     var row = dg.datagrid('getRows')[index];
-
-    //     // update nilai partial
-    //     row.is_partial = checked;
-    //     dg.datagrid('updateRow', {
-    //         index: index,
-    //         row: row
-    //     });
-
-    //     // jika belum edit → langsung masuk edit mode
-    //     if (!row.editing) {
-    //         dg.datagrid('selectRow', index);
-    //         dg.datagrid('beginEdit', index);
-    //     }
-    // }
 
     $.extend($.fn.datagrid.methods, {
         editCell: function(jq, param){
@@ -856,35 +833,6 @@
             });
         }
     });
-
-    // function onPartialChange(el) {
-    //     var dg = $('#dg');
-    //     var index = $(el).data('index');
-    //     var row = dg.datagrid('getRows')[index];
-    //     var checked = el.checked ? 1 : 0;
-
-    //     row.is_partial = checked;
-
-    //     if (checked === 1) {
-    //         console.log('EDIT : ', index);
-
-    //         dg.datagrid('selectRow', index);
-    //         dg.datagrid('editCell', {
-    //             index: index,
-    //             field: 'qty'
-    //         });
-
-    //     } else {
-    //         console.log('CANCEL : ', index);
-
-    //         if (row.editing) {
-    //             dg.datagrid('cancelEdit', index);
-    //         }
-
-    //         row.editing = false;
-    //         dg.datagrid('refreshRow', index);
-    //     }
-    // }
 
     function onPartialChange(el) {
         var index = $(el).data('index');
@@ -926,5 +874,10 @@
             }
         }
         return false;
+    }
+
+    function backToMenu(){
+        var token = window.location.pathname.split('/').pop();
+        window.location.href = "<?= base_url('control/scan_in_wip_store/index/') ?>" + token;
     }
 </script>

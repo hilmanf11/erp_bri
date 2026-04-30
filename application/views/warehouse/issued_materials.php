@@ -625,6 +625,11 @@
         let allowPriority = null;
 
         for (let r of sorted) {
+
+            if (parseInt(r.status_hold) === 1) {
+                continue;
+            }
+
             const bw = parseFloat(r.bal_wip || 0);
             const st = parseFloat(r.stock || 0);
             const total = bw + st;
@@ -639,7 +644,17 @@
         }
 
         let isEnabled = false;
-        if (allowPriority !== -1 && row.eq_priority === allowPriority && balWip >= need) {
+
+        // if (allowPriority !== -1 && row.eq_priority === allowPriority && balWip >= need) {
+        //     isEnabled = true;
+        // }
+
+        if (
+            parseInt(row.status_hold) !== 1 &&
+            allowPriority !== -1 &&
+            row.eq_priority === allowPriority &&
+            balWip >= need
+        ) {
             isEnabled = true;
         }
 

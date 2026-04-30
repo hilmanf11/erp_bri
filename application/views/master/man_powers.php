@@ -129,6 +129,11 @@
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
+                                if(result.theme == "success") {
+                                    toastr.success(result.message);
+                                } else {
+                                    toastr.error(result.message);
+                                }
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
                                 // toastr.error(jqXHR.statusText);

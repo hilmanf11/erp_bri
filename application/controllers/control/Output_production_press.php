@@ -827,9 +827,123 @@ class Output_production_press extends CI_Controller
 
     public function delete()
     {
-        $data = $this->input->post();
-        $send = $this->crud->delete('output_production_press', $data);
-        echo $send;
+        $id = $this->input->post('id');
+
+        $press = $this->db
+            ->where('id', $id)
+            ->get('output_production_press')
+            ->row();
+
+        if (!$press) {
+            echo json_encode([
+                'theme' => 'error',
+                'message' => 'Data Not Found'
+            ]);
+            return;
+        }
+
+        $number    = $press->number ?? null;
+        $workorder = $press->workorder ?? null;
+
+        $this->db->from('output_production_press_detail');
+        $this->db->where('number_output', $number);
+        $this->db->where('workorder', $workorder);
+        $this->db->where('status', 1);
+        $count = $this->db->count_all_results();
+
+        if ($count > 0) {
+            echo json_encode([
+                'theme' => 'error',
+                'message' => 'Cannot delete data with a label that is already in use'
+            ]);
+            return;
+        }
+
+        $this->db->trans_begin();
+
+        $this->crud->delete('output_production_press_detail', [
+            'number_output' => $number,
+            'workorder' => $workorder
+        ]);
+
+        $this->crud->delete('output_production_press', [
+            'id' => $id
+        ]);
+
+        if ($this->db->trans_status() === FALSE) {
+            $this->db->trans_rollback();
+
+            echo json_encode([
+                'theme' => 'error',
+                'message' => 'Delete failed'
+            ]);
+        } else {
+            $this->db->trans_commit();
+
+            echo json_encode([
+                'theme' => 'success',
+                'message' => 'Data deleted successfully'
+            ]);
+        }
+    }
+
+    public function deleteAll()
+    {
+        $number = $this->input->post('number');
+
+        $press = $this->db
+            ->where('number', $number)
+            ->get('output_production_press')
+            ->row();
+
+        if (!$press) {
+            echo json_encode([
+                'theme' => 'error',
+                'message' => 'Data Not Found'
+            ]);
+            return;
+        }
+
+        $number    = $press->number ?? null;
+
+        $this->db->from('output_production_press_detail');
+        $this->db->where('number_output', $number);
+        $this->db->where('status', 1);
+        $count = $this->db->count_all_results();
+
+        if ($count > 0) {
+            echo json_encode([
+                'theme' => 'error',
+                'message' => 'Cannot delete data with a label that is already in use'
+            ]);
+            return;
+        }
+
+        $this->db->trans_begin();
+
+        $this->crud->delete('output_production_press_detail', [
+            'number_output' => $number,
+        ]);
+
+        $this->crud->delete('output_production_press', [
+            'number' => $number
+        ]);
+
+        if ($this->db->trans_status() === FALSE) {
+            $this->db->trans_rollback();
+
+            echo json_encode([
+                'theme' => 'error',
+                'message' => 'Delete failed'
+            ]);
+        } else {
+            $this->db->trans_commit();
+
+            echo json_encode([
+                'theme' => 'success',
+                'message' => 'Data deleted successfully'
+            ]);
+        }
     }
 
     //UPLOAD DATA

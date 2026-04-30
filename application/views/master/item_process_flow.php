@@ -1,3 +1,73 @@
+<div id="dlg_info" class="easyui-dialog" title="Information" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" data-options="selected:false" style="width:100%; height: 100%;">
+        <div title="English" style="padding: 20px;">
+            <p>
+                <b>General Information:</b></br>
+                The Process Flow module defines the sequence and order of production processes for a specific flow type.
+            </p>
+
+            <ul>
+                <li>Flow ID identifies the process flow configuration.</li>
+                <li>Flow Type represents the flow category or model.</li>
+                <li>Process Columns (e.g., Weighing, Mixing, Press, Finishing) indicate the production steps.</li>
+                <li>Numeric Values define the sequence order of each process.</li>
+                <li>A value of 0 indicates that the process is not used in the flow.</li>
+            </ul>
+
+            <span>Process Flow data is used as a reference to control production flow execution in the system.</span>
+        </div>
+        <div title="Indonesian" style="padding: 20px;">
+            <p>
+                <b>Informasi Umum:</b></br>
+                Modul Process Flow digunakan untuk mendefinisikan urutan dan alur proses produksi berdasarkan tipe flow tertentu.
+            </p>
+
+            <ul>
+                <li>Flow ID menunjukkan identitas konfigurasi process flow.</li>
+                <li>Flow Type merepresentasikan jenis atau model alur produksi.</li>
+                <li>Kolom Proses (misalnya Weighing, Mixing, Press, Finishing) menunjukkan tahapan proses produksi.</li>
+                <li>Nilai Angka menunjukkan urutan pelaksanaan proses.</li>
+                <li>Nilai 0 berarti proses tersebut tidak digunakan dalam flow.</li>
+            </ul>
+
+            <span>Data Process Flow digunakan sebagai acuan untuk mengatur alur proses produksi di dalam sistem.</span>
+        </div>
+    </div>
+</div>
+
+<div id="dlg_help" class="easyui-dialog" title="Help" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" data-options="selected:false" style="width:100%; height: 100%;">
+        <div title="English" style="padding: 20px;">
+            <p>
+                <b>How to Use:</b></br>
+            </p>
+
+            <ul>
+                <li>Define a Flow Type based on the required production model.</li>
+                <li>Assign sequence numbers to each process column to determine execution order.</li>
+                <li>Use sequential numbering (e.g., 1, 2, 3) to indicate process flow order.</li>
+                <li>Leave the value as 0 for processes that are not applicable.</li>
+            </ul>
+
+            <span>Changes to Process Flow data will affect production processes executed after the changes are saved.</span>
+        </div>
+        <div title="Indonesian" style="padding: 20px;">
+            <p>
+                <b>Cara Penggunaan:</b></br>
+            </p>
+
+            <ul>
+                <li>Tentukan Flow Type sesuai dengan model produksi yang dibutuhkan.</li>
+                <li>Isi angka urutan pada setiap kolom proses untuk menentukan alur produksi.</li>
+                <li>Gunakan penomoran berurutan (misalnya 1, 2, 3) sebagai urutan proses.</li>
+                <li>Gunakan nilai 0 untuk proses yang tidak digunakan.</li>
+            </ul>
+
+            <span>Perubahan data Process Flow akan mempengaruhi proses produksi yang dijalankan setelah perubahan disimpan.</span>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -15,6 +85,7 @@
             <th rowspan="2" data-options="field:'process_n',width:150,halign:'center',sortable:true">EXTRUSION</th>
             <th rowspan="2" data-options="field:'process_m',width:150,halign:'center',sortable:true">COOLING</th>
             <th rowspan="2" data-options="field:'process_o',width:150,halign:'center',sortable:true">OVEN</th>
+            <th rowspan="2" data-options="field:'process_r',width:150,halign:'center',sortable:true">CUTTING PUNCH</th>
             <th rowspan="2" data-options="field:'process_f',width:150,halign:'center',sortable:true">FINISHING</th>
             <th rowspan="2" data-options="field:'process_g',width:150,halign:'center',sortable:true">VISUAL CHECK</th>
             <!-- <th rowspan="2" data-options="field:'process_n',width:150,halign:'center',sortable:true">SEALER</th> -->
@@ -40,6 +111,8 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_info').dialog('open');"><i class="fa fa-info"></i> Info</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-question-circle"></i> Help</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 600px; padding:10px; top: 20px;">
@@ -100,6 +173,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">OVEN</span>
                     <input style="width:60%;" name="process_o" id="process_o" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">CUTTING PUNCH</span>
+                    <input style="width:60%;" name="process_r" id="process_r" class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">FINISHING</span>
@@ -167,6 +244,7 @@
         $('#process_o').textbox('textbox').attr('placeholder', '0');
         $('#process_p').textbox('textbox').attr('placeholder', '0');
         $('#process_q').textbox('textbox').attr('placeholder', '0');
+        $('#process_r').textbox('textbox').attr('placeholder', '0');
 
         $.ajax({
             type: "post",

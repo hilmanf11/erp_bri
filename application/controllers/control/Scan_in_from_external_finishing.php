@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Scan_incoming_subconts extends CI_Controller
+class Scan_in_from_external_finishing extends CI_Controller
 {
     public function __construct()
     {
@@ -12,7 +12,7 @@ class Scan_incoming_subconts extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //Validasi Form
-        $this->form_validation->set_rules('workorder_label', 'Label No', 'required|min_length[1]|max_length[50]');
+        // $this->form_validation->set_rules('workorder_label', 'Label No', 'required|min_length[1]|max_length[50]');
     }
 
     public function index()
@@ -22,7 +22,7 @@ class Scan_incoming_subconts extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('control/scan_incoming_subconts');
+            $this->load->view('control/scan_in_from_external_finishing');
         } else {
             redirect('error_access');
         }
@@ -60,48 +60,6 @@ class Scan_incoming_subconts extends CI_Controller
 
         echo json_encode($send);
     }
-
-    // public function incoming_doc_nov1()
-    // {
-    //     $incoming_date = $this->input->post('incoming_date');
-    //     $incoming_from = $this->input->post('incoming_from');
-
-    //     $date = $incoming_date ? date("Y-m-d", strtotime($incoming_date)) : date("Y-m-d");
-    //     $month = date("m", strtotime($date));
-    //     $year = date("y", strtotime($date));
-    //     $day = date("d", strtotime($date));
-
-    //     // Tentukan periode reset berdasarkan tanggal 16
-    //     if ($day < 16) {
-    //         $period_start = date("Y-m-16", strtotime("-1 month", strtotime($date)));
-    //         $period_end   = date("Y-m-15", strtotime($date));
-    //     } else {
-    //         $period_start = date("Y-m-16", strtotime($date));
-    //         $period_end   = date("Y-m-15", strtotime("+1 month", strtotime($date)));
-    //     }
-
-    //     $period_month = date("m", strtotime($period_end));
-    //     $period_year  = date("y", strtotime($period_end));
-
-    //     $sql = $this->db->query("
-    //         SELECT MAX(SUBSTRING_INDEX(incoming_doc_no, '/', 1)) AS kode
-    //         FROM scan_incoming_sctf
-    //         WHERE incoming_doc_no LIKE '%/{$incoming_from}/IN/{$period_month}/{$period_year}'
-    //         AND incoming_date BETWEEN '{$period_start}' AND '{$period_end}'
-    //     ");
-
-    //     $row = $sql->row();
-
-    //     if ($row->kode == null) {
-    //         $seq = "001";
-    //     } else {
-    //         $seq = sprintf("%03s", intval($row->kode) + 1);
-    //     }
-
-    //     $autonumber = "{$seq}/{$incoming_from}/IN/{$period_month}/{$period_year}";
-
-    //     echo $autonumber;
-    // }
 
     public function incoming_doc_no()
     {
@@ -150,6 +108,7 @@ class Scan_incoming_subconts extends CI_Controller
             a.item_fg_id,
             a.workorder,
             a.workorder_label,
+            a.serial_label,
             a.qty,
             a.created_date,
             b.number as item_fg_number,
@@ -178,7 +137,7 @@ class Scan_incoming_subconts extends CI_Controller
         ]);
     }
 
-    public function getChecksheetLabel()
+    public function getChecksheetLabelV1()
     {
         if ($this->input->post()) {
             $workorder_label = $this->input->post('workorder_label');
@@ -293,6 +252,233 @@ class Scan_incoming_subconts extends CI_Controller
         }
     }
 
+    public function getChecksheetLabel()
+    {
+        if (!$this->input->post()) return;
+
+        $input_label = $this->input->post('workorder_label');
+        $incoming_type = $this->input->post('incoming_type');
+        $incoming_from_code = $this->input->post('incoming_from_code');
+
+        if (strpos($input_label, 'RWIN') === 0) {
+            echo json_encode([
+                'title'   => 'Invalid Label',
+                'message' => 'The RWIN label is for internal use only and cannot be used'
+            ]);
+            return;
+        }
+
+        $tableConfigs = [
+            [
+                'table' => 'shipping_to_subconts',
+                'field' => 'workorder_label',
+                'prefix' => null,
+                'allowed_category' => ['Finishing', 'BPM']
+            ],
+            [
+                'table' => 'scan_out_rework',
+                'field' => 'serial_label',
+                'prefix' => 'RW',
+                'allowed_category' => ['Rework']
+            ],
+        ];
+
+        $foundTable = null;
+        $foundField = null;
+        $label = null;
+
+        foreach ($tableConfigs as $config) {
+
+            if ($config['prefix'] !== null) {
+                if (strpos($input_label, $config['prefix']) !== 0) {
+                    continue;
+                }
+            }
+
+            $label = $this->db->get_where($config['table'], [
+                $config['field'] => $input_label
+            ])->row_array();
+
+            if ($label) {
+
+                if (!in_array($incoming_type, $config['allowed_category'])) {
+                    echo json_encode([
+                        'title'   => 'Invalid Label',
+                        'message' => 'The label does not match the selected Incoming Type'
+                    ]);
+                    return;
+                }
+
+                $foundTable = $config['table'];
+                $foundField = $config['field'];
+                break;
+            }
+        }
+
+        if (!$label) {
+            echo json_encode([
+                'title'   => 'Not Found',
+                'message' => 'Label not found!s'
+            ]);
+            return;
+        }
+
+        if ($label['type_status'] == 'scanning') {
+            echo json_encode([
+                'title' => 'Process Scanned',
+                'message' => 'Label in the process of being scanned',
+                'data' => $label
+            ]);
+            return;
+        }
+
+        if ($label['status'] == 1) {
+            echo json_encode([
+                'title' => 'Available',
+                'message' => 'Label has already been scanned',
+                'data' => $label,
+            ]);
+            return;
+        }
+
+
+        if ($foundTable == 'scan_out_rework') {
+
+            // $this->db->select("a.item_fg_id, a.workorder, a.workorder_label, b.destination, b.delivery_note_no");
+            $this->db->select("a.item_fg_id, a.workorder, a.workorder_label, a.destination, a.delivery_note_no");
+            $this->db->from('scan_out_rework a');
+            $this->db->join('delivery_rework b', 'a.scan_id = b.scan_id and a.workorder = b.workorder');
+            $this->db->where('b.deleted', 0);
+            $this->db->where('a.status', 0);
+            $this->db->where('a.serial_label', $input_label);
+            $this->db->where('b.approved_to', '');
+
+            $checkOutRework = $this->db->get()->row_array();
+
+            if (empty($checkOutRework)) {
+                echo json_encode([
+                    'title'   => 'Invalid Label',
+                    'message' => 'The label does not exists or is pending approval',
+                    'theme'   => 'error'
+                ]);
+                return;
+            }
+
+            $record = $this->db
+                ->select('id as sctf_id, number')
+                ->from('subconts')
+                ->where('id', $incoming_from_code)
+                ->where('status', 0)
+                ->get()
+                ->row_array();
+
+            if (!$record) {
+                $record = $this->db
+                    ->select('id as sctf_id, number')
+                    ->from('teaching_factory')
+                    ->where('id', $incoming_from_code)
+                    ->where('status', 0)
+                    ->get()
+                    ->row_array();
+            }
+
+            if (!$record || $checkOutRework['destination'] != $record['number']) {
+                echo json_encode([
+                    'title'   => 'Invalid Incoming From',
+                    'message' => 'This label does not match the selected incoming source',
+                    'theme'   => 'error'
+                ]);
+                return;
+            }
+
+            $this->db->select("item_fg_id, workorder, workorder_label, qty, {$foundField} as label, destination, delivery_note_no, dnr_no");
+            $this->db->from($foundTable);
+            $this->db->where($foundField, $input_label);
+            $this->db->where('status', 0);
+
+            $result = $this->db->get()->result_array();
+
+            if(!empty($result)) {
+                $result = array_map(function($row) use ($record) {
+                    $row['destination'] = $record['sctf_id'];
+                    $row['is_partial'] = 0;
+                    return $row;
+                }, $result);
+            }
+
+            echo json_encode([
+                'title' => 'success',
+                'total' => count($result),
+                'data'  => $result
+            ]);
+
+        } else {
+
+            $this->db->select("a.item_fg_id, a.workorder, a.workorder_label, b.destination, b.delivery_note_no");
+            $this->db->from('shipping_to_subconts a');
+            $this->db->join('delivery_to_subconts b', 'a.scan_id = b.scan_id and a.workorder = b.workorder');
+            $this->db->where('b.deleted', 0);
+            $this->db->where('a.status', 0);
+            $this->db->where('a.workorder_label', $input_label);
+            $this->db->where('b.approved_to', '');
+
+            $checkFromShipping = $this->db->get()->row_array();
+
+            if (empty($checkFromShipping)) {
+                echo json_encode([
+                    'title'   => 'Invalid Label',
+                    'message' => 'The label does not exists or is pending approval',
+                    'theme'   => 'error'
+                ]);
+                return;
+            }
+
+            $record = $this->db
+                ->select('id as sctf_id, number')
+                ->from('subconts')
+                ->where('id', $incoming_from_code)
+                ->where('status', 0)
+                ->get()
+                ->row_array();
+
+            if (!$record) {
+                $record = $this->db
+                    ->select('id as sctf_id, number')
+                    ->from('teaching_factory')
+                    ->where('id', $incoming_from_code)
+                    ->where('status', 0)
+                    ->get()
+                    ->row_array();
+            }
+
+            if (!$record || $checkFromShipping['destination'] != $incoming_from_code) {
+                echo json_encode([
+                    'title'   => 'Invalid Incoming From',
+                    'message' => 'This label does not match the selected incoming source',
+                    'theme'   => 'error'
+                ]);
+                return;
+            }
+
+            $this->db->select("item_fg_id, workorder, workorder_label, qty, NULL as label, NULL as dnr_no", FALSE);
+            $this->db->from($foundTable);
+            $this->db->where($foundField, $input_label);
+            $this->db->where('status', 0);
+            $this->db->limit(1);
+
+            $result = $this->db->get()->row_array();
+
+            $result['delivery_note_no'] = $checkFromShipping['delivery_note_no'];
+            $result['destination'] = $record['sctf_id'];
+            $result['is_partial'] = 0;
+
+            echo json_encode([
+                'title' => 'success',
+                'total' => $result ? 1 : 0,
+                'data'  => $result ? [$result] : []
+            ]);
+        }
+    }
 
     public function getSummaryIncoming()
     {
@@ -599,6 +785,219 @@ class Scan_incoming_subconts extends CI_Controller
         } else {
             show_error("Cannot Process your request");
         }
+    }
+
+    public function create_bulk()
+    {
+        if (!$this->input->post()) {
+            show_error("Cannot Process your request");
+        }
+
+        $post = $this->input->post();
+        $header = $post['header'] ?? [];
+        $rows = $post['rows'] ?? [];
+
+        if (empty($rows)) {
+            return $this->jsonResponse(
+                'Error',
+                'No data to process!',
+                'error'
+            );
+        }
+
+        if (
+            empty($header['incoming_type']) ||
+            empty($header['incoming_doc_no']) ||
+            empty($header['incoming_date']) ||
+            empty($header['incoming_from'])
+        ) {
+            return $this->jsonResponse(
+                'Invalid Data',
+                'Incoming header is required',
+                'error'
+            );
+        }
+
+        $this->db->trans_begin();
+
+        try {
+
+            $session_row = $this->db->select('scan_id')
+                ->from('scan_incoming_sctf')
+                ->where('type_status', 'scanning')
+                ->where('status', 0)
+                ->limit(1)
+                ->get()
+                ->row();
+
+            $scan_id = $session_row->scan_id ?? $this->generate_uuid();
+
+            $checkedOR = [];
+
+            foreach ($rows as $row) {
+
+                // $label = $row['label'];
+                $label = $row['label'] ? $row['label'] : $row['workorder_label'];
+
+                $label_sources = [
+                    [
+                        'table' => 'shipping_to_subconts',
+                        'field' => 'workorder_label'
+                    ],
+                    [
+                        'table' => 'scan_out_rework',
+                        'field' => 'serial_label'
+                    ]
+                ];
+
+                $label_item = null;
+                $label_table = null;
+                $label_field = null;
+
+                foreach ($label_sources as $src) {
+                    $query = $this->db->query("
+                        SELECT *
+                        FROM {$src['table']}
+                        WHERE {$src['field']} = ?
+                        AND type_status = ?
+                        FOR UPDATE
+                    ", [$label, 'completed']);
+
+                    $check = $query->row();
+
+                    if ($check) {
+                        $label_item  = $check;
+                        $label_table = $src['table'];
+                        $label_field = $src['field'];
+                        break;
+                    }
+                }
+
+                if (!$label_item) {
+                    throw new Exception(json_encode([
+                        'title'=>'Not Found',
+                        'message'=>'Label not found!',
+                        'theme'=>'error',
+                    ]));
+                }
+
+                if ($label_table == 'scan_out_rework') {
+
+                    if (!in_array($label, $checkedOR)) {
+
+                        $checkRemaining = $this->db->query("
+                            SELECT COUNT(*) as total
+                            FROM scan_out_rework
+                            WHERE serial_label = ?
+                            AND type_status = ?
+                            AND status = 0
+                        ", [$label, 'completed'])->row();
+
+                        if ($checkRemaining->total == 0) {
+                            throw new Exception(json_encode([
+                                'title'=>'Available',
+                                'message'=>'Label has already been scanned',
+                                'theme'=>'warning',
+                            ]));
+                        }
+
+                        $checkedOR[] = $label;
+                    }
+                } else {
+
+                    if ($label_item->status == 1) {
+                        throw new Exception(json_encode([
+                            'title'=>'Available',
+                            'message'=>'Label has already been scanned',
+                            'theme'=>'warning',
+                        ]));
+                    }
+                }
+
+                $data_to_insert = [
+                    'incoming_type'     => $header['incoming_type'],
+                    'incoming_doc_no'   => $header['incoming_doc_no'],
+                    'incoming_date'     => $header['incoming_date'],
+                    'incoming_from'     => $row['destination'],
+                    'delivery_note_no'  => $row['delivery_note_no'],
+                    'dnr_no'            => $row['dnr_no'] ?? null,
+                    'scan_id'           => $scan_id,
+                    'workorder'         => $row['workorder'],
+                    'workorder_label'   => $row['workorder_label'],
+                    'serial_label'      => $row['label'] ?? null,
+                    'item_fg_id'        => $label_item->item_fg_id,
+                    'qty'               => $row['qty'],
+                    'type_status'       => 'scanning',
+                    'status'            => 0,
+                    'is_partial'        => $row['is_partial'] ?? 0,
+                ];
+
+                $this->crud->create('scan_incoming_sctf', $data_to_insert);
+
+                if ($this->db->trans_status() === FALSE) {
+                    throw new Exception('Failed insert detail');
+                }
+
+                if ($label_table != 'scan_out_rework') {
+                    $this->db->where($label_field, $label);
+                    $this->db->update($label_table, ['status' => 1]);
+
+                    if ($this->db->trans_status() === FALSE) {
+                        throw new Exception('Failed update status');
+                    }
+                }
+            }
+
+            if(!empty($checkedOR)) {
+                foreach ($checkedOR as $ot_label) {
+                    $this->db->where('serial_label', $ot_label);
+                    $this->db->update('scan_out_rework', ['status' => 1]);
+
+                    if ($this->db->trans_status() === FALSE) {
+                        throw new Exception('Failed update status');
+                    }
+                }
+            } 
+
+            $this->db->trans_commit();
+
+            return $this->jsonResponse(
+                'Success',
+                'Data berhasil disimpan',
+                'success'
+            );
+
+
+        } catch (Exception $e) {
+
+            $this->db->trans_rollback();
+
+            $json = @json_decode($e->getMessage(), true);
+
+            if ($json) {
+                return $this->jsonResponse(
+                    $json['title'],
+                    $json['message'],
+                    $json['theme']
+                );
+            }
+
+            return $this->jsonResponse(
+                'Error',
+                $e->getMessage(),
+                'error'
+            );
+        }
+    }
+
+    private function jsonResponse($title, $message, $theme = 'error')
+    {
+        echo json_encode([
+            'title'   => $title,
+            'message' => $message,
+            'theme'   => $theme
+        ]);
+        return;
     }
 
     public function updateQty()
@@ -922,11 +1321,15 @@ class Scan_incoming_subconts extends CI_Controller
                     throw new Exception("Delivery Note No not found");
                 }
 
-                if ($qty_label > $dn->qty_delivery) {
-                    throw new Exception("Qty label exceeds delivery quantity for label {$post['workorder_label']}");
-                }
+                // if ($qty_label > $dn->qty_delivery) {
+                //     throw new Exception("Qty label exceeds delivery quantity for label {$post['workorder_label']}");
+                // }
 
                 if ($post['incoming_type'] === 'BPM') {
+
+                    if ($qty_label > $dn->qty_delivery) {
+                        throw new Exception("Qty label exceeds delivery quantity for label {$post['workorder_label']}");
+                    }
 
                     $this->crud->delete('shipping_to_subconts', ['workorder_label' => $label_item->workorder_label]);
 

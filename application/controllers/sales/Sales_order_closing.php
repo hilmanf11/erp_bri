@@ -128,7 +128,6 @@ class Sales_order_closing extends CI_Controller
             $closing_reason = $post['closing_reason'];
             $attachment_closing = $post['attachment_closing'];
 
-            // Ambil semua baris sales_order berdasarkan sales_order_no
             $sales_orders = $this->db
                 ->select('so.id, so.sales_order_no, so.item_fg_id, so.qty, COALESCE(dn.qty, 0) as qty_delivery')
                 ->from('sales_orders so')
@@ -144,7 +143,6 @@ class Sales_order_closing extends CI_Controller
             foreach ($sales_orders as $so) {
                 $outstanding = $so->qty - $so->qty_delivery;
 
-                // Update semua data kecuali type_closing dulu
                 $data_update = [
                     'status' => $status,
                     'closing_reason' => $closing_reason,
@@ -157,6 +155,12 @@ class Sales_order_closing extends CI_Controller
                 }
 
                 $send = $this->crud->update('sales_orders', ['id' => $so->id], $data_update);
+
+                $send2 = $this->crud->update('sales_order_deliveries', [
+                    'sales_order_no' => $so->sales_order_no,
+                    'item_fg_id' => $so->item_fg_id,
+                ], ['status' => 1]);
+
                 $updated_count++;
             }
 

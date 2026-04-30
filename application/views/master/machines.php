@@ -1,3 +1,64 @@
+<div id="dlg_info" class="easyui-dialog" title="Information" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" data-options="selected:false" style="width:100%; height: 100%;">
+        <div title="English" style="padding: 20px;">
+            <p>
+                <b>General Information:</b></br>
+                The Master Machines module stores master data for production, laboratory, and supporting machines used in manufacturing processes.
+            </p>
+
+            <ul>
+                <li>Machine ID identifies the machine record in the system.</li>
+                <li>Machine No represents the machine number or internal code.</li>
+                <li>Name of Machine indicates the machine name.</li>
+                <li>Process Type defines the production or operational process associated with the machine.</li>
+                <li>Specification provides technical specifications of the machine.</li>
+                <li>Purchase Date records the machine purchase date.</li>
+                <li>Manufacturing Date records the machine manufacturing date.</li>
+                <li>Maker indicates the machine manufacturer.</li>
+                <li>Tonnage of Machine shows the machine capacity, if applicable.</li>
+                <li>UOM specifies the unit of measure for machine capacity.</li>
+                <li>Vacuum indicates whether the machine uses a vacuum system.</li>
+                <li>RT represents the cycle time or related runtime parameter.</li>
+                <li>Type defines the machine type.</li>
+                <li>Brand indicates the machine brand.</li>
+                <li>Status shows whether the machine is active or inactive.</li>
+            </ul>
+
+            <span>Master Machines data is used as a reference in production, maintenance, and reporting processes.</span></br></br>
+
+            <span>Changes will apply only to transactions created after the changes are made and will not affect existing data.</span>
+        </div>
+        <div title="Indonesian" style="padding: 20px;">
+            <p>
+                <b>Informasi Umum:</b></br>
+                Modul Master Machines menyimpan data master mesin produksi, laboratorium, dan mesin pendukung yang digunakan dalam proses manufaktur.
+            </p>
+
+            <ul>
+                <li>Machine ID menunjukkan identitas mesin di dalam sistem.</li>
+                <li>Machine No merepresentasikan nomor atau kode internal mesin.</li>
+                <li>Name of Machine menunjukkan nama mesin.</li>
+                <li>Process Type menentukan jenis proses atau aktivitas mesin.</li>
+                <li>Specification berisi spesifikasi teknis mesin.</li>
+                <li>Purchase Date menunjukkan tanggal pembelian mesin.</li>
+                <li>Manufacturing Date menunjukkan tanggal pembuatan mesin.</li>
+                <li>Maker menunjukkan pabrikan mesin.</li>
+                <li>Tonnage of Machine menunjukkan kapasitas mesin, jika digunakan.</li>
+                <li>UOM menunjukkan satuan kapasitas mesin.</li>
+                <li>Vacuum menunjukkan apakah mesin menggunakan sistem vakum.</li>
+                <li>RT menunjukkan waktu siklus atau parameter runtime terkait.</li>
+                <li>Type menunjukkan tipe mesin.</li>
+                <li>Brand menunjukkan merek mesin.</li>
+                <li>Status menunjukkan status mesin, aktif atau tidak aktif.</li>
+            </ul>
+
+            <span>Data Master Machines digunakan sebagai acuan pada proses produksi, maintenance, dan pelaporan.</span></br></br>
+
+            <span>Perubahan data hanya berlaku untuk transaksi yang dibuat setelah perubahan dilakukan dan tidak mempengaruhi data yang sudah ada.</span>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -34,6 +95,7 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_info').dialog('open');"><i class="fa fa-info"></i> Info</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; padding:10px; top: 20px;">

@@ -28,29 +28,6 @@ class Shipping_to_subconts extends CI_Controller
         }
     }
 
-    // public function getShippingSubconts()
-    // {
-    //     if ($this->input->get()) {
-
-    //         $this->db->select('b.*');
-    //         $this->db->from("(SELECT 
-    //                             scan_id,
-    //                             item_fg_id,
-    //                             SUM(qty) AS shipping
-    //                         FROM shipping_to_subconts
-    //                         WHERE type_status = 'scanning' AND status = 0
-    //                         GROUP BY scan_id, item_fg_id
-    //                         ) b");
-
-    //         $records = $this->db->get()->result_array();
-
-    //         $result['total'] = count($records);
-    //         $result['rows']  = $records;
-
-    //         echo json_encode($result);
-    //     }
-    // }
-
     public function getShippingSubconts()
     {
         $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, b.uom');
@@ -75,53 +52,6 @@ class Shipping_to_subconts extends CI_Controller
 
         echo json_encode($result);
     }
-
-    // public function getShippingSubconts()
-    // {
-    //     // Ambil scan_id terakhir (sesi aktif)
-    //     $last_scan = $this->db->select('scan_id')
-    //         ->from('shipping_to_subconts')
-    //         ->where('type_status', 'scanning')
-    //         ->where('status', 0)
-    //         ->order_by('created_date', 'DESC')
-    //         ->limit(1)
-    //         ->get()
-    //         ->row();
-
-    //     if (!$last_scan) {
-    //         echo json_encode(['total' => 0, 'rows' => []]);
-    //         return;
-    //     }
-
-    //     $scan_id = $last_scan->scan_id;
-
-    //     // Ambil data shipping + qty_label berdasarkan sesi terakhir
-    //     $this->db->select('
-    //         a.scan_id,
-    //         a.item_fg_id,
-    //         a.workorder,
-    //         SUM(a.qty) AS shipping,
-    //         COUNT(a.id) AS qty_label,
-    //         MAX(a.created_date) AS last_created_date,
-    //         b.number AS item_fg_number,
-    //         b.name AS item_fg_name,
-    //         b.uom
-    //     ');
-    //     $this->db->from('shipping_to_subconts a');
-    //     $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-    //     $this->db->where('a.scan_id', $scan_id);
-    //     $this->db->where('a.type_status', 'scanning');
-    //     $this->db->where('a.status', 0);
-    //     $this->db->group_by('a.scan_id, a.item_fg_id, a.workorder');
-    //     $this->db->order_by('last_created_date', 'DESC');
-
-    //     $records = $this->db->get()->result_array();
-
-    //     echo json_encode([
-    //         'total' => count($records),
-    //         'rows'  => $records
-    //     ]);
-    // }
 
     public function getChecksheetLabel()
     {
@@ -180,125 +110,124 @@ class Shipping_to_subconts extends CI_Controller
         }
     }
 
-    // public function createv1()
+    // public function create()
     // {
     //     if ($this->input->post()) {
-    //         if ($this->form_validation->run() == TRUE) {
-    //             $post = $this->input->post();
-    //             $post['transaction_type'] = 'ISFG-001';
 
-    //             $input = $post['delivery_order_no'];
-    //             $part1 = substr($input, 0, 4);
-    //             $part3 = substr($input, -4, 2);
-    //             $part4 = substr($input, -2);
-    //             $part2 = substr($input, 4, -4);
-    //             $delivery_order_no = $part1 . '/' . $part2 . '/' . $part3 . '/' . $part4;
-    //             $item_fg_id = isset($post['item_fg_id']) ? $post['item_fg_id'] : null;
+    //         if ($this->form_validation->run() == TRUE) {
+
+    //             $post = $this->input->post();
+    //             $item_fg_id = $post['item_fg_id'] ?? null;
 
     //             if (!$item_fg_id) {
-    //                 echo json_encode(array("title" => "Error", "message" => "Item FG ID is missing", "theme" => "error"));
+    //                 echo json_encode(["title" => "Error", "message" => "Item FG ID is missing", "theme" => "error"]);
     //                 return;
     //             }
 
-    //             $do_no = $this->crud->read("delivery_orders", [], ["delivery_order_no" => $delivery_order_no, "item_fg_id" => $post['item_fg_id']]);
-
-    //             if (!$do_no) {
-    //                 echo json_encode(array("title" => "Error", "message" => "Delivery order not found", "theme" => "error"));
-    //                 return;
-    //             }
-
-    //             $totalShipping = $this->crud->query("SELECT SUM(qty) as qty FROM shipping_to_subconts WHERE delivery_order_no = '$delivery_order_no' and item_fg_id = '$item_fg_id'");
-
-    //             if ($totalShipping[0]->qty + $post['qty'] > $do_no->qty_del) {
-    //                 echo json_encode(array("title" => "Exceeds Delivery", "message" => "Qty Shipping exceeds Delivery Qty", "theme" => "error"));
-    //                 return;
-    //             }
-
-    //             // Cek apakah label ada di fg_scan_in_label
-    //             $this->db->select("a.qty, a.serial_label, a.item_fg_id, b.delivery_order_no, b.qty_del as delivery, b.sales_order_no, b.customer_order_no");
-    //             $this->db->from('fg_scan_in_label a');
-    //             $this->db->join('delivery_orders b', 'a.item_fg_id = b.item_fg_id');
-    //             $this->db->where('a.serial_label', $post['checksheet_label']);
-    //             $this->db->where('b.delivery_order_no', $delivery_order_no);
+    //             $this->db->select("a.*");
+    //             $this->db->from('output_production_press_detail a');
+    //             $this->db->where('a.workorder_label', $post['workorder_label']);
     //             $this->db->where('a.status', '0');
-    //             $label_items = $this->db->get()->result_array();
+    //             $this->db->where('a.item_fg_id !=', 'FGRPNA-0207');
+    //             $label_item = $this->db->get()->row();
 
-    //             // Jika tidak ada di fg_scan_in_label, cek di new_barcode_fg_detail
-    //             if (empty($label_items)) {
-    //                 $this->db->select("a.qty_packing as qty, a.serial_label, a.item_fg_id, b.delivery_order_no, b.qty_del as delivery, b.sales_order_no, b.customer_order_no");
-    //                 $this->db->from('new_barcode_fg_detail a');
-    //                 $this->db->join('delivery_orders b', 'a.item_fg_id = b.item_fg_id');
-    //                 $this->db->where('a.serial_label', $post['checksheet_label']);
-    //                 $this->db->where('b.delivery_order_no', $delivery_order_no);
-    //                 $this->db->where('a.status', '0');
-    //                 $label_items = $this->db->get()->result_array();
+    //             if(empty($label_item)) {
+    //                 $this->db->select("a.*");
+    //                 $this->db->from('internal_process a');
+    //             $this->db->join('output_production_press_detail b', 'a.item_fg_id = b.item_fg_id AND a.workorder = b.workorder and a.workorder_label = b.workorder_label');
+    //                 $this->db->where('a.workorder_label', $post['workorder_label']);
+    //                 $this->db->where('b.status', '2');
+    //                 $this->db->where('a.item_fg_id', 'FGRPNA-0207');
+    //                 $label_item = $this->db->get()->row();
     //             }
 
-    //             if (empty($label_items)) {
-    //                 echo json_encode(array("title" => "Not Match", "message" => "Label does not match the list item", "theme" => "error"));
+    //             if (empty($label_item)) {
+    //                 echo json_encode([
+    //                     "title"   => "Not Found",
+    //                     "message" => "Label not found!",
+    //                     "theme"   => "error"
+    //                 ]);
     //                 return;
     //             }
 
-    //             $shipping_to_subconts = $this->crud->read("shipping_to_subconts", [], ["delivery_order_no" => $delivery_order_no, "serial_label" => $post['checksheet_label']]);
+    //             $summary = $this->getOutputPressSummary($label_item->item_fg_id, $label_item->workorder);
+
+    //             if (!$summary || ($summary['qty_output'] ?? 0) <= 0) {
+    //                 echo json_encode([
+    //                     "title"   => "Already Scanned",
+    //                     "message" => "Item has been finished in internal finishing or already delivered to the subcont",
+    //                     "theme"   => "error"
+    //                 ]);
+    //                 return;
+    //             }
+
+    //             // if (!$label_item) {
+    //             //     echo json_encode(["title" => "Not Found", "message" => "Label not found!", "theme" => "error"]);
+    //             //     return;
+    //             // }
+
+    //             $existing = $this->db->select("id")
+    //                 ->from("shipping_to_subconts")
+    //                 ->where("workorder_label", $label_item->workorder_label)
+    //                 ->where("status", 0)
+    //                 ->get()
+    //                 ->row();
+
+    //             if ($existing) {
+    //                 echo json_encode([
+    //                     "title"   => "Available",
+    //                     "message" => "Label has already been scanned",
+    //                     "theme"   => "error"
+    //                 ]);
+    //                 return;
+    //             }
+
+    //             $this->db->select("scan_id");
+    //             $this->db->from("shipping_to_subconts");
+    //             $this->db->where("type_status", "scanning");
+    //             $this->db->where("status", 0);
+    //             $this->db->limit(1);
+    //             $session_row = $this->db->get()->row();
+
+    //             $scan_id = $session_row->scan_id ?? $this->generate_uuid();
+
+    //             $shipping_to_subconts = $this->crud->read(
+    //                 "shipping_to_subconts", [],
+    //                 ["workorder_label" => $post['workorder_label']]
+    //             );
 
     //             if (!$shipping_to_subconts) {
-    //                 // Siapkan data untuk disimpan
-    //                 foreach ($label_items as $item) {
-    //                     if ($item['qty'] > $item['delivery']) {
-    //                         echo json_encode(array("title" => "Exceeds Delivery", "message" => "Label qty exceeds delivery qty", "theme" => "error"));
-    //                         return;
-    //                     }
+    //                 $qty = $post['qty'] ?? 0;
 
-    //                     $data_to_insert = [
-    //                         'delivery_order_no' => $delivery_order_no,
-    //                         'sales_order_no' => $item['sales_order_no'],
-    //                         'customer_order_no' => $item['customer_order_no'], 
-    //                         'serial_label' => $item['serial_label'],
-    //                         'item_fg_id' => $item['item_fg_id'],
-    //                         'delivery' => $item['delivery'],
-    //                         'qty' => $item['qty'],
-    //                         'status' => 0
-    //                     ];
-    //                     $this->crud->create('shipping_to_subconts', $data_to_insert);
-    //                     // Tambahkan update kolom delivery pada tabel sales_orders
-    //                     // Ambil data sales_orders terkait
-    //                     $sales_order = $this->crud->read('sales_orders', [], [
-    //                         'sales_order_no' => $item['sales_order_no'],
-    //                         'item_fg_id' => $item['item_fg_id']
-    //                     ]);
-    //                     if ($sales_order) {
-    //                         // Hitung total qty shipping untuk sales_order_no dan item_fg_id
-    //                         $total_shipping = $this->crud->query("SELECT SUM(qty) as total FROM shipping_to_subconts WHERE sales_order_no = '".$item['sales_order_no']."' AND item_fg_id = '".$item['item_fg_id']."'");
-    //                         $new_delivery = isset($total_shipping[0]->total) ? $total_shipping[0]->total : 0;
-    //                         $new_outstanding = $sales_order->qty - $new_delivery;
-    //                         $this->crud->update('sales_orders', [
-    //                             'sales_order_no' => $item['sales_order_no'],
-    //                             'item_fg_id' => $item['item_fg_id']
-    //                         ], [
-    //                             'delivery' => $new_delivery,
-    //                             'outstanding' => $new_outstanding
-    //                         ]);
-    //                     }
-    //                 }
+    //                 $data_to_insert = [
+    //                     'scan_id'         => $scan_id,
+    //                     'workorder'       => $label_item->workorder,
+    //                     'workorder_label' => $label_item->workorder_label,
+    //                     'item_fg_id'      => $label_item->item_fg_id,
+    //                     'qty'             => $qty,
+    //                     'type_status'     => 'scanning',
+    //                     'status'          => 0
+    //                 ];
 
-    //                 // Update status di fg_scan_in_label atau new_barcode_fg_detail
-    //                 $this->db->where('serial_label', $post['checksheet_label']);
-    //                 $this->db->where('status', '0');
-    //                 $this->db->update('fg_scan_in_label', ['status' => 1]);
+    //                 $this->crud->create('shipping_to_subconts', $data_to_insert);
 
-    //                 if ($this->db->affected_rows() == 0) {
-    //                     $this->db->where('serial_label', $post['checksheet_label']);
-    //                     $this->db->where('status', '0');
-    //                     $this->db->update('new_barcode_fg_detail', ['status' => 1]);
-    //                 }
+    //                 $this->db->where('workorder_label', $post['workorder_label']);
+    //                 // $this->db->where('status', '0');
+    //                 $this->db->group_start();
+    //                     $this->db->where('status', 0);
+    //                     $this->db->or_where('status', 2);
+    //                 $this->db->group_end();
+    //                 $this->db->update('output_production_press_detail', ['status' => 1]);
 
-    //                 echo json_encode(array("theme" => "success", "message" => "Data berhasil disimpan", "title" => "Success"));
+    //                 echo json_encode(["theme" => "success", "message" => "Data berhasil disimpan", "title" => "Success"]);
     //             } else {
-    //                 echo json_encode(array("title" => "Available", "message" => "Data Shipping Orders has been Scanning", "theme" => "error"));
+    //                 echo json_encode(["title" => "Available", "message" => "Data Shipping To Subcont has been Scanning", "theme" => "error"]);
     //             }
+
     //         } else {
     //             show_error(validation_errors());
     //         }
+
     //     } else {
     //         show_error("Cannot Process your request");
     //     }
@@ -306,127 +235,161 @@ class Shipping_to_subconts extends CI_Controller
 
     public function create()
     {
-        if ($this->input->post()) {
-
-            if ($this->form_validation->run() == TRUE) {
-
-                $post = $this->input->post();
-                $item_fg_id = $post['item_fg_id'] ?? null;
-
-                if (!$item_fg_id) {
-                    echo json_encode(["title" => "Error", "message" => "Item FG ID is missing", "theme" => "error"]);
-                    return;
-                }
-
-                $this->db->select("a.*");
-                $this->db->from('output_production_press_detail a');
-                $this->db->where('a.workorder_label', $post['workorder_label']);
-                $this->db->where('a.status', '0');
-                $this->db->where('a.item_fg_id !=', 'FGRPNA-0207');
-                $label_item = $this->db->get()->row();
-
-                if(empty($label_item)) {
-                    $this->db->select("a.*");
-                    $this->db->from('internal_process a');
-                $this->db->join('output_production_press_detail b', 'a.item_fg_id = b.item_fg_id AND a.workorder = b.workorder and a.workorder_label = b.workorder_label');
-                    $this->db->where('a.workorder_label', $post['workorder_label']);
-                    $this->db->where('b.status', '2');
-                    $this->db->where('a.item_fg_id', 'FGRPNA-0207');
-                    $label_item = $this->db->get()->row();
-                }
-
-                if (empty($label_item)) {
-                    echo json_encode([
-                        "title"   => "Not Found",
-                        "message" => "Label not found!",
-                        "theme"   => "error"
-                    ]);
-                    return;
-                }
-
-                $summary = $this->getOutputPressSummary($label_item->item_fg_id, $label_item->workorder);
-
-                if (!$summary || ($summary['qty_output'] ?? 0) <= 0) {
-                    echo json_encode([
-                        "title"   => "Already Scanned",
-                        "message" => "Item has been finished in internal finishing or already delivered to the subcont",
-                        "theme"   => "error"
-                    ]);
-                    return;
-                }
-
-                // if (!$label_item) {
-                //     echo json_encode(["title" => "Not Found", "message" => "Label not found!", "theme" => "error"]);
-                //     return;
-                // }
-
-                $existing = $this->db->select("id")
-                    ->from("shipping_to_subconts")
-                    ->where("workorder_label", $label_item->workorder_label)
-                    ->where("status", 0)
-                    ->get()
-                    ->row();
-
-                if ($existing) {
-                    echo json_encode([
-                        "title"   => "Available",
-                        "message" => "Label has already been scanned",
-                        "theme"   => "error"
-                    ]);
-                    return;
-                }
-
-                $this->db->select("scan_id");
-                $this->db->from("shipping_to_subconts");
-                $this->db->where("type_status", "scanning");
-                $this->db->where("status", 0);
-                $this->db->limit(1);
-                $session_row = $this->db->get()->row();
-
-                $scan_id = $session_row->scan_id ?? $this->generate_uuid();
-
-                $shipping_to_subconts = $this->crud->read(
-                    "shipping_to_subconts", [],
-                    ["workorder_label" => $post['workorder_label']]
-                );
-
-                if (!$shipping_to_subconts) {
-                    $qty = $post['qty'] ?? 0;
-
-                    $data_to_insert = [
-                        'scan_id'         => $scan_id,
-                        'workorder'       => $label_item->workorder,
-                        'workorder_label' => $label_item->workorder_label,
-                        'item_fg_id'      => $label_item->item_fg_id,
-                        'qty'             => $qty,
-                        'type_status'     => 'scanning',
-                        'status'          => 0
-                    ];
-
-                    $this->crud->create('shipping_to_subconts', $data_to_insert);
-
-                    $this->db->where('workorder_label', $post['workorder_label']);
-                    // $this->db->where('status', '0');
-
-                    $this->db->group_start();
-                        $this->db->where('status', 0);
-                        $this->db->or_where('status', 2);
-                    $this->db->group_end();
-
-                    $this->db->update('output_production_press_detail', ['status' => 1]);
-
-                    echo json_encode(["theme" => "success", "message" => "Data berhasil disimpan", "title" => "Success"]);
-                } else {
-                    echo json_encode(["title" => "Available", "message" => "Data Shipping To Subcont has been Scanning", "theme" => "error"]);
-                }
-
-            } else {
-                show_error(validation_errors());
-            }
-
-        } else {
+        if (!$this->input->post()) {
             show_error("Cannot Process your request");
         }
+
+        if ($this->form_validation->run() !== TRUE) {
+            show_error(validation_errors());
+        }
+
+        $post = $this->input->post();
+        $item_fg_id = $post['item_fg_id'] ?? null;
+
+        if (!$item_fg_id) {
+            return $this->jsonResponse(
+                'Error',
+                'Item FG ID is missing',
+                'error'
+            );
+        }
+
+        $this->db->select("a.*")
+            ->from('output_production_press_detail a')
+            ->where('a.workorder_label', $post['workorder_label'])
+            ->where('a.status', '0')
+            ->where('a.item_fg_id !=', 'FGRPNA-0207');
+        $label_item = $this->db->get()->row();
+
+        if (empty($label_item)) {
+            $this->db->select("a.*")
+                ->from('internal_process a')
+                ->join(
+                    'output_production_press_detail b',
+                    'a.item_fg_id = b.item_fg_id 
+                    AND a.workorder = b.workorder 
+                    AND a.workorder_label = b.workorder_label'
+                )
+                ->where('a.workorder_label', $post['workorder_label'])
+                ->where('b.status', '2')
+                ->where('a.item_fg_id', 'FGRPNA-0207');
+            $label_item = $this->db->get()->row();
+        }
+
+        if (empty($label_item)) {
+            return $this->jsonResponse(
+                'Not Found',
+                'Label not found!',
+                'error'
+            );
+        }
+
+        $summary = $this->getOutputPressSummary(
+            $label_item->item_fg_id,
+            $label_item->workorder
+        );
+
+        if (!$summary || ($summary['qty_output'] ?? 0) <= 0) {
+            return $this->jsonResponse(
+                'Already Scanned',
+                'Item has been finished in internal finishing or already delivered to the subcont',
+                'error'
+            );
+        }
+
+        $existing = $this->db->select('id')
+            ->from('shipping_to_subconts')
+            ->where('workorder_label', $label_item->workorder_label)
+            ->where('status', 0)
+            ->get()
+            ->row();
+
+        if ($existing) {
+            return $this->jsonResponse(
+                'Available',
+                'Label has already been scanned',
+                'error'
+            );
+        }
+
+        $this->db->trans_begin();
+
+        try {
+            $session_row = $this->db->select('scan_id')
+                ->from('shipping_to_subconts')
+                ->where('type_status', 'scanning')
+                ->where('status', 0)
+                ->limit(1)
+                ->get()
+                ->row();
+
+            $scan_id = $session_row->scan_id ?? $this->generate_uuid();
+
+            $qty = $post['qty'] ?? 0;
+
+            $data_to_insert = [
+                'scan_id'         => $scan_id,
+                'workorder'       => $label_item->workorder,
+                'workorder_label' => $label_item->workorder_label,
+                'item_fg_id'      => $label_item->item_fg_id,
+                'qty'             => $qty,
+                'type_status'     => 'scanning',
+                'status'          => 0
+            ];
+
+            $this->crud->create('shipping_to_subconts', $data_to_insert);
+
+            if ($this->db->trans_status() === FALSE) {
+                throw new Exception('Failed create shipping to subconts');
+            }
+
+            $checkWOLabel = $this->crud->query("
+                SELECT workorder_label
+                FROM output_production_press_detail
+                WHERE workorder_label = '".$post['workorder_label']."'
+                AND (status = 0 OR status = 2)
+                LIMIT 1
+            ");
+
+            if($checkWOLabel) {
+                $this->crud->update('output_production_press_detail', [
+                    'workorder_label' => $post['workorder_label']
+                ], [
+                    'status' => 1
+                ]);
+            }
+
+            if ($this->db->trans_status() === FALSE) {
+                throw new Exception('Transaction failed');
+            }
+
+            $this->db->trans_commit();
+
+            return $this->jsonResponse(
+                'Success',
+                'Data berhasil disimpan',
+                'success'
+            );
+
+        } catch (Exception $e) {
+            $this->db->trans_rollback();
+
+            return $this->jsonResponse(
+                'Error',
+                $e->getMessage(),
+                'error'
+            );
+        }
+    }
+
+    private function jsonResponse($title, $message, $theme = 'error')
+    {
+        echo json_encode([
+            'title'   => $title,
+            'message' => $message,
+            'theme'   => $theme
+        ]);
+        return;
     }
 
     private function generate_uuid()

@@ -1,3 +1,43 @@
+<div id="dlg_info" class="easyui-dialog" title="Information" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" data-options="selected:false" style="width:100%; height: 100%;">
+        <div title="English" style="padding: 20px;">
+            <p>
+                <b>General Information:</b></br>
+                The Currency module stores master data for currencies used in system transactions and reporting.
+            </p>
+
+            <ul>
+                <li>ID identifies the currency code in the system.</li>
+                <li>Name represents the currency abbreviation (e.g., IDR, USD).</li>
+                <li>Description provides the full name of the currency.</li>
+                <li>Symbol indicates the currency symbol used in transaction displays.</li>
+            </ul>
+
+            <span>Currency data is used across transactions, calculations, and reports.</span></br></br>
+
+            <span>Changes will apply only to transactions created after the changes are made and will not affect existing data.</span>
+        </div>
+        <div title="Indonesian" style="padding: 20px;">
+
+            <p>
+                <b>Informasi Umum:</b></br>
+                Modul Currency menyimpan data master mata uang yang digunakan dalam transaksi dan pelaporan sistem.
+            </p>
+
+            <ul>
+                <li>ID menunjukkan kode mata uang di dalam sistem.</li>
+                <li>Name merepresentasikan singkatan mata uang (misalnya IDR, USD).</li>
+                <li>Description berisi nama lengkap mata uang.</li>
+                <li>Symbol menunjukkan simbol mata uang yang digunakan pada tampilan transaksi.</li>
+            </ul>
+                
+            <span>Data Currency digunakan pada berbagai transaksi, perhitungan, dan laporan.</span></br></br>
+
+            <span>Perubahan data hanya berlaku untuk transaksi yang dibuat setelah perubahan dilakukan dan tidak mempengaruhi data yang sudah ada.</span>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -21,6 +61,7 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_info').dialog('open');"><i class="fa fa-info"></i> Info</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">

@@ -12,7 +12,9 @@ class divisions extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Division Code', 'required|min_length[1]|max_length[20]|is_unique[divisions.number]');
+        $this->form_validation->set_rules('name', 'Plant Name', 'required|min_length[1]|max_length[20]|is_unique[divisions.name]');
+
+        $this->form_validation->set_rules('number', 'Plant Code', 'required|min_length[1]|max_length[20]|is_unique[divisions.number]');
     }
     //HALAMAN UTAMA
     public function index()

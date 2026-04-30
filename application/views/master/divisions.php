@@ -1,3 +1,42 @@
+<div id="dlg_info" class="easyui-dialog" title="Information" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" data-options="selected:false" style="width:100%; height: 100%;">
+        <div title="English" style="padding: 20px;">
+            <p>
+                <b>General Information:</b></br>
+                The Plant module stores master data for production plants or divisions used across system transactions and reports.
+            </p>
+
+            <ul>
+                <li>Plant ID identifies the plant or division in the system.</li>
+                <li>Plant Name represents the name of the plant or production division.</li>
+                <li>Plant Code defines the short code used to reference the plant.</li>
+                <li>Description provides additional information about the plant.</li>
+            </ul>
+
+            <span>Plant data is used in various transactions and reports, including Historical Transaction RM, Historical Transaction FG, Forecasting, Sales Orders, and other related processes.</span></br></br>
+
+            <span>Changes will apply only to transactions and reports generated after the changes are made and will not affect existing data.</span>
+        </div>
+        <div title="Indonesian" style="padding: 20px;">
+            <p>
+                <b>Informasi Umum:</b></br>
+                Modul Plant menyimpan data master plant atau divisi produksi yang digunakan pada berbagai transaksi dan laporan sistem.
+            </p>
+
+            <ul>
+                <li>Plant ID menunjukkan identitas plant atau divisi.</li>
+                <li>Plant Name merepresentasikan nama plant atau divisi produksi.</li>
+                <li>Plant Code berisi kode singkat yang digunakan sebagai referensi plant.</li>
+                <li>Description memberikan keterangan tambahan mengenai plant.</li>
+            </ul>
+
+            <span>Data Plant digunakan pada berbagai transaksi dan laporan, seperti Historical Transaction RM, Historical Transaction FG, Forecasting, Sales Orders, dan proses terkait lainnya.</span></br></br>
+
+            <span>Perubahan data hanya berlaku untuk transaksi dan laporan yang dibuat setelah perubahan dilakukan dan tidak mempengaruhi data yang sudah ada.</span>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -21,6 +60,7 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_info').dialog('open');"><i class="fa fa-info"></i> Info</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">

@@ -891,6 +891,7 @@ class Supply_sheets extends CI_Controller
         }
 
         // Query utama
+        // COALESCE((a.qty * b.composition),0) as qty_req,
         $this->db->select('
             c.id as item_rm_id,
             c.number as item_rm_no, 
@@ -900,24 +901,61 @@ class Supply_sheets extends CI_Controller
             COALESCE(f.uom_soft, b.uom) as uom,
             COALESCE(b.composition, 0) as qpa,
             a.qty,
-            COALESCE((a.qty * b.composition),0) as qty_req,
+            COALESCE(CAST(a.qty * b.composition AS DECIMAL(20,4)), 0) as qty_req,
             CASE 
-                WHEN c.item_family_id = "P06" AND c.supply = 0 THEN ROUND(a.qty * b.composition, 2)
-                ELSE CASE
-                    WHEN d.qty_bal IS NOT NULL AND d.qty_bal >= 
-                        CASE
-                            WHEN f.uom_soft IS NULL THEN ROUND(a.qty * b.composition)
-                            ELSE ROUND(a.qty * (b.composition * f.convertion))
-                        END THEN d.qty_bal
-                    ELSE CEIL(
-                        CASE
-                            WHEN f.uom_soft IS NULL THEN ROUND(a.qty * b.composition)
-                            ELSE ROUND(a.qty * (b.composition * f.convertion))
-                        END / h.mpq
-                    ) * h.mpq
-                END
-            END as qty_act,
+                WHEN c.item_family_id = "P06"
+                THEN CAST(a.qty * b.composition AS DECIMAL(20,4))
+
+                ELSE 
+                    CAST(
+                        CEIL(
+                            (
+                                CASE
+                                    WHEN f.uom_soft IS NULL 
+                                        THEN (a.qty * b.composition)
+                                    ELSE (a.qty * b.composition * f.convertion)
+                                END
+                            ) / COALESCE(NULLIF(h.mpq, 0), 1)
+                        ) 
+                        * COALESCE(NULLIF(h.mpq, 0), 1)
+                    AS DECIMAL(20,4))
+            END AS qty_act
         ');
+
+
+        // $this->db->select('
+        //     c.id as item_rm_id,
+        //     c.number as item_rm_no, 
+        //     c.number_internal as item_rm_no_internal, 
+        //     c.name as item_rm_name, 
+        //     h.mpq,
+        //     COALESCE(f.uom_soft, b.uom) as uom,
+        //     COALESCE(b.composition, 0) as qpa,
+        //     a.qty,
+        //     COALESCE(CAST(a.qty * b.composition AS DECIMAL(20,4)), 0) as qty_req,
+        //     CASE 
+        //         WHEN c.item_family_id = "P06" AND c.supply = 0 THEN ROUND(a.qty * b.composition, 4)
+        //         ELSE CASE
+        //             WHEN d.qty_bal IS NOT NULL AND d.qty_bal >= 
+        //                 CASE
+        //                     WHEN f.uom_soft IS NULL THEN 
+        //                         ROUND(a.qty * b.composition)
+        //                     ELSE 
+        //                         ROUND(a.qty * (b.composition * f.convertion))
+        //                 END THEN d.qty_bal
+        //             ELSE CEIL(
+        //                 CASE
+        //                     WHEN f.uom_soft IS NULL 
+        //                         THEN CAST(a.qty * b.composition AS DECIMAL(20,4))
+        //                     ELSE 
+        //                         CAST(a.qty * (b.composition * f.convertion) AS DECIMAL(20,4))
+        //                 END / h.mpq
+        //             ) * h.mpq
+        //         END
+        //     END as qty_act,
+        // ');
+
+
 
         // $this->db->select('
         //     c.id as item_rm_id,
@@ -1704,10 +1742,39 @@ class Supply_sheets extends CI_Controller
             c.name as item_rm_name, 
             (CASE WHEN g.uom_soft is null THEN d.name ELSE h.name END) as uom,
             (CASE WHEN g.uom_soft is null THEN f.composition ELSE (f.composition * g.convertion) END) as composition,
-            i.qty_issued as qty_issued,
+            COALESCE(i.qty_issued,0) as qty_issued,
             (i.qty_issued - a.qty_req) as qty_issued_bal,
-            f.composition, 
+            f.composition as composition_raw, 
             e.qty');
+
+        // $this->db->select('
+        //     a.*,
+        //     b.number as item_number,
+        //     e.period, 
+        //     e.wp, 
+        //     c.id as item_rm_id,
+        //     c.number_internal as item_rm_no, 
+        //     c.name as item_rm_name, 
+
+        //     (CASE 
+        //         WHEN g.uom_soft IS NULL THEN d.name 
+        //         ELSE h.name 
+        //     END) as uom,
+
+        //     f.composition as composition_raw,
+
+        //     (CASE 
+        //         WHEN g.uom_soft IS NULL THEN f.composition 
+        //         ELSE (f.composition * g.convertion) 
+        //     END) as composition,
+
+        //     COALESCE(i.qty_issued,0) as qty_issued,
+
+        //     (COALESCE(i.qty_issued,0) - a.qty_req) as qty_issued_bal,
+
+        //     e.qty
+        // ');
+
         $this->db->from('supply_sheets a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
@@ -1723,7 +1790,7 @@ class Supply_sheets extends CI_Controller
         }elseif ($filter_supply_type == "CLOSE") {
             $this->db->where('(i.qty_issued - a.qty_req) =', 0);
         }elseif ($filter_supply_type == "ALL STATUS") {
-            $this->db->having('(i.qty_issued - a.qty_req) <=', 0);
+            $this->db->having('(qty_issued - a.qty_req) <=', 0);
         }
         if ($filter_period != "") {
             $this->db->where('e.period', $filter_period);
@@ -1776,13 +1843,13 @@ class Supply_sheets extends CI_Controller
                 <th>Component No</th>
                 <th>Component Name</th>
                 <th>Uom</th>
-                <th>Qpa</th>
-                <th>WO qty</th>
-                <th>Actual Qty</th>
-                <th>Issued</th>
-                <th>Outstanding</th>
+                <th>QPA</th>
+                <th>WO QTY</th>
+                <th>Qty NEED</th>
+                <th>ISSUED</th>
                 <th>Supply Type</th>
             </tr>';
+            // <th>Outstanding</th>
         $no = 1;
         foreach ($records as $data) {
 
@@ -1804,13 +1871,13 @@ class Supply_sheets extends CI_Controller
                         <td>' . $data['item_rm_no'] . '</td>
                         <td>' . $data['item_rm_name'] . '</td>
                         <td>' . $data['uom'] . '</td>
-                        <td>' . $data['composition'] . '</td>
-                        <td>' . $data['qty'] . '</td>
-                        <td>' . $data['qty_act'] . '</td>
-                        <td>' . $data['qty_issued'] . '</td>
-                        <td>' . $data['qty_issued_bal'] . '</td>
+                        <td>' . number_format($data['composition'], 2, ',', '.') . '</td>
+                        <td>' . number_format($data['qty'], 2, ',', '.') . '</td>
+                        <td>' . number_format($data['qty_act'], 2, ',', '.') . '</td>
+                        <td>' . number_format($data['qty_issued'], 2, ',', '.') . '</td>
                         <td>' . $supply_type . '</td>
-                    </tr>';
+                        </tr>';
+                        // <td>' . number_format($data['qty_issued_bal'], 2, ',', '.') . '</td>
             $no++;
         }
         $html .= '</table></body></html>';

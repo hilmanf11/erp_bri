@@ -143,6 +143,7 @@ class Item_process_flow extends CI_Controller
             'process_n' => 'EXTRUSION',
             'process_m' => 'COOLING',
             'process_o' => 'OVEN',
+            'process_r' => 'CUTTING PUNCH',
             'process_f' => 'FINISHING',
             'process_g' => 'VISUAL CHECK',
             'process_h' => 'SUBCONT',

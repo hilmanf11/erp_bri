@@ -585,7 +585,7 @@ class Delivery_to_subconts extends CI_Controller
                         workorder,
                         SUM(qty) AS qty_incoming
                     FROM scan_incoming_sctf
-                    WHERE incoming_type != 'BPM'
+                    WHERE incoming_type = 'Finishing'
                     AND type_status = 'completed'
                     GROUP BY delivery_note_no, item_fg_id, workorder
                 ) i ON i.delivery_note_no = d.delivery_note_no
@@ -672,7 +672,7 @@ class Delivery_to_subconts extends CI_Controller
                         workorder,
                         SUM(qty) AS qty_incoming
                     FROM scan_incoming_sctf
-                    WHERE incoming_type != 'BPM'
+                    WHERE incoming_type = 'Finishing'
                     AND type_status = 'completed'
                     GROUP BY delivery_note_no, item_fg_id, workorder
                 ) i",
@@ -1391,7 +1391,8 @@ class Delivery_to_subconts extends CI_Controller
             b.uom, 
             COALESCE(c.name, d.name) as destination_name, 
             COALESCE(c.address, d.address) as address,
-            COALESCE(e.qty_label, 0) AS qty_packing
+            COALESCE(e.qty_label, 0) AS qty_packing,
+            COALESCE(i.qty_incoming, 0) AS qty_incoming
         ');
         $this->db->from('delivery_to_subconts a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
@@ -1412,6 +1413,24 @@ class Delivery_to_subconts extends CI_Controller
             AND e.item_fg_id = a.item_fg_id
             AND e.workorder = a.workorder
         ', 'left');
+
+        $this->db->join(
+            "(
+                SELECT
+                    delivery_note_no,
+                    item_fg_id,
+                    workorder,
+                    SUM(qty) AS qty_incoming
+                FROM scan_incoming_sctf
+                WHERE incoming_type != 'BPM'
+                AND type_status = 'completed'
+                GROUP BY delivery_note_no, item_fg_id, workorder
+            ) i",
+            "i.delivery_note_no = a.delivery_note_no
+            AND i.item_fg_id = a.item_fg_id
+            AND i.workorder = a.workorder",
+            'left'
+        );
 
         $this->db->order_by('a.workorder', 'asc');
         $this->db->order_by('b.number', 'asc');
@@ -1497,7 +1516,7 @@ class Delivery_to_subconts extends CI_Controller
                 Print By ' . $this->session->username . '  
             </div>
             <br><br><br>
-            <h3 style="margin:0;">DELIVERY NOTES REPORT</h3>
+            <h3 style="margin:0;">DELIVERY NOTES REGULAR REPORT</h3>
             <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
         </center>
         <br>
@@ -1513,11 +1532,13 @@ class Delivery_to_subconts extends CI_Controller
                         <th style="width: 80px;">WO No</th>
                         <th style="width: 80px;">Qty Packing</th>
                         <th style="width: 80px;">Qty Delivery</th>
+                        <th style="width: 80px;">Qty Incoming</th>
                         <th style="width: 100px;">Remarks</th>
                     </tr>';
 
         $no = 1;
         $total_qty_delivery = 0;
+        $total_qty_incoming = 0;
         $total_qty_packing = 0;
 
         foreach ($records as $row) {
@@ -1531,10 +1552,12 @@ class Delivery_to_subconts extends CI_Controller
                         <td class="no-wrap">'.$row['workorder'].'</td>
                         <td style="text-align: center;">'.number_format($row['qty_packing'],0,".",".").'</td>
                         <td style="text-align: center;">'.number_format($row['qty_delivery'],0,".",".").'</td>
+                        <td style="text-align: center;">'.number_format($row['qty_incoming'],0,".",".").'</td>
                         <td class="no-wrap" style="text-align: center;">'.$row['remarks'].'</td>
                     </tr>';
 
             $total_qty_delivery += $row['qty_delivery'];
+            $total_qty_incoming += $row['qty_incoming'];
             $total_qty_packing += $row['qty_packing'];
             $no++;
         }
@@ -1544,6 +1567,7 @@ class Delivery_to_subconts extends CI_Controller
                     <td colspan="7" style="text-align:right; font-weight:bold;">Total Qty</td>
                     <td style="text-align:center; font-weight:bold;">' . number_format($total_qty_packing, 0, ",", ".") . '</td>
                     <td style="text-align:center; font-weight:bold;">' . number_format($total_qty_delivery, 0, ",", ".") . '</td>
+                    <td style="text-align:center; font-weight:bold;">' . number_format($total_qty_incoming, 0, ",", ".") . '</td>
                     <td></td>
                 </tr>
             </table></div>';

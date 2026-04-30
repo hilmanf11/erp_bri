@@ -6,14 +6,149 @@
     }
 </style>
 
-<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
-    <div class="easyui-accordion" style="width:100%; height: 100%;">
-        <div title="RELATIONS" style="padding: 20px;">
+<div id="dlg_info" class="easyui-dialog" title="Information" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" data-options="selected:false" style="width:100%; height: 100%;">
+        <div title="English" style="padding: 20px;">
+            <p>
+                <b>General Information:</b></br>
+                The Menu Loadings module defines production loading parameters for products, machines, and molds.
+            </p>
+
             <ul>
-                <li>The Data Product No is taken from <b>Master Data > Engineering > Item Finish Good</b></li>
-                <li>The Data Mold ID is taken from <b>Master Data > Engineering > Master Mold</b></li>
-                <li>The Data Machine No is taken from <b>Master Data > Maintenance > Machines</b></li>
+                <li>Product ID / Product No / Product Name identify the finished product.</li>
+                <li>Machine No represents the machine used in production.</li>
+                <li>Tonnage of Machine indicates the machine tonnage capacity.</li>
+                <li>Mold ID shows the mold used in the production setup.</li>
+                <li>Cavity Standard refers to the standard cavity value from the Master Mold module.</li>
+                <li>Cavity Actual represents the current cavity value synchronized with Master Mold.</li>
+                <li>Shift defines the total number of active or usable shifts.</li>
+                <li>Hour/Shift indicates the working hours per shift.</li>
+                <li>Efficiency (%) represents the expected production efficiency.</li>
+                <li>Cycle Time (Second) defines the production cycle time.</li>
+                <li>Man Power indicates the number of operators required.</li>
+                <li>Compound/Shoot defines compound usage per shoot in grams and is displayed in the Production Press Output module.</li>
+                <li>Priority determines loading priority when multiple configurations exist.</li>
             </ul>
+
+            <span>Menu Loadings data is used as a reference for production planning and execution.</span>
+        </div>
+        <div title="Indonesian" style="padding: 20px;">
+            <p>
+                <b>Informasi Umum:</b></br>
+                Modul Menu Loadings digunakan untuk mendefinisikan parameter loading produksi berdasarkan produk, mesin, dan mold.
+            </p>
+
+            <ul>
+                <li>Product ID / Product No / Product Name menunjukkan identitas produk jadi.</li>
+                <li>Machine No menunjukkan mesin yang digunakan dalam produksi.</li>
+                <li>Tonnage of Machine menunjukkan kapasitas tonase mesin.</li>
+                <li>Mold ID menunjukkan mold yang digunakan dalam setup produksi.</li>
+                <li>Cavity Standard mengacu pada data cavity standar dari modul Master Mold.</li>
+                <li>Cavity Actual menunjukkan nilai cavity aktual yang tersinkronisasi dengan modul Master Mold.</li>
+                <li>Shift menunjukkan jumlah total shift yang aktif atau dapat digunakan.</li>
+                <li>Hour/Shift menunjukkan jam kerja per shift.</li>
+                <li>Efficiency (%) menunjukkan target efisiensi produksi.</li>
+                <li>Cycle Time (Second) menunjukkan waktu siklus produksi.</li>
+                <li>Man Power menunjukkan jumlah tenaga kerja yang dibutuhkan.</li>
+                <li>Compound/Shoot menunjukkan penggunaan compound per shoot dalam satuan gram dan akan ditampilkan pada modul Output Production Press.</li>
+                <li>Priority menentukan prioritas loading jika terdapat lebih dari satu konfigurasi.</li>
+            </ul>
+
+            <span>Data Menu Loadings digunakan sebagai acuan dalam perencanaan dan pelaksanaan produksi.</span>
+        </div>
+    </div>
+</div>
+
+<div id="dlg_help" class="easyui-dialog" title="Help" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" data-options="selected:false" style="width:100%; height: 100%;">
+        <div title="English" style="padding: 20px;">
+
+            <ul>
+                <li>
+                    Cavity Data Synchronization:
+                    <ul>
+                        <li>
+                            Cavity Standard is referenced from Master Mold.
+                            <ul>
+                                <li>
+                                    Any change in Master Mold will automatically update the value in this module.
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            Cavity Actual is also referenced from Master Mold.
+                            <ul>
+                                <li>
+                                    Updates occur automatically if data is edited directly in Master Mold.
+                                </li>
+                                <li>
+                                    Updates also occur automatically if changes are triggered by input from the Production Press Output module.
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    Additional Notes:
+                    <ul>
+                        <li>
+                            Shift represents the total number of shifts available for production.
+                        </li>
+                        <li>
+                            Compound/Shoot is measured in grams and will be displayed in the Production Press Output module.
+                        </li>
+                        <li>
+                            No manual update is required for cavity-related fields in this module.
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+
+        </div>
+        <div title="Indonesian" style="padding: 20px;">
+
+            <ul>
+                <li>
+                    Sinkronisasi Data Cavity:
+                    <ul>
+                        <li>
+                            Cavity Standard mengacu pada data di Master Mold.
+                            <ul>
+                                <li>
+                                    Jika terjadi perubahan data di Master Mold, nilai di modul ini akan terupdate secara otomatis.
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            Cavity Actual juga mengacu pada data di Master Mold.
+                            <ul>
+                                <li>
+                                    Data akan terupdate otomatis jika terjadi perubahan langsung di Master Mold.
+                                </li>
+                                <li>
+                                    Data juga akan terupdate otomatis jika perubahan berasal dari input modul Output Production Press.
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    Catatan Tambahan:
+                    <ul>
+                        <li>
+                            Shift menunjukkan total shift yang aktif atau dapat digunakan.
+                        </li>
+                        <li>
+                            Compound/Shoot menggunakan satuan gram dan nilainya akan ditampilkan pada modul Output Production Press.
+                        </li>
+                        <li>
+                            Kolom cavity tidak memerlukan penginputan manual pada modul ini.
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+
+
         </div>
     </div>
 </div>
@@ -57,7 +192,8 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
-    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_info').dialog('open');"><i class="fa fa-info"></i> Info</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-question-circle"></i> Help</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">

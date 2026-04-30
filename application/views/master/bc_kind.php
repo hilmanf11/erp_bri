@@ -1,3 +1,42 @@
+<div id="dlg_info" class="easyui-dialog" title="Information" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" data-options="selected:false" style="width:100%; height: 100%;">
+        <div title="English" style="padding: 20px;">
+            <p>
+                <b>General Information:</b></br>
+                The BC Kind module stores master data for customs transaction types used as references in system transactions.
+            </p>
+
+            <ul>
+                <li>Code identifies the BC transaction type.</li>
+                <li>Name represents the BC category name.</li>
+                <li>Type defines the transaction direction: INCOMING for inbound transactions and OUTGOING for outbound transactions.</li>
+                <li>Description provides a brief explanation of the transaction type.</li>
+            </ul>
+
+            <span>BC Kind data is used by the system to determine transaction flow and recording.</span></br></br>
+
+            <span>Changes will be applied to transactions created after the changes are made and will not affect existing data.</span>
+        </div>
+        <div title="Indonesian" style="padding: 20px;">
+            <p>
+                <b>Informasi Umum :</b></br>
+                Modul BC Kind menyimpan data master jenis transaksi kepabeanan yang digunakan sebagai acuan dalam proses transaksi sistem.
+            </p>
+
+            <ul>
+                <li>Code menunjukkan kode jenis transaksi BC.</li>
+                <li>Name merepresentasikan nama kategori BC.</li>
+                <li>Type menentukan arah transaksi, yaitu INCOMING untuk transaksi masuk dan OUTGOING untuk transaksi keluar.</li>
+                <li>Description berisi penjelasan singkat mengenai jenis transaksi.</li>
+            </ul>
+
+            <span>Data BC Kind digunakan oleh sistem untuk menentukan alur dan pencatatan transaksi.</span></br></br>
+
+            <span>Perubahan data hanya akan berlaku untuk transaksi yang dibuat setelah perubahan dilakukan dan tidak mempengaruhi data yang sudah ada.</span>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -21,6 +60,7 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_info').dialog('open');"><i class="fa fa-info"></i> Info</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">

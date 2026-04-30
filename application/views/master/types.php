@@ -1,3 +1,42 @@
+<div id="dlg_info" class="easyui-dialog" title="Information" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" data-options="selected:false" style="width:100%; height: 100%;">
+        <div title="English" style="padding: 20px;">
+            <p>
+                <b>General Information:</b></br>
+                The Machine Type module stores master data for classifying machines based on their operational or process type.
+            </p>
+
+            <ul>
+                <li>ID identifies the machine type record in the system.</li>
+                <li>Code represents the short code for the machine type.</li>
+                <li>Name indicates the machine type name.</li>
+                <li>Description provides additional information about the machine type, if required.</li>
+            </ul>
+
+            <span>Machine Type data is used as a reference in machine master data and production-related processes.</span></br></br>
+
+            <span>Changes will apply only to data and transactions created after the changes are made and will not affect existing data.</span>
+        </div>
+        <div title="Indonesian" style="padding: 20px;">
+            <p>
+                <b>Informasi Umum:</b></br>
+                Modul Machine Type menyimpan data master pengelompokan jenis mesin berdasarkan fungsi atau proses operasionalnya.
+            </p>
+
+            <ul>
+                <li>ID menunjukkan identitas jenis mesin di dalam sistem.</li>
+                <li>Code merepresentasikan kode singkat jenis mesin.</li>
+                <li>Name menunjukkan nama jenis mesin.</li>
+                <li>Description berisi keterangan tambahan mengenai jenis mesin, jika diperlukan.</li>
+            </ul>
+
+            <span>Data Machine Type digunakan sebagai acuan pada master mesin dan proses terkait produksi.</span></br></br>
+
+            <span>Perubahan data hanya berlaku untuk data dan transaksi yang dibuat setelah perubahan dilakukan dan tidak mempengaruhi data yang sudah ada.</span>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -21,6 +60,7 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_info').dialog('open');"><i class="fa fa-info"></i> Info</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">

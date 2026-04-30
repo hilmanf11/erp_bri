@@ -1,3 +1,36 @@
+<div id="dlg_info" class="easyui-dialog" title="Information" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" data-options="selected:false" style="width:100%; height: 100%;">
+        <div title="English" style="padding: 20px;">
+            <p>
+                <b>General Information :</b></br>
+                The ABC Class module stores master data for item classification used as parameters in Generate MRP calculations.</br>
+            </p>
+
+            <ul>
+                <li>The Class column defines item categories.</li>
+                <li>% Safety Stock determines buffer stock.</li>
+                <li>Formula specifies criteria for assigning items to each class.</li>
+            </ul>
+
+            <span>Changes will be applied to subsequent Generate MRP processes and will not affect existing MRP results.</span>
+        </div>
+        <div title="Indonesian" style="padding: 20px;">
+            <p>
+                <b>Informasi Umum :</b></br>
+                Modul ABC Class menyimpan data master pembagian class item yang digunakan sebagai parameter dalam perhitungan Generate MRP.</br>
+            </p>
+
+            <ul>
+                <li>Kolom Class mendefinisikan kategori item.</li>
+                <li>% Safety Stock menentukan cadangan stok.</li>
+                <li>Formula berisi kriteria penentuan item pada masing-masing class.</li>
+            </ul>
+
+            <span>Perubahan data akan diterapkan pada proses Generate MRP berikutnya dan tidak mempengaruhi hasil MRP yang sudah terbentuk.</span>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -20,6 +53,7 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_info').dialog('open');"><i class="fa fa-info"></i> Info</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">

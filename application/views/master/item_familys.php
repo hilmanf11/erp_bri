@@ -1,3 +1,48 @@
+<div id="dlg_info" class="easyui-dialog" title="Information" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" data-options="selected:false" style="width:100%; height: 100%;">
+        <div title="English" style="padding: 20px;">
+            <p>
+                <b>General Information:</b></br>
+                The Product Family module stores master data for grouping items based on their product type and accounting classification.
+            </p>
+
+            <ul>
+                <li>ID identifies the product family record in the system.</li>
+                <li>Code represents the short code for the product family.</li>
+                <li>Name indicates the product family name.</li>
+                <li>Category defines the item category, such as Raw Material, Finish Good, Asset, or Consumable.</li>
+                <li>Account No specifies the accounting account number associated with the product family.</li>
+                <li>Account Name represents the name of the accounting account used for reporting.</li>
+                <li>Description provides additional information about the product family.</li>
+            </ul>
+
+            <span>Product Family data is used across transactions, inventory processing, accounting, and reporting.</span></br></br>
+
+            <span>Changes will apply only to transactions created after the changes are made and will not affect existing data.</span>
+        </div>
+        <div title="Indonesian" style="padding: 20px;">
+            <p>
+                <b>Informasi Umum:</b></br>
+                Modul Product Family menyimpan data master pengelompokan item berdasarkan jenis produk dan klasifikasi akuntansi.
+            </p>
+
+            <ul>
+                <li>ID menunjukkan identitas data product family di sistem.</li>
+                <li>Code merepresentasikan kode singkat product family.</li>
+                <li>Name menunjukkan nama product family.</li>
+                <li>Category menentukan kategori item, seperti Raw Material, Finish Good, Asset, atau Consumable.</li>
+                <li>Account No menunjukkan nomor akun akuntansi yang terkait dengan product family.</li>
+                <li>Account Name merepresentasikan nama akun akuntansi untuk keperluan pelaporan.</li>
+                <li>Description berisi keterangan tambahan mengenai product family.</li>
+            </ul>
+
+            <span>Data Product Family digunakan pada berbagai transaksi, proses inventory, akuntansi, dan laporan.</span></br></br>
+
+            <span>Perubahan data hanya berlaku untuk transaksi yang dibuat setelah perubahan dilakukan dan tidak mempengaruhi data yang sudah ada.</span>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -24,6 +69,7 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_info').dialog('open');"><i class="fa fa-info"></i> Info</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">

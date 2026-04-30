@@ -1,3 +1,40 @@
+<div id="dlg_info" class="easyui-dialog" title="Information" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" data-options="selected:false" style="width:100%; height: 100%;">
+        <div title="English" style="padding: 20px;">
+            <p>
+                <b>General Information:</b></br>
+                The Line Productions module stores master data for production lines or machines used in manufacturing processes.
+            </p>
+
+            <ul>
+                <li>Code identifies the production line or machine.</li>
+                <li>Name represents the name of the production line or machine.</li>
+                <li>Description describes the production area, process, or work table associated with the line.</li>
+            </ul>
+
+            <span>Line Productions data is used by the system as a reference in production-related transactions and processes.</span></br></br>
+
+            <span>Changes will apply only to transactions created after the changes are made and will not affect existing data.</span>
+        </div>
+        <div title="Indonesian" style="padding: 20px;">
+            <p>
+                <b>Informasi Umum:</b></br>
+                Modul Line Productions menyimpan data master line atau mesin produksi yang digunakan dalam proses manufaktur.
+            </p>
+
+            <ul>
+                <li>Code menunjukkan kode line atau mesin produksi.</li>
+                <li>Name merepresentasikan nama line atau mesin produksi.</li>
+                <li>Description menjelaskan area produksi, proses, atau meja kerja yang terkait dengan line tersebut.</li>
+            </ul>
+
+            <span>Data Line Productions digunakan oleh sistem sebagai acuan dalam proses dan transaksi produksi.</span></br></br>
+
+            <span>Perubahan data hanya berlaku untuk transaksi yang dibuat setelah perubahan dilakukan dan tidak mempengaruhi data yang sudah ada.</span>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -21,6 +58,7 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_info').dialog('open');"><i class="fa fa-info"></i> Info</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
