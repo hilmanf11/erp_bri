@@ -326,6 +326,18 @@ class Notifications extends CI_Controller
             $this->load->view('notifications/delivery_to_subconts');
         }
     }
+    public function delivery_rework($user, $name){
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['user'] = base64_decode($user);
+            $data['name'] = base64_decode($name);
+            $data['table'] = "delivery_rework";
+            
+            $this->load->view('template/header', $data);
+            $this->load->view('notifications/delivery_rework');
+        }
+    }
     public function notification_data($table = "", $user = "", $name = "")
     {
         $user = base64_decode($user);
@@ -610,6 +622,33 @@ class Notifications extends CI_Controller
             $this->db->where('h.name', $name);
             $this->db->where('h.deleted', 0);
             $this->db->group_by('a.delivery_note_no');
+            $this->db->order_by('h.created_date', 'DESC');
+        }
+
+        if($table=='delivery_rework'){
+            $this->db->select('
+                a.dnr_no, 
+                a.delivery_note_no, 
+                a.delivery_date, 
+                d.name as created_by_name, 
+                e.name as approved_by_name, 
+                h.id as id_notification,
+                COALESCE(sc.name, tf.name) as destination_name
+            ');
+            $this->db->from('delivery_rework a');
+            $this->db->join('users d', 'a.created_by = d.username', 'left');
+            $this->db->join('users e', 'a.approved_by = e.username', 'left'); 
+            $this->db->join('notifications h', 'a.id = h.table_id');
+
+            $this->db->join('subconts sc', 'a.destination = sc.number', 'left');
+            $this->db->join('teaching_factory tf', 'a.destination = tf.number', 'left');
+
+            $this->db->where('h.users_id_to', $this->session->username);
+            $this->db->where('h.table_name', $table);
+            $this->db->where('h.users_id_from', $user);
+            $this->db->where('h.name', $name);
+            $this->db->where('h.deleted', 0);
+            $this->db->group_by('a.dnr_no');
             $this->db->order_by('h.created_date', 'DESC');
         }
 

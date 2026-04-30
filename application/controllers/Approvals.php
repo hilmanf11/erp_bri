@@ -152,7 +152,10 @@ class Approvals extends CI_Controller
             $table_approval = 'delivery_to_subconts';
             $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
         }
-
+        if($tablename==="delivery_rework"){
+            $table_approval = 'delivery_rework';
+            $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
+        }
         if ($data->approved == 1) {
             $users_id = @$approval->user_approval_2;
             $approved = 2;
@@ -293,7 +296,11 @@ class Approvals extends CI_Controller
         $table_approval = 'delivery_to_subconts';
         $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
     }
-
+    if ($tablename === "delivery_rework") {
+        $user = $this->crud->read('users', [], ["username" => $read->created_by]);
+        $table_approval = 'delivery_rework';
+        $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
+    }
     if (!empty($read_table_approvals->id)) {
         /* Default */
         if (empty($data)) {
@@ -480,7 +487,9 @@ class Approvals extends CI_Controller
 
         $delivery_to_subconts = $this->crud->reads('delivery_to_subconts', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
 
-        $totalRows = (count($users) + count($purchase_orders) + count($suppliers) + count($supplier_items) + count($purchase_requests) + count($delivery_notes) + count($delivery_to_subconts)); //+ count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) 
+        $delivery_rework = $this->crud->reads('delivery_rework', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
+
+        $totalRows = (count($users) + count($purchase_orders) + count($suppliers) + count($supplier_items) + count($purchase_requests) + count($delivery_notes) + count($delivery_to_subconts) + count($delivery_rework)); //+ count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) 
         if ($totalRows > 0) {
             echo '<span class="badge">' . $totalRows . '</span>';
         } else {
@@ -505,6 +514,8 @@ class Approvals extends CI_Controller
         $delivery_orders = $this->crud->reads('delivery_orders', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
 
         $delivery_to_subconts = $this->crud->reads('delivery_to_subconts', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
+
+        $delivery_rework = $this->crud->reads('delivery_rework', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
 
         foreach ($users as $user) {
             $this->approvalMessage($user->approved_by, $user->approved_to, "users");
@@ -550,6 +561,9 @@ class Approvals extends CI_Controller
         }
         foreach ($delivery_to_subconts as $delivery_note) {
             $this->approvalMessage($delivery_note->approved_by, $delivery_note->approved_to, "delivery_to_subconts");
+        }
+        foreach ($delivery_rework as $delivery_note) {
+            $this->approvalMessage($delivery_note->approved_by, $delivery_note->approved_to, "delivery_rework");
         }
     }
 
@@ -690,6 +704,18 @@ class Approvals extends CI_Controller
             $data['table'] = "delivery_to_subconts";
             $this->load->view('template/header', $data);
             $this->load->view('approval/delivery_to_subconts');
+        }
+    }
+
+    public function delivery_rework($approved_to, $approved_by){
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['approved_to'] = base64_decode($approved_to);
+            $data['approved_by'] = base64_decode($approved_by);
+            $data['table'] = "delivery_rework";
+            $this->load->view('template/header', $data);
+            $this->load->view('approval/delivery_rework');
         }
     }
 
@@ -868,6 +894,34 @@ class Approvals extends CI_Controller
 
         $this->db->join('subconts c', 'a.destination = c.id', 'left');
         $this->db->join('teaching_factory d', 'a.destination = d.id', 'left');
+
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.approved_by', $approved_by);
+        $this->db->where('a.deleted', 0);
+        $this->db->group_by(['a.id', 'a.item_fg_id', 'a.workorder']);
+        $this->db->order_by('a.created_date', 'DESC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalDeliveryRework($approved_to, $approved_by)
+    {
+        $approved_to = base64_decode($approved_to);
+        $approved_by = base64_decode($approved_by);
+
+        $this->db->select("a.*,
+            b.id as item_fg_id, 
+            b.number as item_fg_number, 
+            b.name as item_fg_name,
+            b.uom,
+            COALESCE(c.name, d.name) as destination_name,
+        ");
+        $this->db->from('delivery_rework a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
+
+        $this->db->join('subconts c', 'a.destination = c.number', 'left');
+        $this->db->join('teaching_factory d', 'a.destination = d.number', 'left');
 
         $this->db->where('a.approved_to', $approved_to);
         $this->db->where('a.approved_by', $approved_by);

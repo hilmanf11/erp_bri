@@ -43,6 +43,7 @@
                     <option value="purchase_orders">Purchase Orders</option>
                     <option value="delivery_notes">Delivery Notes</option>
                     <option value="delivery_to_subconts">Delivery To Subconts</option>
+                    <option value="delivery_rework">Delivery Rework</option>
                 </select>
             </div>
             <div class="fitem">
