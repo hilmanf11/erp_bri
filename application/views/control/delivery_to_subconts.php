@@ -40,11 +40,15 @@
 </table>
 
 <!-- TOOLBAR DATAGRID -->
-<div id="toolbar" style="height: 195px; padding:10px;">
+<div id="toolbar" style="height: 198px; padding:10px;">
     <div style="width: 100%;">
         <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
             <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Delivery Category</span>
+                    <input style="width:60%;" id="filter_delivery_category" data-options="editable: false" class="easyui-textbox">
+                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Delivery To</span>
                     <select style="width:60%;" id="filter_delivery_to" panelHeight="auto" class="easyui-combobox" data-options="editable:false">
@@ -970,6 +974,7 @@
     $(function() {
         filter();
         addTable();
+        $('#filter_delivery_category').textbox('setValue', 'Regular');
 
         function reloadDeliveryNoteCombo() {
             var filter_froms = $("#filter_from").datebox("getValue");
