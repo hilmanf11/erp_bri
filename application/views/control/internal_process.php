@@ -56,11 +56,11 @@
         </fieldset>
         <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="add_cp()"><i class="fa fa-plus"></i> Add CP</a>
 
-        <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="add()"><i class="fa fa-plus"></i> Add INF</a>
+        <!-- <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="add()"><i class="fa fa-plus"></i> Add INF</a> -->
 
         <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="update_cp()"><i class="fa fa-edit"></i> Update CP</a>
 
-        <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="update()"><i class="fa fa-edit"></i> Update INF</a>
+        <!-- <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="update()"><i class="fa fa-edit"></i> Update INF</a> -->
 
         <?= $button ?>
     </div>
