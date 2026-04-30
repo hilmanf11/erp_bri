@@ -1264,15 +1264,17 @@
             },
             success: function(result) {
                 var result = eval('(' + result + ')');
-                toastr.success(result.message);
+                if(result.theme == "success") {
+                    toastr.success(result.message);
+    
+                    $('#dg2').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
+                    editIndex = undefined;
+                } else {
+                    toastr.error(result.message);
+                }
 
-                $('#dg2').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
-                editIndex = undefined;
             },
             error: function(jqXHR, textStatus, errorThrown) {
-                // toastr.error(jqXHR.statusText);
-                // $.messager.alert("Error", jqXHR.statusText, 'error');
-
                 if (jqXHR.responseText && jqXHR.responseText.includes("Error Number: 1451")) {
                     toastr.error("Cannot delete data that is still in use");
                 } else {
@@ -1456,18 +1458,19 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('control/output_production_press/delete') ?>',
+                            url: '<?= base_url('control/output_production_press/deleteAll') ?>',
                             data: {
                                 number: row.number,
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
-                                toastr.success(result.message);
+                                if(result.theme == "success") {
+                                    toastr.success(result.message);
+                                } else {
+                                    toastr.error(result.message);
+                                }
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
-                                // toastr.error(jqXHR.statusText);
-                                // $.messager.alert("Error", jqXHR.statusText, 'error');
-
                                 if (jqXHR.responseText && jqXHR.responseText.includes("Error Number: 1451")) {
                                     toastr.error("Cannot delete data that is still in use");
                                 } else {
