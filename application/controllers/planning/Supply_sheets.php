@@ -1742,10 +1742,39 @@ class Supply_sheets extends CI_Controller
             c.name as item_rm_name, 
             (CASE WHEN g.uom_soft is null THEN d.name ELSE h.name END) as uom,
             (CASE WHEN g.uom_soft is null THEN f.composition ELSE (f.composition * g.convertion) END) as composition,
-            i.qty_issued as qty_issued,
+            COALESCE(i.qty_issued,0) as qty_issued,
             (i.qty_issued - a.qty_req) as qty_issued_bal,
-            f.composition, 
+            f.composition as composition_raw, 
             e.qty');
+
+        // $this->db->select('
+        //     a.*,
+        //     b.number as item_number,
+        //     e.period, 
+        //     e.wp, 
+        //     c.id as item_rm_id,
+        //     c.number_internal as item_rm_no, 
+        //     c.name as item_rm_name, 
+
+        //     (CASE 
+        //         WHEN g.uom_soft IS NULL THEN d.name 
+        //         ELSE h.name 
+        //     END) as uom,
+
+        //     f.composition as composition_raw,
+
+        //     (CASE 
+        //         WHEN g.uom_soft IS NULL THEN f.composition 
+        //         ELSE (f.composition * g.convertion) 
+        //     END) as composition,
+
+        //     COALESCE(i.qty_issued,0) as qty_issued,
+
+        //     (COALESCE(i.qty_issued,0) - a.qty_req) as qty_issued_bal,
+
+        //     e.qty
+        // ');
+
         $this->db->from('supply_sheets a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
@@ -1814,13 +1843,13 @@ class Supply_sheets extends CI_Controller
                 <th>Component No</th>
                 <th>Component Name</th>
                 <th>Uom</th>
-                <th>Qpa</th>
-                <th>WO qty</th>
-                <th>Actual Qty</th>
-                <th>Issued</th>
-                <th>Outstanding</th>
+                <th>QPA</th>
+                <th>WO QTY</th>
+                <th>Qty NEED</th>
+                <th>ISSUED</th>
                 <th>Supply Type</th>
             </tr>';
+            // <th>Outstanding</th>
         $no = 1;
         foreach ($records as $data) {
 
@@ -1842,13 +1871,13 @@ class Supply_sheets extends CI_Controller
                         <td>' . $data['item_rm_no'] . '</td>
                         <td>' . $data['item_rm_name'] . '</td>
                         <td>' . $data['uom'] . '</td>
-                        <td>' . $data['composition'] . '</td>
-                        <td>' . $data['qty'] . '</td>
-                        <td>' . $data['qty_act'] . '</td>
-                        <td>' . $data['qty_issued'] . '</td>
-                        <td>' . $data['qty_issued_bal'] . '</td>
+                        <td>' . number_format($data['composition'], 2, ',', '.') . '</td>
+                        <td>' . number_format($data['qty'], 2, ',', '.') . '</td>
+                        <td>' . number_format($data['qty_act'], 2, ',', '.') . '</td>
+                        <td>' . number_format($data['qty_issued'], 2, ',', '.') . '</td>
                         <td>' . $supply_type . '</td>
-                    </tr>';
+                        </tr>';
+                        // <td>' . number_format($data['qty_issued_bal'], 2, ',', '.') . '</td>
             $no++;
         }
         $html .= '</table></body></html>';
