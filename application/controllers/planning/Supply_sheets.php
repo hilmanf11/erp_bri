@@ -1790,7 +1790,7 @@ class Supply_sheets extends CI_Controller
         }elseif ($filter_supply_type == "CLOSE") {
             $this->db->where('(i.qty_issued - a.qty_req) =', 0);
         }elseif ($filter_supply_type == "ALL STATUS") {
-            $this->db->having('(i.qty_issued - a.qty_req) <=', 0);
+            $this->db->having('(qty_issued - a.qty_req) <=', 0);
         }
         if ($filter_period != "") {
             $this->db->where('e.period', $filter_period);
