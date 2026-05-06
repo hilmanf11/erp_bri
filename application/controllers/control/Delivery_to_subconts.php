@@ -377,7 +377,7 @@ class Delivery_to_subconts extends CI_Controller
         echo json_encode($filtered);
     }
 
-    public function delivery_note_no($type = "")
+    public function delivery_note_no_v1($type = "")
     {
         $trans_date = $this->input->post('trans_date');
         $destination_code = $this->input->post('destination_code');
@@ -402,6 +402,42 @@ class Delivery_to_subconts extends CI_Controller
             WHERE delivery_date BETWEEN '{$period_start}' AND '{$period_end}'
             AND delivery_note_no LIKE '%/{$destination_code}/BRI/%'
         ");
+        $row = $sql->row();
+
+        if ($row->kode == null) {
+            $seq = "001";
+        } else {
+            $seq = sprintf("%03s", intval($row->kode) + 1);
+        }
+
+        $autonumber = "{$seq}/{$destination_code}/BRI/{$month}/{$year}";
+
+        if ($type == "return") {
+            return $autonumber;
+        }
+
+        echo $autonumber;
+    }
+
+    public function delivery_note_no($type = "")
+    {
+        $trans_date = $this->input->post('trans_date');
+        $destination_code = $this->input->post('destination_code');
+
+        $date = $trans_date ? date("Y-m-d", strtotime($trans_date)) : date("Y-m-d");
+        $month = date("m", strtotime($date));
+        $year = date("y", strtotime($date));
+
+        $period_start = date("Y-m-01", strtotime($date));
+        $period_end   = date("Y-m-t", strtotime($date));
+
+        $sql = $this->db->query("
+            SELECT MAX(CAST(SUBSTRING_INDEX(delivery_note_no, '/', 1) AS UNSIGNED)) AS kode
+            FROM delivery_to_subconts
+            WHERE delivery_date BETWEEN '{$period_start}' AND '{$period_end}'
+            AND delivery_note_no LIKE '%/{$destination_code}/BRI/{$month}/{$year}'
+        ");
+
         $row = $sql->row();
 
         if ($row->kode == null) {
