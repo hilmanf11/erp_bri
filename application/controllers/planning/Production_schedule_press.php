@@ -885,17 +885,17 @@ class Production_schedule_press extends CI_Controller
         for ($i = 3; $i <= $total_row; $i++) {
             $wp_trans_date_raw = $sheet->getCellByColumnAndRow(4, $i)->getValue();
             
-            if (is_numeric($wp_trans_date_raw)) {
-                $wp_trans_date = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($wp_trans_date_raw)->format('Y-m-d');
-            } else {
-                $wp_trans_date = date('Y-m-d', strtotime($wp_trans_date_raw));
-            }
+            // if (is_numeric($wp_trans_date_raw)) {
+            //     $wp_trans_date = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($wp_trans_date_raw)->format('Y-m-d');
+            // } else {
+            //     $wp_trans_date = date('Y-m-d', strtotime($wp_trans_date_raw));
+            // }
 
             // Menambahkan data ke array
             $datas[] = array(
                 'period' => $sheet->getCellByColumnAndRow(2, $i)->getValue(),
                 'machine_id' => $sheet->getCellByColumnAndRow(3, $i)->getValue(),
-                'trans_date' => $wp_trans_date,
+                'trans_date' => $wp_trans_date_raw,
                 'item_fg_id' => $sheet->getCellByColumnAndRow(5, $i)->getValue(),
                 'mold_id' => $sheet->getCellByColumnAndRow(6, $i)->getValue(),
                 // 'qty' => $sheet->getCellByColumnAndRow(7, $i)->getValue(),
@@ -1058,13 +1058,13 @@ class Production_schedule_press extends CI_Controller
                     empty($data['period']) ||
                     empty($data['machine_id']) ||
                     empty($data['trans_date']) ||
-                    empty($data['item_fg_id']) ||
+                    empty($data['item_fg_id']) 
 
                     // empty($data['mold_id']) ||
                     // empty($data['qty']) ||
                     // !is_numeric($data['qty'])
 
-                    !strtotime($data['trans_date'])
+                    // !strtotime($data['trans_date'])
                    ) {
                         $results[] = [
                             "status" => "failed",
@@ -1079,6 +1079,15 @@ class Production_schedule_press extends CI_Controller
                         "status" => "failed",
                         "item" => "Line " . ($index + 1),
                         "message" => "Invalid period format (must be YYYYMM)"
+                    ];
+                    continue;
+                }
+
+                if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $data['trans_date'])) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Invalid trans date format (must be YYYY-MM-DD)"
                     ];
                     continue;
                 }
