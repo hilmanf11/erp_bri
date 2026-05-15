@@ -59,8 +59,8 @@ class Purchase_orders extends CI_Controller {
             END as category,
 
             irm.id as part_id,
-            irm.number_internal as part_no,
-            irm.name as part_name,
+            irm.name as part_no,
+            irm.number_internal as part_name,
             irm.number as supplier_product,
             irm.uom,
 
