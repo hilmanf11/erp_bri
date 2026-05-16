@@ -300,6 +300,8 @@ class Output_production_press extends CI_Controller
             }
             $this->db->group_by('a.number,a.period,a.trans_date,a.shift');
 
+            $this->db->order_by('a.trans_date', 'ASC');
+            $this->db->order_by('a.shift', 'ASC');
             $this->db->order_by('(a.wp + 0)', 'ASC', false);
             $this->db->order_by('a.wp', 'ASC');
 
@@ -401,7 +403,9 @@ class Output_production_press extends CI_Controller
             if ($filter_item_fg_id != "") {
                 $this->db->where('a.item_fg_id', $filter_item_fg_id);
             }
+            $this->db->order_by('a.trans_date', 'ASC');
             $this->db->order_by('c.id', 'ASC');
+            $this->db->order_by('a.workorder', 'ASC');
             $records = $this->db->get()->result_array();
             echo json_encode($records);
         }
@@ -3155,10 +3159,13 @@ class Output_production_press extends CI_Controller
             $this->db->where('a.status', $filter_status);
         }
 
+        $this->db->order_by('a.trans_date', 'ASC');
+        $this->db->order_by('a.shift', 'ASC');
         $this->db->order_by('(a.wp + 0)', 'ASC', false);
         $this->db->order_by('a.wp', 'ASC');
+        $this->db->order_by('c.id', 'ASC');
 
-        $this->db->order_by('a.id', 'ASC');
+        // $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#output_production_press {border-collapse: collapse;width: 100%;font-size: 12px;}#output_production_press td, #output_production_press th {border: 1px solid #ddd;padding: 2px;}#output_production_press tr:nth-child(even){background-color: #f2f2f2;}#output_production_press tr:hover {background-color: #ddd;}#output_production_press th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
