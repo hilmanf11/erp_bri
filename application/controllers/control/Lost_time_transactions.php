@@ -384,7 +384,12 @@ class Lost_time_transactions extends CI_Controller
                 $this->db->where('a.status', $filter_status);
             }
             $this->db->group_by('a.number,a.period,a.trans_date,a.shift');
-            $this->db->order_by('a.created_date', 'DESC');
+
+            $this->db->order_by('a.trans_date', 'ASC');
+            $this->db->order_by('a.shift', 'ASC');
+            $this->db->order_by('(a.wp + 0)', 'ASC', false);
+            $this->db->order_by('a.wp', 'ASC');
+            // $this->db->order_by('a.created_date', 'DESC');
             // $this->db->order_by('b.number', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
@@ -485,9 +490,10 @@ class Lost_time_transactions extends CI_Controller
             if ($filter_item_fg_id != "") {
                 $this->db->where('a.item_fg_id', $filter_item_fg_id);
             }
+            $this->db->order_by('a.trans_date', 'ASC');
             $this->db->order_by('c.id', 'ASC');
-            // $this->db->order_by('a.item_fg_id', 'ASC');
             $this->db->order_by('a.workorder', 'ASC');
+
             $records = $this->db->get()->result_array();
             echo json_encode($records);
         }
@@ -1434,9 +1440,12 @@ class Lost_time_transactions extends CI_Controller
         if ($filter_status != "") {
             $this->db->where('a.status', $filter_status);
         }
+        $this->db->order_by('a.trans_date', 'ASC');
+        $this->db->order_by('a.shift', 'ASC');
+        $this->db->order_by('(a.wp + 0)', 'ASC', false);
+        $this->db->order_by('a.wp', 'ASC');
         $this->db->order_by('c.id', 'ASC');
-        // $this->db->order_by('a.item_fg_id', 'ASC');
-        $this->db->order_by('a.workorder', 'ASC');
+        // $this->db->order_by('a.workorder', 'ASC');
 
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#lost_time_transactions {border-collapse: collapse;width: 100%;font-size: 12px;}#lost_time_transactions td, #lost_time_transactions th {border: 1px solid #ddd;padding: 2px;}#lost_time_transactions tr:nth-child(even){background-color: #f2f2f2;}#lost_time_transactions tr:hover {background-color: #ddd;}#lost_time_transactions th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>

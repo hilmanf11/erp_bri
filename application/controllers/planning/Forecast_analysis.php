@@ -419,7 +419,7 @@ class Forecast_analysis extends CI_Controller
         }
         $this->db->group_by('a.customer_id');
         $this->db->group_by('a.item_fg_id');
-        $this->db->group_by('a.p_month');
+        // $this->db->group_by('a.p_month');
         $this->db->group_by('a.p_year');
         $this->db->order_by('c.name', 'ASC');
         $records = $this->db->get()->result_array();
@@ -600,5 +600,5 @@ class Forecast_analysis extends CI_Controller
             // Akhiri tabel dan dokumen
             $html .= '</table></div></body></html>';
             echo $html;
-        }
+    }
 }
