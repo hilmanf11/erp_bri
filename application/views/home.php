@@ -1,3 +1,113 @@
+<style>
+	.notification-item {
+		list-style: none;
+		/* margin-bottom: 10px; */
+		/* border-radius: 10px; */
+		transition: all .2s ease;
+		cursor: pointer;
+		border-left: 5px solid transparent;
+		overflow: hidden;
+		border-top: 1px solid white;
+		/* border-bottom: 2px solid white; */
+	}
+
+	.notification-link {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 12px 14px 12px 10px;
+		text-decoration: none;
+	}
+
+	.notification-icon {
+		width: 29px;
+		height: 29px;
+		border-radius: 50%;
+		flex-shrink: 0;
+
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		font-size: 18px;
+		font-weight: bold;
+	}
+
+	.notification-content {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.notification-title {
+		font-size: 13px !important;
+		font-weight: 800 !important;
+		margin-bottom: 4px;
+		line-height: 1.4;
+	}
+
+	.notification-message {
+		font-size: 12px;
+		color: #555;
+		line-height: 1.5;
+	}
+
+	.notification-date {
+		margin-top: 6px;
+		font-size: 11px;
+		color: #888;
+	}
+
+	.notification-overdue {
+		background: #fff1f1;
+		/* border-left-color: #dc3545; */
+	}
+
+	.notification-overdue .notification-icon {
+		background: #dc3545;
+		color: white;
+	}
+
+	.notification-overdue .notification-title {
+		color: #c62828;
+	}
+
+	.notification-reminder {
+		background: #fff9e8;
+		/* border-left-color: #d4a017; */
+	}
+
+	.notification-reminder .notification-icon {
+		background: #d4a017;
+		color: white;
+	}
+
+	.notification-reminder .notification-title {
+		color: #a57700;
+	}
+
+	.notification-info {
+		background: #e8f8ff;
+		/* border-left-color: #00a5d4; */
+	}
+
+	.notification-info .notification-icon {
+		background: #00a5d4;
+		color: white;
+	}
+
+	.notification-info .notification-title {
+		color: #0055a5;
+	}
+
+	.notification-product span {
+		font-size: 11px !important;
+		color: #9498b1 !important;
+		padding-top: 16px;
+		font-style: italic;
+	}
+
+</style>
+
 <body class="easyui-layout">
 
 	<!-- Header -->
@@ -196,16 +306,24 @@
 	</div>
 
 	<!-- NOTIFICATIONS -->
-	<div id="dlg_notif" class="easyui-dialog" title="Notifications" data-options="closed: true" style="width: 400px; height: 400px; top: 20px;">
-		<ul class="list-header" id="notificationList">
+	<div id="dlg_notif" class="easyui-dialog" title="Notifications" data-options="closed: true" style="width: 450px; height: 450px; top: 20px;">
+		<ul class="list-header" style="margin-bottom: 0;">
+			<div id="notificationList"></div>
+			<div id="deliveryToSubcontNotif"></div>
+			<div id="deliveryReworkNotif"></div>
 
+			<div id="notificationNotFound" style="display:none;">
+				<div class="alert alert-info" role="alert">
+					Notification Not Found
+				</div>
+			</div>
 		</ul>
 	</div>
 
-	<div id="dlg_notification_detail" class="easyui-window" title="Notification Data" data-options="closed: true,minimizable:false,collapsible:false" style="width: 1000px; height: 400px; top: 60px;">
+	<div id="dlg_notification_detail" class="easyui-window" title="Notification Data" data-options="closed: true,minimizable:false,collapsible:false" style="width: 1000px; height: 420px; top: 60px;">
 		<!-- <table id="dg_approval" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar_approval" data-options="fitColumns: false, rownumbers: true"></table> -->
 		<center><h2 style="margin: 10px; font-size: 20px !important;" id="header_notification"></h2></center>
-		<iframe src="" scrolling="yes" id="pageNotification" style="border: 0; width: 100%; height: 93%; margin:0;"></iframe>
+		<iframe src="" scrolling="yes" id="pageNotification" style="border: 0; width: 100%; height: 87%; margin:0;"></iframe>
 	</div>
 
 	<!-- CHATS -->
@@ -1309,6 +1427,7 @@
 			dataType: "html",
 			success: function(response) {
 				$('#notificationList').html(response);
+				checkNotificationEmpty();
 			}
 		});
 	}
@@ -1324,23 +1443,111 @@
 		});
 	}
 
-	function notificationDetail(user = "", table = "", name = "") {
+	function checkNotificationEmpty() {
+		let notif1 = $('#notificationList').html().trim();
+		let notif2 = $('#deliveryToSubcontNotif').html().trim();
+		let notif3 = $('#deliveryReworkNotif').html().trim();
+
+		if (notif1 === '' && notif2 === '' && notif3 === '') {
+			$('#notificationNotFound').show();
+		} else {
+			$('#notificationNotFound').hide();
+		}
+	}
+
+	function notificationDetail(user = "", table = "", name = "", title = "", notif_type = "") {
 		if (user == "" || table == "") {
 			toastr.error("Notification Cannot get Data", "Error");
 		} else {
 			var outputString = table.replace(/_/g, ' ');
 			var header_notification = outputString.toUpperCase();
-			$("#header_notification").html("Notification " + header_notification);
+			
+			if(table == 'delivery_to_subconts_notif' || table == 'delivery_rework_notif') {
+				// let header_notif = "Target Date Notification of " + title;
+				// $("#header_notification").html(header_notif);
+
+				let type = "";
+				if (notif_type.includes("overdue")) {
+					type = "Overdue";
+				} else if (notif_type.includes("reminder")) {
+					type = "Reminder";
+				}
+
+				let header_notif = type
+					? `${type} ${title} Notification`
+					: `Target Date Notification of ${title}`;
+
+				$("#header_notification").html(header_notif);
+			} else {
+				$("#header_notification").html("Notification " + header_notification);
+			}
+
+			if (/^(subcont|rework)/.test(notif_type)) {
+				name = notif_type;
+			}
 
 			$('#dlg_notification_detail').window('open');
 			$('#pageNotification').attr('src', '<?= base_url("notifications/") ?>' + table + "/" + btoa(user) + "/" + btoa(name));
 		}
 	}
 
+	function deliveryToSubcontNotif() {
+		$.ajax({
+			type: "post",
+			url: "<?= base_url('notifications/deliveryToSubcontNotif') ?>",
+			dataType: "html",
+			success: function(response) {
+				$('#deliveryToSubcontNotif').html(response);
+				console.log(response);
+				
+				checkNotificationEmpty();
+			}
+		});
+	}
+
+	function deliveryReworkNotif() {
+		$.ajax({
+			type: "post",
+			url: "<?= base_url('notifications/deliveryReworkNotif') ?>",
+			dataType: "html",
+			success: function(response) {
+				$('#deliveryReworkNotif').html(response);
+				checkNotificationEmpty();
+			}
+		});
+	}
+
+
+	// notificationList();
+	// notificationCount();
+	// setInterval(notificationList, 10000);
+	// setInterval(notificationCount, 10000);
+
+	// deliveryToSubcontNotif();
+	// deliveryReworkNotif();
+	// setInterval(deliveryToSubcontNotif, 10000);
+	// setInterval(deliveryReworkNotif, 10000);
+
+
 	notificationList();
 	notificationCount();
+
 	setInterval(notificationList, 10000);
 	setInterval(notificationCount, 10000);
+
+	const username = "<?= $this->session->username ?>";
+	const allowedSubcontUsers = <?= json_encode($allowedSubcontUsers) ?>;
+	const allowedReworkUsers = <?= json_encode($allowedReworkUsers) ?>;
+
+	if (allowedSubcontUsers.includes(username)) {
+		deliveryToSubcontNotif();
+		setInterval(deliveryToSubcontNotif, 10000);
+	}
+
+	if (allowedReworkUsers.includes(username)) {
+		deliveryReworkNotif();
+		setInterval(deliveryReworkNotif, 10000);
+	}
 
 	function logout() {
 		Swal.fire({

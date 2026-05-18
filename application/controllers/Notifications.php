@@ -12,24 +12,85 @@ class Notifications extends CI_Controller
         $this->load->library('form_validation');
         $this->load->library('session');
         $this->load->model('crud');
+        $this->load->model('Notification_model');
     }
 
     public function notificationCount()
     {
-        $this->db->select('a.*, b.name as fullname, b.avatar');
+        $username = $this->session->username;
+
+        // Normal notification
+        $this->db->select('a.id');
         $this->db->from('notifications a');
-        $this->db->join('users b', 'a.users_id_to = b.username');
-        $this->db->where('a.users_id_to', $this->session->username);
+        $this->db->where('a.users_id_to', $username);
         $this->db->where('a.status', 0);
+
         $this->db->group_by('a.name');
         $this->db->group_by('a.users_id_from');
         $this->db->group_by('a.users_id_to');
         $this->db->group_by('a.table_name');
-        $this->db->order_by('a.created_date', 'DESC');
-        $totalRows = $this->db->count_all_results('', false);
 
-        if ($totalRows > 0) {
-            echo '<span class="badge">' . $totalRows . '</span>';
+        $notifCount = $this->db->count_all_results();
+
+        // Delivery To Subcont
+        $deliveryToSubcontCount = 0;
+        $configSubcont = $this->Notification_model->getNotificationConfig('delivery_to_subconts');
+        $allowedSubcontUsers = $this->Notification_model->getNotificationUsers($configSubcont);
+
+        // if (in_array($username, ['scmbri01', 'asmbri', 'pmbri'])) {
+
+        //     $this->getDeliveryToSubcontNotifQuery();
+
+        //     if ($username == 'pmbri') {
+        //         $this->db->where('DATEDIFF(CURDATE(), a.target_date) >=', 2, null, false);
+        //     }
+
+        //     $deliveryToSubcontCount = $this->db->count_all_results();
+        // }
+
+        if (in_array($username, $allowedSubcontUsers)) {
+            $levelSubcont = $this->Notification_model->getNotificationLevel($configSubcont, $username);
+
+            $this->getDeliveryToSubcontNotifQuery();
+
+            if ($levelSubcont >= 3) {
+                $this->db->where('DATEDIFF(CURDATE(), a.target_date) >=', 2, null, false);
+            }
+
+            $deliveryToSubcontCount = $this->db->count_all_results();
+        }
+
+        // Delivery Rework
+        $deliveryReworkCount = 0;
+        $configRework = $this->Notification_model->getNotificationConfig('delivery_rework');
+        $allowedReworkUsers = $this->Notification_model->getNotificationUsers($configRework);
+
+        // if (in_array($username, ['scmbri01', 'asmbri', 'pmbri'])) {
+
+        //     $this->getDeliveryReworkNotifQuery();
+
+        //     if ($username == 'pmbri') {
+        //         $this->db->where('DATEDIFF(CURDATE(), a.target_date) >=', 2, null, false);
+        //     }
+
+        //     $deliveryReworkCount = $this->db->count_all_results();
+        // }
+
+        if (in_array($username, $allowedReworkUsers)) {
+            $levelRework = $this->Notification_model->getNotificationLevel($configRework, $username);
+            $this->getDeliveryReworkNotifQuery();
+
+            if ($levelRework >= 3) {
+                $this->db->where('DATEDIFF(CURDATE(), a.target_date) >=', 2, null, false);
+            }
+
+            $deliveryReworkCount = $this->db->count_all_results();
+        }
+
+        $totalNotif = $notifCount + $deliveryToSubcontCount + $deliveryReworkCount;
+
+        if ($totalNotif > 0) {
+            echo '<span class="badge">' . $totalNotif . '</span>';
         } else {
             echo '';
         }
@@ -48,43 +109,422 @@ class Notifications extends CI_Controller
         $this->db->group_by('a.users_id_to');
         $this->db->group_by('a.table_name');
         $this->db->order_by('a.created_date', 'DESC');
-        $records = $this->db->get()->result_object();
 
-        if (count($records) > 0) {
-            foreach ($records as $record) {
-                if ($record->avatar == "") {
-                    $avatar = base_url('assets/image/users/default.png');
-                } else {
-                    $avatar = $record->avatar;
-                }
-                // $tablenya = ($record->table_name=='purchase_orders_2')?'purchase_orders':$record->table_name;
+        $records = $this->db->get()->result_array();
 
-                // $link = "notificationDetail('" . $record->table_name . "')";
-                $link = "notificationDetail('$record->users_id_from','$record->table_name','$record->name')";
-                echo '<li class="list-isi">
-                    <a onclick="' . $link . '">
-                        <table style="width: 100%;">
-                            <tr>
-                                <td>
-                                    <div class="icon-container">
-                                        <img src="' . $avatar . '" class="user-online" />
-                                        <div class="status-circle"></div>
-                                    </div>
-                                </td>
-                                <td style="padding-left: 10px;">
-                                    <b>' . $record->fullname . '</b><br>
-                                    <small>' . $record->description . '</small>
-                                </td>
-                            </tr>
-                        </table>
-                    </a>
-                </li>';
+        // echo json_encode($records);
+
+        $html = '';
+
+        foreach ($records as $row) {
+
+            $avatar = '';
+            if (empty($row['avatar'])) {
+
+                $avatar = base_url('assets/image/users/default.png');
+            } else {
+
+                $avatar = $row['avatar'];
             }
-        } else {
-            echo '  <div class="alert alert-info" role="alert">
-                        Notification Not Found
-                    </div>';
+
+            $link = "notificationDetail(
+                '{$row['users_id_from']}',
+                '{$row['table_name']}',
+                '{$row['name']}'
+            )";
+
+            $notifClass = 'notification-info';
+
+            $html .= '
+                <li class="notification-item ' . $notifClass . '">
+                    <a class="notification-link"
+                    onclick="' . $link . '">
+
+                        <div class="notification-icon">
+                            <img src="' . $avatar . '" style="width: 29px !important;" />
+                        </div>
+
+                        <div class="notification-content">
+                            <div class="notification-title">
+                                ' . $row['fullname'] . '
+                            </div>
+
+                            <div class="notification-message">
+                                ' . $row['description'] . '
+                            </div>
+                        </div>
+
+                    </a>
+                </li>
+            ';
         }
+
+        echo $html;
+
+    }
+
+    private function getDeliveryToSubcontNotifQuery()
+    {
+        $this->db->select("
+            DATE_FORMAT(a.target_date, '%Y-%m') as target_month,
+
+            CASE
+                WHEN a.target_date <= CURDATE() THEN 'overdue'
+                ELSE 'reminder'
+            END as notif_type
+        ");
+
+        $this->db->from('delivery_to_subconts a');
+        $this->db->join(
+            "
+            (
+                SELECT
+                    delivery_note_no,
+                    item_fg_id,
+                    workorder,
+                    SUM(qty) AS qty_incoming
+                FROM scan_incoming_sctf
+                WHERE incoming_type = 'Finishing'
+                AND type_status = 'completed'
+                GROUP BY delivery_note_no, item_fg_id, workorder
+            ) i",
+            "
+                i.delivery_note_no = a.delivery_note_no
+                AND i.item_fg_id = a.item_fg_id
+                AND i.workorder = a.workorder
+            ",
+            'left'
+        );
+
+        $this->db->where('DATEDIFF(a.target_date, CURDATE()) <= 2', null, false);
+        $this->db->where('(a.qty_delivery - COALESCE(i.qty_incoming, 0)) >', 0);
+
+        $this->db->group_by([
+            "DATE_FORMAT(a.target_date, '%Y-%m')",
+            "notif_type"
+        ]);
+    }
+
+    public function deliveryToSubcontNotif()
+    {
+        $username = $this->session->username;
+        // $allowedUsers = ['scmbri01', 'asmbri', 'pmbri'];
+
+        // if (!in_array($username, $allowedUsers)) {
+        //     return;
+        // }
+
+        $config = $this->Notification_model->getNotificationConfig('delivery_to_subconts');
+        $allowedUsers = $this->Notification_model->getNotificationUsers($config);
+
+        if (!in_array($username, $allowedUsers)) {
+            return;
+        }
+
+        $level = $this->Notification_model->getNotificationLevel($config, $username);
+
+        $this->db->select("
+            DATE_FORMAT(a.target_date, '%Y-%m') as target_month,
+            DATE_FORMAT(a.target_date, '%M %Y') as target_month_name,
+
+            CASE
+                WHEN a.target_date <= CURDATE() THEN 'overdue'
+                ELSE 'reminder'
+            END as notif_type,
+
+            COUNT(DISTINCT a.delivery_note_no) as total_dn,
+            COUNT(a.id) as total_product,
+            MIN(a.target_date) as min_target_date,
+            MAX(a.target_date) as max_target_date
+        ");
+
+        $this->db->from('delivery_to_subconts a');
+
+        $this->db->join(
+            "
+            (
+                SELECT
+                    delivery_note_no,
+                    item_fg_id,
+                    workorder,
+                    SUM(qty) AS qty_incoming
+                FROM scan_incoming_sctf
+                WHERE incoming_type = 'Finishing'
+                AND type_status = 'completed'
+                GROUP BY delivery_note_no, item_fg_id, workorder
+            ) i",
+            "
+                i.delivery_note_no = a.delivery_note_no
+                AND i.item_fg_id = a.item_fg_id
+                AND i.workorder = a.workorder
+            ",
+            'left'
+        );
+
+        $this->db->where('DATEDIFF(a.target_date, CURDATE()) <= 2', null, false);
+        $this->db->where('(a.qty_delivery - COALESCE(i.qty_incoming, 0)) >', 0);
+
+        // if ($username == 'pmbri') {
+        if($level >= 3) {
+            $this->db->where('DATEDIFF(CURDATE(), a.target_date) >=', 2, null, false);
+        }
+
+        $this->db->group_by([
+            "DATE_FORMAT(a.target_date, '%Y-%m')",
+            "notif_type"
+        ]);
+
+        $this->db->order_by('min_target_date', 'ASC');
+        $result = $this->db->get()->result_array();
+
+        // echo json_encode($result);
+
+        $html = '';
+        foreach ($result as $row) {
+
+            $notifClass = '';
+            $notifIcon = '';
+            $title = '';
+            $message = '';
+
+            $link = "notificationDetail(
+                'System',
+                'delivery_to_subconts_notif',
+                '{$row['target_month']}',
+                'Delivery to Subconts',
+                'subcont_{$row['notif_type']}'
+            )";
+
+            if ($row['notif_type'] == 'overdue') {
+
+                $notifClass = 'notification-overdue';
+                $notifIcon = '!';
+                $title = 'Overdue Delivery to Subcont';
+
+                $message = $row['total_dn'] . " delivery notes are overdue as of " . $row['target_month_name'] . ".";
+            } else {
+
+                $notifClass = 'notification-reminder';
+                $notifIcon = '⏰';
+                $title = 'Reminder Delivery to Subcont';
+
+                $message = $row['total_dn'] . " delivery notes are approaching their deadlines in " . $row['target_month_name'] . ".";
+            }
+
+            $html .= '
+                <li class="notification-item ' . $notifClass . '">
+                    <a class="notification-link" onclick="' . $link . '">
+                        <div class="notification-icon">
+                            ' . $notifIcon . '
+                        </div>
+
+                        <div class="notification-content">
+                            <div class="notification-title">
+                                ' . $title . '
+                            </div>
+
+                            <div class="notification-message">
+                                ' . $message . '
+                            </div>
+
+                            <div class="notification-product">
+                                <span>Total Qty : ' . $row['total_product'] . ' items</span>
+                            </div>
+                        </div>
+                    </a>
+                </li>
+            ';
+        }
+
+        echo $html;
+
+    }
+
+    private function getDeliveryReworkNotifQuery()
+    {
+        $this->db->select("
+            DATE_FORMAT(a.target_date, '%Y-%m') as target_month,
+
+            CASE
+                WHEN a.target_date <= CURDATE() THEN 'overdue'
+                ELSE 'reminder'
+            END as notif_type
+        ");
+
+        $this->db->from('delivery_rework a');
+
+        $this->db->join(
+            "(
+                SELECT
+                    dnr_no,
+                    item_fg_id,
+                    workorder,
+                    SUM(qty) AS qty_incoming
+                FROM scan_incoming_sctf
+                WHERE incoming_type = 'Rework'
+                AND type_status = 'completed'
+                GROUP BY dnr_no, item_fg_id, workorder
+            ) i",
+            "
+                i.dnr_no = a.dnr_no
+                AND i.item_fg_id = a.item_fg_id
+                AND i.workorder = a.workorder
+            ",
+            'left'
+        );
+
+        $this->db->where('DATEDIFF(a.target_date, CURDATE()) <= 1', null, false);
+
+        $this->db->where('(a.qty_delivery - COALESCE(i.qty_incoming, 0)) >', 0);
+
+        $this->db->group_by([
+            "DATE_FORMAT(a.target_date, '%Y-%m')",
+            "notif_type"
+        ]);
+    }
+
+    public function deliveryReworkNotif()
+    {
+        $username = $this->session->username;
+        // $allowedUsers = ['scmbri01', 'asmbri', 'pmbri'];
+
+        // if (!in_array($username, $allowedUsers)) {
+        //     return;
+        // }
+
+        $config = $this->Notification_model->getNotificationConfig('delivery_rework');
+        $allowedUsers = $this->Notification_model->getNotificationUsers($config);
+
+        if (!in_array($username, $allowedUsers)) {
+            return;
+        }
+
+        $level = $this->Notification_model->getNotificationLevel($config, $username);
+
+        $this->db->select("
+            DATE_FORMAT(a.target_date, '%Y-%m') as target_month,
+            DATE_FORMAT(a.target_date, '%M %Y') as target_month_name,
+
+            CASE
+                WHEN a.target_date <= CURDATE() THEN 'overdue'
+                ELSE 'reminder'
+            END as notif_type,
+
+            COUNT(DISTINCT a.dnr_no) as total_dnr,
+            COUNT(a.id) as total_product,
+
+            MIN(a.target_date) as min_target_date,
+            MAX(a.target_date) as max_target_date,
+
+            SUM(a.qty_delivery - COALESCE(i.qty_incoming, 0)) as outstanding_qty
+        ");
+
+        $this->db->from('delivery_rework a');
+
+        $this->db->join('subconts b', 'a.destination = b.number', 'left');
+        $this->db->join('teaching_factory c', 'a.destination = c.number', 'left');
+
+        $this->db->join(
+            "(
+                SELECT
+                    dnr_no,
+                    item_fg_id,
+                    workorder,
+                    SUM(qty) AS qty_incoming
+                FROM scan_incoming_sctf
+                WHERE incoming_type = 'Rework'
+                AND type_status = 'completed'
+                GROUP BY dnr_no, item_fg_id, workorder
+            ) i",
+            "
+                i.dnr_no = a.dnr_no
+                AND i.item_fg_id = a.item_fg_id
+                AND i.workorder = a.workorder
+            ",
+            'left'
+        );
+
+        $this->db->where('DATEDIFF(a.target_date, CURDATE()) <= 1', null, false);
+
+        $this->db->where('(a.qty_delivery - COALESCE(i.qty_incoming, 0)) >', 0);
+
+        // if ($username == 'pmbri') {
+        if($level >= 3) {
+            $this->db->where('DATEDIFF(CURDATE(), a.target_date) >=', 2, null, false);
+        }
+
+        $this->db->group_by([
+            "DATE_FORMAT(a.target_date, '%Y-%m')",
+            "notif_type"
+        ]);
+
+        $this->db->order_by('min_target_date', 'ASC');
+        $deliveryReworkNotif = $this->db->get()->result_array();
+
+        // echo json_encode($deliveryReworkNotif);
+
+        $html = '';
+
+        foreach ($deliveryReworkNotif as $row) {
+
+            $notifClass = '';
+            $notifIcon = '';
+            $title = '';
+            $message = '';
+
+            $link = "notificationDetail(
+                'System',
+                'delivery_rework_notif',
+                '{$row['target_month']}',
+                'Delivery Rework',
+                'rework_{$row['notif_type']}'
+            )";
+
+            if ($row['notif_type'] == 'overdue') {
+
+                $notifClass = 'notification-overdue';
+                $notifIcon = '!';
+                $title = 'Overdue Delivery Rework';
+
+                $message =
+                    $row['total_dnr'] . " delivery notes are overdue as of " . $row['target_month_name'] . ".";
+
+            } else {
+
+                $notifClass = 'notification-reminder';
+                $notifIcon = '⏰';
+                $title = 'Reminder Delivery Rework';
+
+                $message = $row['total_dnr'] . " delivery notes are approaching their deadlines in " . $row['target_month_name'] . ".";
+            }
+
+            $html .= '
+                <li class="notification-item ' . $notifClass . '">
+                    <a class="notification-link" onclick="' . $link . '">
+                        <div class="notification-icon">
+                            ' . $notifIcon . '
+                        </div>
+
+                        <div class="notification-content">
+
+                            <div class="notification-title">
+                                ' . $title . '
+                            </div>
+
+                            <div class="notification-message">
+                                ' . $message . '
+                            </div>
+
+                            <div class="notification-product">
+                                <span>Total Qty : ' . $row['total_product'] . ' items</span>
+                            </div>
+                        </div>
+                    </a>
+                </li>
+            ';
+        }
+
+        echo $html;
     }
 
     public function delete()
@@ -326,6 +766,18 @@ class Notifications extends CI_Controller
             $this->load->view('notifications/delivery_to_subconts');
         }
     }
+    public function delivery_to_subconts_notif($user, $name){
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['user'] = base64_decode($user);
+            $data['name'] = base64_decode($name);
+            $data['table'] = "delivery_to_subconts";
+            
+            $this->load->view('template/header', $data);
+            $this->load->view('notifications/delivery_to_subconts_notif');
+        }
+    }
     public function delivery_rework($user, $name){
         if (empty($this->session->username)) {
             redirect('error_session');
@@ -336,6 +788,18 @@ class Notifications extends CI_Controller
             
             $this->load->view('template/header', $data);
             $this->load->view('notifications/delivery_rework');
+        }
+    }
+    public function delivery_rework_notif($user, $name){
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['user'] = base64_decode($user);
+            $data['name'] = base64_decode($name);
+            $data['table'] = "delivery_rework";
+            
+            $this->load->view('template/header', $data);
+            $this->load->view('notifications/delivery_rework_notif');
         }
     }
     public function notification_data($table = "", $user = "", $name = "")
@@ -625,6 +1089,83 @@ class Notifications extends CI_Controller
             $this->db->order_by('h.created_date', 'DESC');
         }
 
+        if ($table == 'delivery_to_subconts_notif') {
+
+            $username = $this->session->username;
+            // $allowedUsers = ['scmbri01', 'asmbri', 'pmbri'];
+
+            // if (!in_array($username, $allowedUsers)) {
+            //     return;
+            // }
+
+            $config = $this->Notification_model->getNotificationConfig('delivery_to_subconts');
+            $allowedUsers = $this->Notification_model->getNotificationUsers($config);
+
+            if (!in_array($username, $allowedUsers)) {
+                return;
+            }
+
+            $level = $this->Notification_model->getNotificationLevel($config, $username);
+
+            $this->db->select('
+                a.delivery_note_no,
+                a.delivery_date,
+                a.target_date,
+                a.qty_delivery,
+                a.item_fg_id,
+                a.prod_date,
+                d.number as item_fg_number,
+                d.name as item_fg_name,
+                d.uom,
+                COALESCE(b.name, c.name) as destination_name,
+                COALESCE(i.qty_incoming, 0) AS qty_incoming,
+                (a.qty_delivery - COALESCE(i.qty_incoming, 0)) as qty_outstanding
+            ');
+
+            $this->db->from('delivery_to_subconts a');
+            $this->db->join('subconts b', 'a.destination = b.id', 'left');
+            $this->db->join('teaching_factory c', 'a.destination = c.id', 'left');
+            $this->db->join('item_fg d', 'd.id = a.item_fg_id');
+
+            $this->db->join(
+                "(
+                    SELECT
+                        delivery_note_no,
+                        item_fg_id,
+                        workorder,
+                        SUM(qty) AS qty_incoming
+                    FROM scan_incoming_sctf
+                    WHERE incoming_type = 'Finishing'
+                    AND type_status = 'completed'
+                    GROUP BY delivery_note_no, item_fg_id, workorder
+                ) i",
+                "
+                    i.delivery_note_no = a.delivery_note_no
+                    AND i.item_fg_id = a.item_fg_id
+                    AND i.workorder = a.workorder
+                ",
+                'left'
+            );
+
+            $this->db->where('(a.qty_delivery - COALESCE(i.qty_incoming, 0)) >', 0);
+
+            if ($name == 'subcont_overdue') {
+                $this->db->where('a.target_date <= CURDATE()', null, false);
+
+            } elseif ($name == 'subcont_reminder') {
+                $this->db->where('a.target_date > CURDATE()', null, false);
+                $this->db->where('DATEDIFF(a.target_date, CURDATE()) <= 2', null, false);
+            }
+
+            // if ($username == 'pmbri') {
+            if($level >= 3) {
+                $this->db->where('DATEDIFF(CURDATE(), a.target_date) >=', 2, null, false);
+            }
+
+            $this->db->order_by('a.target_date', 'ASC');
+            $this->db->order_by('a.delivery_note_no', 'ASC');
+        }
+
         if($table=='delivery_rework'){
             $this->db->select('
                 a.dnr_no, 
@@ -650,6 +1191,91 @@ class Notifications extends CI_Controller
             $this->db->where('h.deleted', 0);
             $this->db->group_by('a.dnr_no');
             $this->db->order_by('h.created_date', 'DESC');
+        }
+
+        if ($table == 'delivery_rework_notif') {
+
+            $username = $this->session->username;
+            // $allowedUsers = ['scmbri01', 'asmbri', 'pmbri'];
+
+            // if (!in_array($username, $allowedUsers)) {
+            //     return;
+            // }
+
+            $config = $this->Notification_model->getNotificationConfig('delivery_rework');
+            $allowedUsers = $this->Notification_model->getNotificationUsers($config);
+
+            if (!in_array($username, $allowedUsers)) {
+                return;
+            }
+
+            $level = $this->Notification_model->getNotificationLevel($config, $username);
+
+
+            $this->db->select('
+                a.dnr_no,
+                a.delivery_date,
+                a.target_date,
+                a.qty_delivery,
+                a.item_fg_id,
+                a.prod_date,
+                d.number as item_fg_number,
+                d.name as item_fg_name,
+                d.uom,
+                COALESCE(b.name, c.name) as destination_name,
+                COALESCE(i.qty_incoming, 0) AS qty_incoming,
+                (a.qty_delivery - COALESCE(i.qty_incoming, 0)) as qty_outstanding
+            ');
+
+            $this->db->from('delivery_rework a');
+
+            $this->db->join('subconts b', 'a.destination = b.id', 'left');
+            $this->db->join('teaching_factory c', 'a.destination = c.id', 'left');
+            $this->db->join('item_fg d', 'd.id = a.item_fg_id');
+
+            $this->db->join(
+                "
+                (
+                    SELECT
+                        dnr_no,
+                        item_fg_id,
+                        workorder,
+                        SUM(qty) AS qty_incoming
+                    FROM scan_incoming_sctf
+                    WHERE incoming_type = 'Rework'
+                    AND type_status = 'completed'
+                    GROUP BY dnr_no, item_fg_id, workorder
+                ) i",
+                "
+                    i.dnr_no = a.dnr_no
+                    AND i.item_fg_id = a.item_fg_id
+                    AND i.workorder = a.workorder
+                ",
+                'left'
+            );
+
+            $this->db->where('(a.qty_delivery - COALESCE(i.qty_incoming, 0)) >', 0);
+
+            if ($name == 'rework_overdue') {
+                $this->db->where('a.target_date <= CURDATE()', null, false);
+
+            } elseif ($name == 'rework_reminder') {
+                $this->db->where('a.target_date > CURDATE()', null, false);
+                $this->db->where('DATEDIFF(a.target_date, CURDATE()) <= 2', null, false);
+            }
+
+            // if ($username == 'pmbri') {
+            if($level >= 3) {
+                $this->db->where('DATEDIFF(CURDATE(), a.target_date) >=', 2, null, false);
+            }
+
+            // $this->db->group_by([
+            //     'a.dnr_no',
+            //     'a.item_fg_id'
+            // ]);
+
+            $this->db->order_by('a.target_date', 'ASC');
+            $this->db->order_by('a.dnr_no', 'ASC');
         }
 
             $records = $this->db->get()->result_array();

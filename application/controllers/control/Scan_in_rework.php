@@ -111,6 +111,10 @@ class Scan_in_rework extends CI_Controller
             $this->db->join('rework_visual_checker_label_lot_tracking b', 'a.serial_label = b.serial_label');
             $this->db->join('scan_visual_checker_detail c', 'a.scan_id = c.scan_id and b.workorder_label = c.workorder_label');
             $this->db->where('a.serial_label', $serial_label);
+            $this->db->group_by([
+                'b.serial_label',
+                'b.workorder_label',
+            ]);
 
             $details = $this->db->get()->result_array();
 
@@ -220,6 +224,15 @@ class Scan_in_rework extends CI_Controller
             $scan_id = $session_row->scan_id ?? $this->generate_uuid();
 
             foreach ($details as $d) {
+
+                $exists = $this->db->get_where('scan_in_rework', [
+                    'serial_label' => $serial_label,
+                    'workorder_label' => $d['workorder_label']
+                ])->row();
+
+                if ($exists) {
+                    continue;
+                }
 
                 $workorder_label = $d['workorder_label'];
 

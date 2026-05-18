@@ -141,6 +141,8 @@ class Delivery_rework extends CI_Controller
             }
             $this->db->like('a.dnr_no', $filter_dnr_no);
             $this->db->group_by('a.dnr_no');
+
+            $this->db->order_by('a.delivery_date', 'ASC');
             $this->db->order_by('a.dnr_no', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
@@ -170,6 +172,7 @@ class Delivery_rework extends CI_Controller
                 f.name AS item_fg_name,
                 f.uom,
                 COALESCE(i.qty_incoming, 0) AS qty_incoming,
+                (d.qty_delivery - COALESCE(i.qty_incoming, 0)) AS qty_outstanding,
 
                 CASE
                     WHEN COALESCE(i.qty_incoming, 0) = 0 THEN '0'
@@ -214,7 +217,8 @@ class Delivery_rework extends CI_Controller
                 'left'
             );
 
-            $this->db->order_by('d.workorder');
+            $this->db->order_by('d.prod_date', 'ASC');
+            $this->db->order_by('d.workorder', 'ASC');
 
             echo json_encode($this->db->get()->result_array());
         }
@@ -748,7 +752,9 @@ class Delivery_rework extends CI_Controller
             b.uom, 
             COALESCE(c.name, d.name) as destination_name, 
             COALESCE(c.address, d.address) as address,
-            COALESCE(e.qty_label, 0) AS qty_packing
+            COALESCE(e.qty_label, 0) AS qty_packing,
+            COALESCE(i.qty_incoming, 0) AS qty_incoming,
+            (a.qty_delivery - COALESCE(i.qty_incoming, 0)) AS qty_outstanding
         ');
         $this->db->from('delivery_rework a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
@@ -770,8 +776,28 @@ class Delivery_rework extends CI_Controller
             AND e.workorder = a.workorder
         ', 'left');
 
+        $this->db->join(
+            "(
+                SELECT
+                    dnr_no,
+                    item_fg_id,
+                    workorder,
+                    SUM(qty) AS qty_incoming
+                FROM scan_incoming_sctf
+                WHERE incoming_type = 'Rework'
+                AND type_status = 'completed'
+                GROUP BY dnr_no, item_fg_id, workorder
+            ) i",
+            "i.dnr_no = a.dnr_no
+            AND i.item_fg_id = a.item_fg_id
+            AND i.workorder = a.workorder",
+            'left'
+        );
+
+        $this->db->order_by('a.delivery_date', 'asc');
+        $this->db->order_by('i.dnr_no', 'asc');
+        $this->db->order_by('a.delivery_note_no', 'asc');
         $this->db->order_by('a.workorder', 'asc');
-        $this->db->order_by('b.number', 'asc');
 
         if ($filter_from != "" && $filter_to != "") {
             $this->db->where('a.delivery_date >=', $filter_from);
@@ -863,6 +889,7 @@ class Delivery_rework extends CI_Controller
                     <tr>
                         <th style="width: 10px;">No</th>
                         <th style="width: 80px;">Delivery Date</th>
+                        <th style="width: 80px;">Target Date</th>
                         <th style="width: 120px;">DNR No</th>
                         <th style="width: 120px;">Delivery Note No</th>
                         <th style="width: 100px;">Product ID</th>
@@ -871,16 +898,23 @@ class Delivery_rework extends CI_Controller
                         <th style="width: 80px;">WO No</th>
                         <th style="width: 80px;">Qty Packing</th>
                         <th style="width: 80px;">Qty Delivery</th>
+                        <th style="width: 80px;">Qty Incoming</th>
+                        <th style="width: 80px;">Qty Outstanding</th>
                     </tr>';
 
         $no = 1;
         $total_qty_delivery = 0;
+        $total_qty_incoming = 0;
+        $total_qty_outstanding = 0;
         $total_qty_packing = 0;
 
         foreach ($records as $row) {
+            $target_date = (!empty($row['target_date']) ? date('Y-m-d', strtotime($row['target_date'])) : '-');
+
             $html .= '<tr>
                         <td class="text-center">'.$no.'</td>
-                        <td class="no-wrap">'.date('Y-m-d', strtotime($row['delivery_date'])).'</td>
+                        <td class="no-wrap"  style="text-align: center;">'.date('Y-m-d', strtotime($row['delivery_date'])).'</td>
+                        <td class="no-wrap"  style="text-align: center;">'.$target_date.'</td>
                         <td class="no-wrap">'.$row['dnr_no'].'</td>
                         <td class="no-wrap">'.$row['delivery_note_no'].'</td>
                         <td class="no-wrap">'.$row['item_fg_id'].'</td>
@@ -889,18 +923,24 @@ class Delivery_rework extends CI_Controller
                         <td class="no-wrap">'.$row['workorder'].'</td>
                         <td style="text-align: center;">'.number_format($row['qty_packing'],0,".",".").'</td>
                         <td style="text-align: center;">'.number_format($row['qty_delivery'],0,".",".").'</td>
+                        <td style="text-align: center;">'.number_format($row['qty_incoming'],0,".",".").'</td>
+                        <td style="text-align: center;">'.number_format($row['qty_outstanding'],0,".",".").'</td>
                     </tr>';
 
             $total_qty_delivery += $row['qty_delivery'];
+            $total_qty_incoming += $row['qty_incoming'];
+            $total_qty_outstanding += $row['qty_outstanding'];
             $total_qty_packing += $row['qty_packing'];
             $no++;
         }
 
         $html .= '
                 <tr>
-                    <td colspan="8" style="text-align:right; font-weight:bold;">Total Qty</td>
+                    <td colspan="9" style="text-align:right; font-weight:bold;">Total Qty</td>
                     <td style="text-align:center; font-weight:bold;">' . number_format($total_qty_packing, 0, ",", ".") . '</td>
                     <td style="text-align:center; font-weight:bold;">' . number_format($total_qty_delivery, 0, ",", ".") . '</td>
+                    <td style="text-align:center; font-weight:bold;">' . number_format($total_qty_incoming, 0, ",", ".") . '</td>
+                    <td style="text-align:center; font-weight:bold;">' . number_format($total_qty_outstanding, 0, ",", ".") . '</td>
                 </tr>
             </table></div>';
 

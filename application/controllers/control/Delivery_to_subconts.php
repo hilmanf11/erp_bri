@@ -643,6 +643,8 @@ class Delivery_to_subconts extends CI_Controller
             }
             $this->db->like('a.delivery_note_no', $filter_delivery_note_no);
             $this->db->group_by('a.delivery_note_no');
+
+            $this->db->order_by('a.delivery_date', 'ASC');
             $this->db->order_by('a.delivery_note_no', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
@@ -669,6 +671,7 @@ class Delivery_to_subconts extends CI_Controller
                 d.prod_date,
                 d.qty_delivery,
                 COALESCE(i.qty_incoming, 0) AS qty_incoming,
+                (d.qty_delivery - COALESCE(i.qty_incoming, 0)) AS qty_outstanding,
                 d.remarks,
                 f.number AS item_fg_number,
                 f.name AS item_fg_name,
@@ -718,7 +721,8 @@ class Delivery_to_subconts extends CI_Controller
                 'left'
             );
 
-            $this->db->order_by('d.workorder');
+            $this->db->order_by('d.prod_date', 'ASC');
+            $this->db->order_by('d.workorder', 'ASC');
 
             echo json_encode($this->db->get()->result_array());
         }
@@ -1428,7 +1432,8 @@ class Delivery_to_subconts extends CI_Controller
             COALESCE(c.name, d.name) as destination_name, 
             COALESCE(c.address, d.address) as address,
             COALESCE(e.qty_label, 0) AS qty_packing,
-            COALESCE(i.qty_incoming, 0) AS qty_incoming
+            COALESCE(i.qty_incoming, 0) AS qty_incoming,
+            (a.qty_delivery - COALESCE(i.qty_incoming, 0)) AS qty_outstanding
         ');
         $this->db->from('delivery_to_subconts a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
@@ -1458,7 +1463,7 @@ class Delivery_to_subconts extends CI_Controller
                     workorder,
                     SUM(qty) AS qty_incoming
                 FROM scan_incoming_sctf
-                WHERE incoming_type != 'BPM'
+                WHERE incoming_type = 'Finishing'
                 AND type_status = 'completed'
                 GROUP BY delivery_note_no, item_fg_id, workorder
             ) i",
@@ -1468,8 +1473,12 @@ class Delivery_to_subconts extends CI_Controller
             'left'
         );
 
+        $this->db->order_by('a.delivery_date', 'asc');
+        $this->db->order_by('a.delivery_note_no', 'asc');
         $this->db->order_by('a.workorder', 'asc');
-        $this->db->order_by('b.number', 'asc');
+
+        // $this->db->order_by('a.workorder', 'asc');
+        // $this->db->order_by('b.number', 'asc');
 
         if ($filter_from != "" && $filter_to != "") {
             $this->db->where('a.delivery_date >=', $filter_from);
@@ -1561,6 +1570,8 @@ class Delivery_to_subconts extends CI_Controller
                     <tr>
                         <th style="width: 10px;">No</th>
                         <th style="width: 80px;">Delivery Date</th>
+                        <th style="width: 80px;">Target Date</th>
+                        <th style="width: 120px;">Destination Name</th>
                         <th style="width: 120px;">Delivery Note No</th>
                         <th style="width: 100px;">Product ID</th>
                         <th style="width: 100px;">Product No</th>
@@ -1569,18 +1580,24 @@ class Delivery_to_subconts extends CI_Controller
                         <th style="width: 80px;">Qty Packing</th>
                         <th style="width: 80px;">Qty Delivery</th>
                         <th style="width: 80px;">Qty Incoming</th>
+                        <th style="width: 80px;">Qty Outstanding</th>
                         <th style="width: 100px;">Remarks</th>
                     </tr>';
 
         $no = 1;
         $total_qty_delivery = 0;
         $total_qty_incoming = 0;
+        $total_qty_outstanding = 0;
         $total_qty_packing = 0;
 
         foreach ($records as $row) {
+            $target_date = (!empty($row['target_date']) ? date('Y-m-d', strtotime($row['target_date'])) : '-');
+
             $html .= '<tr>
                         <td class="text-center">'.$no.'</td>
-                        <td class="no-wrap">'.date('Y-m-d', strtotime($row['delivery_date'])).'</td>
+                        <td class="no-wrap" style="text-align: center;">'.date('Y-m-d', strtotime($row['delivery_date'])).'</td>
+                        <td class="no-wrap" style="text-align: center;">'.$target_date.'</td>
+                        <td class="no-wrap">'.$row['destination_name'].'</td>
                         <td class="no-wrap">'.$row['delivery_note_no'].'</td>
                         <td class="no-wrap">'.$row['item_fg_id'].'</td>
                         <td class="no-wrap" style="mso-number-format:&quot;@&quot;">'.$row['item_fg_number'].'</td>
@@ -1589,21 +1606,24 @@ class Delivery_to_subconts extends CI_Controller
                         <td style="text-align: center;">'.number_format($row['qty_packing'],0,".",".").'</td>
                         <td style="text-align: center;">'.number_format($row['qty_delivery'],0,".",".").'</td>
                         <td style="text-align: center;">'.number_format($row['qty_incoming'],0,".",".").'</td>
+                        <td style="text-align: center;">'.number_format($row['qty_outstanding'],0,".",".").'</td>
                         <td class="no-wrap" style="text-align: center;">'.$row['remarks'].'</td>
                     </tr>';
 
             $total_qty_delivery += $row['qty_delivery'];
             $total_qty_incoming += $row['qty_incoming'];
+            $total_qty_outstanding += $row['qty_outstanding'];
             $total_qty_packing += $row['qty_packing'];
             $no++;
         }
 
         $html .= '
                 <tr>
-                    <td colspan="7" style="text-align:right; font-weight:bold;">Total Qty</td>
+                    <td colspan="9" style="text-align:right; font-weight:bold;">Total Qty</td>
                     <td style="text-align:center; font-weight:bold;">' . number_format($total_qty_packing, 0, ",", ".") . '</td>
                     <td style="text-align:center; font-weight:bold;">' . number_format($total_qty_delivery, 0, ",", ".") . '</td>
                     <td style="text-align:center; font-weight:bold;">' . number_format($total_qty_incoming, 0, ",", ".") . '</td>
+                    <td style="text-align:center; font-weight:bold;">' . number_format($total_qty_outstanding, 0, ",", ".") . '</td>
                     <td></td>
                 </tr>
             </table></div>';

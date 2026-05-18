@@ -668,6 +668,46 @@ class Scan_out_rework extends CI_Controller
         return $uuid;
     }
 
+    private function getWorkingDate($start_date, $total_days = 5)
+    {
+        $current_date = $start_date;
+        $added_days = 0;
+
+        while ($added_days < $total_days) {
+
+            // tambah 1 hari
+            $current_date = date(
+                'Y-m-d',
+                strtotime($current_date . ' +1 day')
+            );
+
+            // cek weekend
+            $day = date('N', strtotime($current_date));
+            // 6 = sabtu, 7 = minggu
+            if ($day == 6 || $day == 7) {
+                continue;
+            }
+
+            // cek tanggal merah / libur
+            $holiday = $this->db
+                ->where('working_date', $current_date)
+                ->where('remarks IS NOT NULL')
+                ->where('deleted', 0)
+                ->where('status', 0)
+                ->get('calendars')
+                ->row();
+
+            if ($holiday) {
+                continue;
+            }
+
+            // hitung hari kerja
+            $added_days++;
+        }
+
+        return $current_date;
+    }
+
     public function saveSummaryScanOutRework()
     {
         if (!$this->input->post('items')) {
@@ -767,6 +807,17 @@ class Scan_out_rework extends CI_Controller
                     $row['workorder'],
                 );
 
+                $checkTEFA = $this->crud->read("teaching_factory", [], [
+                        "number" => $row['destination'],
+                    ],
+                );
+
+                if(!$checkTEFA) {
+                    $target_date = date('Y-m-d', strtotime($row['delivery_date'] . ' +3 days'));
+                } else {
+                    $target_date = $this->getWorkingDate($row['delivery_date'], 3);
+                }
+
                 $insert = [
                     'scan_id'           => $row['scan_id'],
                     'item_fg_id'        => $row['item_fg_id'],
@@ -774,6 +825,7 @@ class Scan_out_rework extends CI_Controller
                     'dnr_no'            => $row['dnr_no'],
                     'delivery_category' => $row['delivery_category'],
                     'delivery_date'     => $row['delivery_date'],
+                    'target_date'       => $target_date,
                     'destination'       => $row['destination'],
                     'prod_date'         => $getTransDate['trans_date'] ?? null,
                     'workorder'         => $row['workorder'],

@@ -17,7 +17,8 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'printed',width:100,align:'center', formatter:btnPrint">Print</th>
             <th rowspan="2" data-options="field:'delivery_note_no',width:220,halign:'center',sortable:true">Delivery Note No</th>
-            <th rowspan="2" data-options="field:'delivery_date',width:220,halign:'center',sortable:true">Delivery Date</th>
+            <th rowspan="2" data-options="field:'delivery_date',width:180,halign:'center',sortable:true">Delivery Date</th>
+            <th rowspan="2" data-options="field:'target_date',width:180,halign:'center',sortable:true">Target Date</th>
             <th rowspan="2" data-options="field:'destination_name',width:220,halign:'center',sortable:true">Destination</th>
             <th rowspan="2" data-options="field:'total_qty_delivery',width:130,halign:'center',sortable:true, formatter:numberFormat, align:'center'">Total Qty Delivery</th>
             
@@ -909,7 +910,16 @@
                             align: 'right',
                             width: 100,
                             formatter: numberFormat
-                        }, {
+                        }, 
+                        {
+                            field: 'qty_outstanding',
+                            title: 'Qty Outstanding',
+                            halign: 'center',
+                            align: 'right',
+                            width: 120,
+                            formatter: numberFormat
+                        },
+                        {
                             field: 'uom',
                             title: 'UOM',
                             align: 'center',
