@@ -45,6 +45,7 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th>
             <th rowspan="2" data-options="field:'division_name',width:100,halign:'center',sortable:true">Plant</th>
+            <th rowspan="2" data-options="field:'period_month',width:120,halign:'center',sortable:true,formatter:cellPeriodMonthFormatter">Period Month</th>
             <th rowspan="2" data-options="field:'so_type',width:100,halign:'center',sortable:true">SO Type</th>
             <th rowspan="2" data-options="field:'type_item',width:100,halign:'center',sortable:true">Product Type</th>
             <th rowspan="2" data-options="field:'sales_order_no',width:150,halign:'center',sortable:true">Sales Order No</th>
@@ -131,7 +132,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; height: 90%; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1200px; height: 90%; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -147,6 +148,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Customer Order No</span>
                     <input style="width:60%;" name="customer_order_no" id="customer_order_no" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Period Month</span>
+                    <input style="width:40%;" name="period_month" id="period_month" required="" class="easyui-combobox" data-options="valueField:'value',textField:'text',editable:false,panelHeight:'auto'">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Sales Order Date</span>
@@ -273,6 +278,8 @@
 
 <script>
     let form_mode = '';
+    let createMonths = [];
+    let updateMonths = [];
 
     //ADD DATA
     function add() {
@@ -298,6 +305,8 @@
         $('#customer_id').combobox('readonly', false).combobox('enable');
         // $("#customer_id").combobox('enable');
         $("#sales_order_no").textbox('enable');
+        $("#period_month").combobox('enable');
+        $("#period_month").combobox('loadData', createMonths);
         $("#sales_order_date").datebox('enable');
         $("#customer_address_id").textbox('enable');
         $("#pph").numberbox('setValue', 0);
@@ -943,6 +952,11 @@
                 $('#frm_insert').form('load', row);
                 $("#customer_id").combobox('disable');
                 $("#sales_order_no").textbox('disable');
+
+                $("#period_month")
+                    .combobox('loadData', updateMonths)
+                    .combobox('disable');
+
                 $("#sales_order_date").datebox('disable');
                 $("#plant").textbox('disable');
                 
@@ -1179,6 +1193,31 @@
 
     $(function() {
         filter();
+
+        let currentMonth = new Date().getMonth() + 1;
+        let months = [
+            { value: '01', text: 'January' },
+            { value: '02', text: 'February' },
+            { value: '03', text: 'March' },
+            { value: '04', text: 'April' },
+            { value: '05', text: 'May' },
+            { value: '06', text: 'June' },
+            { value: '07', text: 'July' },
+            { value: '08', text: 'August' },
+            { value: '09', text: 'September' },
+            { value: '10', text: 'October' },
+            { value: '11', text: 'November' },
+            { value: '12', text: 'December' }
+        ];
+
+        createMonths = months.filter((m, index) => {
+            return (index + 1) >= currentMonth;
+        });
+
+        updateMonths = months;
+        $('#period_month').combobox({
+            data: createMonths
+        });
         
         $.extend($.fn.validatebox.defaults.rules, {
             nonZero: {
@@ -1279,9 +1318,10 @@
                 handler: function() {
                     var customer_id = $("#customer_id").combobox('getValue');
                     var customer_order_no = $("#customer_order_no").textbox('getValue');
+                    var period_month = $("#period_month").combobox('getValue');
                     var sales_order_date = $("#sales_order_date").datebox('getValue');
                     var sales_order_no = $("#sales_order_no").textbox('getValue');
-                     var division = $("#division").combobox('getValue');
+                    var division = $("#division").combobox('getValue');
                     var type_item = $("#type_item").combobox('getValue');
                     var attachment = $("#attachment").textbox('getValue');
                     var delivery_date = $("#delivery_date").datebox('getValue');
@@ -1318,6 +1358,7 @@
                                 items.push({
                                         customer_id: customer_id,
                                         customer_order_no: customer_order_no,
+                                        period_month: period_month,
                                         sales_order_date: sales_order_date,
                                         sales_order_no: sales_order_no,
                                         division: division,
@@ -1519,6 +1560,11 @@
         } else {
             return 'CLOSE';
         }
+    };
+
+    function cellPeriodMonthFormatter(value) {
+        const months = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        return months[parseInt(value)] || value;
     };
 
     //CELLSTYLE CLOSING SO
