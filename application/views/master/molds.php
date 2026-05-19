@@ -86,7 +86,7 @@
             <th rowspan="2" data-options="field:'cavity_actual',width:150,halign:'center',sortable:true">Actual Cavity</th>
             <th rowspan="2" data-options="field:'shoot_standard',width:150,halign:'center',sortable:true">Standard Shoot</th>
             <th rowspan="2" data-options="field:'shoot_actual',width:150,halign:'center',sortable:true">Actual Shoot</th>
-            <th rowspan="2" data-options="field:'target_shoot',width:150,halign:'center',sortable:true">Target Shoot</th>
+            <th rowspan="2" data-options="field:'target_shoot',width:150,halign:'center',sortable:true">Target Shoot<br>(7 WH)</th>
             <th rowspan="2" data-options="field:'model',width:150,halign:'center',sortable:true">Mold Model</th>
             <th rowspan="2" data-options="field:'mold_type',width:80,halign:'center',sortable:true">Mold Type</th>
             <th rowspan="2" data-options="field:'remark',width:150,halign:'center',sortable:true">Remarks</th>
@@ -175,7 +175,7 @@
                     <input style="width:60%;" name="shoot_actual" id="shoot_actual" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Target Shoot</span>
+                    <span style="width:35%; display:inline-block;">Target Shoot (7 WH)</span>
                     <input style="width:60%;" name="target_shoot" class="easyui-numberbox">
                 </div>
                 <div class="fitem">

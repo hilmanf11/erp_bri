@@ -150,7 +150,7 @@ class Scan_in_finishing extends CI_Controller
 
             if (strpos($input_label, 'RWIN') === 0) {
 
-                $this->db->select("a.item_fg_id, a.type_status, b.serial_label");
+                $this->db->select("a.item_fg_id, a.type_status, b.serial_label, b.status");
                 $this->db->from("scan_visual_checker_detail a");
                 $this->db->join("rework_visual_checker_label b", "a.scan_id = b.scan_id and a.item_fg_id = b.item_fg_id");
                 $this->db->where("b.serial_label", $input_label);
@@ -171,6 +171,15 @@ class Scan_in_finishing extends CI_Controller
                         'title' => 'Process Scanned',
                         'message' => 'Label is currently being processed in Visual Checker',
                         'data' => $label
+                    ]);
+                    return;
+                }
+
+                if ($label['status'] == 1) {
+                    echo json_encode([
+                        'title'   => 'Scanned',
+                        'message' => 'Label has already been scanned',
+                        'data'    => $label
                     ]);
                     return;
                 }
