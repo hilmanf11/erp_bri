@@ -452,6 +452,15 @@ class Setting_molds extends CI_Controller
                         continue;
                 }
 
+                if(empty($data['cycle_time'])) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Cycle Time must be greater than 0"
+                    ];
+                    continue;
+                }
+
                 $item_fg_id = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
                 if (empty($item_fg_id) && $item_fg_id->item_family_number != "CD") {
                     $results[] = [
@@ -745,8 +754,9 @@ class Setting_molds extends CI_Controller
                  <th>Mold No</th>
                  <th>Model</th>
                  <th>Cavity Actual</th>
-                 <th>cavity Standard</th>
+                 <th>Cavity Standard</th>
                  <th>Cycle Time (Shot/Second)</th>
+                 <th>Target Shoot/Hour</th>
                  <th>Lot Size</th>
                  <th>Effiency (%)</th>
                  <th>Priority</th>
@@ -756,15 +766,16 @@ class Setting_molds extends CI_Controller
             $html .= '<tr>
                          <td>' . $no . '</td>
                          <td>' . $data['item_fg_id'] . '</td>
-                         <td>' . $data['item_fg_no'] . '</td>
+                         <td style="mso-number-format:\'@\'; text-align: left;">' . $data['item_fg_no'] . '</td>
                          <td>' . $data['item_fg_name'] . '</td>
                          <td>' . $data['machine_id'] . '</td>
                          <td>' . $data['machine_no'] . '</td>
                          <td>' . $data['mold_id'] . '</td>
                          <td>' . $data['mold_model'] . '</td>
-                         <td>' . $data['mold_actual'] . '</td>
+                         <td>' . (int)$data['mold_actual'] . '</td>
                          <td>' . $data['mold_standard'] . '</td>
                          <td>' . $data['cycle_time'] . '</td>
+                         <td>' . $data['target_shoot_hour'] . '</td>
                          <td>' . $data['lot_size'] . '</td>
                          <td>' . $data['efficiency'] . '</td>
                          <td>' . $data['priority'] . '</td>

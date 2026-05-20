@@ -125,6 +125,7 @@
             <th rowspan="2" data-options="field:'mold_actual',halign:'center',width:100,sortable:true">Cavity Actual</th>
             <th rowspan="2" data-options="field:'mold_standard',halign:'center',width:100,sortable:true">Cavity <br>Standard</th>
             <th rowspan="2" data-options="field:'cycle_time',align:'center',width:100,sortable:true">Cycle Time <br>(shot/second)</th>
+            <th rowspan="2" data-options="field:'target_shoot_hour',align:'center',width:100,sortable:true">Target <br>Shoot/Hour</th>
             <!-- <th rowspan="2" data-options="field:'curing_time_standard',align:'center',width:100,sortable:true">Curing Time <br>Standard</th> -->
             <th rowspan="2" data-options="field:'lot_size',align:'center',width:80,sortable:true">Lot Size</th>
             <!-- <th rowspan="2" data-options="field:'efficiency',align:'center',width:100,sortable:true">Eficiency (%)</th> -->
@@ -163,10 +164,27 @@
                 <span style="width:35%; display:inline-block;">Mold Name</span>
                 <input style="width:60%;" name="mold_id" id="mold_id" required="" class="easyui-combogrid">
             </div>
-            <div class="fitem">
+
+            <!-- <div class="fitem">
                 <span style="width:35%; display:inline-block;">Cycle Time</span>
                 <input style="width:60%;" name="cycle_time" class="easyui-numberbox">
+            </div> -->
+
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Cycle Time</span>
+                <input style="width:60%;" name="cycle_time" id="cycle_time" class="easyui-numberbox" data-options="
+                        required:true,
+                        precision:2,
+                        validType:'greaterThanZero',
+                        onChange:calculateTargetShootHour
+                    ">
             </div>
+
+            <div class="fitem">
+                <span style="width: 35%; display: inline-block;">Target Shoot/Hour</span>
+                <input style="width:60%;" name="target_shoot_hour" id="target_shoot_hour" class="easyui-numberbox" data-options="required:true,precision:2,readonly:true">
+            </div>
+
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Lot Size</span>
                 <input style="width:60%;" name="lot_size" class="easyui-numberbox">
@@ -209,6 +227,15 @@
 <!-- PDF -->
 <iframe id="printout" src="<?= base_url('master/setting_molds/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
+    $.extend($.fn.validatebox.defaults.rules, {
+        greaterThanZero: {
+            validator: function (value) {
+                return parseFloat(value) > 0;
+            },
+            message: 'Cycle Time must be greater than 0'
+        }
+    });
+
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
@@ -225,6 +252,10 @@
             $('#frm_insert').form('load', row);
 
             $('#mold_actual').val(row.mold_actual);
+
+            setTimeout(function () {
+                calculateTargetShootHour();
+            }, 100);
 
             url_save = '<?= base_url('master/setting_molds/update') ?>?id=' + btoa(row.id);
         } else {
@@ -372,6 +403,20 @@
             return 'Inactive';
         }
     };
+
+    function calculateTargetShootHour() {
+        var cycleTime = $('#cycle_time').numberbox('getValue');
+
+        if (cycleTime && parseFloat(cycleTime) > 0) {
+            // var result = Math.round(3600 / parseFloat(cycleTime));
+            // var result = Math.floor(3600 / parseFloat(cycleTime));
+
+            var result = parseFloat(3600 / parseFloat(cycleTime));
+            $('#target_shoot_hour').numberbox('setValue', result.toFixed(2));
+        } else {
+            $('#target_shoot_hour').numberbox('clear');
+        }
+    }
 
     $(function() {
         //SETTING DATAGRID EASYUI
