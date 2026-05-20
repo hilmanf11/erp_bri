@@ -274,6 +274,7 @@ class Teaching_factory extends CI_Controller
                 <th style="text-align: center;">TF Name</th>
                 <th style="text-align: center;">TF Code</th>
                 <th style="text-align: center;">Type</th>
+                <th style="text-align: center;">Fee %</th>
                 <th style="text-align: center;">Address</th>
                 <th style="text-align: center;">Area</th>
                 <th style="text-align: center">Contact Person</th>
@@ -283,7 +284,8 @@ class Teaching_factory extends CI_Controller
         $no = 1;
         foreach ($records as $data) {
 
-            $status = $data['status'] == 1 ? "Active" : "Not Active";
+            $status = $data['status'] == 0 ? "Active" : "Not Active";
+            $fee = $data['fee'] == 0 ? '-' : number_format($data['fee'], 0, ',', '.');
 
             // $status = $data['status'] == 1 ? "<span style='color:green;font-weight:bold;'>Active</span>" : "<span style='color:red;font-weight:bold;'>Not Active</span>";
 
@@ -293,6 +295,7 @@ class Teaching_factory extends CI_Controller
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['number'] . '</td>
                     <td>' . $data['subcont_type_name'] . '</td>
+                    <td>' . $fee . '</td>
                     <td>' . $data['address'] . '</td>
                     <td>' . $data['delivery_area_name'] . '</td>
                     <td>' . $data['contact_person'] . '</td>
