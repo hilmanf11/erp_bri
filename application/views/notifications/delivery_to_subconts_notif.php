@@ -61,6 +61,12 @@
                     align: 'left',
                     title: "Product Name"
                 }, {
+                    field: 'destination_name',
+                    width: 150,
+                    halign: 'center',
+                    align: 'left',
+                    title: "Destination Name"
+                }, {
                     field: 'prod_date',
                     width: 150,
                     halign: 'center',

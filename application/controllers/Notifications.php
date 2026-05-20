@@ -1229,8 +1229,8 @@ class Notifications extends CI_Controller
 
             $this->db->from('delivery_rework a');
 
-            $this->db->join('subconts b', 'a.destination = b.id', 'left');
-            $this->db->join('teaching_factory c', 'a.destination = c.id', 'left');
+            $this->db->join('subconts b', 'a.destination = b.number', 'left');
+            $this->db->join('teaching_factory c', 'a.destination = c.number', 'left');
             $this->db->join('item_fg d', 'd.id = a.item_fg_id');
 
             $this->db->join(
