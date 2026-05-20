@@ -890,6 +890,7 @@ class Delivery_rework extends CI_Controller
                         <th style="width: 10px;">No</th>
                         <th style="width: 80px;">Delivery Date</th>
                         <th style="width: 80px;">Target Date</th>
+                        <th style="width: 120px;">Destination</th>
                         <th style="width: 120px;">DNR No</th>
                         <th style="width: 120px;">Delivery Note No</th>
                         <th style="width: 100px;">Product ID</th>
@@ -915,6 +916,7 @@ class Delivery_rework extends CI_Controller
                         <td class="text-center">'.$no.'</td>
                         <td class="no-wrap"  style="text-align: center;">'.date('Y-m-d', strtotime($row['delivery_date'])).'</td>
                         <td class="no-wrap"  style="text-align: center;">'.$target_date.'</td>
+                        <td class="no-wrap">'.$row['destination_name'].'</td>
                         <td class="no-wrap">'.$row['dnr_no'].'</td>
                         <td class="no-wrap">'.$row['delivery_note_no'].'</td>
                         <td class="no-wrap">'.$row['item_fg_id'].'</td>

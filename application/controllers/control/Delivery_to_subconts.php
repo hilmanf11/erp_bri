@@ -1571,7 +1571,7 @@ class Delivery_to_subconts extends CI_Controller
                         <th style="width: 10px;">No</th>
                         <th style="width: 80px;">Delivery Date</th>
                         <th style="width: 80px;">Target Date</th>
-                        <th style="width: 120px;">Destination Name</th>
+                        <th style="width: 120px;">Destination</th>
                         <th style="width: 120px;">Delivery Note No</th>
                         <th style="width: 100px;">Product ID</th>
                         <th style="width: 100px;">Product No</th>
