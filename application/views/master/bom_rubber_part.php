@@ -741,7 +741,7 @@
     });
 
     $('#item_fg_id').combogrid({
-        url: '<?= base_url('master/item_fg/readRubberParts/'); ?>',
+        url: '<?= base_url('master/item_fg/readRubberPartAll/'); ?>',
         panelWidth: 420,
         idField: 'id',
         textField: 'number',
@@ -762,7 +762,7 @@
     });
 
     $('#filter_item_fg_id').combogrid({
-        url: '<?= base_url('master/item_fg/readRubberParts'); ?>',
+        url: '<?= base_url('master/item_fg/readRubberPartAll'); ?>',
         panelWidth: 750,
         idField: 'id',
         textField: 'number',

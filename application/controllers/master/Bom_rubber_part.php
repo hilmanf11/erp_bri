@@ -127,7 +127,7 @@ class Bom_rubber_part extends CI_Controller
             $this->db->select('b.id as item_fg_id, b.number as item_fg_number, b.name as item_fg_name, a.created_by, a.created_date, a.updated_by, a.updated_date');
             $this->db->from('bom a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-            $this->db->where('b.item_family_number', 'RP');
+            $this->db->where('b.item_family_number !=', 'CD');
             $this->db->like('a.item_fg_id', $filter_item_fg_id);
             $this->db->like('a.item_rm_id', $filter_item_rm_id);
             $this->db->group_by('b.number');
@@ -194,7 +194,7 @@ class Bom_rubber_part extends CI_Controller
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
             $this->db->join('item_familys d', 'c.item_family_id = d.id');
-            $this->db->where('b.item_family_number', 'RP');
+            $this->db->where('b.item_family_number !=', 'CD');
             $this->db->where('a.item_fg_id', $item_fg_id);
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
@@ -429,7 +429,7 @@ class Bom_rubber_part extends CI_Controller
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
         $this->db->join('item_familys d', 'c.item_family_id = d.id');
         $this->db->join('item_process e', 'a.process_id = e.id');
-        $this->db->where('b.item_family_number', 'RP');
+        $this->db->where('b.item_family_number !=', 'CD');
         $this->db->like('a.item_fg_id', $filter_item_fg_id);
         $this->db->like('a.item_rm_id', $filter_item_rm_id);
         $this->db->order_by('b.number', 'ASC');
@@ -549,7 +549,7 @@ class Bom_rubber_part extends CI_Controller
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
         $this->db->join('item_familys d', 'c.item_family_id = d.id');
         $this->db->join('item_process e', 'a.process_id = e.id');
-        $this->db->where('b.item_family_number', 'RP');
+        $this->db->where('b.item_family_number !=', 'CD');
         $this->db->like('a.item_fg_id', $filter_item_fg_id);
         $this->db->like('a.item_rm_id', $filter_item_rm_id);
         $this->db->order_by('b.number', 'ASC');
