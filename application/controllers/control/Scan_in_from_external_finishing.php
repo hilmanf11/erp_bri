@@ -61,36 +61,68 @@ class Scan_in_from_external_finishing extends CI_Controller
         echo json_encode($send);
     }
 
+    // public function incoming_doc_no_v1()
+    // {
+    //     $incoming_date = $this->input->post('incoming_date');
+    //     $incoming_from = $this->input->post('incoming_from');
+
+    //     $date = $incoming_date ? date("Y-m-d", strtotime($incoming_date)) : date("Y-m-d");
+    //     $day  = date("d", strtotime($date));
+
+    //     if ($day < 16) {
+    //         $period_start = date("Y-m-16", strtotime("-1 month", strtotime($date)));
+    //         $period_end   = date("Y-m-15", strtotime($date));
+    //     } else {
+    //         $period_start = date("Y-m-16", strtotime($date));
+    //         $period_end   = date("Y-m-15", strtotime("+1 month", strtotime($date)));
+    //     }
+
+    //     $doc_month = date("m", strtotime($date));
+    //     $doc_year  = date("y", strtotime($date));
+
+    //     $sql = $this->db->query("
+    //         SELECT MAX(CAST(SUBSTRING_INDEX(incoming_doc_no, '/', 1) AS UNSIGNED)) AS kode
+    //         FROM scan_incoming_sctf
+    //         WHERE incoming_date BETWEEN '{$period_start}' AND '{$period_end}'
+    //         AND incoming_doc_no LIKE '%/{$incoming_from}/IN/%'
+    //     ");
+
+    //     $row = $sql->row();
+    //     $seq = $row->kode ? sprintf("%03d", $row->kode + 1) : "001";
+
+    //     echo "{$seq}/{$incoming_from}/IN/{$doc_month}/{$doc_year}";
+    // }
+
     public function incoming_doc_no()
     {
         $incoming_date = $this->input->post('incoming_date');
         $incoming_from = $this->input->post('incoming_from');
 
         $date = $incoming_date ? date("Y-m-d", strtotime($incoming_date)) : date("Y-m-d");
-        $day  = date("d", strtotime($date));
+        $month = date("m", strtotime($date));
+        $year = date("y", strtotime($date));
 
-        if ($day < 16) {
-            $period_start = date("Y-m-16", strtotime("-1 month", strtotime($date)));
-            $period_end   = date("Y-m-15", strtotime($date));
-        } else {
-            $period_start = date("Y-m-16", strtotime($date));
-            $period_end   = date("Y-m-15", strtotime("+1 month", strtotime($date)));
-        }
-
-        $doc_month = date("m", strtotime($date));
-        $doc_year  = date("y", strtotime($date));
+        $period_start = date("Y-m-01", strtotime($date));
+        $period_end   = date("Y-m-t", strtotime($date));
 
         $sql = $this->db->query("
             SELECT MAX(CAST(SUBSTRING_INDEX(incoming_doc_no, '/', 1) AS UNSIGNED)) AS kode
             FROM scan_incoming_sctf
             WHERE incoming_date BETWEEN '{$period_start}' AND '{$period_end}'
-            AND incoming_doc_no LIKE '%/{$incoming_from}/IN/%'
+            AND incoming_doc_no LIKE '%/{$incoming_from}/IN/{$month}/{$year}'
         ");
 
         $row = $sql->row();
-        $seq = $row->kode ? sprintf("%03d", $row->kode + 1) : "001";
 
-        echo "{$seq}/{$incoming_from}/IN/{$doc_month}/{$doc_year}";
+        if ($row->kode == null) {
+            $seq = "001";
+        } else {
+            $seq = sprintf("%03s", intval($row->kode) + 1);
+        }
+
+        $autonumber = "{$seq}/{$incoming_from}/IN/{$month}/{$year}";
+
+        echo $autonumber;
     }
 
     public function getScanIncoming()
@@ -273,7 +305,7 @@ class Scan_in_from_external_finishing extends CI_Controller
                 'table' => 'shipping_to_subconts',
                 'field' => 'workorder_label',
                 'prefix' => null,
-                'allowed_category' => ['Finishing', 'BPM']
+                'allowed_category' => ['Regular', 'BPM']
             ],
             [
                 'table' => 'scan_out_rework',

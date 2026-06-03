@@ -28,6 +28,41 @@ class Delivery_to_subconts extends CI_Controller
         }
     }
 
+    public function readWorkorderLabels()
+    {
+        $q = $this->input->get('q');
+        $filter_from = $this->input->get("filter_from");
+        $filter_to   = $this->input->get("filter_to");
+
+        $this->db->select('a.workorder_label');
+        $this->db->from('shipping_to_subconts a');
+
+        $this->db->join(
+            'delivery_to_subconts b',
+            'a.scan_id = b.scan_id
+            AND a.workorder = b.workorder',
+            'inner'
+        );
+
+        $this->db->where('a.type_status', 'completed');
+        $this->db->where('a.workorder_label IS NOT NULL', null, false);
+        $this->db->where('a.workorder_label !=', '');
+        if (!empty($filter_from) && !empty($filter_to)) {
+            $this->db->where('b.delivery_date >=', $filter_from);
+            $this->db->where('b.delivery_date <=', $filter_to);
+        }
+
+        if ($q != '') {
+            $this->db->like('a.workorder_label', $q);
+        }
+
+        $this->db->order_by('a.workorder_label', 'ASC');
+
+        echo json_encode(
+            $this->db->get()->result_array()
+        );
+    }
+
     public function datatablesTemp($delivery_order_no, $delivery_note_date)
     {
         $delivery_order_no = explode(",", base64_decode($delivery_order_no));
@@ -80,7 +115,7 @@ class Delivery_to_subconts extends CI_Controller
         echo $divisions. "-" . $autoID . "-" . $numberCust . "-" . $datenow;
     }
 
-    public function readDelivery_note_no()
+    public function readDeliveryNoteNo()
     {
         $filter_from = $this->input->get("filter_from");
         $filter_to   = $this->input->get("filter_to");
@@ -301,7 +336,7 @@ class Delivery_to_subconts extends CI_Controller
                     x.doc_no,
                     x.process_date AS process_date,
                     CASE 
-                        WHEN MAX(x.process_name) = 'Internal Finishing' THEN SUM(x.external)
+                        WHEN MAX(x.process_name) = 'Internal Regular' THEN SUM(x.external)
                         WHEN MAX(x.process_name) = 'Cutting Punch' THEN SUM(x.ok_punch)
                         ELSE NULL
                     END AS source_value
@@ -569,6 +604,7 @@ class Delivery_to_subconts extends CI_Controller
             $filter_delivery_to = @base64_decode($get['filter_delivery_to']);
             $filter_item_fg = @base64_decode($get['filter_item_fg']);
             $filter_delivery_note_no = @base64_decode($get['filter_delivery_note_no']);
+            $filter_workorder_label = @base64_decode($get['filter_workorder_label']);
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -578,16 +614,22 @@ class Delivery_to_subconts extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
 
+            // CASE
+            //     WHEN s.cnt_over > 0 THEN '3'
+            //     WHEN s.cnt_ongoing > 0 THEN '2'
+            //     WHEN s.cnt_closed = s.total_row THEN '1'
+            //     ELSE '0'
+            // END AS status_header
+
             $this->db->select("
                 a.*, 
                 COALESCE(c.name, d.name) as destination_name,
-                SUM(a.qty_delivery) as total_qty_delivery,
-
+                t.total_qty_delivery,
                 CASE
                     WHEN s.cnt_over > 0 THEN '3'
-                    WHEN s.cnt_ongoing > 0 THEN '2'
                     WHEN s.cnt_closed = s.total_row THEN '1'
-                    ELSE '0'
+                    WHEN s.cnt_open = s.total_row THEN '0'
+                    ELSE '2'
                 END AS status_header
             ", false);
 
@@ -595,6 +637,40 @@ class Delivery_to_subconts extends CI_Controller
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('subconts c', 'a.destination = c.id', 'left');
             $this->db->join('teaching_factory d', 'a.destination = d.id', 'left');
+
+            // Jika ingin header tetap
+            $this->db->join("(
+                SELECT
+                    delivery_note_no,
+                    SUM(qty_delivery) AS total_qty_delivery
+                FROM delivery_to_subconts
+                GROUP BY delivery_note_no
+            ) t", "t.delivery_note_no = a.delivery_note_no", "left");
+
+            // $this->db->join(
+            //     'shipping_to_subconts sw',
+            //     'sw.scan_id = a.scan_id
+            //     AND sw.workorder = a.workorder
+            //     AND sw.type_status = "completed"',
+            //     'left'
+            // );
+
+            // $this->db->join(
+            //     "(
+            //         SELECT
+            //             scan_id,
+            //             workorder,
+            //             MAX(workorder_label) AS workorder_label
+            //         FROM shipping_to_subconts
+            //         WHERE type_status = 'completed'
+            //         GROUP BY
+            //             scan_id,
+            //             workorder
+            //     ) sw",
+            //     'sw.scan_id = a.scan_id
+            //     AND sw.workorder = a.workorder',
+            //     'left'
+            // );
 
             $this->db->join("(
                 SELECT
@@ -621,7 +697,7 @@ class Delivery_to_subconts extends CI_Controller
                         workorder,
                         SUM(qty) AS qty_incoming
                     FROM scan_incoming_sctf
-                    WHERE incoming_type = 'Finishing'
+                    WHERE incoming_type = 'Regular'
                     AND type_status = 'completed'
                     GROUP BY delivery_note_no, item_fg_id, workorder
                 ) i ON i.delivery_note_no = d.delivery_note_no
@@ -630,6 +706,24 @@ class Delivery_to_subconts extends CI_Controller
                 GROUP BY d.delivery_note_no
             ) s", "s.delivery_note_no = a.delivery_note_no", "left");
 
+
+            // if ($filter_workorder_label != "") {
+            //     $this->db->where('sw.workorder_label', $filter_workorder_label);
+            // }
+
+            if ($filter_workorder_label != "") {
+
+                $this->db->join(
+                    'shipping_to_subconts sw',
+                    'sw.scan_id = a.scan_id
+                    AND sw.item_fg_id = a.item_fg_id
+                    AND sw.workorder = a.workorder
+                    AND sw.type_status = "completed"',
+                    'left'
+                );
+
+                $this->db->where('sw.workorder_label', $filter_workorder_label);
+            }
 
             if ($filter_from != "" && $filter_to != "") {
                 $this->db->where('a.delivery_date >=', $filter_from);
@@ -664,6 +758,7 @@ class Delivery_to_subconts extends CI_Controller
         if ($this->input->get()) {
 
             $delivery_note_no = base64_decode($this->input->get('delivery_note_no'));
+            $workorder_label = base64_decode($this->input->get('workorder_label'));
 
             $this->db->select("
                 d.item_fg_id,
@@ -688,6 +783,7 @@ class Delivery_to_subconts extends CI_Controller
 
             $this->db->from("(
                 SELECT
+                    scan_id,
                     delivery_note_no,
                     item_fg_id,
                     workorder,
@@ -711,7 +807,7 @@ class Delivery_to_subconts extends CI_Controller
                         workorder,
                         SUM(qty) AS qty_incoming
                     FROM scan_incoming_sctf
-                    WHERE incoming_type = 'Finishing'
+                    WHERE incoming_type = 'Regular'
                     AND type_status = 'completed'
                     GROUP BY delivery_note_no, item_fg_id, workorder
                 ) i",
@@ -721,6 +817,19 @@ class Delivery_to_subconts extends CI_Controller
                 'left'
             );
 
+            $this->db->join(
+                'shipping_to_subconts s',
+                's.scan_id = d.scan_id
+                AND s.workorder = d.workorder
+                AND s.type_status = "completed"',
+                'left'
+            );
+
+            if ($workorder_label != '') {
+                $this->db->where('s.workorder_label', $workorder_label);
+            }
+
+            $this->db->group_by('d.scan_id, d.workorder');
             $this->db->order_by('d.prod_date', 'ASC');
             $this->db->order_by('d.workorder', 'ASC');
 
@@ -1418,6 +1527,7 @@ class Delivery_to_subconts extends CI_Controller
         $filter_delivery_to = @base64_decode($get['filter_delivery_to']);
         $filter_item_fg = @base64_decode($get['filter_item_fg']);
         $filter_delivery_note_no = @base64_decode($get['filter_delivery_note_no']);
+        $filter_workorder_label = @base64_decode($get['filter_workorder_label']);
 
         //Config
         $this->db->select('*');
@@ -1455,6 +1565,26 @@ class Delivery_to_subconts extends CI_Controller
             AND e.workorder = a.workorder
         ', 'left');
 
+        // $this->db->join(
+        //     "(
+        //         SELECT
+        //             scan_id,
+        //             item_fg_id,
+        //             workorder,
+        //             MAX(workorder_label) AS workorder_label
+        //         FROM shipping_to_subconts
+        //         WHERE type_status = 'completed'
+        //         GROUP BY
+        //             scan_id,
+        //             item_fg_id,
+        //             workorder
+        //     ) sw",
+        //     'sw.scan_id = a.scan_id
+        //     AND sw.item_fg_id = a.item_fg_id
+        //     AND sw.workorder = a.workorder',
+        //     'left'
+        // );
+
         $this->db->join(
             "(
                 SELECT
@@ -1463,7 +1593,7 @@ class Delivery_to_subconts extends CI_Controller
                     workorder,
                     SUM(qty) AS qty_incoming
                 FROM scan_incoming_sctf
-                WHERE incoming_type = 'Finishing'
+                WHERE incoming_type = 'Regular'
                 AND type_status = 'completed'
                 GROUP BY delivery_note_no, item_fg_id, workorder
             ) i",
@@ -1477,8 +1607,24 @@ class Delivery_to_subconts extends CI_Controller
         $this->db->order_by('a.delivery_note_no', 'asc');
         $this->db->order_by('a.workorder', 'asc');
 
-        // $this->db->order_by('a.workorder', 'asc');
-        // $this->db->order_by('b.number', 'asc');
+        // if ($filter_workorder_label != "") {
+        //     $this->db->where('sw.workorder_label', $filter_workorder_label);
+        // }
+
+
+        if ($filter_workorder_label != "") {
+
+            $this->db->join(
+                'shipping_to_subconts sw',
+                'sw.scan_id = a.scan_id
+                AND sw.item_fg_id = a.item_fg_id
+                AND sw.workorder = a.workorder
+                AND sw.type_status = "completed"',
+                'left'
+            );
+
+            $this->db->where('sw.workorder_label', $filter_workorder_label);
+        }
 
         if ($filter_from != "" && $filter_to != "") {
             $this->db->where('a.delivery_date >=', $filter_from);
@@ -1629,6 +1775,250 @@ class Delivery_to_subconts extends CI_Controller
             </table></div>';
 
         // $html .= '</table></div>';
+        echo $html;
+    }
+
+
+    //PRINT & EXCEL DATA
+    public function print_label($option = "")
+    {
+        if ($option == "excel") {
+            $format  = date("Ymd");
+            header("Content-type: application/vnd-ms-excel");
+            header("Content-Disposition: attachment; filename=delivery_to_subconts_label_$format.xls");
+        }
+
+        $get = $this->input->get();
+        $filter_from = @base64_decode($get['filter_from']);
+        $filter_to = @base64_decode($get['filter_to']);
+        $filter_delivery_to = @base64_decode($get['filter_delivery_to']);
+        $filter_item_fg = @base64_decode($get['filter_item_fg']);
+        $filter_delivery_note_no = @base64_decode($get['filter_delivery_note_no']);
+        $filter_workorder_label = @base64_decode($get['filter_workorder_label']);
+
+        //Config
+        $this->db->select('*');
+        $this->db->from('config');
+        $config = $this->db->get()->row();
+
+        $this->db->select('
+            a.*,
+            b.number as item_fg_number,
+            b.name as item_fg_name,
+            b.uom,
+            sw.workorder_label,
+            COALESCE(c.number, d.number) as destination_code,
+            COALESCE(c.name, d.name) as destination_name,
+            COALESCE(sw.qty, 0) AS qty_delivery,
+            COALESCE(i.qty_incoming, 0) AS qty_incoming,
+            (sw.qty - COALESCE(i.qty_incoming, 0)) AS qty_outstanding
+        ');
+        $this->db->from('delivery_to_subconts a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->join('subconts c', 'a.destination = c.id', 'left');
+        $this->db->join('teaching_factory d', 'a.destination = d.id', 'left');
+
+        $this->db->join(
+            'shipping_to_subconts sw',
+            'sw.scan_id = a.scan_id
+            AND sw.item_fg_id = a.item_fg_id
+            AND sw.workorder = a.workorder
+            AND sw.type_status = "completed"
+            AND sw.deleted = 0',
+            'left'
+        );
+
+        $this->db->join(
+            "(
+                SELECT
+                    delivery_note_no,
+                    item_fg_id,
+                    workorder,
+                    workorder_label,
+                    SUM(qty) AS qty_incoming
+                FROM scan_incoming_sctf
+                WHERE incoming_type = 'Regular'
+                AND type_status = 'completed'
+                GROUP BY
+                    delivery_note_no,
+                    item_fg_id,
+                    workorder,
+                    workorder_label
+            ) i",
+            "i.delivery_note_no = a.delivery_note_no
+            AND i.item_fg_id = a.item_fg_id
+            AND i.workorder = a.workorder
+            AND i.workorder_label = sw.workorder_label",
+            'left'
+        );
+
+        // $this->db->join(
+        //     "(
+        //         SELECT
+        //             scan_id,
+        //             item_fg_id,
+        //             workorder,
+        //             MAX(workorder_label) AS workorder_label
+        //         FROM shipping_to_subconts
+        //         WHERE type_status = 'completed'
+        //         GROUP BY
+        //             scan_id,
+        //             item_fg_id,
+        //             workorder
+        //     ) sw",
+        //     'sw.scan_id = a.scan_id
+        //     AND sw.item_fg_id = a.item_fg_id
+        //     AND sw.workorder = a.workorder',
+        //     'left'
+        // );
+
+        // $this->db->group_by([
+        //     'a.delivery_note_no',
+        //     'a.item_fg_id',
+        //     'a.workorder',
+        //     'sw.workorder_label'
+        // ]);
+
+        $this->db->where('a.deleted', 0);
+        $this->db->order_by('a.delivery_date', 'asc');
+        $this->db->order_by('a.delivery_note_no', 'asc');
+        $this->db->order_by('destination_code', 'asc');
+        $this->db->order_by('a.workorder', 'asc');
+
+        if ($filter_workorder_label != "") {
+            $this->db->where('sw.workorder_label', $filter_workorder_label);
+        }
+
+        if ($filter_from != "" && $filter_to != "") {
+            $this->db->where('a.delivery_date >=', $filter_from);
+            $this->db->where('a.delivery_date <=', $filter_to);
+        }
+        if ($filter_delivery_to != "") {
+            $this->db->where('a.delivery_to', $filter_delivery_to);
+        }
+        if ($filter_delivery_note_no != "") {
+            $this->db->where('a.delivery_note_no', $filter_delivery_note_no);
+        }
+        if ($filter_item_fg != "") {
+            $this->db->where('a.item_fg_id', $filter_item_fg);
+        }
+
+        //$this->db->group_by('a.delivery_note_no');
+        //$this->db->order_by('a.status', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        $html = '<html><head><title>Print Data</title></head><style>
+            body {
+                font-family: Arial, Helvetica, sans-serif;
+                margin: 20px;
+            }
+            #customers {
+                border-collapse: collapse;
+                width: 100%;
+                font-size: 11px;
+                margin: 15px 0;
+            }
+            .table-container {
+                margin: 20px;
+            }
+            #customers td, #customers th {
+                border: 1px solid black;
+                padding: 4px;
+                text-align: left;
+                white-space: nowrap;
+            }
+            #customers th {
+                background-color: white;
+                color: black;
+                font-weight: bold;
+                text-align: center;
+                border-bottom: 1px solid black;
+            }
+            #customers tr:hover {
+                background-color: #f5f5f5;
+            }
+            .text-right {
+                text-align: right;
+            }
+            .text-center {
+                text-align: center;
+            }
+            .no-wrap {
+                white-space: nowrap;
+            }
+            .text-right {
+                text-align: right;
+            }
+            </style>
+            <body>
+            <center>
+            <div style="float: left; font-size: 12px; text-align: left;">
+                <table style="width: 100%;">
+                    <tr>
+                        <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                            <img src="' . $config->favicon . '" width="30">
+                        </td>
+                        <td style="font-size: 14px; text-align: left; margin:2px;">
+                            <b>' . $config->name . '</b><br>
+                            <small>'.$config->description.'</small>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div style="float: right; font-size: 12px; text-align: right;">
+                Print Date ' . date("d M Y H:i:s") . ' <br>
+                Print By ' . $this->session->username . '  
+            </div>
+            <br><br><br>
+            <h3 style="margin:0;">DATA DELIVERY TO SUBCONTS</h3>
+            <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b>
+        </center>
+        <br>
+            <div class="table-container">
+            <table id="customers" border="1">
+                    <tr>
+                        <th style="width: 10px; style="text-align: center;">No</th>
+                        <th style="width: 120px;">Delivery Note No</th>
+                        <th style="width: 80px;">Delivery Date</th>
+                        <th style="width: 80px;">Target Date</th>
+                        <th style="width: 120px;">Destination Code</th>
+                        <th style="width: 120px;">Destination Name</th>
+                        <th style="width: 100px;">Workorder</th>
+                        <th style="width: 100px;">Workorder Label</th>
+                        <th style="width: 100px;">Product ID</th>
+                        <th style="width: 100px;">Product No</th>
+                        <th style="width: 80px;">Qty Delivery</th>
+                        <th style="width: 80px;">Qty Incoming</th>
+                        <th style="width: 80px;">Qty Outstanding</th>
+                    </tr>';
+
+        $no = 1;
+        $total_qty_delivery = 0;
+
+        foreach ($records as $row) {
+            $target_date = (!empty($row['target_date']) ? date('Y-m-d', strtotime($row['target_date'])) : '-');
+
+            $html .= '<tr>
+                        <td class="text-center">'.$no.'</td>
+                        <td class="no-wrap">'.$row['delivery_note_no'].'</td>
+                        <td class="no-wrap" style="text-align: center;">'.date('Y-m-d', strtotime($row['delivery_date'])).'</td>
+                        <td class="no-wrap" style="text-align: center;">'.$target_date.'</td>
+                        <td class="no-wrap">'.$row['destination_code'].'</td>
+                        <td class="no-wrap">'.$row['destination_name'].'</td>
+                        <td class="no-wrap">'.$row['workorder'].'</td>
+                        <td class="no-wrap">'.$row['workorder_label'].'</td>
+                        <td class="no-wrap">'.$row['item_fg_id'].'</td>
+                        <td class="no-wrap" style="mso-number-format:&quot;@&quot;">'.$row['item_fg_number'].'</td>
+                        <td style="text-align: center;">'.number_format($row['qty_delivery'],0,".",".").'</td>
+                        <td style="text-align: center;">'.number_format($row['qty_incoming'],0,".",".").'</td>
+                        <td style="text-align: center;">'.number_format($row['qty_outstanding'],0,".",".").'</td>
+                    </tr>';
+
+            $total_qty_delivery += $row['qty_delivery'];
+            $no++;
+        }
+
+        $html .= '</table></div>';
         echo $html;
     }
 }

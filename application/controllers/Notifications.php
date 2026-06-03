@@ -184,7 +184,7 @@ class Notifications extends CI_Controller
                     workorder,
                     SUM(qty) AS qty_incoming
                 FROM scan_incoming_sctf
-                WHERE incoming_type = 'Finishing'
+                WHERE incoming_type = 'Regular'
                 AND type_status = 'completed'
                 GROUP BY delivery_note_no, item_fg_id, workorder
             ) i",
@@ -249,7 +249,7 @@ class Notifications extends CI_Controller
                     workorder,
                     SUM(qty) AS qty_incoming
                 FROM scan_incoming_sctf
-                WHERE incoming_type = 'Finishing'
+                WHERE incoming_type = 'Regular'
                 AND type_status = 'completed'
                 GROUP BY delivery_note_no, item_fg_id, workorder
             ) i",
@@ -1135,7 +1135,7 @@ class Notifications extends CI_Controller
                         workorder,
                         SUM(qty) AS qty_incoming
                     FROM scan_incoming_sctf
-                    WHERE incoming_type = 'Finishing'
+                    WHERE incoming_type = 'Regular'
                     AND type_status = 'completed'
                     GROUP BY delivery_note_no, item_fg_id, workorder
                 ) i",
