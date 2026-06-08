@@ -63,6 +63,49 @@ class Grn_subconts extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readWorkorderLabels()
+    {
+        $q = $this->input->get('q');
+        $filter_from = $this->input->get("filter_from");
+        $filter_to   = $this->input->get("filter_to");
+        $filter_source_name   = $this->input->get("filter_source_name");
+
+        $this->db->select('a.workorder_label');
+        $this->db->from('scan_incoming_sctf a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+
+        $this->db->join(
+            'delivery_to_subconts d',
+            'd.delivery_note_no = a.delivery_note_no
+            AND d.item_fg_id = a.item_fg_id
+            AND d.workorder = a.workorder
+            AND d.deleted = 0',
+            'left'
+        );
+
+        $this->db->where('a.type_status', 'completed');
+        $this->db->where('a.incoming_type', 'Regular');
+
+        if (!empty($filter_from) && !empty($filter_to)) {
+            $this->db->where('a.incoming_date >=', $filter_from);
+            $this->db->where('a.incoming_date <=', $filter_to);
+        }
+
+        if (!empty($filter_source_name)) {
+            $this->db->where('a.incoming_from', $filter_source_name);
+        }
+
+        if ($q != '') {
+            $this->db->like('a.workorder_label', $q);
+        }
+
+        $this->db->order_by('a.workorder_label', 'ASC');
+
+        echo json_encode(
+            $this->db->get()->result_array()
+        );
+    }
+
     public function number($delivery_note_date, $divison_number)
     {
         $divison_number = base64_decode($divison_number);
@@ -99,9 +142,10 @@ class Grn_subconts extends CI_Controller
             $this->db->where('incoming_date <=', $filter_to);
         }
 
-         if (!empty($filter_source_name)) {
+        if (!empty($filter_source_name)) {
             $this->db->where('incoming_from', $filter_source_name);
         }
+
         $this->db->where('incoming_type', 'Regular');
         $this->db->order_by('delivery_note_no', 'ASC');
         $query = $this->db->get();
@@ -144,6 +188,7 @@ class Grn_subconts extends CI_Controller
             $filter_delivery_note_no = @base64_decode($get['filter_delivery_note_no']);
             $filter_incoming_doc_no = @base64_decode($get['filter_incoming_doc_no']);
             $filter_source_name = @base64_decode($get['filter_source_name']);
+            $filter_workorder_label = @base64_decode($get['filter_workorder_label']);
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -193,6 +238,9 @@ class Grn_subconts extends CI_Controller
             if ($filter_source_name != "") {
                 $this->db->where('a.incoming_from', $filter_source_name);
             }
+            if ($filter_workorder_label != "") {
+                $this->db->where('a.workorder_label', $filter_workorder_label);
+            }
 
             $this->db->like('a.delivery_note_no', $filter_delivery_note_no);
             $this->db->like('a.incoming_doc_no', $filter_incoming_doc_no);
@@ -218,6 +266,7 @@ class Grn_subconts extends CI_Controller
 
             $incoming_doc_no = base64_decode($this->input->get('incoming_doc_no'));
             $delivery_note_no = base64_decode($this->input->get('delivery_note_no'));
+            $workorder_label = base64_decode($this->input->get('workorder_label'));
 
             $this->db->select("
                 a.item_fg_id,
@@ -269,6 +318,10 @@ class Grn_subconts extends CI_Controller
             // $this->db->where('a.delivery_note_no', $delivery_note_no);
             if (!empty($delivery_note_no)) {
                 $this->db->where('a.delivery_note_no', $delivery_note_no);
+            }
+
+            if (!empty($workorder_label)) {
+                $this->db->where('a.workorder_label', $workorder_label);
             }
 
             $this->db->group_by([
@@ -550,6 +603,7 @@ class Grn_subconts extends CI_Controller
         $filter_delivery_note_no = @base64_decode($get['filter_delivery_note_no']);
         $filter_incoming_doc_no = @base64_decode($get['filter_incoming_doc_no']);
         $filter_source_name = @base64_decode($get['filter_source_name']);
+        $filter_workorder_label = @base64_decode($get['filter_workorder_label']);
 
         //Config
         $this->db->select('*');
@@ -631,6 +685,9 @@ class Grn_subconts extends CI_Controller
         }
         if ($filter_item_fg != "") {
             $this->db->where('a.item_fg_id', $filter_item_fg);
+        }
+        if ($filter_workorder_label != "") {
+            $this->db->where('a.workorder_label', $filter_workorder_label);
         }
 
         $records = $this->db->get()->result_array();
@@ -781,6 +838,7 @@ class Grn_subconts extends CI_Controller
         $filter_delivery_note_no = @base64_decode($get['filter_delivery_note_no']);
         $filter_incoming_doc_no = @base64_decode($get['filter_incoming_doc_no']);
         $filter_source_name = @base64_decode($get['filter_source_name']);
+        $filter_workorder_label = @base64_decode($get['filter_workorder_label']);
 
         //Config
         $this->db->select('*');
@@ -866,6 +924,9 @@ class Grn_subconts extends CI_Controller
         }
         if ($filter_item_fg != "") {
             $this->db->where('a.item_fg_id', $filter_item_fg);
+        }
+        if ($filter_workorder_label != "") {
+            $this->db->where('a.workorder_label', $filter_workorder_label);
         }
 
         $records = $this->db->get()->result_array();

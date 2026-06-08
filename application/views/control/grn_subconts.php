@@ -22,7 +22,7 @@
 </table>
 
 <!-- TOOLBAR DATAGRID -->
-<div id="toolbar" style="height: 195px; padding:10px;">
+<div id="toolbar" style="height: 230px; padding:10px;">
     <div style="width: 100%;">
         <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
@@ -49,6 +49,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No</span>
                     <input style="width:60%;" id="filter_item_fg" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Workorder Label</span>
+                    <input style="width:60%;" id="filter_workorder_label" class="easyui-combobox">
                 </div>
                 <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
                     <span style="width:35%; display:inline-block;"></span>
@@ -84,13 +88,15 @@
         var filter_source_name = $("#filter_source_name").combogrid('getValue');
         var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
         var filter_incoming_doc_no = $("#filter_incoming_doc_no").combobox('getValue');
+        var filter_workorder_label = $("#filter_workorder_label").combobox('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
             "&filter_source_name=" + window.btoa(filter_source_name) +
             "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
-            "&filter_incoming_doc_no=" + window.btoa(filter_incoming_doc_no);
+            "&filter_incoming_doc_no=" + window.btoa(filter_incoming_doc_no) +
+            "&filter_workorder_label=" + window.btoa(filter_workorder_label);
 
         $('#dg').datagrid({
             url: '<?= base_url('control/grn_subconts/datatables') ?>' + url,
@@ -109,10 +115,12 @@
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
 
                 let filter_delivery_note_no = $('#filter_delivery_note_no').combobox('getValue');
+                let filter_workorder_label = $('#filter_workorder_label').combobox('getValue');
 
                 ddv.datagrid({
                     url: '<?= base_url('control/grn_subconts/datatableDetails?incoming_doc_no=') ?>' + encodeURIComponent(window.btoa(row.incoming_doc_no))
-                    + '&delivery_note_no=' + encodeURIComponent(window.btoa(filter_delivery_note_no)),
+                    + '&delivery_note_no=' + encodeURIComponent(window.btoa(filter_delivery_note_no))  
+                    + '&workorder_label=' + encodeURIComponent(window.btoa(filter_workorder_label)),
                     singleSelect: true,
                     rownumbers: true,
                     columns: [
@@ -215,13 +223,15 @@
         var filter_source_name = $("#filter_source_name").combogrid('getValue');
         var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
         var filter_incoming_doc_no = $("#filter_incoming_doc_no").combobox('getValue');
+        var filter_workorder_label = $("#filter_workorder_label").combobox('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
             "&filter_source_name=" + window.btoa(filter_source_name) +
             "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
-            "&filter_incoming_doc_no=" + window.btoa(filter_incoming_doc_no);
+            "&filter_incoming_doc_no=" + window.btoa(filter_incoming_doc_no) +
+            "&filter_workorder_label=" + window.btoa(filter_workorder_label);
 
         window.location.assign('<?= base_url('control/grn_subconts/print/excel') ?>' + url);
     }
@@ -234,13 +244,15 @@
         var filter_source_name = $("#filter_source_name").combogrid('getValue');
         var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
         var filter_incoming_doc_no = $("#filter_incoming_doc_no").combobox('getValue');
+        var filter_workorder_label = $("#filter_workorder_label").combobox('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
             "&filter_source_name=" + window.btoa(filter_source_name) +
             "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
-            "&filter_incoming_doc_no=" + window.btoa(filter_incoming_doc_no);
+            "&filter_incoming_doc_no=" + window.btoa(filter_incoming_doc_no) +
+            "&filter_workorder_label=" + window.btoa(filter_workorder_label);
 
         window.location.assign('<?= base_url('control/grn_subconts/print_detail/excel') ?>' + url);
     }
@@ -262,7 +274,6 @@
         $('#filter_delivery_note_no').combobox('reload', url);
     }
 
-
     function reloadIncomingDocNoCombo() {
         var filter_froms = $("#filter_from").datebox("getValue");
         var filter_tos   = $("#filter_to").datebox("getValue");
@@ -276,9 +287,21 @@
         $('#filter_incoming_doc_no').combobox('reload', url);
     }
 
+    function reloadWorkorderLabel() {
+        var filter_froms = $("#filter_from").datebox("getValue");
+        var filter_tos   = $("#filter_to").datebox("getValue");
+        var filter_source_name = $("#filter_source_name").combogrid("getValue");
+
+        var url = '<?= base_url('control/grn_subconts/readWorkorderLabels'); ?>'
+                + '?filter_from=' + encodeURIComponent(filter_froms)
+                + '&filter_to=' + encodeURIComponent(filter_tos)
+                + '&filter_source_name=' + encodeURIComponent(filter_source_name);
+
+        $('#filter_workorder_label').combobox('reload', url);
+    }
+
     $(function() {
         toggleButtonExport();
-
 
         $('#filter_delivery_note_no').combobox({
             valueField: 'delivery_note_no',
@@ -306,13 +329,27 @@
             }]
         });
 
+        $('#filter_workorder_label').combobox({
+            valueField: 'workorder_label',
+            textField: 'workorder_label',
+            prompt: 'Choose All',
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }]
+        });
+
         reloadDeliveryNoteCombo();
         reloadIncomingDocNoCombo();
+        reloadWorkorderLabel();
 
         $('#filter_from, #filter_to').datebox({
             onChange: function() {
                 reloadDeliveryNoteCombo();
                 reloadIncomingDocNoCombo();
+                reloadWorkorderLabel();
             }
         });
     });
@@ -369,12 +406,14 @@
         onSelect: function(index, row) {
             reloadDeliveryNoteCombo();
             reloadIncomingDocNoCombo();
+            reloadWorkorderLabel();
 
             toggleButtonExport();
         },
         onChange: function(newValue, oldValue) {
             reloadDeliveryNoteCombo();
             reloadIncomingDocNoCombo();
+            reloadWorkorderLabel();
 
             isFiltered = false;
             disableExportButtons();
