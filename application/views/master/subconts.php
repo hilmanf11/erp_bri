@@ -1,3 +1,11 @@
+<style>
+    .window-shadow{
+        background: none !important;
+        box-shadow: none !important;
+        -webkit-box-shadow: none !important;
+    }
+</style>
+
 <div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
     <div class="easyui-accordion" style="width:100%; height: 100%;">
         <div title="RELATIONS" style="padding: 20px;">
@@ -16,8 +24,9 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'id',width:100,align:'center',sortable:true">Subcont ID</th>
             <th rowspan="2" data-options="field:'name',width:200,halign:'center',sortable:true">Subcont Name</th>
-            <th rowspan="2" data-options="field:'number',width:100,halign:'center',sortable:true">Subcont Code</th>
-            <th rowspan="2" data-options="field:'subcont_type_name',width:250,halign:'center',sortable:true">Type</th>
+            <th rowspan="2" data-options="field:'number',width:120,halign:'center',sortable:true">Subcont Code</th>
+            <th rowspan="2" data-options="field:'subcont_type_name',width:150,halign:'center',sortable:true">Type</th>
+            <th rowspan="2" data-options="field:'fee',width:150,halign:'center',sortable:true,formatter:formatRupiah">Fee (Rp)</th>
             <th rowspan="2" data-options="field:'address',width:150,halign:'center',sortable:true">Address</th>
             <th rowspan="2" data-options="field:'delivery_area_name',width:150,halign:'center',sortable:true">Area</th>
             <th rowspan="2" data-options="field:'contact_person',width:150,halign:'center',sortable:true">Contact Person</th>
@@ -61,7 +70,11 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Type</span>
-                <input style="width:60%;" name="subcont_type_id" id="subcont_type_id" required="" class="easyui-combobox">
+                <input style="width:60%;" name="subcont_type_id" id="subcont_type_id" required="" class="easyui-combobox" data-options="panelHeight:'auto',editable:false">
+            </div>
+            <div class="fitem" id="fee_container">
+                <span style="width:35%; display:inline-block;">Fee (Rp)</span>
+                <input style="width:60%;" name="fee" id="fee" class="easyui-numberbox" data-options="min:0,precision:0,groupSeparator:'.'" required>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Address</span>
@@ -93,7 +106,7 @@
             </div> -->
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Status</span>
-                <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
+                <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox" data-options="panelHeight:'auto',editable:false">
                     <option value="0">Active</option>
                     <option value="1">Not Active</option>
                 </select>
@@ -132,6 +145,8 @@
         $('#frm_insert').form('clear');
 
         $('#status').combobox('setValue', '0');
+        $('#fee_container').hide();
+        $('#fee').numberbox({ required: false });
 
         $.ajax({
             type: "post",
@@ -149,6 +164,12 @@
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
             url_save = '<?= base_url('master/subconts/update') ?>?id=' + btoa(row.id);
+
+            if (row.fee && row.fee != 0) {
+                $('#fee').numberbox('setValue', row.fee);
+            } else {
+                $('#fee').numberbox('clear');
+            }
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -252,6 +273,16 @@
         valueField: 'id',
         textField: 'name',
         prompt: 'Choose Type of Subcont',
+        onSelect: function(record) {
+            if (record.name == 'Finishing') {
+                $('#fee_container').show();
+                $('#fee').numberbox({ required: true });
+            } else {
+                $('#fee_container').hide(); 
+                $('#fee').numberbox('clear');
+                $('#fee').numberbox({ required: false });
+            }
+        },
     });
 
     $('#delivery_area_id').combobox({
@@ -357,4 +388,11 @@
             }
         }]
     });
+
+    function formatRupiah(value, row, index) {
+        if (value == null || value == '' || value == 0) {
+            return '-';
+        }
+        return new Intl.NumberFormat('id-ID').format(value);
+    }
 </script>

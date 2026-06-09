@@ -544,7 +544,7 @@ class Production_capacities extends CI_Controller
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['item_fg_id'] . '</td>
-                    <td>' . $data['item_fg_number'] . '</td>
+                    <td style="mso-number-format:\'@\'; text-align: left;">' . $data['item_fg_number'] . '</td>
                     <td>' . $data['item_fg_name'] . '</td>
                     <td>' . $data['mold_id'] . '</td>
                     <td>' . $data['machine_number'] . '</td>

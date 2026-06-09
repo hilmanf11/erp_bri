@@ -242,6 +242,11 @@
                 iconCls: 'icon-ok',
                 handler: function() {
 
+                    let btn = $(this);
+                    if(btn.data('loading')) {
+                        return;
+                    }
+
                     var delivery_date = $("#delivery_date").datebox('getValue');
                     var delivery_note_no = $("#delivery_note_no").textbox('getValue');
                     var delivery_category = $("#delivery_category").textbox('getValue');
@@ -266,7 +271,7 @@
                         return;
                     }
 
-                    console.log(rows);
+                    // console.log(rows);
 
                     var payload = {
                         delivery_date: delivery_date,
@@ -285,6 +290,11 @@
                     var destination = $("#destination").combogrid('getValue');
                     var destination_code = $("#destination_code").combogrid('getValue');
 
+                    btn.data('loading', true);
+                    btn.linkbutton({
+                        disabled: true,
+                        text: 'Saving...'
+                    });
 
                     $.ajax({
                         url: '<?= base_url("control/shipping_to_subconts/createDN") ?>',
@@ -307,12 +317,27 @@
                             }else{
                                 toastr.error(result.message);
                             }
+                        },
+                        complete: function() {
+                            btn.data('loading', false);
+                            btn.linkbutton({
+                                disabled: false,
+                                text: 'Save'
+                            });
                         }
                     });
+
                 }
             }]
         });
 
+        $('#delivery_date').datebox().datebox('calendar').calendar({
+            validator: function(date){
+                var now = new Date();
+                var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                return date >= today;
+            }
+        });
     });
 
 

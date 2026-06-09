@@ -285,6 +285,7 @@ class Subconts extends CI_Controller
                 <th>Subcont Name</th>
                 <th>Subcont Code</th>
                 <th>Type</th>
+                <th>Fee (Rp)</th>
                 <th>Address</th>
                 <th>Area</th>
                 <th>Contact Person</th>
@@ -293,13 +294,16 @@ class Subconts extends CI_Controller
             </tr>';
         $no = 1;
         foreach ($records as $data) {
-            $status = $data['status'] == 1 ? "Active" : "Not Active";
+            $status = $data['status'] == 0 ? "Active" : "Not Active";
+            $fee = $data['fee'] == 0 ? '-' : number_format($data['fee'], 0, ',', '.');
+
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['id'] . '</td>
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['number'] . '</td>
                     <td>' . $data['subcont_type_name'] . '</td>
+                    <td>' . $fee . '</td>
                     <td>' . $data['address'] . '</td>
                     <td>' . $data['delivery_area_name'] . '</td>
                     <td>' . $data['contact_person'] . '</td>

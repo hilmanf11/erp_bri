@@ -353,7 +353,7 @@ class Output_production_press extends CI_Controller
                 c.number as machine_number, 
                 e.number as item_rm_number,
                 g.standard_curing_time,
-                g.target_shoot,
+                FLOOR(COALESCE(a.shift_hour,0) * COALESCE(f.target_shoot_hour,0)) as target_shoot,
 
                 CEILING(COALESCE(a.planning_qty,0) / 3) as planning_qty_shift, 
             
@@ -364,9 +364,9 @@ class Output_production_press extends CI_Controller
 
                 COALESCE(g.cavity_standard,0) as standard_cavity,
 
-                (COALESCE(a.actual_shoot,0) - COALESCE(g.target_shoot,0)) as shoot_deviation,
+                (COALESCE(a.actual_shoot,0) - FLOOR(COALESCE(a.shift_hour,0) * COALESCE(f.target_shoot_hour,0))) as shoot_deviation,
 
-                COALESCE(ROUND((COALESCE(a.actual_shoot,0) / NULLIF(COALESCE(g.target_shoot,0),0)) * 100, 2),0) as achievment,
+                COALESCE(ROUND((COALESCE(a.actual_shoot,0) / NULLIF(FLOOR(COALESCE(a.shift_hour,0) * COALESCE(f.target_shoot_hour,0)),0)) * 100, 2),0) as achievment,
 
                 COALESCE(ROUND((COALESCE(a.qty_ng,0) / NULLIF(COALESCE(a.qty_ok,0) + COALESCE(a.qty_ng,0) + COALESCE(a.qty_ng_mold,0),0)) * 100, 2),0) as ng_prod,
 
@@ -386,10 +386,28 @@ class Output_production_press extends CI_Controller
             $this->db->join('bom d', 'a.item_fg_id = d.item_fg_id and d.priority = 1', 'left');
             $this->db->join('item_rm e', 'd.item_rm_id = e.id', 'left');
 
-            // $this->db->join("(SELECT item_fg_id, MIN(mold_id) AS mold_id
-            //       FROM setting_molds
-            //       GROUP BY item_fg_id
-            //      ) f", "a.item_fg_id = f.item_fg_id", "left");
+            // $this->db->join("
+            //     (
+            //         SELECT 
+            //             item_fg_id,
+            //             machine_id,
+            //             mold_id,
+            //             target_shoot_hour
+            //         FROM setting_molds
+            //     ) f",
+            //     "a.item_fg_id = f.item_fg_id 
+            //     AND a.machine_id = f.machine_id 
+            //     AND a.mold_id = f.mold_id",
+            //     "left"
+            // );
+
+            $this->db->join(
+                'setting_molds f',
+                'a.item_fg_id = f.item_fg_id 
+                AND a.machine_id = f.machine_id 
+                AND a.mold_id = f.mold_id',
+                'left'
+            );
 
             // // $this->db->join('setting_molds f', 'a.item_fg_id = f.item_fg_id', 'left');
             // $this->db->join('molds g', 'f.mold_id = g.id', 'left');
@@ -3088,7 +3106,7 @@ class Output_production_press extends CI_Controller
             c.number as machine_number,
             e.number as item_rm_number,
             g.standard_curing_time,
-            g.target_shoot,
+            FLOOR(COALESCE(a.shift_hour,0) * COALESCE(f.target_shoot_hour,0)) as target_shoot,
 
             CEILING(COALESCE(a.planning_qty,0) / 3) as planning_qty_shift, 
 
@@ -3099,9 +3117,9 @@ class Output_production_press extends CI_Controller
 
             COALESCE(g.cavity_standard,0) as standard_cavity,
 
-            (COALESCE(a.actual_shoot,0) - COALESCE(g.target_shoot,0)) as shoot_deviation,
+            (COALESCE(a.actual_shoot,0) - FLOOR(COALESCE(a.shift_hour,0) * COALESCE(f.target_shoot_hour,0))) as shoot_deviation,
 
-            COALESCE(ROUND((COALESCE(a.actual_shoot,0) / NULLIF(COALESCE(g.target_shoot,0),0)) * 100, 2),0) as achievment,
+            COALESCE(ROUND((COALESCE(a.actual_shoot,0) / NULLIF(FLOOR(COALESCE(a.shift_hour,0) * COALESCE(f.target_shoot_hour,0)),0)) * 100, 2),0) as achievment,
 
             COALESCE(ROUND((COALESCE(a.qty_ng,0) / NULLIF(COALESCE(a.qty_ok,0) + COALESCE(a.qty_ng,0) + COALESCE(a.qty_ng_mold,0),0)) * 100, 2),0) as ng_prod,
 
@@ -3121,12 +3139,29 @@ class Output_production_press extends CI_Controller
         $this->db->join('bom d', 'a.item_fg_id = d.item_fg_id and d.priority = 1', 'left');
         $this->db->join('item_rm e', 'd.item_rm_id = e.id', 'left');
 
-        // $this->db->join("(SELECT item_fg_id, MIN(mold_id) AS mold_id
+        // $this->db->join("
+        //     (
+        //         SELECT 
+        //             item_fg_id,
+        //             machine_id,
+        //             mold_id,
+        //             target_shoot_hour
         //         FROM setting_molds
-        //         GROUP BY item_fg_id
-        //         ) f", "a.item_fg_id = f.item_fg_id", "left");
+        //     ) f",
+        //     "a.item_fg_id = f.item_fg_id 
+        //     AND a.machine_id = f.machine_id 
+        //     AND a.mold_id = f.mold_id",
+        //     "left"
+        // );
 
-        // $this->db->join('setting_molds f', 'a.item_fg_id = f.item_fg_id', 'left');
+        $this->db->join(
+            'setting_molds f',
+            'a.item_fg_id = f.item_fg_id 
+            AND a.machine_id = f.machine_id 
+            AND a.mold_id = f.mold_id',
+            'left'
+        );
+
         $this->db->join('molds g', 'a.mold_id = g.id', 'left');
 
         if ($filter_from != "" or $filter_to != "") {

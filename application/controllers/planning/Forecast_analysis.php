@@ -422,6 +422,7 @@ class Forecast_analysis extends CI_Controller
         // $this->db->group_by('a.p_month');
         $this->db->group_by('a.p_year');
         $this->db->order_by('c.name', 'ASC');
+        $this->db->order_by('b.number', 'ASC');
         $records = $this->db->get()->result_array();
 
         $customer_name = 'ALL';

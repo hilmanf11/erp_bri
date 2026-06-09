@@ -19,6 +19,27 @@ class Home extends CI_Controller
         if ($this->session->username != "") {
             $username = $this->session->username;
 
+            $this->load->model('Notification_model');
+
+            $data['allowedSubcontUsers'] = [];
+            $data['allowedReworkUsers'] = [];
+
+            $configSubcont = $this->Notification_model
+                ->getNotificationConfig('delivery_to_subconts');
+
+            if (!empty($configSubcont)) {
+                $data['allowedSubcontUsers'] = $this->Notification_model
+                    ->getNotificationUsers($configSubcont);
+            }
+
+            $configRework = $this->Notification_model
+                ->getNotificationConfig('delivery_rework');
+
+            if (!empty($configRework)) {
+                $data['allowedReworkUsers'] = $this->Notification_model
+                    ->getNotificationUsers($configRework);
+            }
+
             $this->db->select('b.*');
             $this->db->from('logins a');
             $this->db->join('users b', 'a.username = b.username');

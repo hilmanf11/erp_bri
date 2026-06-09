@@ -17,7 +17,8 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'printed',width:100,align:'center', formatter:btnPrint">Print</th>
             <th rowspan="2" data-options="field:'delivery_note_no',width:220,halign:'center',sortable:true">Delivery Note No</th>
-            <th rowspan="2" data-options="field:'delivery_date',width:220,halign:'center',sortable:true">Delivery Date</th>
+            <th rowspan="2" data-options="field:'delivery_date',width:180,halign:'center',sortable:true">Delivery Date</th>
+            <th rowspan="2" data-options="field:'target_date',width:180,halign:'center',sortable:true">Target Date</th>
             <th rowspan="2" data-options="field:'destination_name',width:220,halign:'center',sortable:true">Destination</th>
             <th rowspan="2" data-options="field:'total_qty_delivery',width:130,halign:'center',sortable:true, formatter:numberFormat, align:'center'">Total Qty Delivery</th>
             
@@ -40,7 +41,7 @@
 </table>
 
 <!-- TOOLBAR DATAGRID -->
-<div id="toolbar" style="height: 198px; padding:10px;">
+<div id="toolbar" style="height: 230px; padding:10px;">
     <div style="width: 100%;">
         <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
@@ -72,13 +73,20 @@
                     <span style="width:35%; display:inline-block;">Delivery Note No</span>
                     <input style="width:60%;" id="filter_delivery_note_no" class="easyui-combobox">
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Workorder Label</span>
+                    <input style="width:60%;" id="filter_workorder_label" class="easyui-combobox">
+                </div>
                 <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
                     <span style="width:35%; display:inline-block;"></span>
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                 </div>
             </div>
         </fieldset>
+
         <?= $button ?>
+
+        <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="print_label()"><i class="fa fa-file"></i> Export Label</a>
     </div>
 </div>
 
@@ -830,12 +838,14 @@
         var filter_delivery_to = $("#filter_delivery_to").combobox('getValue');
         var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
         var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
+        var filter_workorder_label = $("#filter_workorder_label").combobox('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_delivery_to=" + window.btoa(filter_delivery_to) +
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
-            "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no);
+            "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
+            "&filter_workorder_label=" + window.btoa(filter_workorder_label);
 
         $('#dg').datagrid({
             url: '<?= base_url('control/delivery_to_subconts/datatables') ?>' + url,
@@ -855,9 +865,10 @@
 
                 // var filterProductFamily = $('#filter_product_family').combogrid('getValue');
                 // var encodedProductFamily = filterProductFamily ? "&product_family=" + window.btoa(filterProductFamily) : "";
+                let filter_workorder_label = $('#filter_workorder_label').combobox('getValue');
 
                 ddv.datagrid({
-                    url: '<?= base_url('control/delivery_to_subconts/datatableDetails?delivery_note_no=') ?>' + window.btoa(row.delivery_note_no),
+                    url: '<?= base_url('control/delivery_to_subconts/datatableDetails?delivery_note_no=') ?>' + encodeURIComponent(window.btoa(row.delivery_note_no)) + '&workorder_label=' + encodeURIComponent(window.btoa(filter_workorder_label)),
                     singleSelect: true,
                     rownumbers: true,
                     columns: [
@@ -909,7 +920,16 @@
                             align: 'right',
                             width: 100,
                             formatter: numberFormat
-                        }, {
+                        }, 
+                        {
+                            field: 'qty_outstanding',
+                            title: 'Qty Outstanding',
+                            halign: 'center',
+                            align: 'right',
+                            width: 120,
+                            formatter: numberFormat
+                        },
+                        {
                             field: 'uom',
                             title: 'UOM',
                             align: 'center',
@@ -956,14 +976,35 @@
         var filter_delivery_to = $("#filter_delivery_to").combobox('getValue');
         var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
         var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
+        var filter_workorder_label = $("#filter_workorder_label").combobox('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_delivery_to=" + window.btoa(filter_delivery_to) +
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
-            "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no);
+            "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
+            "&filter_workorder_label=" + window.btoa(filter_workorder_label);
 
         window.location.assign('<?= base_url('control/delivery_to_subconts/print/excel') ?>' + url);
+    }
+
+    //PRINT LABEL EXCEL
+    function print_label() {
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_delivery_to = $("#filter_delivery_to").combobox('getValue');
+        var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
+        var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
+        var filter_workorder_label = $("#filter_workorder_label").combobox('getValue');
+
+        var url = "?filter_from=" + window.btoa(filter_from) +
+            "&filter_to=" + window.btoa(filter_to) +
+            "&filter_delivery_to=" + window.btoa(filter_delivery_to) +
+            "&filter_item_fg=" + window.btoa(filter_item_fg) +
+            "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
+            "&filter_workorder_label=" + window.btoa(filter_workorder_label);
+
+        window.location.assign('<?= base_url('control/delivery_to_subconts/print_label/excel') ?>' + url);
     }
 
     //RELOAD
@@ -981,7 +1022,7 @@
             var filter_tos   = $("#filter_to").datebox("getValue");
             var delivery_to  = $("#filter_delivery_to").combobox("getValue");
 
-            var url = '<?= base_url('control/delivery_to_subconts/readDelivery_note_no'); ?>'
+            var url = '<?= base_url('control/delivery_to_subconts/readDeliveryNoteNo'); ?>'
                     + '?filter_from=' + encodeURIComponent(filter_froms)
                     + '&filter_to=' + encodeURIComponent(filter_tos)
                     + '&delivery_to=' + encodeURIComponent(delivery_to);
@@ -1002,31 +1043,52 @@
             }]
         });
 
+        function reloadWorkorderLabel() {
+            var filter_froms = $("#filter_from").datebox("getValue");
+            var filter_tos   = $("#filter_to").datebox("getValue");
+            var workorder_label  = $("#filter_workorder_label").combobox("getValue");
+
+            var url = '<?= base_url('control/delivery_to_subconts/readWorkorderLabels'); ?>'
+                    + '?filter_from=' + encodeURIComponent(filter_froms)
+                    + '&filter_to=' + encodeURIComponent(filter_tos)
+                    + '&workorder_label=' + encodeURIComponent(workorder_label);
+
+            $('#filter_workorder_label').combobox('reload', url);
+        }
+
+        $('#filter_workorder_label').combobox({
+            valueField: 'workorder_label',
+            textField: 'workorder_label',
+            prompt: 'Choose All',
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }]
+        });
+
+
         reloadDeliveryNoteCombo();
+        reloadWorkorderLabel();
 
         $('#filter_from, #filter_to').datebox({
             onChange: function() {
                 reloadDeliveryNoteCombo();
+                reloadWorkorderLabel();
             }
         });
 
         $('#filter_delivery_to').combobox({
             onChange: function(newValue, oldValue) {
                 reloadDeliveryNoteCombo();
+                reloadWorkorderLabel();
             }
         });
 
-
         //SAVE DATA
         $('#dlg_insert').dialog({
-            buttons: [
-                // {
-                //     text: '<span id="total_qty_delivery" style="font-size: 14px !important; color:#000; font-weight:normal;">Total Qty Delivery : <b style="font-size: 14px !important; border: #000 !important;" id="total_insert_qty">' + $('#total_qty_delivery').text() + '</b></span>',
-                //     plain: true,
-                //     handler: function(){ }
-                // },
-
-                {
+            buttons: [{
                     text: '<span style="font-size: 14px !important; color:#000;">Total Qty Delivery : <b id="total_insert_qty" style="font-size: 14px !important; border: #000 !important;">0</b></span>',
                     plain: true,
                     handler: function(){ }
@@ -1111,7 +1173,7 @@
     //         var filter_to = $("#filter_to").datebox("getValue");
 
     //         $('#filter_delivery_note_no').combobox({
-    //             url: '<?= base_url('control/delivery_to_subconts/readDelivery_note_no?customer_id='); ?>' + customer.id + "&filter_from=" + filter_from + "&filter_to=" + filter_to,
+    //             url: '<?= base_url('control/delivery_to_subconts/readDeliveryNoteNo?customer_id='); ?>' + customer.id + "&filter_from=" + filter_from + "&filter_to=" + filter_to,
     //             valueField: 'delivery_note_no',
     //             textField: 'delivery_note_no',
     //             prompt: 'Choose All',

@@ -385,6 +385,13 @@ class Report_visual_checker extends CI_Controller
                 b.qty_ok as ok,
                 b.qty_rework as rework,
 
+                CASE
+                    WHEN b.serial_label LIKE 'RW%'
+                        AND b.serial_label NOT LIKE 'RWIN%'
+                        THEN sctf.dnr_no
+                    ELSE b.delivery_note_no
+                END as delivery_note_no,
+
                 COALESCE(ng.ng_production,0) as ng_production,
                 COALESCE(ng.ng_finishing,0) as ng_finishing,
                 COALESCE(ng.total_ng,0) as total_ng,
@@ -410,6 +417,23 @@ class Report_visual_checker extends CI_Controller
             $this->db->from('scan_visual_checker_detail b');
             $this->db->join('scan_visual_checker a', 'a.id = b.visual_checker_id');
             $this->db->join('item_fg d', 'b.item_fg_id = d.id');
+
+            // $this->db->join(
+            //     'scan_incoming_sctf sctf',
+            //     'b.serial_label = sctf.serial_label',
+            //     'left'
+            // );
+
+            $this->db->join("
+                (
+                    SELECT 
+                        serial_label,
+                        MAX(dnr_no) as dnr_no
+                    FROM scan_incoming_sctf
+                    WHERE deleted = 0
+                    GROUP BY serial_label
+                ) sctf
+            ", 'b.serial_label = sctf.serial_label', 'left');
 
             $this->db->join("
                 (SELECT 
@@ -458,7 +482,18 @@ class Report_visual_checker extends CI_Controller
             }
 
             $this->db->order_by('a.check_date', 'ASC');
+
             $this->db->order_by('b.item_fg_id', 'ASC');
+
+            $this->db->order_by("
+                CASE
+                    WHEN b.serial_label LIKE 'RW%'
+                        AND b.serial_label NOT LIKE 'RWIN%'
+                        THEN sctf.dnr_no
+                    ELSE b.delivery_note_no
+                END
+            ", 'ASC', false);
+
             $this->db->order_by('b.workorder_label', 'ASC');
 
             $records = $this->db->get()->result_array();
@@ -496,6 +531,7 @@ class Report_visual_checker extends CI_Controller
                             <th rowspan="2">Mold ID</th>
                             <th rowspan="2">Compound Lot No</th>
                             <th rowspan="2">Source</th>
+                            <th rowspan="2">DN No</th>
                             <th rowspan="2">Operator Finishing</th>
                             <th rowspan="2">Inspector</th>
 
@@ -526,6 +562,8 @@ class Report_visual_checker extends CI_Controller
             $no = 1;
 
             foreach ($records as $data) {
+                $delivery_note_no = $data['source'] === "INTERNAL" ? '-' : $data['delivery_note_no'];
+
                 $html .= '<tr align="center">
                             <td class="freeze-col col-no">' . $no . '</td>
                             <td class="freeze-col col-date">' . $data['check_date'] . '</td>
@@ -541,6 +579,7 @@ class Report_visual_checker extends CI_Controller
                             <td align="center">' . $data['mold_id'] . '</td>
                             <td align="center">' . $data['compound_lot_no'] . '</td>
                             <td align="center">' . $data['source'] . '</td>
+                            <td align="center">' . $delivery_note_no . '</td>
                             <td align="center">' . $data['operator_finishing'] . '</td>
                             <td align="center">' . $data['operator_checker'] . '</td>
 

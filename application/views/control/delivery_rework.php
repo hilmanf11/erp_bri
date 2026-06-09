@@ -17,7 +17,8 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'printed',width:100,align:'center', formatter:btnPrint">Print</th>
             <th rowspan="2" data-options="field:'dnr_no',width:220,halign:'center',sortable:true">DNR No</th>
-            <th rowspan="2" data-options="field:'delivery_date',width:220,halign:'center',sortable:true">Delivery Date</th>
+            <th rowspan="2" data-options="field:'delivery_date',width:180,halign:'center',sortable:true">Delivery Date</th>
+            <th rowspan="2" data-options="field:'target_date',width:180,halign:'center',sortable:true">Target Date</th>
             <th rowspan="2" data-options="field:'destination_name',width:220,halign:'center',sortable:true">Destination</th>
             <th rowspan="2" data-options="field:'total_qty_delivery',width:130,halign:'center',sortable:true, formatter:numberFormat, align:'center'">Total Qty Delivery</th>
             
@@ -40,7 +41,7 @@
 </table>
 
 <!-- TOOLBAR DATAGRID -->
-<div id="toolbar" style="height: 198px; padding:10px;">
+<div id="toolbar" style="height: 230px; padding:10px;">
     <div style="width: 100%;">
         <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
@@ -72,6 +73,10 @@
                     <span style="width:35%; display:inline-block;">DNR No</span>
                     <input style="width:60%;" id="filter_dnr_no" class="easyui-combobox">
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Serial Label</span>
+                    <input style="width:60%;" id="filter_serial_label" class="easyui-combobox">
+                </div>
                 <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
                     <span style="width:35%; display:inline-block;"></span>
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
@@ -79,6 +84,8 @@
             </div>
         </fieldset>
         <?= $button ?>
+
+        <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="print_label()"><i class="fa fa-file"></i> Export Label</a>
     </div>
 </div>
 
@@ -144,12 +151,14 @@
         var filter_dnr_no = $("#filter_dnr_no").combobox('getValue');
         // var filter_destination = $("#filter_destination").combogrid('getValue');
         var filter_destination_code = $("#filter_destination_code").combogrid('getValue');
+        var filter_serial_label = $("#filter_serial_label").combobox('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_destination=" + window.btoa(filter_destination_code) +
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
-            "&filter_dnr_no=" + window.btoa(filter_dnr_no);
+            "&filter_dnr_no=" + window.btoa(filter_dnr_no) +
+            "&filter_serial_label=" + window.btoa(filter_serial_label);
 
         $('#dg').datagrid({
             url: '<?= base_url('control/delivery_rework/datatables') ?>' + url,
@@ -166,9 +175,10 @@
             },
             onExpandRow: function(index, row) {
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
+                let filter_serial_label = $('#filter_serial_label').combobox('getValue');
 
                 ddv.datagrid({
-                    url: '<?= base_url('control/delivery_rework/datatableDetails?dnr_no=') ?>' + window.btoa(row.dnr_no),
+                    url: '<?= base_url('control/delivery_rework/datatableDetails?dnr_no=') ?>' + encodeURIComponent(window.btoa(row.dnr_no)) + '&serial_label=' + encodeURIComponent(window.btoa(filter_serial_label)),
                     singleSelect: true,
                     rownumbers: true,
                     columns: [
@@ -212,7 +222,15 @@
                             align: 'right',
                             width: 100,
                             formatter: numberFormat
-                        }, 
+                        },
+                        {
+                            field: 'qty_outstanding',
+                            title: 'Qty Outstanding',
+                            halign: 'center',
+                            align: 'right',
+                            width: 120,
+                            formatter: numberFormat
+                        },
                         {
                             field: 'uom',
                             title: 'UOM',
@@ -263,14 +281,36 @@
         var filter_dnr_no = $("#filter_dnr_no").combobox('getValue');
         // var filter_destination = $("#filter_destination").combogrid('getValue');
         var filter_destination_code = $("#filter_destination_code").combogrid('getValue');
+        var filter_serial_label = $("#filter_serial_label").combobox('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_destination=" + window.btoa(filter_destination_code) +
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
-            "&filter_dnr_no=" + window.btoa(filter_dnr_no);
+            "&filter_dnr_no=" + window.btoa(filter_dnr_no) +
+            "&filter_serial_label=" + window.btoa(filter_serial_label);
 
         window.location.assign('<?= base_url('control/delivery_rework/print/excel') ?>' + url);
+    }
+
+    //PRINT LABEL EXCEL
+    function print_label() {
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
+        var filter_dnr_no = $("#filter_dnr_no").combobox('getValue');
+        // var filter_destination = $("#filter_destination").combogrid('getValue');
+        var filter_destination_code = $("#filter_destination_code").combogrid('getValue');
+        var filter_serial_label = $("#filter_serial_label").combobox('getValue');
+
+        var url = "?filter_from=" + window.btoa(filter_from) +
+            "&filter_to=" + window.btoa(filter_to) +
+            "&filter_destination=" + window.btoa(filter_destination_code) +
+            "&filter_item_fg=" + window.btoa(filter_item_fg) +
+            "&filter_dnr_no=" + window.btoa(filter_dnr_no) +
+            "&filter_serial_label=" + window.btoa(filter_serial_label);
+
+        window.location.assign('<?= base_url('control/delivery_rework/print_label/excel') ?>' + url);
     }
 
     //RELOAD
@@ -308,17 +348,46 @@
             }]
         });
 
+
+        function reloadSerialLabel() {
+            var filter_froms = $("#filter_from").datebox("getValue");
+            var filter_tos   = $("#filter_to").datebox("getValue");
+            var serial_label  = $("#filter_serial_label").combobox("getValue");
+
+            var url = '<?= base_url('control/delivery_rework/readSerialLabels'); ?>'
+                    + '?filter_from=' + encodeURIComponent(filter_froms)
+                    + '&filter_to=' + encodeURIComponent(filter_tos)
+                    + '&serial_label=' + encodeURIComponent(serial_label);
+
+            $('#filter_serial_label').combobox('reload', url);
+        }
+
+        $('#filter_serial_label').combobox({
+            valueField: 'serial_label',
+            textField: 'serial_label',
+            prompt: 'Choose All',
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }]
+        });
+
         reloadDeliveryNoteCombo();
+        reloadSerialLabel();
 
         $('#filter_from, #filter_to').datebox({
             onChange: function() {
                 reloadDeliveryNoteCombo();
+                reloadSerialLabel();
             }
         });
 
         $('#filter_destination_code').combogrid({
             onChange: function(newValue, oldValue) {
                 reloadDeliveryNoteCombo();
+                reloadSerialLabel();
             }
         });
 

@@ -466,6 +466,46 @@ class Shipping_to_subconts extends CI_Controller
         return $this->db->query($query)->row_array();
     }
 
+    private function getWorkingDate($start_date, $total_days = 5)
+    {
+        $current_date = $start_date;
+        $added_days = 0;
+
+        while ($added_days < $total_days) {
+
+            // tambah 1 hari
+            $current_date = date(
+                'Y-m-d',
+                strtotime($current_date . ' +1 day')
+            );
+
+            // cek weekend
+            $day = date('N', strtotime($current_date));
+            // 6 = sabtu, 7 = minggu
+            if ($day == 6 || $day == 7) {
+                continue;
+            }
+
+            // cek tanggal merah / libur
+            $holiday = $this->db
+                ->where('working_date', $current_date)
+                ->where('remarks IS NOT NULL')
+                ->where('deleted', 0)
+                ->where('status', 0)
+                ->get('calendars')
+                ->row();
+
+            if ($holiday) {
+                continue;
+            }
+
+            // hitung hari kerja
+            $added_days++;
+        }
+
+        return $current_date;
+    }
+
     public function createDN()
     {
         if ($this->input->post()) {
@@ -518,6 +558,12 @@ class Shipping_to_subconts extends CI_Controller
                     $row['workorder'],
                 );
 
+                if($post['delivery_to'] == "TEFA" && strpos($post['destination'], 'TF') === 0) {
+                    $target_date = $this->getWorkingDate($post['delivery_date'], 5);
+                } else {
+                    $target_date = date('Y-m-d', strtotime($post['delivery_date'] . ' +5 days'));
+                }
+
                 $insert = [
                     'scan_id'           => $row['scan_id'],
                     'item_fg_id'        => $row['item_fg_id'],
@@ -525,6 +571,7 @@ class Shipping_to_subconts extends CI_Controller
                     'qty_delivery'      => $row['shipping'],
                     'delivery_note_no'  => $post['delivery_note_no'],
                     'delivery_date'     => $post['delivery_date'],
+                    'target_date'       => $target_date,
                     'delivery_category' => $post['delivery_category'],
                     'delivery_to'       => $post['delivery_to'],
                     'destination'       => $post['destination'],

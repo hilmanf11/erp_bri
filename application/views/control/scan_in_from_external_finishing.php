@@ -62,7 +62,7 @@
                             }
                         "
                     >
-                        <option value="Finishing">Finishing</option>
+                        <option value="Regular">Regular</option>
                         <option value="BPM">BPM</option>
                     </select> -->
 
@@ -73,7 +73,7 @@
                         style="width:60%;"
                         data-options="editable:false"
                     >
-                        <option value="Finishing">Finishing</option>
+                        <option value="Regular">Regular</option>
                         <option value="Rework">Rework</option>
                         <option value="BPM">BPM</option>
                     </select>

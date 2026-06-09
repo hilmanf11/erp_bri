@@ -316,6 +316,14 @@
             }
         });
 
+        $('#delivery_date').datebox().datebox('calendar').calendar({
+            validator: function(date){
+                var now = new Date();
+                var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                return date >= today;
+            }
+        });
+
     });
 
     $('#destination').combogrid({

@@ -138,6 +138,10 @@ class Molds extends CI_Controller
 
             foreach ($settings as $sm) {
 
+                if(empty($sm->cycle_time) || $sm->cycle_time == 0 || $sm->cycle_time == 0.00){
+                    continue;
+                }
+
                 $menu = $this->crud->read('menu_loadings', [], [
                     'item_fg_id' => $sm->item_fg_id,
                     'machine_id' => $sm->machine_id,
@@ -485,6 +489,10 @@ class Molds extends CI_Controller
 
                             foreach ($settings as $sm) {
 
+                                if(empty($sm->cycle_time) || $sm->cycle_time == 0 || $sm->cycle_time == 0.00){
+                                    continue;
+                                }
+
                                 $menu = $this->crud->read('menu_loadings', [], [
                                     'item_fg_id' => $sm->item_fg_id,
                                     'machine_id' => $sm->machine_id,
@@ -692,7 +700,7 @@ class Molds extends CI_Controller
                 <th>Actual Cavity</th>
                 <th>Standard Shoot</th>
                 <th>Actual Shoot</th>
-                <th>Target Shoot</th>
+                <th>Target Shoot (7 WH)</th>
                 <th>Mold Type</th>
                 <th>Remarks</th>
                 <th>Status</th>
@@ -702,7 +710,7 @@ class Molds extends CI_Controller
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['id'] . '</td>
-                    <td>' . $data['mold_name'] . '</td>
+                    <td style="mso-number-format:\'@\'; text-align: left;">' . $data['mold_name'] . '</td>
                     <td>' . $data['type'] . '</td>
                     <td>' . $data['customer_name'] . '</td>
                     <td>' . $data['project_year'] . '</td>
