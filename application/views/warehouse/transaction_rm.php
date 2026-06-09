@@ -18,14 +18,14 @@
             <!-- <th rowspan="2" data-options="field:'status',width:120,align:'center',formatter:statusformat,styler:statusStyle">Status</th> -->
             <th rowspan="2" data-options="field:'request_date',width:120,halign:'center'">Transaction Date</th>
             <th rowspan="2" data-options="field:'request_name',width:120,halign:'center'">Requester</th>
-            <th rowspan="2" data-options="field:'transaction_type',width:80,halign:'center',align:'center'">Type</th>
+            <th rowspan="2" data-options="field:'type',width:120,halign:'center',align:'center'">Type</th>
             <!-- <th rowspan="2" data-options="field:'period',width:100,halign:'center'">Period</th>
             <th rowspan="2" data-options="field:'workorder',width:120,halign:'center'">Workorder</th> -->
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Product Name</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformatQpa">Qty</th>
-            <th rowspan="2" data-options="field:'remarks',width:100,align:'center'">Remarks</th>
+            <th rowspan="2" data-options="field:'remarks',width:120,align:'center'">Remarks</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -166,7 +166,7 @@
                 }, 100); // delay karena dialog render async
             }
         });
-    });    
+    });
     //Add Data
     function add() {
         $('#dlg_insert').dialog('open');
@@ -867,8 +867,14 @@
     $("#filter_transaction_type").combobox({
         url: '<?= base_url('warehouse/transaction_rm/readType/') ?>',
         valueField: 'type',
-        textField: 'type',
+        textField: 'name',
         prompt: "Choose Type",
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
     });
 
     //Format Datepicker

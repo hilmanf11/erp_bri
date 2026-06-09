@@ -139,9 +139,10 @@ class Transaction_fg extends CI_Controller
 
             if ($id === "0") {
                 //Select Query
-                $this->db->select('a.*, c.number as item_number, c.name as item_name, c.uom');
+                $this->db->select('a.*, c.number as item_number, c.name as item_name, c.uom, d.name as type_name');
                 $this->db->from('transaction_fg a');
                 $this->db->join('item_fg c', 'a.item_fg_id = c.id', 'left');
+                $this->db->join('transaction_type d', 'a.transaction_type = d.type', 'left');
                 $this->db->where('a.deleted', 0);
                 // $this->db->where('a.status', 0);
                 if ($filter_request_no != "") {
@@ -179,7 +180,7 @@ class Transaction_fg extends CI_Controller
                         "item_number" => $record['item_number'],
                         "item_name" => $record['item_name'],
                         "workorder" => $record['workorder'],
-                        "transaction_type" => $record['transaction_type'],
+                        "transaction_type" => $record['type_name'],
                         "transaction_kind" => $record['transaction_kind'],
                         "transaction_id" => $record['transaction_id'],
                         "remarks" => $record['remarks'],
@@ -192,9 +193,10 @@ class Transaction_fg extends CI_Controller
                 echo json_encode($result);
             } else {
                 //Select Query
-                $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom');
+                $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom, c.name as type_name');
                 $this->db->from('transaction_fg a');
                 $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+                $this->db->join('transaction_type c', 'a.transaction_type = c.type', 'left');
                 $this->db->where('a.deleted', 0);
                 $this->db->where('a.request_no', $id);
                 $this->db->group_by('a.id');
@@ -223,7 +225,7 @@ class Transaction_fg extends CI_Controller
                         "qty" => $record['qty'],
                         "uom" => $record['uom'],
                         "remarks" => $record['remarks'],
-                        "transaction_type" => $record['transaction_type'],
+                        "transaction_type" => $record['type_name'],
                         "status" => $record['status'],
                         "created_by" => $record['created_by'],
                         "created_date" => $record['created_date'],
