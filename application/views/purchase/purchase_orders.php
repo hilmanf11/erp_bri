@@ -7,7 +7,7 @@
             <th rowspan="2" data-options="field:'status_pi',width:80,align:'center',formatter:statusformatFinance,styler:statusStyleFinance">Status<br>Invoice</th>
             <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center',formatter:formatApproved,styler:styleApproved">Status <br>Approve</th>
             <th rowspan="2" data-options="field:'approved_by',width:100,halign:'center'">Approve By</th>
-            <th rowspan="2" data-options="field:'approved_date',width:100,halign:'center'">Approve Date</th>
+            <th rowspan="2" data-options="field:'approved_date',width:130,halign:'center'">Approve Date</th>
             <th rowspan="2" data-options="field:'request_no',width:150,halign:'center'">Request No</th>
             <th rowspan="2" data-options="field:'po_date',width:100,align:'center'">PO Date</th>
             <th rowspan="2" data-options="field:'delivery_date',width:100,align:'center'">Delivery Date</th>
@@ -241,6 +241,12 @@
         if (row) {
             console.log(row);
             if (row.datatable == "1") {
+
+                if (row.is_all_closed == 1) {
+                    toastr.error("This purchase order cannot be updated because all items are already closed.");
+                    return;
+                }
+
                 if (row.status_pi == "0" || row.status_pi == null) {
                     $('#dlg_insert').dialog('open');
                     $('#frm_insert').form('load', row);
@@ -489,6 +495,17 @@
                                     type: 'numberbox',
                                 }
                             }, {
+                                field: 'revision',
+                                width: 80,
+                                align: 'center',
+                                title: 'Revision',
+                                editor: {
+                                    type: 'numberbox',
+                                    options: {
+                                        readonly: true,
+                                    }
+                                }
+                            }, {
                                 field: 'item_rm_id',
                                 width: 150,
                                 hidden: true,
@@ -499,14 +516,144 @@
                                 }
                             }]
                         ],
+
+                        // onBeforeEdit: function(index, row) {
+                        //     row.remark_revision = '';
+
+                        //     if (row.status == 1) {
+                        //         return false;
+                        //     }
+
+                        //     row.editing = true;
+
+                        //     if (row.po_no && row.approved_to == "") {
+                        //         row._old_qty = row.qty;
+                        //         row._old_expected_date = row.expected_date;
+                        //     }
+
+                        //     $(this).datagrid('refreshRow', index);
+                        // },
+
+                        // onAfterEdit: function(index, row) {
+                        //     row.editing = false;
+
+                        //     if (row.po_no && row.approved_to == "") {
+                        //         // update phase 1
+                        //         var oldQty = parseFloat(row._old_qty) || 0;
+                        //         var newQty = parseFloat(row.qty) || 0;
+
+                        //         if (oldQty !== newQty) {
+                        //             row.revision = Number(row.revision || 0) + 1;
+                        //             row.remark_revision = "Qty"
+                        //         }
+                        //     } else if(row.po_no && row.approved_to != "" && row.revision != 0) {
+                        //         // update phase 2
+                        //         var oldQty = parseFloat(row._old_qty) || 0;
+                        //         var newQty = parseFloat(row.qty) || 0;
+
+                        //         if (oldQty !== newQty) {
+                        //             row.revision = Number(row.revision || 0);
+                        //             row.remark_revision = "Qty"
+                        //         }
+                        //     } else {
+                        //         // add
+                        //         row.revision = 0;
+                        //     }
+
+                        //     $(this).datagrid('refreshRow', index);
+                        // },
+
                         onBeforeEdit: function(index, row) {
+                            // row.remark_revision = '';
+                            if (!row.remark_revision) {
+                                row.remark_revision = '';
+                            }
+
+                            if (row.status == 1) {
+                                return false;
+                            }
+
                             row.editing = true;
+
+                            // if (row.po_no && row.approved_to == "") {
+
+                            // set baseline phase 1 & 2
+                            if (row._base_qty === undefined) {
+                                row._base_qty = row.qty;
+                            }
+
+                            if (row._base_expected_date === undefined) {
+                                row._base_expected_date = row.expected_date;
+                            }
+
+                            row._old_qty = row.qty;
+                            row._old_expected_date = row.expected_date;
+                            
+                            // }
+
                             $(this).datagrid('refreshRow', index);
                         },
+
                         onAfterEdit: function(index, row) {
                             row.editing = false;
+
+                            var oldQty = row._base_qty !== undefined ? parseFloat(row._base_qty) : parseFloat(row.qty);
+                            var newQty = parseFloat(row.qty) || 0;
+
+                            var oldDate = row._base_expected_date !== undefined ? row._base_expected_date : row.expected_date;
+                            var newDate = row.expected_date || '';
+
+                            let isQtyChanged = oldQty !== newQty;
+                            let isDateChanged = oldDate !== newDate;
+
+                            let remarks = [];
+                            
+                            // if (isQtyChanged) {
+                            //     remarks.push(`Change Qty from ${oldQty} to ${newQty}`);
+                            // }
+
+                            // if (isDateChanged) {
+                            //     remarks.push(`Change ETA from ${oldDate} to ${newDate}`);
+                            // }
+
+
+                            if (isQtyChanged) {
+                                row.remark_revision = upsertRemark(row.remark_revision, `Change Qty from ${oldQty} to ${newQty}`, 'Qty');
+                            }
+
+                            if (isDateChanged) {
+                                row.remark_revision = upsertRemark(row.remark_revision, `Change ETA from ${oldDate} to ${newDate}`, 'ETA');
+                            }
+
+                            if (row.po_no && row.approved_to == "") {
+                                // phase 1
+                                if (isQtyChanged || isDateChanged) {
+
+                                    if (!row._is_revised) {
+                                        row.revision = Number(row.revision || 0) + 1;
+                                        row._is_revised = true;
+                                    }
+
+                                    // row.remark_revision = remarks.join(", ");
+                                    // row.remark_revision = (row.remark_revision ? row.remark_revision + ', ' : '') + remarks.join(", ");
+                                }
+
+                            } else if (row.po_no && row.approved_to != "" && row.revision != 0) {
+                                // phase 2
+                                if (isQtyChanged || isDateChanged) {
+                                    row.revision = Number(row.revision || 0);
+                                    // row.remark_revision = remarks.join(", ");
+                                    // row.remark_revision = (row.remark_revision ? row.remark_revision + ', ' : '') + remarks.join(", ");
+                                }
+
+                            } else {
+                                // add
+                                row.revision = 0;
+                            }
+
                             $(this).datagrid('refreshRow', index);
                         },
+
                         onCancelEdit: function(index, row) {
                             row.editing = false;
                             $(this).datagrid('refreshRow', index);
@@ -762,6 +909,14 @@
                 $("#total_grand").numberbox('setValue', total_grand);
             }
         });
+    }
+
+    function upsertRemark(existing, newText, keyword) {
+        if (!existing) return newText;
+
+        let parts = existing.split(', ').filter(r => !r.includes(keyword));
+        parts.push(newText);
+        return parts.join(', ');
     }
 
     function getRowIndex(target) {
@@ -1046,6 +1201,11 @@
                     //     toastr.warning("Total Sub , VAT and Grand Total is 0 for selected PO no, Please Update first for Calculated", "Information");
                     // }
 
+                    if (response.has_unapproved) {
+                        toastr.warning("There are still unapproved items, please approve all items first.", "Warning");
+                        return;
+                    }
+
                     // Menentukan jenis cetak berdasarkan jenis po_no
                     var printUrl = "";
                     if (po_no.includes("-A")) { // Jika po_no mengandung '-A08'
@@ -1141,30 +1301,62 @@
                                             var po_no = row.po_no;
                                             var supplier_id = row.supplier_id;
                                             var qty = row.qty;
-                                            var discount = row.discount;
-                                            var price = row.price;
-                                            var total = row.total;
+                                            // var discount = row.discount;
+                                            // var price = row.price;
+                                            // var total = row.total;
                                             var delivery_date = row.expected_date;
                                             var remarks = row.remarks;
                                             var month_1 = row.month_1;
                                             var month_2 = row.month_2;
                                             var month_3 = row.month_3;
                                             var month_4 = row.month_4;
+                                            var revision = row.revision;
+                                            var remark_revision = '';
 
-                                            var total_sub = $("#total_sub").numberbox('getValue');
-                                            var disc_pr = $("#disc_pr").numberbox('getValue');
-                                            var discount_total = $("#discount_total").numberbox('getValue');
-                                            var total_vat = $("#total_vat").numberbox('getValue');
-                                            var income_tax = $("#income_tax").numberbox('getValue');
-                                            var income_total = $("#income_total").numberbox('getValue');
-                                            var total_dp = $("#total_dp").numberbox('getValue');
-                                            var total_grand = $("#total_grand").numberbox('getValue');
+                                            // var total_sub = $("#total_sub").numberbox('getValue');
+                                            // var disc_pr = $("#disc_pr").numberbox('getValue');
+                                            // var discount_total = $("#discount_total").numberbox('getValue');
+                                            // var total_vat = $("#total_vat").numberbox('getValue');
+                                            // var income_tax = $("#income_tax").numberbox('getValue');
+                                            // var income_total = $("#income_total").numberbox('getValue');
+                                            // var total_dp = $("#total_dp").numberbox('getValue');
+                                            // var total_grand = $("#total_grand").numberbox('getValue');
 
 
                                             if (po_no == "") {
                                                 var url_save = "<?= base_url('purchase/purchase_orders/create') ?>";
+
+                                                var discount = 0;
+                                                var price = 0;
+                                                var total = 0;
+
+                                                var total_sub = 0;
+                                                var disc_pr = 0;
+                                                var discount_total = 0;
+                                                var total_vat = 0;
+                                                var income_tax = 0;
+                                                var income_total = 0;
+                                                var total_dp = 0;
+                                                var total_grand = 0;
+
                                             } else {
+
                                                 var url_save = "<?= base_url('purchase/purchase_orders/update') ?>";
+
+                                                var discount = row.discount;
+                                                var price = row.price;
+                                                var total = row.total;
+
+                                                var total_sub = $("#total_sub").numberbox('getValue');
+                                                var disc_pr = $("#disc_pr").numberbox('getValue');
+                                                var discount_total = $("#discount_total").numberbox('getValue');
+                                                var total_vat = $("#total_vat").numberbox('getValue');
+                                                var income_tax = $("#income_tax").numberbox('getValue');
+                                                var income_total = $("#income_total").numberbox('getValue');
+                                                var total_dp = $("#total_dp").numberbox('getValue');
+                                                var total_grand = $("#total_grand").numberbox('getValue');
+
+                                                remark_revision = row.remark_revision || '';
                                             }
 
                                             $.ajax({
@@ -1183,6 +1375,8 @@
                                                     '&total=' + total +
                                                     '&delivery_date=' + delivery_date +
                                                     '&remarks=' + remarks +
+                                                    '&revision=' + revision +
+                                                    '&remark_revision=' + remark_revision +
                                                     '&month_1=' + month_1 +
                                                     '&month_2=' + month_2 +
                                                     '&month_3=' + month_3 +
@@ -1259,6 +1453,10 @@
     });
 
     function buttonEdit(value, row, index) {
+        if (row.status == 1) {
+            return '<a href="javascript:void(0)" class="btn btn-danger btn-sm w-100" style="pointer-events:none; opacity:0.5;">Closed</a>';
+        }
+
         if (row.editing) {
             var s = '<a href="javascript:void(0)" class="btn btn-success btn-sm w-100" style="pointer-events:auto; opacity:1;" onclick="saverow(this)">Save</a>';
             return s;

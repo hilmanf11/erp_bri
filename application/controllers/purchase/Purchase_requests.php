@@ -44,14 +44,19 @@ class Purchase_requests extends CI_Controller
             e.name as supplier_name,
             e.currency,
             '0' as discount,
+            '0' as revision,
             a.month_1 as month_1,
             a.month_2 as month_2,
             a.month_3 as month_3,
             a.month_4 as month_4,
-            d.price,
+            '0' as price,
+            '0.00' as total,
             '' as po_no,
-            ROUND((CAST(a.qty  AS DECIMAL(10, 2)) * CAST(d.price  AS DECIMAL(16, 2))),2) as total,
             (a.request_date + INTERVAL d.leadtime DAY) as delivery_date");
+
+            // d.price,
+            // ROUND((CAST(a.qty  AS DECIMAL(10, 2)) * CAST(d.price  AS DECIMAL(16, 2))),2) as total,
+
         $this->db->from('purchase_requests a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('item_familys c', 'b.item_family_id = c.id');

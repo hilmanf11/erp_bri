@@ -276,6 +276,7 @@ class Purchase_order_receipts extends CI_Controller
                 WHERE a.po_no = '$po_no' 
                 AND a.status = 0 
                 AND a.deleted = 0
+                AND a.approved_to = ''
                 UNION
                 SELECT 
                     a.po_no as po_no, 

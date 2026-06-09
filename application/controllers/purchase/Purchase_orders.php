@@ -192,6 +192,13 @@ class Purchase_orders extends CI_Controller
         $this->db->where('po_no', $po_no);
         $record = $this->db->get()->row_array();
 
+        $this->db->from('purchase_orders');
+        $this->db->where('po_no', $po_no);
+        $this->db->where('approved', 1);
+        $count_approved = $this->db->count_all_results();
+
+        $record['has_unapproved'] = ($count_approved > 0);
+
         echo json_encode($record);
     }
 
@@ -335,7 +342,8 @@ class Purchase_orders extends CI_Controller
                         "approved_by" => $record['approved_by'],
                         "approved_date" => $record['approved_date'],
                         "total_sub" => $record['total_sub'],
-                        "datatable" => 1
+                        "datatable" => 1,
+                        "is_all_closed" => ($record['total_status'] == $record['total_status_close']) ? 1 : 0,
                     );
                 }
                 $result['total'] = $totalRows;
@@ -393,6 +401,7 @@ class Purchase_orders extends CI_Controller
     {
         $po_no = base64_decode($this->input->get('po_no'));
         $this->db->select('a.*,  
+            a.delivery_date as expected_date,
             b.number as item_number, 
             b.name as item_name,
             b.uom,
@@ -413,7 +422,9 @@ class Purchase_orders extends CI_Controller
         $this->db->where('a.deleted', 0);
         // $this->db->where('a.status', 0);
         $this->db->where('a.po_no', $po_no);
-        $this->db->order_by('b.number', 'ASC');
+        // $this->db->order_by('b.number', 'ASC');
+        $this->db->order_by('a.status', 'ASC');
+        $this->db->order_by('a.po_no', 'DESC');
         $records = $this->db->get()->result_array();
 
         $total_sub = 0;
@@ -520,7 +531,11 @@ class Purchase_orders extends CI_Controller
                 // Update status purchase request
                 $this->db->where('request_no', $post['request_no']);
                 $this->db->where('item_rm_id', $items->id);
-                $this->db->update("purchase_requests", ["status" => 1]);
+                $this->db->update("purchase_requests", [
+                    "status" => 1,
+                    "qty" => $post['qty'],
+                    "expected_date" => $post['delivery_date']
+                ]);
 
                 echo json_encode($send);
             } else {
@@ -532,13 +547,90 @@ class Purchase_orders extends CI_Controller
     }
 
     //UPDATE DATA
+    // public function update()
+    // {
+    //     if ($this->input->post()) {
+    //         $post = $this->input->post();
+
+    //         $items = $this->crud->read('item_rm', [], ['id' => $post['item_rm_id']]);
+
+    //         $purchaseOrder = $this->crud->read('purchase_orders', [], [
+    //             "request_no" => $post['request_no'], 
+    //             "supplier_id" => $post['supplier_id'], 
+    //             "item_rm_id" => $items->id
+    //         ]);
+
+    //         $purchase_orders = $this->db->update('purchase_orders', [
+    //             "supplier_id" => $post['supplier_id'],
+    //             "qty" => $post['qty'],
+    //             "discount" => $post['discount'],
+    //             "po_date" => $post['po_date'],
+    //             "price" => $post['price'],
+    //             "total" => $post['total'],
+    //             "delivery_date" => $post['delivery_date'],
+    //             "remarks" => $post['remarks'],
+    //             "month_1" => $post['month_1'],
+    //             "month_2" => $post['month_2'],
+    //             "month_3" => $post['month_3'],
+    //             "month_4" => $post['month_4'],
+    //             "total_sub" => $post['total_sub'],
+    //             "disc_pr" => $post['disc_pr'],
+    //             "discount_total" => $post['discount_total'],
+    //             "income_tax" => $post['income_tax'],
+    //             "income_total" => $post['income_total'],
+    //             "total_dp" => $post['total_dp'],
+    //             "total_grand" => $post['total_grand'],
+    //             "total_vat" => $post['total_vat'],
+    //             // "revision" => (@$purchaseOrder->revision + 1),
+    //             "revision" => $post['revision'],
+    //             "remark_revision" => $post['remark_revision'] ?? null,
+    //         ], ["request_no" => $post['request_no'], "item_rm_id" => $items->id]);
+
+    //         $purchase_requests = $this->db->update('purchase_requests', ["qty" => $post['qty']], ["request_no" => $post['request_no'], "item_rm_id" => $items->id]);
+
+    //         echo $purchase_orders;
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+
+
     public function update()
     {
         if ($this->input->post()) {
             $post = $this->input->post();
 
             $items = $this->crud->read('item_rm', [], ['id' => $post['item_rm_id']]);
-            $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_rm_id" => $items->id]);
+
+            $purchaseOrder = $this->crud->read('purchase_orders', [], [
+                "request_no" => $post['request_no'], 
+                "supplier_id" => $post['supplier_id'], 
+                "item_rm_id" => $items->id
+            ]);
+
+            $isRevisionChanged = false;
+            $isQtyChanged = false;
+            $isDateChanged = false;
+
+            if ($purchaseOrder && isset($purchaseOrder->revision)) {
+                // revision
+                if ((int)$purchaseOrder->revision !== (int)$post['revision']) {
+                    $isRevisionChanged = true;
+                }
+
+                // qty
+                if ((float)$purchaseOrder->qty !== (float)$post['qty']) {
+                    $isQtyChanged = true;
+                }
+
+                // delivery_date
+                if (date('Y-m-d', strtotime($purchaseOrder->delivery_date)) !== date('Y-m-d', strtotime($post['delivery_date']))) {
+                    $isDateChanged = true;
+                }
+            }
+
+            $isNeedApproval = $isRevisionChanged || $isQtyChanged || $isDateChanged;
+
             $purchase_orders = $this->db->update('purchase_orders', [
                 "supplier_id" => $post['supplier_id'],
                 "qty" => $post['qty'],
@@ -560,16 +652,120 @@ class Purchase_orders extends CI_Controller
                 "total_dp" => $post['total_dp'],
                 "total_grand" => $post['total_grand'],
                 "total_vat" => $post['total_vat'],
-                "revision" => (@$purchaseOrder->revision + 1)
+                // "revision" => (@$purchaseOrder->revision + 1),
+                "revision" => $post['revision'],
+                "remark_revision" => $post['remark_revision'] ?? null,
             ], ["request_no" => $post['request_no'], "item_rm_id" => $items->id]);
 
-            $purchase_requests = $this->db->update('purchase_requests', ["qty" => $post['qty']], ["request_no" => $post['request_no'], "item_rm_id" => $items->id]);
+
+            if ($isNeedApproval) {
+                $row = $this->db->get_where('purchase_orders', [
+                    "request_no" => $post['request_no'],
+                    "supplier_id" => $post['supplier_id'], 
+                    "item_rm_id" => $items->id
+                ])->row();
+
+                $dataBefore = $purchaseOrder;
+
+                if ($row) {
+                    $this->approval('purchase_orders', $row->id, $dataBefore);
+                }
+            }
+
+            $purchase_requests = $this->db->update('purchase_requests', [
+                "qty" => $post['qty'],
+                "expected_date" => $post['delivery_date'],
+            ], [
+                "request_no" => $post['request_no'], 
+                "item_rm_id" => $items->id
+            ]);
 
             echo $purchase_orders;
         } else {
             show_error("Cannot Process your request");
         }
     }
+
+    public function approval($table, $table_id, $data)
+    {
+        $query = $this->db->query("DESCRIBE $table");
+        $fields = $query->result_array();
+
+        $approval = $this->crud->read('approvals', [], ["table_name" => $table]);
+
+        $fieldExists = false;
+        foreach ($fields as $field) {
+            if ($field['Field'] == "approved") {
+                $fieldExists = true;
+                break;
+            }
+        }
+
+        if ($fieldExists) {
+            if (!empty($approval)) {
+                $formApprove = [
+                    "approved" => 1,
+                    "approved_to" => $approval->user_approval_1,
+                    "approved_by" => $this->session->username,
+                    "approved_date" => null,
+                    "approved_data" => json_encode($data),
+                ];
+
+                $this->db->where(["id" => $table_id]);
+                $this->db->update($table, $formApprove);
+            }
+        }
+    }
+
+
+    // public function update_all_approve()
+    // {
+    //     if ($this->input->post()) {
+    //         $post = $this->input->post();
+
+    //         $items = $this->crud->read('item_rm', [], ['id' => $post['item_rm_id']]);
+    //         $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_rm_id" => $items->id]);
+    //         $purchase_orders = $this->crud->update('purchase_orders', [
+    //             "request_no" => $post['request_no'], 
+    //             "item_rm_id" => $items->id
+    //         ], [
+    //             "supplier_id" => $post['supplier_id'],
+    //             "qty" => $post['qty'],
+    //             "discount" => $post['discount'],
+    //             "po_date" => $post['po_date'],
+    //             "price" => $post['price'],
+    //             "total" => $post['total'],
+    //             "delivery_date" => $post['delivery_date'],
+    //             "remarks" => $post['remarks'],
+    //             "month_1" => $post['month_1'],
+    //             "month_2" => $post['month_2'],
+    //             "month_3" => $post['month_3'],
+    //             "month_4" => $post['month_4'],
+    //             "total_sub" => $post['total_sub'],
+    //             "disc_pr" => $post['disc_pr'],
+    //             "discount_total" => $post['discount_total'],
+    //             "income_tax" => $post['income_tax'],
+    //             "income_total" => $post['income_total'],
+    //             "total_dp" => $post['total_dp'],
+    //             "total_grand" => $post['total_grand'],
+    //             "total_vat" => $post['total_vat'],
+    //             // "revision" => (@$purchaseOrder->revision + 1),
+    //             "revision" => $post['revision']
+    //         ]);
+
+    //         $purchase_requests = $this->crud->update('purchase_requests', [
+    //             "request_no" => $post['request_no'], 
+    //             "item_rm_id" => $items->id
+    //         ], [
+    //             "qty" => $post['qty']
+    //         ]);
+
+    //         echo $purchase_orders;
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+
 
     public function update_approval()
     {
@@ -681,10 +877,10 @@ class Purchase_orders extends CI_Controller
             $user2=$sqlApproval->user_approval_1;
         }
 
-        if(intval($sqlApproval->approved_by)==0){
-            $user1='DR001';
-            $user2='PRESDIR';
-        }
+        // if(intval($sqlApproval->approved_by)==0){
+        //     $user1='DR001';
+        //     $user2='PRESDIR';
+        // }
 
         if($user1!==null){
             $user_1 = $this->crud->read('users', [], ["username" => $user1]);
@@ -1179,10 +1375,10 @@ class Purchase_orders extends CI_Controller
             $user2=$sqlApproval->user_approval_1;
         }
 
-        if(intval($sqlApproval->approved_by)==0){
-            $user1='DR001';
-            $user2='PRESDIR';
-        }
+        // if(intval($sqlApproval->approved_by)==0){
+        //     $user1='DR001';
+        //     $user2='PRESDIR';
+        // }
 
     if($user1!==null){
         $user_1 = $this->crud->read('users', [], ["username" => $user1]);
