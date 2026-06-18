@@ -22,6 +22,7 @@
             <th rowspan="2" data-options="field:'number',width:150,halign:'center',sortable:true">Part No External</th>
             <th rowspan="2" data-options="field:'number_internal',width:150,halign:'center',sortable:true">Part No Internal</th>
             <th rowspan="2" data-options="field:'name',width:150,halign:'center',sortable:true">Part Name</th>
+            <th rowspan="2" data-options="field:'cas_no',width:150,halign:'center',sortable:true">CAS No</th>
             <th rowspan="2" data-options="field:'uom',width:100,halign:'center',sortable:true">Uom</th>
             <th rowspan="2" data-options="field:'type',width:150,halign:'center',sortable:true">Type</th>
             <th rowspan="2" data-options="field:'division',width:150,halign:'center',sortable:true">Plant</th>
@@ -74,6 +75,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Part Name</span>
                     <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">CAS No</span>
+                    <input style="width:60%;" name="cas_no" id="cas_no" class="easyui-textbox" data-options="validType:['casNo']" maxlength="15">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Unit of Measure</span>
@@ -199,6 +204,15 @@
 <!-- PDF -->
 <iframe id="printout" src="<?= base_url('master/item_rm/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
+    $.extend($.fn.validatebox.defaults.rules, {
+        casNo: {
+            validator: function(value){
+                return /^[0-9-]{1,15}$/.test(value);
+            },
+            message: 'CAS No must contain only numbers and dash (-), maximum 15 characters'
+        }
+    });
+
     //ADD DATA
     function add() {
         // $('#dlg_insert').dialog('open');

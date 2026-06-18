@@ -244,24 +244,26 @@ class Item_rm extends CI_Controller
         for ($i = 3; $i <= $total_row; $i++) {
             $part_no = $data->val($i, 2);
             $name = $data->val($i, 3);
-            $unit_of_measure = $data->val($i, 4);
-            $type = $data->val($i, 5);
-            $category = $data->val($i, 6);
-            $product_family = $data->val($i, 7);
-            $sub_product_family = $data->val($i, 8);
-            $account_number = $data->val($i, 9);
-            $account_name = $data->val($i, 10);
-            $description = $data->val($i, 11);
-            $specification = $data->val($i, 12);
-            $leadtime = $data->val($i, 13);
-            $lifetime = $data->val($i, 14);
-            $safety_stock = $data->val($i, 15);
-            $supply = $data->val($i, 16);
-            $status = $data->val($i, 17);
+            $cas_no = $data->val($i, 4);
+            $unit_of_measure = $data->val($i, 5);
+            $type = $data->val($i, 6);
+            $category = $data->val($i, 7);
+            $product_family = $data->val($i, 8);
+            $sub_product_family = $data->val($i, 9);
+            $account_number = $data->val($i, 10);
+            $account_name = $data->val($i, 11);
+            $description = $data->val($i, 12);
+            $specification = $data->val($i, 13);
+            $leadtime = $data->val($i, 14);
+            $lifetime = $data->val($i, 15);
+            $safety_stock = $data->val($i, 16);
+            $supply = $data->val($i, 17);
+            $status = $data->val($i, 18);
 
             $datas[] = array(
                 'part_no' => $part_no,
                 'name' => $name,
+                'cas_no' => $cas_no,
                 'unit_of_measure' => $unit_of_measure,
                 'type' => $type,
                 'category' => $category,
@@ -361,6 +363,15 @@ class Item_rm extends CI_Controller
                 return;
             }
 
+            if (!empty($data['cas_no']) && !preg_match('/^[0-9-]{1,15}$/', $data['cas_no'])) {
+                echo json_encode(array(
+                    "title" => "Error",
+                    "message" => "CAS No must contain only numbers and dash (-), maximum 15 characters",
+                    "theme" => "error"
+                ));
+                return;
+            }
+
             //Cek Process Number
             $category = $this->crud->read('item_categories', [], ["number" => $data['category']]);
             $prod_fam = $this->crud->read('item_familys', [], ["number" => $data['product_family']]);
@@ -396,6 +407,7 @@ class Item_rm extends CI_Controller
                     //field
                     "id" => $autoid,
                     "number" => $data['part_no'],
+                    "cas_no" => $data['cas_no'],
                     "number_internal" => $number_internal,
                     "name" => $data['name'],
                     "uom" => $data['unit_of_measure'],
@@ -471,6 +483,7 @@ class Item_rm extends CI_Controller
                 <th>Part No External</th>
                 <th>Part No Internal</th>
                 <th>Part Name</th>
+                <th>CAS No</th>
                 <th>UOM</th>
                 <th>Type</th>
                 <th>Category</th>
@@ -494,6 +507,7 @@ class Item_rm extends CI_Controller
                         <td style="mso-number-format:\@;">' . $data['number'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['number_internal'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['name'] . '</td>
+                        <td style="mso-number-format:\@;">' . $data['cas_no'] . '</td>
                         <td>' . $data['uom'] . '</td>
                         <td>' . $data['type'] . '</td>
                         <td>' . $data['item_category_name'] . '</td>
