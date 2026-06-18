@@ -76,32 +76,75 @@ class Balance_begin_wip extends CI_Controller
 
     }
 
-    private function getLabelTypes()
+    private function getLabelTypes($location = '')
     {
-        return [
-            [
-                'id' => 'R01',
+        $all = [
+            'PR1' => [
+                'code' => 'PR1',
                 'name' => 'REGULAR',
-                'description' => 'INCLUDE RETURN'
+                'description' => 'Product after finishing (internal/external).'
             ],
-            [
-                'id' => 'R02',
+            'PR2' => [
+                'code' => 'PR2',
                 'name' => 'REWORK',
-                'description' => 'ONLY REWORK'
+                'description' => 'Product sudah scan out ke SC/TF untuk di-rework.'
+            ],
+            'PR3' => [
+                'code' => 'PR3',
+                'name' => 'INCOMING REWORK',
+                'description' => 'Product yang sudah di-rework oleh SC/TF.'
+            ],
+            'PR4' => [
+                'code' => 'PR4',
+                'name' => 'RETURN',
+                'description' => 'Product after finishing (internal/external).'
+            ],
+            'PR5' => [
+                'code' => 'PR5',
+                'name' => 'WIP PRESS',
+                'description' => 'Product original output press.'
+            ],
+            'PR6' => [
+                'code' => 'PR6',
+                'name' => 'WIP FINISHING',
+                'description' => 'Product siap finishing SC/TF.'
             ]
         ];
+
+        switch ($location) {
+            case 'WIPP':
+                return [
+                    $all['PR5']
+                ];
+
+            case 'WIPS':
+                return [
+                    $all['PR1'],
+                    $all['PR2'],
+                    $all['PR3'],
+                    $all['PR4']
+                ];
+
+            default:
+                return [
+                    $all['PR2'],
+                    $all['PR6']
+                ];
+        }
     }
 
     private function getLocations()
     {
         $data = [
             [
-                'id' => 'WIP01',
+                'id' => 'WIPP',
+                'code' => 'WIPP',
                 'name' => 'WIP PRESS',
                 'description' => 'OUTPUT PRODUCTION PRESS'
             ],
             [
-                'id' => 'WIP02',
+                'id' => 'WIPS',
+                'code' => 'WIPS',
                 'name' => 'WIP STORE',
                 'description' => 'WIP STORE INTERNAL'
             ]
@@ -111,6 +154,7 @@ class Balance_begin_wip extends CI_Controller
             ->select("
                 id, 
                 name,
+                number as code,
                 '-' as description
             ")
             ->from('subconts')
@@ -124,6 +168,7 @@ class Balance_begin_wip extends CI_Controller
             ->select("
                 id,
                 name,
+                number as code,
                 '-' as description
             ")
             ->from('teaching_factory')
@@ -137,7 +182,16 @@ class Balance_begin_wip extends CI_Controller
 
     public function readLabelTypes()
     {
-        echo json_encode($this->getLabelTypes());
+        $location = $this->input->get('location');
+
+        if (empty($location)) {
+            echo json_encode([]);
+            return;
+        }
+
+        echo json_encode(
+            $this->getLabelTypes($location)
+        );
     }
 
     public function readLocations()
@@ -269,20 +323,13 @@ class Balance_begin_wip extends CI_Controller
             $this->db->limit($rows, $offset);
             $records = $this->db->get()->result_array();
 
-            $label_types = [];
-            foreach ($this->getLabelTypes() as $row) {
-                $label_types[$row['id']] = $row['name'];
-            }
-
             $locations = [];
             foreach ($this->getLocations() as $row) {
-                $locations[$row['id']] = $row['name'];
+                $locations[$row['code']] = $row['name'];
             }
 
             foreach ($records as &$row) {
-                $row['label_type_name'] = isset($label_types[$row['label_type']])
-                    ? $label_types[$row['label_type']]
-                    : '';
+                $row['label_type_name'] = $row['label_type'];
 
                 $row['location_name'] = isset($locations[$row['location']])
                     ? $locations[$row['location']]
@@ -441,6 +488,24 @@ class Balance_begin_wip extends CI_Controller
                         ];
                         continue;
                 }
+
+                $labelTypes = $this->getLabelTypes($data['location']);
+
+                $labelTypeMap = [];
+                foreach ($labelTypes as $labelType) {
+                    $labelTypeMap[$labelType['code']] = $labelType['name'];
+                }
+
+                if (!isset($labelTypeMap[$data['label_type']])) {
+                    $results[] = [
+                        "status" => "failed",
+                        "item" => "Line " . ($index + 1),
+                        "message" => "Label Type {$data['label_type']} is not valid for Location {$data['location']}"
+                    ];
+                    continue;
+                }
+
+                $data['label_type'] = $labelTypeMap[$data['label_type']];
 
                 $item_fg_id = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
                 if (empty($item_fg_id)) {
@@ -612,12 +677,12 @@ class Balance_begin_wip extends CI_Controller
 
         $label_types = [];
         foreach ($this->getLabelTypes() as $row) {
-            $label_types[$row['id']] = $row['name'];
+            $label_types[$row['name']] = $row['name'];
         }
 
         $locations = [];
         foreach ($this->getLocations() as $row) {
-            $locations[$row['id']] = $row['name'];
+            $locations[$row['code']] = $row['name'];
         }
 
         foreach ($records as &$row) {
