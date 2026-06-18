@@ -68,6 +68,23 @@ class Transaction_type extends CI_Controller
             $this->db->select('id, type, name, description, status, created_by, created_date, updated_by, updated_date');
             $this->db->from('transaction_type');
             $this->db->where('deleted', 0);
+
+            if (@count($filters) > 0) {
+                foreach ($filters as $filter) {
+                    if($filter->field == "type"){
+                        $this->db->like("type", $filter->value);
+                    }else if($filter->field == "name"){
+                        $this->db->like("name", $filter->value);
+                    }else if($filter->field == "description"){
+                        $this->db->like("description", $filter->value);
+                    }elseif($filter->field == "status"){
+                        $this->db->like("status", $filter->value);
+                    }else{
+                        $this->db->like($filter->field, $filter->value);
+                    }
+                }
+            }
+
             $this->db->order_by('name', 'ASC');
              //Total Data
              $totalRows = $this->db->count_all_results('', false);
@@ -95,7 +112,7 @@ class Transaction_type extends CI_Controller
                     $post['type'] = $autoid;
                     $transtype = $this->crud->read('transaction_type', [], ["name" => $post['name']]);
                     if (!empty($transtype->name)) {
-                        echo json_encode(array("title" => "Duplicated", "message" => "Transaction Type " . $data['name'] . " Duplicate Data", "theme" => "error"));
+                        echo json_encode(array("title" => "Duplicated", "message" => "Transaction Type " . $post['name'] . " Duplicate Data", "theme" => "error"));
                     } else {
                         $send   = $this->crud->create('transaction_type', $post);
                         echo $send;
