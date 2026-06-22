@@ -328,7 +328,7 @@
                         type: 'numberbox',
                         options: {
                             required: true,
-                            // precision: 2
+                            precision: 2
                         }
                     }
                 }, {
@@ -505,7 +505,7 @@
                         type: 'numberbox',
                         options: {
                             required: true,
-                            // precision: 2
+                            precision: 2
                         }
                     }
                 }, {

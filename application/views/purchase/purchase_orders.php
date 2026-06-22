@@ -16,7 +16,7 @@
             <th rowspan="2" data-options="field:'item_name',width:200,halign:'center'">Part Name</th>
             <th rowspan="2" data-options="field:'mpq',width:80,halign:'center',align:'right',formatter:numberformatInteger">MPQ</th>
             <th rowspan="2" data-options="field:'moq',width:80,halign:'center',align:'right',formatter:numberformatInteger">MOQ</th>
-            <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformatInteger">Qty</th>
+            <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformatFloat">Qty</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
             <th rowspan="2" data-options="field:'price',width:100,halign:'center',align:'right',formatter:numberformat">Price</th>
             <th rowspan="2" data-options="field:'discount',width:80,halign:'center',align:'right',formatter:numberformatDefault">Disc %</th>
@@ -1296,6 +1296,7 @@
 
                                         for (var i = 0; i < totalrows; i++) {
                                             var row = rows[i];
+                                            console.log('INIT : ', row.qty, typeof row.qty);
 
                                             var item_rm_id = row.item_rm_id; //item_number
                                             var po_no = row.po_no;
@@ -1587,6 +1588,16 @@
             const formatter = new Intl.NumberFormat('id-ID', {
                 minimumFractionDigits: 0, // Tidak menampilkan desimal
                 maximumFractionDigits: 0 // Tidak menampilkan desimal
+            });
+            return "<b>" + formatter.format(value) + "</b>";
+        }
+    };
+
+    function numberformatFloat(value, row) {
+        if (value != null) {
+            const formatter = new Intl.NumberFormat('id-ID', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
             });
             return "<b>" + formatter.format(value) + "</b>";
         }

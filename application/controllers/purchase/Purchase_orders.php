@@ -1132,12 +1132,12 @@ class Purchase_orders extends CI_Controller
                                 <td>' . $record['item_id'] . '</td>
                                 <td><span style="font-size:10px;">' . $record['item_name'] . '</span></td>
                                 <td style="text-align:center;">' . $record['description'] . '</td>
-                                <td style="text-align:right;">' . number_format(round($record['qty']), 0, ',', '.') . '</td>
+                                <td style="text-align:right;">' . number_format($record['qty'], 2, ',', '.') . '</td>
                                 <td style="text-align:center;">' . $record['uom'] . '</td>
                                 
-                                <td style="text-align:right;">' . number_format($record['price'], $digits) . '</td>
+                                <td style="text-align:right;">' . number_format($record['price'], $digits, ',', '.') . '</td>
                                 <td style="text-align:center;">' . $record['currency'] . '</td>
-                                <td style="text-align:right;">' . number_format($record['total'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format($record['total'], 2, ',', '.') . '</td>
                                 <td style="text-align:center;">' . $record['delivery_date'] . '</td>
                                 <td style="text-align:right;">' . $record['month_1'] . '</td>
                                 <td style="text-align:right;">' . $record['month_2'] . '</td>
@@ -1152,9 +1152,9 @@ class Purchase_orders extends CI_Controller
                 $html .= '
                 <tr>
                     <th style="text-align:center;" colspan="4">Sub Total</th>
-                    <th style="text-align:right;">' . number_format($total_qty, 0, ',', '.') . '</th>
+                    <th style="text-align:right;">' . number_format($total_qty, 2, ',', '.') . '</th>
                     <th style="text-align:right;" colspan="3"></th>
-                    <th style="text-align:right;">' . number_format($record['total_sub'], 2) . '</th>
+                    <th style="text-align:right;">' . number_format($record['total_sub'], 2, ',', '.') . '</th>
                     <th style="text-align:right;" colspan="5"></th> 
                 </tr>
                 </table>';
@@ -1661,9 +1661,9 @@ class Purchase_orders extends CI_Controller
                 <td>' . $record['item_id'] . '</td>
                 <td><span style="font-size:10px;">' . $record['item_name'] . '</span></td>
                 <td style="text-align:center;">' . $record['description'] . '</td>
-                <td style="text-align:right;">' . number_format(round($record['qty']), 0, ',', '.') . '</td>
+                <td style="text-align:right;">' . number_format($record['qty'], 2, ',', '.') . '</td>
                 <td style="text-align:center;">' . $record['uom'] . '</td>
-                <td style="text-align:right;">' . number_format($record['price'], $digits) . '</td>
+                <td style="text-align:right;">' . number_format($record['price'], $digits, ',', '.') . '</td>
                 <td style="text-align:center;">' . $record['currency'] . '</td>
                 <td style="text-align:right;">' . number_format($record['total'], 2) . '</td>
                 <td style="text-align:center;">' . $record['delivery_date'] . '</td>
@@ -1677,9 +1677,9 @@ class Purchase_orders extends CI_Controller
                 $html .= '
                 <tr>    
                     <th style="text-align:center;" colspan="4">Sub Total</th>
-                    <th style="text-align:right;">' . number_format($total_qty, 0, ',', '.') . '</th>
+                    <th style="text-align:right;">' . number_format($total_qty, 2, ',', '.') . '</th>
                     <th style="text-align:right;" colspan="3"></th>
-                    <th style="text-align:right;">' . number_format($record['total_sub'], 2) . '</th>
+                    <th style="text-align:right;">' . number_format($record['total_sub'], 2, ',', '.') . '</th>
                     <th style="text-align:right;" colspan="2"></th> 
                 </tr>
                 </table>';
