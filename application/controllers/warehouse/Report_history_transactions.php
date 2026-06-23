@@ -231,7 +231,7 @@ class Report_history_transactions extends CI_Controller
             WHERE transaction_type LIKE 'IS%' 
             AND request_date between '$filter_from' and '$filter_to'
             GROUP BY item_rm_id) j ON a.id = j.item_rm_id
-        WHERE b.number like '%$filter_item_family%' and a.id like '%$filter_items%'
+        WHERE a.item_category_id = 'C02' and b.number like '%$filter_item_family%' and a.id like '%$filter_items%'
         $where_condition
         GROUP BY a.id
         $having_condition
@@ -339,7 +339,7 @@ class Report_history_transactions extends CI_Controller
                 AND request_date < '$filter_from'
                 GROUP BY item_rm_id
             ) j ON a.id = j.item_rm_id
-            WHERE a.id like '$item_rm_id'
+            WHERE a.item_category_id = 'C02' and a.id = '$item_rm_id'
             GROUP BY a.id
             ORDER BY a.number");
 
