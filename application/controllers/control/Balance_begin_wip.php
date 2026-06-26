@@ -108,6 +108,11 @@ class Balance_begin_wip extends CI_Controller
                 'code' => 'PR6',
                 'name' => 'WIP FINISHING',
                 'description' => 'Product siap finishing SC/TF.'
+            ],
+            'PR7' => [
+                'code' => 'PR7',
+                'name' => 'WIP CHECKER',
+                'description' => 'Product Visual Checker, Oven & CP, siap RFG.'
             ]
         ];
 
@@ -124,7 +129,10 @@ class Balance_begin_wip extends CI_Controller
                     $all['PR3'],
                     $all['PR4']
                 ];
-
+            case 'WIPC':
+                return [
+                    $all['PR7']
+                ];
             default:
                 return [
                     $all['PR2'],
@@ -147,6 +155,12 @@ class Balance_begin_wip extends CI_Controller
                 'code' => 'WIPS',
                 'name' => 'WIP STORE',
                 'description' => 'WIP STORE INTERNAL'
+            ],
+            [
+                'id' => 'WIPC',
+                'code' => 'WIPC',
+                'name' => 'WIP CHECKER',
+                'description' => 'AREA QUALITY CHECK'
             ]
         ];
 
@@ -675,26 +689,30 @@ class Balance_begin_wip extends CI_Controller
         $this->db->order_by('a.trans_date', 'ASC');
         $records = $this->db->get()->result_array();
 
-        $label_types = [];
-        foreach ($this->getLabelTypes() as $row) {
-            $label_types[$row['name']] = $row['name'];
-        }
-
         $locations = [];
         foreach ($this->getLocations() as $row) {
             $locations[$row['code']] = $row['name'];
         }
 
         foreach ($records as &$row) {
-            $row['label_type_name'] = isset($label_types[$row['label_type']])
-                ? $label_types[$row['label_type']]
-                : '';
+            $row['label_type_name'] = $row['label_type'];
 
             $row['location_name'] = isset($locations[$row['location']])
                 ? $locations[$row['location']]
                 : '';
         }
+        unset($row);
 
+        usort($records, function ($a, $b) {
+
+            $cmp = strcmp($a['location_name'], $b['location_name']);
+            if ($cmp !== 0) return $cmp;
+
+            $cmp = strcmp($a['label_type_name'], $b['label_type_name']);
+            if ($cmp !== 0) return $cmp;
+
+            return strcmp($a['item_fg_id'], $b['item_fg_id']);
+        });
 
             $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#balance_begin_wip {border-collapse: collapse;width: 100%;font-size: 12px;}#balance_begin_wip td, #balance_begin_wip th {border: 1px solid #ddd;padding: 2px;}#balance_begin_wip tr:nth-child(even){background-color: #f2f2f2;}#balance_begin_wip tr:hover {background-color: #ddd;}#balance_begin_wip th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
 
