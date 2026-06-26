@@ -81,16 +81,11 @@
 <table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar">
     <thead>
         <tr>
-            <!-- <th rowspan="2" field="ck" checkbox="true"></th> -->
             <th rowspan="2" data-options="field:'action',width:100,halign:'center',formatter: buttonEdit">Action</th>
             <th rowspan="2" data-options="field:'item_fg_number',width:200,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th>
             <th rowspan="2" data-options="field:'workorder_label',width:150,halign:'center'">Serial WO No</th>
             <th rowspan="2" data-options="field:'source',width:100,halign:'center',align:'center'">Source</th>
-
-            <!-- <th rowspan="2" data-options="field:'operator_finishing',width:150,halign:'center',styler: emptyRedStyler,editor:{type: 'textbox', options: { required: true }}">Operator Finishing</th>
-            <th rowspan="2" data-options="field:'compound_lot_no',width:150,halign:'center',styler: emptyRedStyler,editor:{type: 'textbox', options: { required: true }}">Compound Lot No</th> -->
-
             <th rowspan="2" data-options="
                 field:'operator_finishing',
                 width:150,
@@ -282,12 +277,6 @@
                 </div>
 
                 <div class="fitem" style="padding:0 70px 0px 40px;">
-
-                    <!--
-                    <a href="javascript:;" class="easyui-linkbutton" id="btnPreview" onclick="btnPreview()">
-                        <i class="fa fa-search"></i> Preview Data
-                    </a>
-                    -->
 
                     <a href="javascript:;" class="easyui-linkbutton btn-lg" style="margin-right: 5px !important;" id="btnComplete" onclick="btnComplete()">
                         <i class="fa fa-check"></i> <span id="checkComplete">Complete</span>
@@ -539,9 +528,6 @@
                     $('#dg').datagrid('refreshRow',index);
                     let detail_id = row.id;
 
-                    // updateQty(row,index);
-                    // saveNGPerDetail(index, detail_id);
-
                     updateQty(row,index,function(){
                         saveNGPerDetail(index, detail_id);
                     });
@@ -584,7 +570,7 @@
                     },
                     dataType: "json",
                     success: function(json) {
-                        console.log('Response : ', json);
+                        // console.log('Response : ', json);
 
                         if (json.title === "Not Found") {
                             serialNotFound.play();
@@ -601,55 +587,6 @@
                             $("#workorder_label").val('').focus();
                             return;
                         }
-
-
-                        // if (json.title === "success") {
-                        //     var row = json.data;
-
-                        //     $.ajax({
-                        //         type: "POST",
-                        //         url: "<?= base_url('control/scan_visual_checker/create') ?>",
-                        //         data: {
-                        //             check_date: check_date,
-                        //             inspector: inspector,
-                        //             visual_process: visual_process,
-                        //             customer: customer,
-
-                        //             item_fg_id: row.item_fg_id,
-                        //             workorder: row.workorder,
-                        //             label: label,
-                        //             qty: row.qty,
-                        //         },
-                        //         dataType: "json",
-                        //         success: function(result) {
-                        //             if (result.theme === "success") {
-                        //                 serialSuccess.play();
-                        //                 toastr.success(result.message, result.title);
-                        //             } else {
-                        //                 if (result.title == "Available") {
-                        //                     serialDuplicate.play();
-                        //                 } else if(result.title == "Not Found") {
-                        //                     serialNotFound.play();
-                        //                 } else if (result.title == "Already Scanned") {
-                        //                     // serialDuplicate.play();
-                        //                 }
-
-                        //                 toastr.warning(result.message, result.title);
-                        //             }
-
-                        //             $("#workorder_label").val('');
-                        //             $('#workorder_label').focus();
-                        //             $('#dg').datagrid('reload');
-
-                        //         },
-                        //         error: function(xhr, status, error) {
-                        //             toastr.error("An error occurred: " + error, "Error");
-                        //         }
-                        //     });
-
-                        //     return;
-                        // }
-
 
                         if (json.title === "success") {
                             var row = json.data;
@@ -714,38 +651,10 @@
                 ng:JSON.stringify(ngList)
             },
             success:function(res){
-                console.log('NG saved',res);
+                // console.log('NG saved',res);
             }
         });
     }
-
-    // $('#inspector').combogrid({
-    //     url: '<?= base_url("master/man_powers/readVisualCheckers") ?>',
-    //     panelWidth: 400,
-    //     idField: 'nik',
-    //     textField: 'name',
-    //     valueField: 'nik',
-    //     mode: 'remote',
-    //     fitColumns: true,
-    //     prompt: "Select Inspector Name",
-    //     icons: [{
-    //         iconCls: 'icon-clear',
-    //         handler: function(e) {
-    //             $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-    //         }
-    //     }],
-    //     columns: [
-    //         [{
-    //             field: 'nik',
-    //             title: 'NIK',
-    //             width: 200
-    //         }, {
-    //             field: 'name',
-    //             title: 'Name',
-    //             width: 200
-    //         }]
-    //     ],
-    // });
 
     $('#inspector').combogrid({
         url: '<?= base_url("master/man_powers/readVisualCheckers") ?>',
@@ -803,36 +712,6 @@
             }
         },
     });
-
-
-    // $('#customer').combogrid({
-    //     url: '<?= base_url("master/customers/reads") ?>',
-    //     panelWidth: 350,
-    //     idField: 'id',
-    //     textField: 'name',
-    //     valueField: 'id',
-    //     mode: 'remote',
-    //     fitColumns: true,
-    //     prompt: "Select Customer",
-    //     icons: [{
-    //         iconCls: 'icon-clear',
-    //         handler: function(e) {
-    //             $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-    //         }
-    //     }],
-    //     columns: [
-    //         [{
-    //             field: 'id',
-    //             title: 'Customer ID',
-    //             width: 100
-    //         }, {
-    //             field: 'name',
-    //             title: 'Customer Name',
-    //             width: 250
-    //         }]
-    //     ],
-    // });
-
 
     $('#customer').combogrid({
         url: '<?= base_url("master/customers/reads") ?>',
@@ -1305,9 +1184,7 @@
 
         // console.log('ROWS : ', rows);
 
-
         let items = [];
-
         rows.forEach(row => {
             if (row.item_fg_id) {
                 items.push({
@@ -1331,7 +1208,7 @@
             return;
         }
 
-        console.log('ITEMS : ', items);
+        // console.log('ITEMS : ', items);
 
         Swal.fire({
             title: 'Confirm Complete',
@@ -1435,7 +1312,7 @@
         var rows = $('#dg').datagrid('getRows');
         var totalrows = rows.length;
 
-        console.log('ROWSS : ', rows);
+        // console.log('ROWSS : ', rows);
 
         if (totalrows === 0) {
             return toastr.error("No data available!");
@@ -1453,9 +1330,6 @@
             url: '<?= base_url('control/scan_visual_checker/getSummaryVc') ?>',
             method: 'get',
             fitColumns: true,
-            // queryParams: {
-            //     workorder_labels: workorder_labels.join(',')
-            // },
             columns: [[
                 {
                     field: 'no',
@@ -1479,12 +1353,6 @@
                     width: 285,
                     rowspan: 2
                 },
-                // {
-                //     field: 'item_fg_name',
-                //     title: 'Product Name',
-                //     width: 300,
-                //     rowspan: 2
-                // },
                 {
                     title: 'QTY',
                     colspan: 7,
@@ -1766,61 +1634,6 @@
         return false;
     }
 
-
-    // function hasEditingRow() {
-
-    //     var dg = $('#dg');
-    //     var rows = dg.datagrid('getRows');
-
-    //     for (var i = 0; i < rows.length; i++) {
-
-    //         var rowIndex = dg.datagrid('getRowIndex', rows[i]);
-
-    //         if (dg.datagrid('getEditors', rowIndex).length > 0) {
-    //             dg.datagrid('selectRow', rowIndex);
-    //             toastr.warning('There is still selected data being edited. Please save first');
-
-    //             return true;
-    //         }
-    //     }
-
-    //     return false;
-    // }
-
-    // function hasIncompleteRequired(){
-
-    //     var dg = $('#dg');
-    //     var rows = dg.datagrid('getRows');
-
-    //     for(var i=0;i<rows.length;i++){
-
-    //         let r = rows[i];
-    //         let rowIndex = dg.datagrid('getRowIndex', r);
-
-    //         if(
-    //             !r.operator_finishing ||
-    //             !r.compound_lot_no ||
-    //             r.qty_actual === '' || 
-    //             r.qty_actual === null || 
-    //             r.qty_ok === '' || 
-    //             r.qty_ok === null || 
-    //             r.qty_ok === undefined ||
-
-    //             !Number(r.qty_actual) ||
-    //             !Number(r.qty_ok)
-    //         ) {
-
-    //             dg.datagrid('selectRow',rowIndex);
-    //             toastr.warning('Please complete all required fields before creating label');
-
-    //             return true;
-    //         }
-    //     }
-
-    //     return false;
-    // }
-
-
     function backToMenu(){
         var token = window.location.pathname.split('/').pop();
         window.location.href = "<?= base_url('control/scan_in_wip_store/index/') ?>" + token;
@@ -1843,45 +1656,6 @@
             message: 'Value cannot be negative'
         }
     });
-
-
-    // function printLabelRfg(item_fg_id, scan_id){
-    //     var url = "<?= base_url('control/scan_visual_checker/print_label_rfg') ?>?item_fg_id=" + item_fg_id;
-    //     window.open(url, '_blank');
-
-    //     $.post("<?= base_url('control/scan_visual_checker/setPrintRfg') ?>", {
-    //         item_fg_id: item_fg_id,
-    //         scan_id: scan_id
-    //     }, function(res){
-
-    //         let result = JSON.parse(res);
-
-    //         if(result.status){
-    //             // 🔹 3. reload datagrid biar button berubah
-    //             $('#dgScanVc').datagrid('reload');
-    //         }else{
-    //             toastr.error('Failed update print status');
-    //         }
-
-    //     });
-    // }
-
-
-    // function printLabelRfg(item_fg_id){
-    //     var url = "<?= base_url('control/scan_visual_checker/print_label_rfg') ?>?item_fg_id=" + item_fg_id;
-    //     window.open(url, '_blank');
-    // }
-
-    // function printLabelReturn(item_fg_id){
-    //     var url = "<?= base_url('control/scan_visual_checker/print_label_return') ?>?item_fg_id=" + item_fg_id;
-    //     window.open(url, '_blank');
-    // }
-
-    // function printLabelRework(item_fg_id){
-    //     var url = "<?= base_url('control/scan_visual_checker/print_label_rework') ?>?item_fg_id=" + item_fg_id;
-    //     window.open(url, '_blank');
-    // }
-
 
     function printLabelRfg(item_fg_id, scan_id){
 
@@ -1989,145 +1763,6 @@
             +'</a></div>';
     }
 
-
-
-
-    // function printLabelRfg(item_fg_id){
-
-    //     var form = $('<form>',{
-    //         action: '<?= base_url("control/scan_visual_checker/print_label_rfg") ?>',
-    //         method: 'POST',
-    //         target: '_blank'
-    //     });
-
-    //     form.append($('<input>',{
-    //         type:'hidden',
-    //         name:'item_fg_id',
-    //         value:item_fg_id
-    //     }));
-
-    //     $('body').append(form);
-
-    //     form.submit();
-    //     form.remove();
-    // }
-
-    // function printLabelRfg(item_fg_id){
-    //     var rows = $('#dg').datagrid('getChecked');
-
-    //     if(rows.length === 0){
-    //         return toastr.error("No data selected");
-    //     }
-
-    //     var workorder_labels = [];
-
-    //     $.each(rows, function(i,r){
-    //         workorder_labels.push(r.workorder_label);
-    //     });
-
-    //     var form = $('<form>',{
-    //         action: '<?= base_url("control/scan_visual_checker/print_label_rfg") ?>',
-    //         method: 'POST',
-    //         target: '_blank'
-    //     });
-
-    //     form.append($('<input>',{
-    //         type:'hidden',
-    //         name:'item_fg_id',
-    //         value:item_fg_id
-    //     }));
-
-    //     form.append($('<input>',{
-    //         type:'hidden',
-    //         name:'workorder_labels',
-    //         value: JSON.stringify(workorder_labels)
-    //     }));
-
-    //     $('body').append(form);
-
-    //     form.submit();
-    //     form.remove();
-    // }
-
-    // function printLabelReturn(item_fg_id){
-
-    //     var rows = $('#dg').datagrid('getChecked');
-
-    //     if(rows.length === 0){
-    //         return toastr.error("No data selected");
-    //     }
-
-    //     var workorder_labels = [];
-
-    //     $.each(rows, function(i,r){
-    //         workorder_labels.push(r.workorder_label);
-    //     });
-
-    //     var form = $('<form>',{
-    //         action: '<?= base_url("control/scan_visual_checker/print_label_return") ?>',
-    //         method: 'POST',
-    //         target: '_blank'
-    //     });
-
-    //     form.append($('<input>',{
-    //         type:'hidden',
-    //         name:'item_fg_id',
-    //         value:item_fg_id
-    //     }));
-
-    //     form.append($('<input>',{
-    //         type:'hidden',
-    //         name:'workorder_labels',
-    //         value: JSON.stringify(workorder_labels)
-    //     }));
-
-    //     $('body').append(form);
-
-    //     form.submit();
-
-    //     form.remove();
-    // }
-
-    // function printLabelRework(item_fg_id){
-
-    //     var rows = $('#dg').datagrid('getChecked');
-
-    //     if(rows.length === 0){
-    //         return toastr.error("No data selected");
-    //     }
-
-    //     var workorder_labels = [];
-
-    //     $.each(rows, function(i,r){
-    //         workorder_labels.push(r.workorder_label);
-    //     });
-
-    //     var form = $('<form>',{
-    //         action: '<?= base_url("control/scan_visual_checker/print_label_rework") ?>',
-    //         method: 'POST',
-    //         target: '_blank'
-    //     });
-
-    //     form.append($('<input>',{
-    //         type:'hidden',
-    //         name:'item_fg_id',
-    //         value:item_fg_id
-    //     }));
-
-    //     form.append($('<input>',{
-    //         type:'hidden',
-    //         name:'workorder_labels',
-    //         value: JSON.stringify(workorder_labels)
-    //     }));
-
-    //     $('body').append(form);
-
-    //     form.submit();
-
-    //     form.remove();
-    // }
-
-
     function saveSummaryScanVc() {
         var check_date      = $("#check_date").datebox('getValue');
         var inspector       = $("#inspector").combogrid('getValue');
@@ -2147,9 +1782,7 @@
 
         // console.log('ROWS : ', rows);
 
-
         let items = [];
-
         rows.forEach(row => {
             if (row.item_fg_id) {
                 items.push({
@@ -2173,7 +1806,7 @@
             return;
         }
 
-        console.log('ITEMS : ', items);
+        // console.log('ITEMS : ', items);
 
         var rowsScan = $('#dgScanVc').datagrid('getRows');
 
