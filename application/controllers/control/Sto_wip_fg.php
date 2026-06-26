@@ -436,6 +436,40 @@ class Sto_wip_fg extends CI_Controller
         return null;
     }
 
+    private function _generateAutoId()
+    {
+        $date = date('Ymd');
+
+        $query = $this->db->query("
+            SELECT id
+            FROM sto_wip_fg
+            WHERE id LIKE '{$date}%'
+            ORDER BY id DESC
+            LIMIT 1
+            FOR UPDATE
+        ");
+
+        if ($query === false) {
+
+            $error = $this->db->error();
+
+            throw new Exception(json_encode([
+                'db_error_code' => $error['code'] ?? 0,
+                'db_error_message' => $error['message'] ?? ''
+            ]));
+        }
+
+        $row = $query->row();
+
+        if (!$row) {
+            $id = $date . '000001';
+        } else {
+            $id = (string)((int)$row->id + 1);
+        }
+
+        return $id;
+    }
+
     public function resetHeader()
     {
         $doc_no = $this->input->post('doc_no');
@@ -468,7 +502,7 @@ class Sto_wip_fg extends CI_Controller
         );
     }
 
-    public function createHeader()
+    public function createHeaderV1()
     {
         if (!$this->input->post()) {
             show_error("Cannot Process your request");
@@ -599,6 +633,178 @@ class Sto_wip_fg extends CI_Controller
                 $e->getMessage(),
                 'error'
             );
+        }
+    }
+
+    public function createHeader()
+    {
+        if (!$this->input->post()) {
+            show_error("Cannot Process your request");
+        }
+
+        $post = $this->input->post();
+
+        $existing = $this->db
+            ->where('created_by', $this->session->username)
+            ->where('type_status', 'scanning')
+            ->where('status', 0)
+            ->where('deleted', 0)
+            ->order_by('created_date', 'DESC')
+            ->limit(1)
+            ->get('sto_wip_fg')
+            ->row_array();
+
+        if ($existing) {
+            return $this->jsonResponse(
+                'Scanning Active',
+                'You already have an active scanning session on another device, please logout of your account here!',
+                'reload'
+            );
+        }
+
+        $scan_id = $this->generate_uuid();
+
+        $original_doc_no = $post['doc_no'];
+        $doc_no          = $post['doc_no'];
+
+        $data_header = [
+            'scan_id'      => $scan_id,
+            'doc_no'       => $doc_no,
+            'location'     => $post['location'],
+            'period_month' => $post['period_month'],
+            'period_year'  => $post['period_year'],
+            'type_status'  => 'scanning',
+            'status'       => 0
+        ];
+
+        $old_debug = $this->db->db_debug;
+        $this->db->db_debug = FALSE;
+
+        try {
+
+            $max_retry = 5;
+            $inserted  = false;
+
+            for ($i = 0; $i < $max_retry; $i++) {
+
+                $this->db->trans_begin();
+
+                try {
+
+                    $id = $this->_generateAutoId();
+
+                    $data = array_merge($data_header, [
+                        'id'           => $id,
+                        'created_by'   => $this->session->username,
+                        'created_date' => date('Y-m-d H:i:s')
+                    ]);
+
+                    $inserted = $this->db->insert('sto_wip_fg', $data);
+
+                    if ($inserted === true) {
+
+                        $this->crud->logs(
+                            "Create",
+                            json_encode($data),
+                            'sto_wip_fg'
+                        );
+                        $this->db->trans_commit();
+
+                        $doc_no = $data_header['doc_no'];
+                        break;
+                    }
+
+                    $error = $this->db->error();
+
+                    $this->db->trans_rollback();
+
+                    $errorCode = $error['code'] ?? 0;
+
+                    if (!in_array($errorCode, [1062, 1213, 1205])) {
+                        throw new Exception($error['message']);
+                    }
+
+                    // log_message('error', 'Retry #' . ($i + 1));
+                    // log_message('error', 'Error Code : ' . $errorCode);
+                    // log_message('error', 'Message : ' . $error['message']);
+
+                    $errorMessage = $error['message'] ?? '';
+
+                    if (strpos($errorMessage, 'uk_doc_no') !== false) {
+
+                        $data_header['doc_no'] = $this->generateStoDocNo(
+                            $post['location'],
+                            $post['period_month'],
+                            $post['period_year']
+                        );
+                    }
+
+                    // log_message(
+                    //     'error',
+                    //     'NEW DOC NO = ' . $data_header['doc_no']
+                    // );
+
+                    usleep(random_int(100000, 300000));
+
+                } catch (Exception $e) {
+                    $this->db->trans_rollback();
+
+                    $json = json_decode($e->getMessage(), true);
+                    $dbErrorCode = $json['db_error_code'] ?? 0;
+                    if (in_array($dbErrorCode, [1213, 1205])) {
+
+                        // log_message(
+                        //     'error',
+                        //     'Retry because deadlock/timeout #' . ($i + 1)
+                        // );
+
+                        usleep(random_int(100000, 300000));
+                        continue;
+                    }
+
+                    throw $e;
+                }
+            }
+
+            if (!$inserted) {
+                throw new Exception(
+                    'Failed to generate unique ID / Document No after '
+                    . $max_retry .
+                    ' retries'
+                );
+            }
+
+            return $this->jsonResponse(
+                'Success',
+                'Data berhasil disimpan',
+                'success',
+                [
+                    'doc_no'         => $doc_no,
+                    'original_doc_no'=> $original_doc_no
+                ]
+            );
+
+        } catch (Exception $e) {
+
+            $json = @json_decode($e->getMessage(), true);
+
+            if ($json) {
+                return $this->jsonResponse(
+                    $json['title'],
+                    $json['message'],
+                    $json['theme']
+                );
+            }
+
+            return $this->jsonResponse(
+                'Error',
+                $e->getMessage(),
+                'error'
+            );
+
+        } finally {
+
+            $this->db->db_debug = $old_debug;
         }
     }
 
