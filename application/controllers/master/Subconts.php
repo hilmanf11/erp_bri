@@ -286,6 +286,9 @@ class Subconts extends CI_Controller
                 <th>Subcont Code</th>
                 <th>Type</th>
                 <th>Fee (Rp)</th>
+                <th>Bank Account Name</th>
+                <th>Bank Account No</th>
+                <th>Bank Account Holder</th>
                 <th>Address</th>
                 <th>Area</th>
                 <th>Contact Person</th>
@@ -299,15 +302,18 @@ class Subconts extends CI_Controller
 
             $html .= '<tr>
                     <td>' . $no . '</td>
-                    <td>' . $data['id'] . '</td>
+                    <td width="100">' . $data['id'] . '</td>
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['number'] . '</td>
                     <td>' . $data['subcont_type_name'] . '</td>
                     <td>' . $fee . '</td>
+                    <td>' . $data['bank_account_name'] . '</td>
+                    <td style="mso-number-format:\@">' . $data['bank_account_no'] . '</td>
+                    <td>' . $data['bank_account_holder'] . '</td>
                     <td>' . $data['address'] . '</td>
                     <td>' . $data['delivery_area_name'] . '</td>
                     <td>' . $data['contact_person'] . '</td>
-                    <td>' . $data['telp'] . '</td>
+                    <td style="mso-number-format:\@">' . $data['telp'] . '</td>
                     <td>' . $status . '</td>';
             $no++;
         }

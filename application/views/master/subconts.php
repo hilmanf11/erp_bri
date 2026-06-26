@@ -27,6 +27,9 @@
             <th rowspan="2" data-options="field:'number',width:120,halign:'center',sortable:true">Subcont Code</th>
             <th rowspan="2" data-options="field:'subcont_type_name',width:150,halign:'center',sortable:true">Type</th>
             <th rowspan="2" data-options="field:'fee',width:150,halign:'center',sortable:true,formatter:formatRupiah">Fee (Rp)</th>
+            <th rowspan="2" data-options="field:'bank_account_name',width:150,halign:'center',sortable:true">Bank Account Name</th>
+            <th rowspan="2" data-options="field:'bank_account_no',width:150,halign:'center',sortable:true">Bank Account No</th>
+            <th rowspan="2" data-options="field:'bank_account_holder',width:150,halign:'center',sortable:true">Bank Account Holder</th>
             <th rowspan="2" data-options="field:'address',width:150,halign:'center',sortable:true">Address</th>
             <th rowspan="2" data-options="field:'delivery_area_name',width:150,halign:'center',sortable:true">Area</th>
             <th rowspan="2" data-options="field:'contact_person',width:150,halign:'center',sortable:true">Contact Person</th>
@@ -75,6 +78,18 @@
             <div class="fitem" id="fee_container">
                 <span style="width:35%; display:inline-block;">Fee (Rp)</span>
                 <input style="width:60%;" name="fee" id="fee" class="easyui-numberbox" data-options="min:0,precision:0,groupSeparator:'.'" required>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Bank Account Name</span>
+                <input style="width:60%;" name="bank_account_name" id="bank_account_name" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Bank Account No</span>
+                <input style="width:60%;" name="bank_account_no" id="bank_account_no" class="easyui-numberbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Bank Account Holder</span>
+                <input style="width:60%;" name="bank_account_holder" id="bank_account_holder" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Address</span>

@@ -275,6 +275,9 @@ class Teaching_factory extends CI_Controller
                 <th style="text-align: center;">TF Code</th>
                 <th style="text-align: center;">Type</th>
                 <th style="text-align: center;">Fee %</th>
+                <th style="text-align: center;">Bank Account Name</th>
+                <th style="text-align: center;">Bank Account No</th>
+                <th style="text-align: center;">Bank Account Holder</th>
                 <th style="text-align: center;">Address</th>
                 <th style="text-align: center;">Area</th>
                 <th style="text-align: center">Contact Person</th>
@@ -296,10 +299,13 @@ class Teaching_factory extends CI_Controller
                     <td>' . $data['number'] . '</td>
                     <td>' . $data['subcont_type_name'] . '</td>
                     <td>' . $fee . '</td>
+                    <td>' . $data['bank_account_name'] . '</td>
+                    <td style="mso-number-format:\@">' . $data['bank_account_no'] . '</td>
+                    <td>' . $data['bank_account_holder'] . '</td>
                     <td>' . $data['address'] . '</td>
                     <td>' . $data['delivery_area_name'] . '</td>
                     <td>' . $data['contact_person'] . '</td>
-                    <td>' . $data['telp'] . '</td>
+                    <td style="mso-number-format:\@">' . $data['telp'] . '</td>
                     <td>' . $status . '</td>';
             $no++;
         }
