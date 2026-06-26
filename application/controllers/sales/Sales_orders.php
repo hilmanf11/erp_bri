@@ -219,10 +219,13 @@ class Sales_orders extends CI_Controller
     {
         if ($this->input->post()) {
             $get = $this->input->get();
+            $filter_type_search  = base64_decode($this->input->get('filter_type_search'));
             $filter_from = @base64_decode($get['filter_from']);
             $filter_to = @base64_decode($get['filter_to']);
             $filter_customer_id = @base64_decode($get['filter_customer_id']);
             $filter_customer_order_no = @base64_decode($get['filter_customer_order_no']);
+            $filter_p_month = @base64_decode($get['filter_p_month']);
+            $filter_p_year = @base64_decode($get['filter_p_year']);
             $filter_sales_order_no = @base64_decode($get['filter_sales_order_no']);
             $filter_division = @base64_decode($get['filter_division']);
             $filter_status = @base64_decode($get['filter_status']);
@@ -241,10 +244,29 @@ class Sales_orders extends CI_Controller
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('divisions c', 'a.division = c.number', 'left');
             $this->db->join('item_fg d', 'a.item_fg_id = d.id');
-            if ($filter_from != "" && $filter_to != "") {
-                $this->db->where('a.sales_order_date >=', $filter_from);
-                $this->db->where('a.sales_order_date <=', $filter_to);
+
+            if($filter_type_search == "sales_order_date") {
+                if ($filter_from != "" && $filter_to != "") {
+                    $this->db->where('a.sales_order_date >=', $filter_from);
+                    $this->db->where('a.sales_order_date <=', $filter_to);
+                }
+            } elseif($filter_type_search == "period") {
+                if ($filter_p_month != "" && $filter_p_year != "") {
+                    $this->db->where('a.p_month', $filter_p_month);
+                    $this->db->where('a.p_year', $filter_p_year);
+                }
+            } else {
+                if ($filter_from != "" && $filter_to != "") {
+                    $this->db->where('a.sales_order_date >=', $filter_from);
+                    $this->db->where('a.sales_order_date <=', $filter_to);
+                }
+
+                if ($filter_p_month != "" && $filter_p_year != "") {
+                    $this->db->where('a.p_month', $filter_p_month);
+                    $this->db->where('a.p_year', $filter_p_year);
+                }
             }
+
             if ($filter_product_family != "") {
                 $this->db->where('d.item_family_number', $filter_product_family);
             }
@@ -993,10 +1015,13 @@ class Sales_orders extends CI_Controller
         }
 
         $get = $this->input->get();
+        $filter_type_search = @base64_decode($get['filter_type_search']);
         $filter_from = @base64_decode($get['filter_from']);
         $filter_to = @base64_decode($get['filter_to']);
         $filter_customer_id = @base64_decode($get['filter_customer_id']);
         $filter_sales_order_no = @base64_decode($get['filter_sales_order_no']);
+        $filter_p_month = @base64_decode($get['filter_p_month']);
+        $filter_p_year = @base64_decode($get['filter_p_year']);
         $filter_division = @base64_decode($get['filter_division']);
         $filter_status = @base64_decode($get['filter_status']);
         $filter_product_family = @base64_decode($get['filter_product_family']);
@@ -1011,13 +1036,33 @@ class Sales_orders extends CI_Controller
         $this->db->join('customers b', 'a.customer_id = b.id');
         $this->db->join('item_fg c', 'a.item_fg_id = c.id');
         $this->db->join('divisions d', 'a.division = d.number', 'left');
-        if ($filter_from != "" && $filter_to != "") {
-            $this->db->where('a.sales_order_date >=', $filter_from);
-            $this->db->where('a.sales_order_date <=', $filter_to);
+
+        if($filter_type_search == "sales_order_date") {
+            if ($filter_from != "" && $filter_to != "") {
+                $this->db->where('a.sales_order_date >=', $filter_from);
+                $this->db->where('a.sales_order_date <=', $filter_to);
+            }
+        } elseif($filter_type_search == "period") {
+            if ($filter_p_month != "" && $filter_p_year != "") {
+                $this->db->where('a.p_month', $filter_p_month);
+                $this->db->where('a.p_year', $filter_p_year);
+            }
+        } else {
+            if ($filter_from != "" && $filter_to != "") {
+                $this->db->where('a.sales_order_date >=', $filter_from);
+                $this->db->where('a.sales_order_date <=', $filter_to);
+            }
+
+            if ($filter_p_month != "" && $filter_p_year != "") {
+                $this->db->where('a.p_month', $filter_p_month);
+                $this->db->where('a.p_year', $filter_p_year);
+            }
         }
+
         if ($filter_product_family != "") {
             $this->db->where('c.item_family_number', $filter_product_family);
         }
+
         $this->db->like('a.customer_id', $filter_customer_id);
         $this->db->like('a.item_fg_id', $filter_sales_order_no);
         $this->db->like('a.division', $filter_division);
@@ -1055,11 +1100,13 @@ class Sales_orders extends CI_Controller
                 <th width="20">No</th>
                 <th>Customer Name</th>
                 <th>Customer Order No</th>
-                <th>Division</th>
+                <th>Plant</th>
+                <th>Period Month</th>
+                <th>Period Year</th>
                 <th>SO Type</th>
+                <th>Product Type</th>
                 <th>Sales Order No</th>
                 <th>Sales Order Date</th>
-                <th>Division</th>
                 <th>Delivery Date</th>
                 <th>Remarks</th>
                 <th>Product ID</th>
@@ -1074,20 +1121,42 @@ class Sales_orders extends CI_Controller
                 <th>Total</th>
             </tr>';
         $no = 1;
+
+        $months = [
+            '01' => 'January',
+            '02' => 'February',
+            '03' => 'March',
+            '04' => 'April',
+            '05' => 'May',
+            '06' => 'June',
+            '07' => 'July',
+            '08' => 'August',
+            '09' => 'September',
+            '10' => 'October',
+            '11' => 'November',
+            '12' => 'December'
+        ];
+
         foreach ($records as $data) {
+            $month_name = isset($months[$data['p_month']])
+                ? $months[$data['p_month']]
+                : '';
+
             $html .= '<tr>
                         <td>' . $no . '</td>
                         <td>' . $data['customer_name'] . '</td>
-                        <td>' . $data['customer_order_no'] . '</td>
+                        <td style="mso-number-format:\@;">' . $data['customer_order_no'] . '</td>
                         <td>' . $data['division_name'] . '</td>
+                        <td style="text-align: center;">' . $month_name . '</td>
+                        <td style="text-align: center;">' . $data['p_year'] . '</td>
                         <td>' . $data['so_type'] . '</td>
+                        <td>' . $data['type_item'] . '</td>
                         <td>' . $data['sales_order_no'] . '</td>
                         <td>' . $data['sales_order_date'] . '</td>
-                        <td>' . $data['division'] . '</td>
                         <td>' . $data['delivery_date'] . '</td>
                         <td>' . $data['remarks'] . '</td>
                         <td>' . $data['item_fg_id'] . '</td>
-                        <td>' . $data['item_fg_number'] . '</td>
+                        <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
                         <td>' . $data['item_fg_name'] . '</td>
                         <td>' . $data['uom'] . '</td>
                         <td>' . $data['qty'] . '</td>

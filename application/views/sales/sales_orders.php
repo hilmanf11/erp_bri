@@ -45,7 +45,8 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th>
             <th rowspan="2" data-options="field:'division_name',width:100,halign:'center',sortable:true">Plant</th>
-            <th rowspan="2" data-options="field:'period_month',width:120,halign:'center',sortable:true,formatter:cellPeriodMonthFormatter">Period Month</th>
+            <th rowspan="2" data-options="field:'p_month',width:120,halign:'center',sortable:true,align:'center',formatter:cellPeriodMonthFormatter">Period Month</th>
+            <th rowspan="2" data-options="field:'p_year',width:90,halign:'center',sortable:true,align:'center'">Period Year</th>
             <th rowspan="2" data-options="field:'so_type',width:100,halign:'center',sortable:true">SO Type</th>
             <th rowspan="2" data-options="field:'type_item',width:100,halign:'center',sortable:true">Product Type</th>
             <th rowspan="2" data-options="field:'sales_order_no',width:150,halign:'center',sortable:true">Sales Order No</th>
@@ -73,21 +74,46 @@
 </table>
 
 <!-- TOOLBAR DATAGRID -->
-<div id="toolbar" style="height: 250px; padding: 10px;">
+<div id="toolbar" style="height: 232px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-        <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+        <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
-            <div style="width: 50%; float: left;">
+            <div style="width: 33%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Type Search</span>
+                    <select style="width:60%;" id="filter_type_search" panelHeight="auto" class="easyui-combobox" data-options="editable: false">
+                        <option value="sales_order_date">Sales Order Date</option>
+                        <option value="period">Period</option>
+                    </select>
+                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Sales Order Date</span>
                     <input style="width:30%;" id="filter_from" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
                     <input style="width:29.5%;" id="filter_to" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Period</span>
+                    <input style="width:30%;" id="filter_p_month" class="easyui-combobox" value="<?= date("m") ?>">
+                    <input style="width:30%;" id="filter_p_year" class="easyui-combobox" value="<?= date("Y") ?>">
+                </div>
+            </div>
+            <div style="width: 33%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Plant</span>
+                    <input style="width:60%;" id="filter_division" class="easyui-combobox">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Customer Name</span>
                     <input style="width:60%;" id="filter_customer_id" class="easyui-combobox">
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Customer Order No</span>
+                    <input style="width:60%;" id="filter_customer_order_no" class="easyui-combobox">
+                </div>
+            </div>
+
+            <div style="width: 33%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Family</span>
                     <input style="width:60%;" id="filter_product_family" class="easyui-combogrid">
@@ -95,16 +121,6 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No</span>
                     <input style="width:60%;" id="filter_sales_order_no" class="easyui-combobox">
-                </div>
-            </div>
-            <div style="width: 50%; float: left;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Plant</span>
-                    <input style="width:60%;" id="filter_division" class="easyui-combobox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Customer Order No</span>
-                    <input style="width:60%;" id="filter_customer_order_no" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status</span>
@@ -150,12 +166,13 @@
                     <input style="width:60%;" name="customer_order_no" id="customer_order_no" required="" class="easyui-textbox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Period Month</span>
-                    <input style="width:40%;" name="period_month" id="period_month" required="" class="easyui-combobox" data-options="valueField:'value',textField:'text',editable:false,panelHeight:'auto'">
+                    <span style="width:35%; display:inline-block;">Period</span>
+                    <input style="width:30%;" name="p_month" id="p_month" required="" class="easyui-combobox" data-options="valueField:'value',textField:'text',editable:false,panelHeight:'auto'">
+                    <input style="width:29.5%;" name="p_year" id="p_year" required="" class="easyui-combobox" data-options="valueField:'value',textField:'text',editable:false,panelHeight:'auto'">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Sales Order Date</span>
-                    <input style="width:40%;" name="sales_order_date" id="sales_order_date" required="" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
+                    <input style="width:60%;" name="sales_order_date" id="sales_order_date" required="" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
                 </div>
                 <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Sales Order No</span>
@@ -163,7 +180,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Delivery Date</span>
-                    <input style="width:40%;" name="delivery_date" id="delivery_date" required data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
+                    <input style="width:60%;" name="delivery_date" id="delivery_date" required data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Order Type</span>
@@ -305,8 +322,10 @@
         $('#customer_id').combobox('readonly', false).combobox('enable');
         // $("#customer_id").combobox('enable');
         $("#sales_order_no").textbox('enable');
-        $("#period_month").combobox('enable');
-        $("#period_month").combobox('loadData', createMonths);
+        $("#p_month").combobox('enable');
+        $("#p_month").combobox('loadData', createMonths);
+        $("#p_year").combobox('enable');
+        $("#p_year").combobox('setValue', <?= date('Y') ?>);
         $("#sales_order_date").datebox('enable');
         $("#customer_address_id").textbox('enable');
         $("#pph").numberbox('setValue', 0);
@@ -953,10 +972,11 @@
                 $("#customer_id").combobox('disable');
                 $("#sales_order_no").textbox('disable');
 
-                $("#period_month")
+                $("#p_month")
                     .combobox('loadData', updateMonths)
                     .combobox('disable');
 
+                $("#p_year").combobox('disable');
                 $("#sales_order_date").datebox('disable');
                 $("#plant").textbox('disable');
                 
@@ -1018,21 +1038,45 @@
 
     //FILTER DATA
     function filter() {
+        var filter_type_search = $("#filter_type_search").combobox('getValue');
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_customer_id = $("#filter_customer_id").combobox('getValue');
         var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
+        var filter_p_month = $("#filter_p_month").combobox('getValue');
+        var filter_p_year = $("#filter_p_year").combobox('getValue');
         var filter_division = $("#filter_division").combobox('getValue');
         var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
         var filter_product_family = $("#filter_product_family").combogrid('getValue');
 
-        var url = "?filter_from=" + window.btoa(filter_from) +
+
+        if (filter_type_search == "") {
+            if (filter_from == "" && filter_to == "") {
+                toastr.warning("Please select Sales Order Date");
+                return;
+            }
+        } else if (filter_type_search == "sales_order_date") {
+            if (filter_from == "" || filter_to == "") {
+                toastr.warning("Please select Sales Order Date");
+                return;
+            }
+        } else if (filter_type_search == "period") {
+            if (filter_p_month == "" || filter_p_year == "") {
+                toastr.warning("Please select Period");
+                return;
+            }
+        }
+
+        var url = "?filter_type_search=" + window.btoa(filter_type_search) + 
+            "&filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
             "&filter_division=" + window.btoa(filter_division) +
             "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
+            "&filter_p_month=" + window.btoa(filter_p_month) +
+            "&filter_p_year=" + window.btoa(filter_p_year) +
             "&filter_status=" + window.btoa(filter_status) +
             "&filter_product_family=" + window.btoa(filter_product_family);
 
@@ -1165,21 +1209,45 @@
 
     //PRINT EXCEL
     function excel() {
+        var filter_type_search = $("#filter_type_search").combobox('getValue');
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_customer_id = $("#filter_customer_id").combobox('getValue');
         var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
         var filter_division = $("#filter_division").combobox('getValue');
         var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
+        var filter_p_month = $("#filter_p_month").combobox('getValue');
+        var filter_p_year = $("#filter_p_year").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
         var filter_product_family = $("#filter_product_family").combogrid('getValue');
 
-        var url = "?filter_from=" + window.btoa(filter_from) +
+
+        if (filter_type_search == "") {
+            if (filter_from == "" && filter_to == "") {
+                toastr.warning("Please select Sales Order Date");
+                return;
+            }
+        } else if (filter_type_search == "sales_order_date") {
+            if (filter_from == "" || filter_to == "") {
+                toastr.warning("Please select Sales Order Date");
+                return;
+            }
+        } else if (filter_type_search == "period") {
+            if (filter_p_month == "" || filter_p_year == "") {
+                toastr.warning("Please select Period");
+                return;
+            }
+        }
+
+        var url = "?filter_type_search=" + window.btoa(filter_type_search) + 
+            "&filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
             "&filter_division=" + window.btoa(filter_division) +
             "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
+            "&filter_p_month=" + window.btoa(filter_p_month) +
+            "&filter_p_year=" + window.btoa(filter_p_year) +
             "&filter_status=" + window.btoa(filter_status) +
             "&filter_product_family=" + window.btoa(filter_product_family);
 
@@ -1215,7 +1283,7 @@
         });
 
         updateMonths = months;
-        $('#period_month').combobox({
+        $('#p_month').combobox({
             data: createMonths
         });
         
@@ -1318,7 +1386,8 @@
                 handler: function() {
                     var customer_id = $("#customer_id").combobox('getValue');
                     var customer_order_no = $("#customer_order_no").textbox('getValue');
-                    var period_month = $("#period_month").combobox('getValue');
+                    var p_month = $("#p_month").combobox('getValue');
+                    var p_year = $("#p_year").combobox('getValue');
                     var sales_order_date = $("#sales_order_date").datebox('getValue');
                     var sales_order_no = $("#sales_order_no").textbox('getValue');
                     var division = $("#division").combobox('getValue');
@@ -1358,7 +1427,8 @@
                                 items.push({
                                         customer_id: customer_id,
                                         customer_order_no: customer_order_no,
-                                        period_month: period_month,
+                                        p_month: p_month,
+                                        p_year: p_year,
                                         sales_order_date: sales_order_date,
                                         sales_order_no: sales_order_no,
                                         division: division,
@@ -1428,6 +1498,35 @@
                 }
             }]
         });
+
+
+        $("#filter_p_month").combobox('disable');
+        $("#filter_p_year").combobox('disable');
+    
+        $("#filter_type_search").combobox({
+            onChange: function(val) {
+                if (val == "sales_order_date") {
+                    $("#filter_from").datebox('enable');
+                    $("#filter_to").datebox('enable');
+
+                    $("#filter_p_month").datebox('disable');
+                    $("#filter_p_year").datebox('disable');
+                } else if (val == "period") {
+                    $("#filter_from").datebox('disable');
+                    $("#filter_to").datebox('disable');
+
+                    $("#filter_p_month").datebox('enable');
+                    $("#filter_p_year").datebox('enable');
+                } else {
+                    $("#filter_from").datebox('enable');
+                    $("#filter_to").datebox('enable');
+                    
+                    $("#filter_p_month").datebox('disable');
+                    $("#filter_p_year").datebox('disable');
+                }
+            }
+        });
+
     });
 
     $('#filter_customer_id').combobox({
@@ -1491,6 +1590,64 @@
                 $(e.data.target).combobox('clear').combobox('textbox').focus();
             }
         }],
+    });
+
+    // $('#filter_p_month').combobox({
+    //     valueField: 'value',
+    //     textField: 'text',
+    //     prompt: 'Choose All',
+    //     data: [
+    //         { value: '01', text: 'January' },
+    //         { value: '02', text: 'February' },
+    //         { value: '03', text: 'March' },
+    //         { value: '04', text: 'April' },
+    //         { value: '05', text: 'May' },
+    //         { value: '06', text: 'June' },
+    //         { value: '07', text: 'July' },
+    //         { value: '08', text: 'August' },
+    //         { value: '09', text: 'September' },
+    //         { value: '10', text: 'October' },
+    //         { value: '11', text: 'November' },
+    //         { value: '12', text: 'December' }
+    //     ],
+    //     icons: [{
+    //         iconCls: 'icon-clear',
+    //         handler: function(e) {
+    //             $(e.data.target).combobox('clear').combobox('textbox').focus();
+    //         }
+    //     }]
+    // });
+
+    $('#filter_p_month').combobox({
+        url: '<?= base_url('planning/forecasts/readPeriod/month'); ?>',
+        valueField: 'id',
+        textField: 'name',
+        prompt: 'Choose All',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_p_year').combobox({
+        url: '<?= base_url('planning/forecasts/readPeriod/year'); ?>',
+        valueField: 'id',
+        textField: 'name',
+        prompt: 'Choose All',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    $('#p_year').combobox({
+        url: '<?= base_url('planning/forecasts/readPeriod/year'); ?>',
+        valueField: 'id',
+        textField: 'name',
     });
 
     $('#division').combobox({

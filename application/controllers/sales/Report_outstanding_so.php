@@ -36,6 +36,8 @@ class Report_outstanding_so extends CI_Controller
         $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
         $filter_d_date_from = base64_decode($this->input->get("filter_d_date_from"));
         $filter_d_date_to = base64_decode($this->input->get("filter_d_date_to"));
+        $filter_p_month = base64_decode($this->input->get("filter_p_month"));
+        $filter_p_year = base64_decode($this->input->get("filter_p_year"));
         $customer_id = $this->input->get("customer_id");
 
         $where_date = '';
@@ -51,6 +53,13 @@ class Report_outstanding_so extends CI_Controller
                     a.delivery_date BETWEEN '$filter_d_date_from' and '$filter_d_date_to'
                 )";
             }
+        } elseif ($filter_type == "PERIOD") {
+            if (!empty($filter_p_month) && !empty($filter_p_year)) {
+                $where_date = "
+                    AND a.p_month = '$filter_p_month'
+                    AND a.p_year = '$filter_p_year'
+                ";
+            }
         } else {
             if (!empty($filter_so_date_from) && !empty($filter_so_date_to)) {
                 $where_date = "AND (
@@ -61,6 +70,12 @@ class Report_outstanding_so extends CI_Controller
                 $where_date .= " AND (
                     a.delivery_date BETWEEN '$filter_d_date_from' and '$filter_d_date_to'
                 )";
+            }
+            if (!empty($filter_p_month) && !empty($filter_p_year)) {
+                $where_date = "
+                    AND a.p_month = '$filter_p_month'
+                    AND a.p_year = '$filter_p_year'
+                ";
             }
         }
 
@@ -119,6 +134,8 @@ class Report_outstanding_so extends CI_Controller
         $filter_d_date_to = base64_decode($this->input->get("filter_d_date_to"));
         $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));
         $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
+        $filter_p_month = base64_decode($this->input->get("filter_p_month"));
+        $filter_p_year = base64_decode($this->input->get("filter_p_year"));
         $filter_customer_name = base64_decode($this->input->get("filter_customer_name"));
         $filter_customer_order_no = base64_decode($this->input->get("filter_customer_order_no"));
         $filter_sales_order_no = base64_decode($this->input->get("filter_sales_order_no"));
@@ -197,12 +214,21 @@ class Report_outstanding_so extends CI_Controller
                 if(!empty($filter_d_date_from) && !empty($filter_d_date_to)) {
                     $this->db->where("a.delivery_date between '$filter_d_date_from' and '$filter_d_date_to'");
                 }
+            } elseif($filter_type == "PERIOD") {
+                if(!empty($filter_p_month) && !empty($filter_p_year)) {
+                    $this->db->where("a.p_month", "$filter_p_month");
+                    $this->db->where("a.p_year", "$filter_p_year");
+                }
             } else {
                 if(!empty($filter_so_date_from) && !empty($filter_so_date_to)) {
                     $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
                 }
                 if(!empty($filter_d_date_from) && !empty($filter_d_date_to)) {
                     $this->db->where("a.delivery_date between '$filter_d_date_from' and '$filter_d_date_to'");
+                }
+                if(!empty($filter_p_month) && !empty($filter_p_year)) {
+                    $this->db->where("a.p_month", "$filter_p_month");
+                    $this->db->where("a.p_year", "$filter_p_year");
                 }
             }
 
@@ -325,12 +351,21 @@ class Report_outstanding_so extends CI_Controller
                 if(!empty($filter_d_date_from) && !empty($filter_d_date_to)) {
                     $this->db->where("a.delivery_date between '$filter_d_date_from' and '$filter_d_date_to'");
                 }
+            } elseif($filter_type == "PERIOD") {
+                if(!empty($filter_p_month) && !empty($filter_p_year)) {
+                    $this->db->where("a.p_month", "$filter_p_month");
+                    $this->db->where("a.p_year", "$filter_p_year");
+                }
             } else {
                 if(!empty($filter_so_date_from) && !empty($filter_so_date_to)) {
                     $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
                 }
                 if(!empty($filter_d_date_from) && !empty($filter_d_date_to)) {
                     $this->db->where("a.delivery_date between '$filter_d_date_from' and '$filter_d_date_to'");
+                }
+                if(!empty($filter_p_month) && !empty($filter_p_year)) {
+                    $this->db->where("a.p_month", "$filter_p_month");
+                    $this->db->where("a.p_year", "$filter_p_year");
                 }
             }
 
