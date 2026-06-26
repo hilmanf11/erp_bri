@@ -545,7 +545,8 @@ class Bom_compound extends CI_Controller
             c.number_internal as item_rm_number_internal,
             c.name as item_rm_name,
             e.name as process_name,
-            d.name as product_family_name
+            d.name as product_family_name,
+            c.cas_no
         ');
         $this->db->from('bom a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
@@ -588,15 +589,15 @@ class Bom_compound extends CI_Controller
         $sheet->getStyle('B1')->getAlignment()
             ->setVertical(Alignment::VERTICAL_CENTER);
 
-        $sheet->mergeCells('L1:N1');
-        $sheet->mergeCells('L2:N2');
-        $sheet->setCellValue('L1', 'Print Date : '.date('d M Y H:i:s'));
-        $sheet->setCellValue('L2', 'Print By   : '.$this->session->username);
-        $sheet->getStyle('L1:L2')->getAlignment()
+        $sheet->mergeCells('M1:O1');
+        $sheet->mergeCells('M2:O2');
+        $sheet->setCellValue('M1', 'Print Date : '.date('d M Y H:i:s'));
+        $sheet->setCellValue('M2', 'Print By   : '.$this->session->username);
+        $sheet->getStyle('M1:M2')->getAlignment()
             ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->getStyle('L1:L2')->getFont()->setSize(10);
+        $sheet->getStyle('M1:M2')->getFont()->setSize(10);
 
-        $sheet->mergeCells('A4:N4');
+        $sheet->mergeCells('A4:O4');
         $sheet->setCellValue('A4', 'MASTER BILL OF MATERIAL COMPOUND');
         $sheet->getStyle('A4')->getFont()->setBold(true)->setSize(16);
         $sheet->getStyle('A4')->getAlignment()
@@ -605,7 +606,7 @@ class Bom_compound extends CI_Controller
         $row = 6;
         $headers = [
             'No','Product ID','Product No','Product Name',
-            'Part ID','Part No Internal','Part Name',
+            'Part ID','Part No Internal','Part Name', 'CAS No',
             'Process Name','Type of Product','% Recycle Part',
             'Product Family','UOM','Composition','Priority'
         ];
@@ -627,18 +628,24 @@ class Bom_compound extends CI_Controller
         $sheet->getColumnDimension('E')->setWidth(20);
         $sheet->getColumnDimension('F')->setWidth(20);
         $sheet->getColumnDimension('G')->setWidth(30);
-        $sheet->getColumnDimension('H')->setWidth(18);
+
+        $sheet->getColumnDimension('H')->setWidth(25);
+        $sheet->getStyle('H:H')
+            ->getNumberFormat()
+            ->setFormatCode('@');
+
         $sheet->getColumnDimension('I')->setWidth(18);
         $sheet->getColumnDimension('J')->setWidth(18);
-        $sheet->getColumnDimension('K')->setWidth(22);
-        $sheet->getColumnDimension('L')->setWidth(14);
-        $sheet->getColumnDimension('M')->setWidth(16);
-        $sheet->getColumnDimension('N')->setWidth(12);
+        $sheet->getColumnDimension('K')->setWidth(18);
+        $sheet->getColumnDimension('L')->setWidth(22);
+        $sheet->getColumnDimension('M')->setWidth(14);
+        $sheet->getColumnDimension('N')->setWidth(16);
+        $sheet->getColumnDimension('O')->setWidth(12);
 
         $sheet->getStyle('C:C')->getAlignment()
             ->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
-        $sheet->getStyle("A$row:N$row")
+        $sheet->getStyle("A$row:O$row")
             ->getFill()
             ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()->setRGB('F2F2F2');
@@ -655,14 +662,21 @@ class Bom_compound extends CI_Controller
             $sheet->setCellValue("E$row", $data['item_rm_id']);
             $sheet->setCellValue("F$row", $data['item_rm_number_internal']);
             $sheet->setCellValue("G$row", $data['item_rm_name']);
-            $sheet->setCellValue("H$row", $data['process_name']);
-            $sheet->setCellValue("I$row", $data['type']);
-            $sheet->setCellValue("J$row", $data['recyle']);
-            $sheet->setCellValue("K$row", $data['product_family_name']);
-            $sheet->setCellValue("L$row", $data['uom']);
+            // $sheet->setCellValue("H$row", $data['cas_no']);
+            $sheet->setCellValue("I$row", $data['process_name']);
+            $sheet->setCellValue("J$row", $data['type']);
+            $sheet->setCellValue("K$row", $data['recyle']);
+            $sheet->setCellValue("L$row", $data['product_family_name']);
+            $sheet->setCellValue("M$row", $data['uom']);
 
             $sheet->setCellValueExplicit(
-                "M$row",
+                "H$row",
+                $data['cas_no'],
+                DataType::TYPE_STRING
+            );
+
+            $sheet->setCellValueExplicit(
+                "N$row",
                 (float)$data['composition'],
                 DataType::TYPE_NUMERIC
             );
@@ -677,17 +691,17 @@ class Bom_compound extends CI_Controller
             //     ->getNumberFormat()
             //     ->setFormatCode('#,##0.0000');
 
-            $sheet->getStyle("M$row")
+            $sheet->getStyle("N$row")
                 ->getNumberFormat()
                 ->setFormatCode('0.0000');
 
 
-            $sheet->setCellValue("N$row", $data['priority']);
+            $sheet->setCellValue("O$row", $data['priority']);
 
             $row++;
         }
 
-        $sheet->getStyle("A6:N".($row-1))
+        $sheet->getStyle("A6:O".($row-1))
             ->getBorders()
             ->getAllBorders()
             ->setBorderStyle(Border::BORDER_THIN);
