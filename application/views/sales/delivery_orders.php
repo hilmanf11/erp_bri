@@ -1446,17 +1446,39 @@
                                     toastr.clear();
                                     if (res.theme === 'success') {
                                         $('#dg_request').datagrid('clearSelections');
-                                        Swal.fire({
-                                            title: res.message,
-                                            icon: res.theme,
-                                            confirmButtonText: 'Ok',
-                                            allowOutsideClick: false,
-                                        }).then((result) => {
-                                            if (result.isConfirmed) {
-                                                print_do(delivery_order_no);
+
+                                        if (res.delivery_order_changed) {
+
+                                            Swal.fire({
+                                                title: 'Delivery Order No Updated',
+                                                html: `Your delivery order no changed to:<br><b>${res.delivery_order_no}</b>`,
+                                                icon: 'warning',
+                                                confirmButtonText: 'OK',
+                                                allowOutsideClick: false
+                                            }).then(() => {
+
+                                                print_do(res.delivery_order_no);
                                                 window.location.reload();
-                                            }
-                                        });
+
+                                            });
+
+                                        } else {
+
+                                            Swal.fire({
+                                                title: res.message,
+                                                icon: res.theme,
+                                                confirmButtonText: 'Ok',
+                                                allowOutsideClick: false,
+                                            }).then((result) => {
+
+                                                if (result.isConfirmed) {
+                                                    print_do(delivery_order_no);
+                                                    window.location.reload();
+                                                }
+
+                                            });
+
+                                        }
 
                                         $('#dg').datagrid('reload');
                                         $('#dlg_insert').dialog('close');

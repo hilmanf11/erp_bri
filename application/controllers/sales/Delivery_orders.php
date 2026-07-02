@@ -300,6 +300,35 @@ class Delivery_orders extends CI_Controller
         echo $new_seq.'/'.$prefix;
     }
 
+    private function generateDeliveryOrderNo($delivery_order_date, $customer_id, $customer_no)
+    {
+        $dt = DateTime::createFromFormat('Y-m-d', $delivery_order_date);
+
+        if (!$dt) {
+            $dt = new DateTime();
+        }
+
+        $month      = $dt->format('m');
+        $year_short = $dt->format('y');
+
+        $prefix = $customer_no.'/'.$month.'/'.$year_short;
+
+        $query = $this->db->query("
+            SELECT 
+                CAST(SUBSTRING_INDEX(delivery_order_no, '/', 1) AS UNSIGNED) AS seq
+            FROM delivery_orders
+            WHERE customer_id = '".$customer_id."'
+            AND SUBSTRING_INDEX(delivery_order_no, '/', -1) = '".$year_short."'
+            ORDER BY seq DESC
+            LIMIT 1
+        ");
+
+        $new_seq = ($query->num_rows() > 0)
+            ? sprintf('%04d', ((int)$query->row()->seq + 1))
+            : '0001';
+
+        return $new_seq.'/'.$prefix;
+    }
 
 
 
@@ -1039,19 +1068,14 @@ class Delivery_orders extends CI_Controller
 
         $this->db->trans_begin();
 
-        foreach ($items as $post) {
-            $delivery_orders = $this->crud->read("delivery_orders", [], [
-                "delivery_order_no" => $post['delivery_order_no'],
-                "item_fg_id"        => $post['item_fg_id'],
-                "sales_order_no"    => $post['sales_order_no']
-            ]);
+        $original_do_no = $items[0]['delivery_order_no'];
+        $original_so_no = $items[0]['sales_order_no'];
 
+        $regenerated_do_no = null;
+        foreach ($items as $post) {
             $send = false;
 
-            $item_fg = $this->crud->read('item_fg', [], [
-                'id' => $post['item_fg_id']
-            ]);
-
+            $item_fg = $this->crud->read('item_fg', [], ['id' => $post['item_fg_id']]);
             if (!$item_fg) {
                 $errors[] = "Product ID not found {$post['item_fg_id']}";
                 continue;
@@ -1075,6 +1099,12 @@ class Delivery_orders extends CI_Controller
                 continue;
             }
 
+            $delivery_orders = $this->crud->read("delivery_orders", [], [
+                "delivery_order_no" => $post['delivery_order_no'],
+                "item_fg_id"        => $post['item_fg_id'],
+                "sales_order_no"    => $post['sales_order_no']
+            ]);
+
             if (@$delivery_orders->delivery_order_no != "") {
                 $update_data = [
                     "remarks" => $post['remarks'],
@@ -1093,6 +1123,32 @@ class Delivery_orders extends CI_Controller
                 //     continue;
                 // }
                 // $send = $this->crud->create('delivery_orders', $post);
+
+                $checkDO = $this->db
+                        ->where('delivery_order_no', $original_do_no)
+                        ->where('sales_order_no !=', $original_so_no)
+                        ->limit(1)
+                        ->count_all_results('delivery_orders') > 0;
+
+                if ($regenerated_do_no !== null) {
+                    $post['delivery_order_no'] = $regenerated_do_no;
+
+                } elseif ($checkDO) {
+
+                    $customer = $this->crud->read('customers', [], [
+                        'id' => $post['customer_id']
+                    ]);
+
+                    if ($customer) {
+                        $regenerated_do_no = $this->generateDeliveryOrderNo(
+                            $post['delivery_order_date'],
+                            $post['customer_id'],
+                            $customer->number
+                        );
+
+                        $post['delivery_order_no'] = $regenerated_do_no;
+                    }
+                }
 
                 $parent_sod = $this->crud->read("sales_order_deliveries", [], [
                     "sales_order_no"    => $post['sales_order_no'],
@@ -1314,11 +1370,21 @@ class Delivery_orders extends CI_Controller
             return;
         }
 
+        $delivery_order_changed = false;
+        $final_delivery_order_no = $original_do_no;
+
+        if ($regenerated_do_no !== null) {
+            $delivery_order_changed = true;
+            $final_delivery_order_no = $regenerated_do_no;
+        }
+
         $this->db->trans_commit();
         echo json_encode([
             "title" => "Success",
             "message" => "$success_count items have been saved successfully",
-            "theme" => "success"
+            "theme" => "success",
+            "delivery_order_changed" => $delivery_order_changed,
+            "delivery_order_no" => $final_delivery_order_no
         ]);
     }
 

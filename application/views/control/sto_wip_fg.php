@@ -301,7 +301,12 @@
             '<?= base_url("control/sto_wip_fg/getCurrentHeader") ?>',
             function(row){
                 if(row.scan_id){
+                    // console.log('ROW : ', row);
+
+                    isLoadingExistingData = true;
+                    
                     $("#doc_no").textbox('setValue', row.doc_no);
+                    // console.log($("#doc_no").textbox('getValue'));
                     $("#period_month").combobox('setValue', row.period_month);
                     $("#period_year").combobox('setValue', row.period_year);
                     $("#location").combogrid('setValue', row.location_name);
@@ -314,6 +319,8 @@
 
                     $('#workorder_label').prop('disabled', false);
                     $('#btnStartScan').linkbutton('disable');
+
+                    isLoadingExistingData = false;
 
                 }else{
 
@@ -489,6 +496,7 @@
         if (isLoadingExistingData) {
             return;
         }
+        // console.log("regenerateDocNo");
 
         let period_month = $('#period_month').combobox('getValue');
         let period_year = $('#period_year').combobox('getValue');
@@ -510,8 +518,12 @@
                 },
                 dataType: "html",
                 success: function(result) {
+                    // console.log("Generated =", result);
+                    
                     $("#doc_no").textbox('setValue', result);
                     // $("#doc_no").textbox('setText', result);
+
+                    // console.log("After set =", $("#doc_no").textbox("getValue"));
                 }
             });
         }

@@ -63,12 +63,12 @@
                 <input style="width:60%;" name="item_fg_id"  id="item_fg_id" required class="easyui-combogrid">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Label Type</span>
-                <input style="width:60%;" name="label_type"  id="label_type" required class="easyui-combogrid" data-options="editable:false">
-            </div>
-            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Location</span>
                 <input style="width:60%;" name="location" id="location" required class="easyui-combogrid" data-options="editable:false">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Label Type</span>
+                <input style="width:60%;" name="label_type"  id="label_type" required class="easyui-combogrid" data-options="editable:false">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Qty</span>
@@ -314,29 +314,37 @@
         ],
     });
 
-    $('#label_type').combogrid({
-        url: '<?= base_url("control/balance_begin_wip/readLabelTypes") ?>',
-        idField: 'id',
-        textField: 'name',
-        panelWidth: 400,
-        fitColumns: true,
-        columns:[[
-            {field:'id',title:'TYPE ID',width:100},
-            {field:'name',title:'TYPE NAME',width:150},
-            {field:'description',title:'DESCRIPTION',width:150}
-        ]]
-    });
-
     $('#location').combogrid({
         url: '<?= base_url("control/balance_begin_wip/readLocations") ?>',
-        idField: 'id',
+        idField: 'code',
         textField: 'name',
         panelWidth: 500,
         fitColumns: true,
         columns:[[
-            {field:'id',title:'LOCATION ID',width:100},
+            {field:'code',title:'LOCATION CODE',width:100},
             {field:'name',title:'LOCATION NAME',width:200},
             {field:'description',title:'DESCRIPTION',width:200}
+        ]],
+        onSelect: function(index, row){
+
+            $('#label_type').combogrid('clear');
+            $('#label_type').combogrid('grid').datagrid('options').url =
+                '<?= base_url("control/balance_begin_wip/readLabelTypes") ?>?location=' + row.code;
+
+            $('#label_type').combogrid('grid').datagrid('reload');
+        }
+    });
+
+    $('#label_type').combogrid({
+        url: '<?= base_url("control/balance_begin_wip/readLabelTypes") ?>',
+        idField: 'name',
+        textField: 'name',
+        panelWidth: 600,
+        fitColumns: true,
+        columns:[[
+            {field:'code',title:'TYPE CODE',width:100},
+            {field:'name',title:'TYPE NAME',width:150},
+            {field:'description',title:'DESCRIPTION',width:350}
         ]]
     });
 

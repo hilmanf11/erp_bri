@@ -12,8 +12,6 @@ class Scan_visual_checker extends CI_Controller
         $this->load->library('session');
         $this->load->library('Ciqrcode');
         $this->load->model('crud');
-        //Validasi Form
-        // $this->form_validation->set_rules('workorder_label', 'Label No', 'required|min_length[1]|max_length[50]');
     }
 
     public function index()
@@ -89,68 +87,71 @@ class Scan_visual_checker extends CI_Controller
         ]);
     }
 
-    public function getChecksheetLabelV1()
+    private function _getTableConfigs()
     {
-        if (!$this->input->post()) {
-            return;
-        }
+        return [
+            [
+                'key' => 'FNS',
+                'table' => 'scan_in_from_internal_finishing',
+                'field' => 'workorder_label',
+                'prefix' => null,
 
-        $workorder_label = $this->input->post('workorder_label');
+                'multi_status_check' => false
+            ],
+            [
+                'key' => 'FNS_RW',
+                'table' => 'scan_in_from_internal_finishing',
+                'field' => 'serial_label',
+                'prefix' => 'RWIN',
 
-        $tables = [
-            'scan_in_from_internal_finishing',
-            'scan_incoming_sctf',
-            // 'scan_in_reworks'
+                'multi_status_check' => true,
+                'tracker' => 'RWIN'
+            ],
+            [
+                'key' => 'SCTF',
+                'table' => 'scan_incoming_sctf',
+                'field' => 'workorder_label',
+                'prefix' => null,
+
+                'multi_status_check' => false
+            ],
+            [
+                'key' => 'SCTF_RW',
+                'table' => 'scan_incoming_sctf',
+                'field' => 'serial_label',
+                'prefix' => 'RW',
+
+                'multi_status_check' => true,
+                'tracker' => 'RW'
+            ],
+            [
+                'key' => 'RETURN',
+                'table' => 'scan_in_return',
+                'field' => 'serial_label',
+                'prefix' => 'RT',
+
+                'multi_status_check' => true,
+                'tracker' => 'RT'
+            ]
         ];
-
-        $foundTable = null;
-        $label = null;
-
-        foreach ($tables as $table) {
-            $label = $this->db->get_where($table, [
-                'workorder_label' => $workorder_label,
-                'type_status' => 'completed'
-            ])->row_array();
-
-            if ($label) {
-                $foundTable = $table;
-                break;
-            }
-        }
-
-        if (!$label) {
-            echo json_encode([
-                'title'   => 'Not Found',
-                'message' => 'Label not found!'
-            ]);
-            return;
-        }
-
-        if ($label['status'] == 1) {
-            echo json_encode([
-                'title'   => 'Scanned',
-                'message' => 'Label has already been scanned',
-                'data'    => $label
-            ]);
-            return;
-        }
-
-        $this->db->select("item_fg_id, workorder, workorder_label, qty");
-        $this->db->from($foundTable);
-        $this->db->where('workorder_label', $workorder_label);
-        $this->db->where('status', '0');
-        $this->db->limit(1);
-
-        $result = $this->db->get()->row_array();
-
-        echo json_encode([
-            'title' => 'success',
-            'total' => count($result),
-            'data'  => $result
-        ]);
     }
 
-    public function getChecksheetLabel()
+    private function _getConfigMap()
+    {
+        static $map = null;
+
+        if ($map !== null) {
+            return $map;
+        }
+
+        foreach ($this->_getTableConfigs() as $config) {
+            $map[$config['key']] = $config;
+        }
+
+        return $map;
+    }
+
+    public function getChecksheetLabelV2()
     {
         if (!$this->input->post()) {
             return;
@@ -191,18 +192,20 @@ class Scan_visual_checker extends CI_Controller
         $label = null;
 
         foreach ($tableConfigs as $config) {
-
-            // Jika ada prefix, validasi dulu
             if ($config['prefix'] !== null) {
                 if (strpos($input_label, $config['prefix']) !== 0) {
                     continue;
                 }
             }
 
-            $label = $this->db->get_where($config['table'], [
-                $config['field'] => $input_label,
-                'type_status'    => 'completed'
-            ])->row_array();
+            $this->db->where($config['field'], $input_label);
+            $this->db->where('type_status', 'completed');
+
+            if ($config['table'] == 'scan_incoming_sctf') {
+                $this->db->where('incoming_type !=', 'BPM');
+            }
+
+            $label = $this->db->get($config['table'])->row_array();
 
             if ($label) {
                 $foundTable = $config['table'];
@@ -227,21 +230,6 @@ class Scan_visual_checker extends CI_Controller
             ]);
             return;
         }
-
-        // $this->db->select("item_fg_id, workorder, qty, {$foundField} as label");
-        // $this->db->from($foundTable);
-        // $this->db->where($foundField, $input_label);
-        // $this->db->where('status', '0');
-        // $this->db->limit(1);
-
-        // $result = $this->db->get()->row_array();
-
-        // echo json_encode([
-        //     'title' => 'success',
-        //     'total' => $result ? 1 : 0,
-        //     'data'  => $result
-        // ]);
-
 
         if (
             $foundTable == 'scan_in_return' || 
@@ -280,6 +268,103 @@ class Scan_visual_checker extends CI_Controller
 
         }
 
+    }
+
+    public function getChecksheetLabel()
+    {
+        if (!$this->input->post()) {
+            return;
+        }
+
+        $input_label = $this->input->post('workorder_label');
+        $tableConfigs = $this->_getTableConfigs();
+
+        $label = null;
+        $foundConfig = null;
+
+        foreach ($tableConfigs as $config) {
+
+            if ($config['prefix'] !== null && strpos($input_label, $config['prefix']) !== 0) {
+                continue;
+            }
+
+            $this->db->where($config['field'], $input_label);
+            $this->db->where('type_status', 'completed');
+
+            if ($config['table'] == 'scan_incoming_sctf') {
+                $this->db->where('incoming_type !=', 'BPM');
+            }
+
+            $row = $this->db->get($config['table'])->row_array();
+
+            if ($row) {
+                $label = $row;
+                $foundConfig = $config;
+                break;
+            }
+        }
+
+        if (!$label) {
+            echo json_encode([
+                'title'   => 'Not Found',
+                'message' => 'Label not found!'
+            ]);
+            return;
+        }
+
+        if ($label['status'] == 1) {
+            echo json_encode([
+                'title'   => 'Scanned',
+                'message' => 'Label has already been scanned',
+                'data'    => $label
+            ]);
+            return;
+        }
+
+        $isMulti =
+            $foundConfig['table'] == 'scan_in_return' ||
+            (
+                $foundConfig['table'] == 'scan_in_from_internal_finishing' &&
+                $foundConfig['field'] == 'serial_label'
+            ) ||
+            (
+                $foundConfig['table'] == 'scan_incoming_sctf' &&
+                $foundConfig['field'] == 'serial_label'
+            );
+
+        $this->db->select("item_fg_id, workorder, workorder_label, qty, {$foundConfig['field']} as label");
+        $this->db->from($foundConfig['table']);
+        $this->db->where($foundConfig['field'], $input_label);
+        $this->db->where('status', '0');
+        $this->db->where('type_status', 'completed');
+
+        if ($foundConfig['table'] == 'scan_incoming_sctf') {
+            $this->db->where('incoming_type !=', 'BPM');
+        }
+
+        if ($isMulti) {
+            $result = $this->db->get()->result_array();
+            foreach ($result as &$row) {
+                $row['config_key'] = $foundConfig['key'];
+            }
+
+            echo json_encode([
+                'title' => 'success',
+                'total' => count($result),
+                'data'  => $result
+            ]);
+
+        } else {
+
+            $result = $this->db->limit(1)->get()->row_array();
+            $result['config_key'] = $foundConfig['key'];
+
+            echo json_encode([
+                'title' => 'success',
+                'total' => $result ? 1 : 0,
+                'data'  => $result ? [$result] : []
+            ]);
+        }
     }
 
     public function getSummaryVc()
@@ -394,227 +479,8 @@ class Scan_visual_checker extends CI_Controller
         ]);
     }
 
-    public function createV1()
-    {
-        if (!$this->input->post()) {
-            show_error("Cannot Process your request");
-        }
 
-        if ($this->form_validation->run() !== TRUE) {
-            show_error(validation_errors());
-        }
-
-        $post = $this->input->post();
-
-        $username = $this->session->username;
-        $item_fg_id = $post['item_fg_id'] ?? null;
-
-        if (!$item_fg_id) {
-            return $this->jsonResponse(
-                'Error',
-                'Item FG ID is missing',
-                'error'
-            );
-        }
-
-        // $check_date     = $post['check_date'];
-        // $inspector      = $post['inspector'];
-        // $visual_process = $post['visual_process'];
-
-        // $checkScan = $this->crud->query("
-        //     SELECT * 
-        //     FROM scan_visual_checker
-        //     where check_date = '$check_date'
-        //     AND inspector = '$inspector'
-        //     AND visual_process = '$visual_process'
-        //     AND type_status = 'scanning'
-        //     AND created_by != '$username'
-        // ");
-
-        // if($checkScan) {
-        //     return $this->jsonResponse(
-        //         "Error",
-        //         "The inspector is currently performing $visual_process on another account",
-        //         "error"
-        //     );
-        // }
-
-
-        $this->db->trans_begin();
-
-        try {
-
-            $label_sources = [
-                'scan_in_from_internal_finishing',
-                'scan_incoming_sctf',
-                // 'scan_in_reworks'
-            ];
-
-            $label_item = null;
-            $label_table = null;
-
-            foreach ($label_sources as $table) {
-
-                $row = $this->db->query("
-                    SELECT *
-                    FROM {$table}
-                    WHERE workorder_label = ?
-                    AND type_status = ?
-                    FOR UPDATE
-                ", [$post['workorder_label'], 'completed'])->row();
-
-                if ($row) {
-                    $label_item  = $row;
-                    $label_table = $table;
-                    break;
-                }
-            }
-
-            if (!$label_item){
-                throw new Exception(json_encode([
-                    'title'=>'Not Found',
-                    'message'=>'Label not found!',
-                    'theme'=>'error',
-                ]));
-            }
-
-            if ($label_item->status == 1){
-                throw new Exception(json_encode([
-                    'title'=>'Available',
-                    'message'=>'Label has already been scanned',
-                    'theme'=>'warning',
-                ]));
-            }
-
-
-            $session_row = $this->db->select('scan_id, created_by')
-                ->from('scan_visual_checker')
-                ->where('type_status', 'scanning')
-                ->where('created_by', "$username")
-                ->where('status', 0)
-                ->limit(1)
-                ->get()
-                ->row();
-
-            $scan_id = $session_row->scan_id ?? $this->generate_uuid();
-
-            $qty = $post['qty'] ?? 0;
-
-            $data_header = [
-                'scan_id'         => $scan_id,
-                'check_date'      => $post['check_date'],
-                'inspector'       => $post['inspector'],
-                'customer_id'     => $post['customer'],
-                'visual_process'  => $post['visual_process'],
-                'type_status'     => 'scanning',
-                'status'          => 0
-            ];
-
-            $checkHeader = $this->db->get_where('scan_visual_checker', [
-                'scan_id' => $scan_id
-            ])->row_array();
-
-            if(!$checkHeader){
-                $this->crud->create('scan_visual_checker', $data_header);
-
-                if ($this->db->trans_status() === FALSE) {
-                    throw new Exception('Failed scan label in visual checker');
-                }
-
-                $checkHeader = $this->db->get_where('scan_visual_checker', [
-                    'scan_id' => $scan_id
-                ])->row_array();
-            }
-
-
-            $source = 'INTERNAL';
-            $delivery_note_no = '';
-
-            if ($label_table === 'scan_incoming_sctf') {
-
-                $checkSubTF = $this->db->query("
-                    SELECT 
-                        COALESCE(b.number, c.number) AS incoming_from_number,
-                        a.delivery_note_no
-                    FROM scan_incoming_sctf a
-                    LEFT JOIN subconts b ON b.id = a.incoming_from
-                    LEFT JOIN teaching_factory c ON c.id = a.incoming_from
-                    WHERE a.workorder_label = ?
-                    LIMIT 1
-                ", [$post['workorder_label']])->row();
-
-                if ($checkSubTF && $checkSubTF->incoming_from_number){
-                    $source = $checkSubTF->incoming_from_number;
-                }
-
-                if ($checkSubTF && $checkSubTF->delivery_note_no){
-                    $delivery_note_no = $checkSubTF->delivery_note_no;
-                }
-            }
-
-            $data_to_insert = [
-                'scan_id'         => $scan_id,
-                'visual_checker_id' => $checkHeader['id'],
-                'item_fg_id'      => $label_item->item_fg_id,
-                'workorder'       => $label_item->workorder,
-                'workorder_label' => $label_item->workorder_label,
-
-                'delivery_note_no'=> $delivery_note_no,
-                'source'          => $source,
-                'qty_on_label'    => $qty,
-
-                'type_status'     => 'scanning',
-                'status'          => 0
-            ];
-
-            $this->crud->create('scan_visual_checker_detail', $data_to_insert);
-
-            if ($this->db->trans_status() === FALSE) {
-                throw new Exception('Failed scan label in visual checker');
-            }
-
-            $this->crud->update($label_table, [
-                'workorder_label' => $post['workorder_label'],
-            ], [
-                'status' => 1
-            ]);
-
-            if ($this->db->trans_status() === FALSE) {
-                throw new Exception('Transaction failed');
-            }
-
-            $this->db->trans_commit();
-
-            return $this->jsonResponse(
-                'Success',
-                'Data berhasil disimpan',
-                'success'
-            );
-
-        } catch (Exception $e) {
-
-            $this->db->trans_rollback();
-
-            $json=@json_decode($e->getMessage(),true);
-
-            if($json){
-                return $this->jsonResponse(
-                    $json['title'],
-                    $json['message'],
-                    $json['theme']
-                );
-            }
-
-            return $this->jsonResponse(
-                'Error',
-                $e->getMessage(),
-                'error'
-            );
-        }
-    }
-
-
-    public function create_bulk()
+    public function create_bulk_v2()
     {
         if (!$this->input->post()) {
             show_error("Cannot Process your request");
@@ -991,6 +857,306 @@ class Scan_visual_checker extends CI_Controller
         }
     }
 
+    public function create_bulk()
+    {
+        if (!$this->input->post()) {
+            show_error("Cannot Process your request");
+        }
+
+        $post = $this->input->post();
+        $username = $this->session->username;
+
+        $rows = $post['rows'] ?? [];
+
+        if (empty($rows)) {
+            return $this->jsonResponse(
+                'Error',
+                'No data to process!',
+                'error'
+            );
+        }
+
+        $this->db->trans_begin();
+
+        try {
+
+            $session_row = $this->db->select('scan_id, created_by')
+                ->from('scan_visual_checker')
+                ->where('type_status', 'scanning')
+                ->where('created_by', $username)
+                ->where('status', 0)
+                ->limit(1)->get()->row();
+
+            $scan_id = $session_row->scan_id ?? $this->generate_uuid();
+
+            $data_header = [
+                'scan_id'         => $scan_id,
+                'check_date'      => $post['check_date'],
+                'inspector'       => $post['inspector'],
+                'customer_id'     => $post['customer'],
+                'visual_process'  => $post['visual_process'],
+                'type_status'     => 'scanning',
+                'status'          => 0
+            ];
+
+            $checkHeader = $this->db->get_where('scan_visual_checker', [
+                'scan_id' => $scan_id
+            ])->row_array();
+
+            if (!$checkHeader) {
+                $this->crud->create('scan_visual_checker', $data_header);
+
+                if ($this->db->trans_status() === FALSE) {
+                    throw new Exception('Failed create header');
+                }
+
+                $checkHeader = $this->db->get_where('scan_visual_checker', [
+                    'scan_id' => $scan_id
+                ])->row_array();
+            }
+
+
+            $trackers = [
+                'RT' => [
+                    'labels' => [],
+                    'table'  => 'scan_in_return'
+                ],
+                'RWIN' => [
+                    'labels' => [],
+                    'table'  => 'scan_in_from_internal_finishing'
+                ],
+                'RW' => [
+                    'labels' => [],
+                    'table'  => 'scan_incoming_sctf'
+                ]
+            ];
+
+            foreach ($rows as $row) {
+
+                $label = $row['label']; //workorder_label / serial_label
+
+                $configKey = $row['config_key'] ?? null;
+                $config = $this->_getConfigMap()[$configKey] ?? null;
+
+                if (!$config) {
+                    throw new Exception(json_encode([
+                        'title'   => 'Error',
+                        'message' => 'Invalid data',
+                        'theme'   => 'error',
+                    ]));
+                }
+
+                // $query = $this->db->query("
+                //     SELECT *
+                //     FROM {$config['table']}
+                //     WHERE {$config['field']} = ?
+                //     AND type_status = ?
+                //     FOR UPDATE
+                // ", [$label, 'completed']);
+
+                // $label_item = $query->row();
+
+                $sql = "
+                    SELECT *
+                    FROM {$config['table']}
+                    WHERE {$config['field']} = ?
+                    AND type_status = ?
+                ";
+
+                $params = [$label, 'completed'];
+
+                if ($config['table'] === 'scan_incoming_sctf') {
+                    $sql .= " AND incoming_type != ?";
+                    $params[] = 'BPM';
+                }
+
+                $sql .= " FOR UPDATE";
+
+                $query = $this->db->query($sql, $params);
+
+                $label_item = $query->row();
+                $label_table = $config['table'];
+                $label_field = $config['field'];
+
+                $workorder_label = ($label_field == 'workorder_label') ? $label : $row['workorder_label'];
+                $serial_label    = ($label_field == 'serial_label') ? $label : null;
+
+                if (!$label_item) {
+                    throw new Exception(json_encode([
+                        'title'=>'Not Found',
+                        'message'=>'Label not found!',
+                        'theme'=>'error',
+                    ]));
+                }
+
+                $isMulti = !empty($config['multi_status_check']);
+
+                if ($isMulti) {
+
+                    $checkedList = &$trackers[$config['tracker']]['labels'];
+                    if (!in_array($label, $checkedList)) {
+
+                        $checkRemaining = $this->db->query("
+                            SELECT COUNT(*) as total
+                            FROM {$config['table']}
+                            WHERE {$config['field']} = ?
+                            AND type_status = ?
+                        ", [$label, 'completed'])->row();
+
+                        if ($checkRemaining->total == 0) {
+
+                            throw new Exception(json_encode([
+                                'title'   => 'Available',
+                                'message' => 'Label has already been scanned',
+                                'theme'   => 'warning',
+                            ]));
+                        }
+
+                        $checkedList[] = $label;
+                    }
+
+                } else {
+
+                    if ($label_item->status == 1) {
+
+                        throw new Exception(json_encode([
+                            'title'   => 'Available',
+                            'message' => 'Label has already been scanned',
+                            'theme'   => 'warning',
+                        ]));
+                    }
+                }
+
+                $source = 'INTERNAL';
+                $delivery_note_no = '';
+
+                if ($label_table === 'scan_incoming_sctf') {
+
+                    $checkSubTF = $this->db->query("
+                        SELECT
+                            COALESCE(b.number, c.number) AS incoming_from_number,
+                            a.delivery_note_no
+                        FROM scan_incoming_sctf a
+                        LEFT JOIN subconts b ON b.id = a.incoming_from
+                        LEFT JOIN teaching_factory c ON c.id = a.incoming_from
+                        WHERE a.{$label_field} = ?
+                        AND a.incoming_type != 'BPM'
+                        AND a.status = 0
+                        LIMIT 1
+                        ", [$label])->row();
+
+                    if ($checkSubTF) {
+                        $source = $checkSubTF->incoming_from_number ?? 'INTERNAL';
+                        $delivery_note_no = $checkSubTF->delivery_note_no ?? '';
+                    }
+                }
+
+                $prevData = null;
+
+                if ($isMulti) {
+
+                    $prevData = $this->db->select('operator_finishing, compound_lot_no, source, delivery_note_no')
+                        ->from('scan_visual_checker_detail')
+                        ->where('workorder_label', $row['workorder_label'])
+                        ->where('type_status', 'finished')
+                        ->order_by('id', 'DESC')
+                        ->limit(1)->get()->row();
+
+                    $source = $prevData ? $prevData->source : 'INTERNAL';
+                }
+
+                $data_to_insert = [
+                    'scan_id'            => $scan_id,
+                    'visual_checker_id'  => $checkHeader['id'],
+                    'item_fg_id'         => $row['item_fg_id'],
+                    'workorder'          => $row['workorder'],
+                    'workorder_label'    => $workorder_label,
+                    'serial_label'       => $serial_label,
+                    'operator_finishing' => $prevData->operator_finishing ?? null,
+                    'compound_lot_no'    => $prevData->compound_lot_no ?? null,
+                    'delivery_note_no'   => $prevData ? $prevData->delivery_note_no : $delivery_note_no,
+                    'source'             => $source,
+                    'qty_on_label'       => $row['qty'],
+                    'type_status'        => 'scanning',
+                    'status'             => 0
+                ];
+
+                $this->crud->create('scan_visual_checker_detail', $data_to_insert);
+
+                if ($this->db->trans_status() === FALSE) {
+                    throw new Exception('Failed insert detail');
+                }
+
+                if (!$isMulti) {
+                    // $this->db->where($label_field, $label);
+                    // $this->db->update($label_table, ['status' => 1]);
+
+                    $this->crud->update($label_table, [
+                        $label_field => $label,
+                        'status'     => 0
+                    ], [
+                        'status' => 1
+                    ]);
+
+
+                    if ($this->db->trans_status() === FALSE) {
+                        throw new Exception('Failed update status');
+                    }
+                }
+            }
+
+            foreach ($trackers as $tracker) {
+
+                if (empty($tracker['labels'])) {
+                    continue;
+                }
+
+                foreach ($tracker['labels'] as $label) {
+
+                    // $this->db->where('serial_label', $label);
+                    // $this->db->update($tracker['table'], ['status' => 1]);
+
+                    $this->crud->update($tracker['table'], [
+                        'serial_label' => $label,
+                        'status'     => 0
+                    ], [
+                        'status' => 1
+                    ]);
+
+                    if ($this->db->trans_status() === FALSE) {
+                        throw new Exception('Failed update label status');
+                    }
+                }
+            }
+
+            $this->db->trans_commit();
+
+            return $this->jsonResponse(
+                'Success',
+                'Data berhasil disimpan',
+                'success'
+            );
+
+        } catch (Exception $e) {
+            $this->db->trans_rollback();
+
+            $json = @json_decode($e->getMessage(), true);
+
+            if ($json) {
+                return $this->jsonResponse(
+                    $json['title'],
+                    $json['message'],
+                    $json['theme']
+                );
+            }
+
+            return $this->jsonResponse(
+                'Error',
+                $e->getMessage(),
+                'error'
+            );
+        }
+    }
 
     private function jsonResponse($title, $message, $theme = 'error')
     {

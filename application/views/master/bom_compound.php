@@ -215,12 +215,17 @@
                                         index: rowIndex,
                                         field: 'composition'
                                     });
+                                    var ed7 = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'cas_no'
+                                    });
 
                                     $(ed.target).textbox('setValue', rows.name);
                                     $(ed3.target).textbox('setValue', rows.id);
                                     $(ed4.target).textbox('setValue', rows.item_family_name);
                                     $(ed5.target).textbox('setValue', rows.uom);
                                     $(ed6.target).numberbox('setValue', calculatedComposition);
+                                    $(ed7.target).textbox('setValue', rows.cas_no);
 
                                     reloadUomEditor(dg, rowIndex, rows.item_family_name, rows.uom);
                                 });
@@ -241,6 +246,17 @@
                     width: 150,
                     halign: 'center',
                     title: "Part Name",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'cas_no',
+                    width: 150,
+                    halign: 'center',
+                    title: "CAS No",
                     editor: {
                         type: 'textbox',
                         options: {
@@ -624,6 +640,11 @@
                             }, {
                                 field: 'item_rm_name',
                                 title: 'Part Name',
+                                halign: 'center',
+                                width: 180
+                            }, {
+                                field: 'cas_no',
+                                title: 'CAS No',
                                 halign: 'center',
                                 width: 180
                             }, {
