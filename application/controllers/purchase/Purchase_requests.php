@@ -35,10 +35,10 @@ class Purchase_requests extends CI_Controller
         $request_no = $this->input->get('request_no');
         // Select Query
         $this->db->select("a.*, 
-        b.number as item_number, 
-        b.name as item_name, 
-        b.uom, 
-        c.name as category_name,
+            b.number as item_number,
+            b.name as item_name,
+            b.uom,
+            c.name as category_name,
             d.supplier_id,
             d.mpq, d.moq,
             e.name as supplier_name,
@@ -49,10 +49,20 @@ class Purchase_requests extends CI_Controller
             a.month_2 as month_2,
             a.month_3 as month_3,
             a.month_4 as month_4,
-            '0' as price,
-            '0.00' as total,
+            CASE 
+                WHEN e.number = 'AII' THEN '0'
+                ELSE d.price
+            END as price,
+            CASE 
+                WHEN e.number = 'AII' THEN '0'
+                ELSE ROUND((CAST(a.qty  AS DECIMAL(10, 2)) * CAST(d.price  AS DECIMAL(16, 2))),2)
+            END as total,
             '' as po_no,
-            (a.request_date + INTERVAL d.leadtime DAY) as delivery_date");
+            (a.request_date + INTERVAL d.leadtime DAY) as delivery_date
+        ");
+
+            // '0' as price,
+            // '0.00' as total,
 
             // d.price,
             // ROUND((CAST(a.qty  AS DECIMAL(10, 2)) * CAST(d.price  AS DECIMAL(16, 2))),2) as total,

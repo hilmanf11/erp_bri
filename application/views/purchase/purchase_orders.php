@@ -667,24 +667,32 @@
                                 // if (editor.field === 'delivery_date') {
                                 //     $(editor.target).datebox('setValue', row.expected_date);
                                 // }
+                                
                                 if (editor.field === 'qty') {
-                                    $(editor.target).textbox({
-                                        onChange: function(newValue) {
-                                            var qty = $(editors.find(e => e.field === 'qty').target).numberbox('getValue') || 0;
-                                            var discount = $(editors.find(e => e.field === 'discount').target).numberbox('getValue') || 0;
-                                            var price = $(editors.find(e => e.field === 'price').target).numberbox('getValue') || 0;
-
-                                            // Calculate total
-                                            var total = ((qty * price) - ((qty * price) * (discount / 100)));
-
-                                            // Set total value
-                                            var totalEditor = editors.find(e => e.field === 'total');
-                                            if (totalEditor) {
-                                                $(totalEditor.target).numberbox('setValue', total);
-                                            }
+                                    $(editor.target).numberbox({
+                                        onChange: function () {
+                                            recalculateTotal(editors, row, rowIndex);
                                         }
                                     });
                                 }
+                                // if (editor.field === 'qty') {
+                                //     $(editor.target).textbox({
+                                //         onChange: function(newValue) {
+                                //             var qty = $(editors.find(e => e.field === 'qty').target).numberbox('getValue') || 0;
+                                //             var discount = $(editors.find(e => e.field === 'discount').target).numberbox('getValue') || 0;
+                                //             var price = $(editors.find(e => e.field === 'price').target).numberbox('getValue') || 0;
+
+                                //             // Calculate total
+                                //             var total = ((qty * price) - ((qty * price) * (discount / 100)));
+
+                                //             // Set total value
+                                //             var totalEditor = editors.find(e => e.field === 'total');
+                                //             if (totalEditor) {
+                                //                 $(totalEditor.target).numberbox('setValue', total);
+                                //             }
+                                //         }
+                                //     });
+                                // }
                                 if (editor.field === 'discount') {
                                     $(editor.target).textbox({
                                         onChange: function(newValue) {
@@ -776,7 +784,7 @@
                                                     $(totalEditor.target).numberbox('setValue', totalDiscountedPrice);
                                                 }
                                             } else {
-                                                toastr.warning("Please Input Part No in Supplier Items");
+                                                // toastr.warning("Please Input Part No in Supplier Items");
                                             }
                                         },
                                         onSelect: function(index, row) {
@@ -823,7 +831,7 @@
                                         onChange: function() {
                                             var f_delivery_date = $(editors.find(e => e.field === 'expected_date').target).datebox('getValue');
                                             if (f_delivery_date < po_date) {
-                                                $(editor.target).datebox('clear');
+                                                // $(editor.target).datebox('clear');
                                                 toastr.warning("PO Date > Expected Date");
                                             }
                                         }
@@ -898,6 +906,8 @@
             url: "<?= base_url('admin/config/read') ?>",
             dataType: "json",
             success: function(config) {
+                $("#total_sub").numberbox('setValue', total_subs);
+
                 var taxes = config.tax;
                 var total_vat = Math.floor((total_subs - discount_total) * (taxes / 100));
                 $("#total_vat").numberbox('setValue', total_vat);
@@ -909,6 +919,33 @@
                 $("#total_grand").numberbox('setValue', total_grand);
             }
         });
+    }
+
+    function recalculateTotal(editors, row, rowIndex) {
+        var qtyEditor   = editors.find(e => e.field === 'qty');
+        var priceEditor = editors.find(e => e.field === 'price');
+
+        var qty   = parseFloat($(qtyEditor.target).numberbox('getValue')) || 0;
+        var price = parseFloat($(priceEditor.target).numberbox('getValue')) || 0;
+
+        var total = qty * price;
+        var totalEditor = editors.find(e => e.field === 'total');
+        if (totalEditor) {
+            $(totalEditor.target).numberbox('setValue', total);
+        }
+
+        row.total = total;
+
+        var rows = $('#dg_request').datagrid('getRows');
+        var totalSub = rows.reduce(function(sum, r){
+            return sum + (parseFloat(r.total) || 0);
+        }, 0);
+
+        var disc_pr   = $("#disc_pr").numberbox('getValue');
+        var incomeTax = $("#income_tax").numberbox('getValue');
+        var totalDp   = $("#total_dp").numberbox('getValue');
+
+        calculateTotal(totalSub, disc_pr, incomeTax, totalDp);
     }
 
     function upsertRemark(existing, newText, keyword) {
@@ -1302,9 +1339,9 @@
                                             var po_no = row.po_no;
                                             var supplier_id = row.supplier_id;
                                             var qty = row.qty;
-                                            // var discount = row.discount;
-                                            // var price = row.price;
-                                            // var total = row.total;
+                                            var discount = row.discount;
+                                            var price = row.price;
+                                            var total = row.total;
                                             var delivery_date = row.expected_date;
                                             var remarks = row.remarks;
                                             var month_1 = row.month_1;
@@ -1314,49 +1351,20 @@
                                             var revision = row.revision;
                                             var remark_revision = '';
 
-                                            // var total_sub = $("#total_sub").numberbox('getValue');
-                                            // var disc_pr = $("#disc_pr").numberbox('getValue');
-                                            // var discount_total = $("#discount_total").numberbox('getValue');
-                                            // var total_vat = $("#total_vat").numberbox('getValue');
-                                            // var income_tax = $("#income_tax").numberbox('getValue');
-                                            // var income_total = $("#income_total").numberbox('getValue');
-                                            // var total_dp = $("#total_dp").numberbox('getValue');
-                                            // var total_grand = $("#total_grand").numberbox('getValue');
+                                            var total_sub = $("#total_sub").numberbox('getValue');
+                                            var disc_pr = $("#disc_pr").numberbox('getValue');
+                                            var discount_total = $("#discount_total").numberbox('getValue');
+                                            var total_vat = $("#total_vat").numberbox('getValue');
+                                            var income_tax = $("#income_tax").numberbox('getValue');
+                                            var income_total = $("#income_total").numberbox('getValue');
+                                            var total_dp = $("#total_dp").numberbox('getValue');
+                                            var total_grand = $("#total_grand").numberbox('getValue');
 
 
                                             if (po_no == "") {
                                                 var url_save = "<?= base_url('purchase/purchase_orders/create') ?>";
-
-                                                var discount = 0;
-                                                var price = 0;
-                                                var total = 0;
-
-                                                var total_sub = 0;
-                                                var disc_pr = 0;
-                                                var discount_total = 0;
-                                                var total_vat = 0;
-                                                var income_tax = 0;
-                                                var income_total = 0;
-                                                var total_dp = 0;
-                                                var total_grand = 0;
-
                                             } else {
-
                                                 var url_save = "<?= base_url('purchase/purchase_orders/update') ?>";
-
-                                                var discount = row.discount;
-                                                var price = row.price;
-                                                var total = row.total;
-
-                                                var total_sub = $("#total_sub").numberbox('getValue');
-                                                var disc_pr = $("#disc_pr").numberbox('getValue');
-                                                var discount_total = $("#discount_total").numberbox('getValue');
-                                                var total_vat = $("#total_vat").numberbox('getValue');
-                                                var income_tax = $("#income_tax").numberbox('getValue');
-                                                var income_total = $("#income_total").numberbox('getValue');
-                                                var total_dp = $("#total_dp").numberbox('getValue');
-                                                var total_grand = $("#total_grand").numberbox('getValue');
-
                                                 remark_revision = row.remark_revision || '';
                                             }
 

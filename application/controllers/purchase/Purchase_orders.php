@@ -523,7 +523,15 @@ class Purchase_orders extends CI_Controller
                     "month_3" => $post['month_3'],
                     "month_4" => $post['month_4'],
                     "total_sub" => $post['total_sub'],
+                    "disc_pr" => $post['disc_pr'],
+                    "total_vat" => $post['total_vat'],
+                    "income_tax" => $post['income_tax'],
+                    "income_total" => $post['income_total'],
+                    "total_grand" => $post['total_grand'],
+                    "total_dp" => $post['total_dp'],
+                    "discount_total" => $post['discount_total'],
                 );
+
 
                 // Simpan purchase order baru
                 $send = $this->crud->createPO('purchase_orders',$table_approval, $data);
