@@ -33,7 +33,19 @@ class divisions extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('divisions', ["name" => $post]);
+
+        // $send = $this->crud->reads('divisions', ["name" => $post]);
+        // echo json_encode($send);
+
+        $send = $this->crud->query("
+            SELECT id, number, name, description
+                FROM divisions a 
+            WHERE a.number like '%$post%' 
+                OR a.name like '%$post%'
+                OR a.id like '%$post%'
+            ORDER BY a.id ASC
+        ");
+
         echo json_encode($send);
     }
     //GET DATATABLES
