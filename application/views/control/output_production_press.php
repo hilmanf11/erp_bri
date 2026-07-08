@@ -2190,6 +2190,13 @@
                         },
                         error: function() {
                             toastr.error("Server error while saving");
+
+                            console.log(xhr.status);
+                            console.log(status);
+                            console.log(error);
+                            console.log(xhr.responseText);
+
+                            alert(xhr.responseText);
                         }
                     });
 
