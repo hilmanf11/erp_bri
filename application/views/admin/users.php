@@ -3,7 +3,7 @@
     <thead>
         <tr>
             <th field="ck" checkbox="true"></th>
-            <th data-options="field:'department',width:150">Department</th>
+            <th data-options="field:'department_name',width:150">Department</th>
             <th data-options="field:'number',width:100">Number ID</th>
             <th data-options="field:'name',width:200">Name</th>
             <th data-options="field:'username',width:150">Username</th>

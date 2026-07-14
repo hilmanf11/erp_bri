@@ -84,7 +84,7 @@ class Users extends CI_Controller
             ];
 
             //Select Query
-            $this->db->select('a.*, b.name as department');
+            $this->db->select('a.*, b.id as department, b.name as department_name');
             $this->db->from('users a');
             $this->db->join('departments b', 'b.id = a.department_id', 'left');
             $this->db->where('a.deleted', 0);
