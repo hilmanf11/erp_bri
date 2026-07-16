@@ -38,23 +38,117 @@ class Purchase_orders extends CI_Controller
         echo json_encode($send);
     }
 
+
+    public function readPreview()
+    {
+        $request_no = $this->input->get('request_no');
+        $user = $this->crud->currentUserDept();
+
+        // Select Query
+        $this->db->select("a.*, 
+            b.number as item_number,
+            b.name as item_name,
+            b.uom,
+            c.name as category_name,
+            d.supplier_id,
+            d.mpq, d.moq,
+            e.name as supplier_name,
+            e.currency,
+            '0' as discount,
+            '0' as revision,
+            a.month_1 as month_1,
+            a.month_2 as month_2,
+            a.month_3 as month_3,
+            a.month_4 as month_4,
+            CASE 
+                WHEN e.number = 'AII' THEN '0'
+                ELSE d.price
+            END as price,
+            CASE 
+                WHEN e.number = 'AII' THEN '0'
+                ELSE ROUND((CAST(a.qty  AS DECIMAL(10, 2)) * CAST(d.price  AS DECIMAL(16, 2))),2)
+            END as total,
+            '' as po_no,
+            (a.request_date + INTERVAL d.leadtime DAY) as delivery_date
+        ");
+
+            // '0' as price,
+            // '0.00' as total,
+
+            // d.price,
+            // ROUND((CAST(a.qty  AS DECIMAL(10, 2)) * CAST(d.price  AS DECIMAL(16, 2))),2) as total,
+
+        $this->db->from('purchase_requests a');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+        $this->db->join('item_familys c', 'b.item_family_id = c.id');
+        $this->db->join('supplier_items d', 'a.item_rm_id = d.item_rm_id', 'left');
+        $this->db->join('suppliers e', 'd.supplier_id = e.id', 'left');
+        $this->db->join('users u', 'u.username = a.created_by', 'left');
+        
+        $this->db->where('a.deleted', 0);
+        $this->db->where('a.status', 0);
+        $this->db->where('a.request_no', $request_no);
+        $this->db->where('a.approved_to', '');
+
+        if (!empty($user->department_id) && !in_array($user->department, $this->crud->getIgnoreDept())) {
+            $this->db->where('u.department_id', $user->department_id);
+        }
+
+        $this->db->group_by('b.number');
+        $this->db->order_by('b.number', 'ASC');
+        $records = $this->db->get()->result_array();
+        echo json_encode($records);
+    }
+
+    public function readRequestno()
+    {
+        $user = $this->crud->currentUserDept();
+
+        $this->db->select('a.request_no, a.request_date, a.request_name');
+        $this->db->from('purchase_requests a');
+        $this->db->join('users u', 'u.username = a.created_by', 'left');
+        $this->db->where('a.status', 0);
+        $this->db->where('a.approved_to', '');
+
+        if (!empty($user->department_id) && !in_array($user->department, $this->crud->getIgnoreDept())) {
+            $this->db->where('u.department_id', $user->department_id);
+        }
+
+        $this->db->group_by('a.request_no');
+        $this->db->order_by('a.created_date', 'DESC');
+
+        $records = $this->db->get()->result();
+
+        echo json_encode($records);
+    }
+
     public function readPono()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $supplier_id = $this->input->get('supplier_id');
 
+        $user = $this->crud->currentUserDept();
+
         $this->db->select('a.po_no, a.po_date, a.po_name, b.number as supplier_number, b.name as supplier_name');
         $this->db->from('purchase_orders a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
+        $this->db->join('users u', 'u.username = a.created_by', 'left');
         $this->db->where('a.deleted', 0);
         $this->db->where('a.status', 0);
         $this->db->where('a.approved_to', '');
+
         if ($supplier_id != "") {
             $this->db->where('a.supplier_id', $supplier_id);
         }
+
+        if($user && !empty($user->department_id) && !in_array($user->department, $this->crud->getIgnoreDept())) {
+            $this->db->where('u.department_id', $user->department_id);
+        }
+
         // $this->db->where('a.approved', '');
         // $this->db->like('a.supplier_id', $supplier_id);
         // $this->db->like('a.po_no', $post);
+
         $this->db->group_by('a.po_no');
         $this->db->order_by('a.created_date', 'desc');
 
@@ -109,13 +203,21 @@ class Purchase_orders extends CI_Controller
     public function readPonos()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $user = $this->crud->currentUserDept();
 
         $this->db->select('a.po_no, a.po_date, a.po_name, b.number as supplier_number, b.name as supplier_name');
         $this->db->from('purchase_orders a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
+        $this->db->join('users u', 'u.username = a.created_by', 'left');
         $this->db->where('a.deleted', 0);
+
         // $this->db->where('a.status', 0);
         // $this->db->like('a.po_no', $post);
+
+        if($user && !empty($user->department_id) && !in_array($user->department, $this->crud->getIgnoreDept())) {
+            $this->db->where('u.department_id', $user->department_id);
+        }
+
         $this->db->group_by('a.po_no');
         $this->db->order_by('a.created_date', 'desc');
 
@@ -154,6 +256,29 @@ class Purchase_orders extends CI_Controller
         $records = $this->db->get()->row();
 
         echo json_encode($records);
+    }
+
+    public function readVatSupplier()
+    {
+        $supplier_id = $this->input->post('supplier_id');
+
+        $supplier = $this->db
+            ->select('vat_status, vat')
+            ->where('id', $supplier_id)
+            ->get('suppliers')
+            ->row();
+
+        if ($supplier) {
+            echo json_encode([
+                'tax' => strtoupper($supplier->vat_status) == 'VAT'
+                    ? (float)$supplier->vat
+                    : 0
+            ]);
+        } else {
+            echo json_encode([
+                'tax' => 0
+            ]);
+        }
     }
 
     public function completePo()
@@ -226,6 +351,8 @@ class Purchase_orders extends CI_Controller
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
 
+            $user = $this->crud->currentUserDept();
+
             //Pagination 1-10
             $page   = isset($page) ? intval($page) : 1;
             $rows   = isset($rows) ? intval($rows) : 10;
@@ -248,6 +375,7 @@ class Purchase_orders extends CI_Controller
                     SUM(a.qty) as qty, 
                     SUM(a.price) as price, 
                     SUM(a.total) as total_price,
+                    a.total_grand,
                     a.status,
                     COUNT(a.status) as total_status,
                     f.max_status as status_pi,
@@ -256,7 +384,50 @@ class Purchase_orders extends CI_Controller
                     a.approved_date, 
                     h.total_status_complete,
                     g.total_status_close,
-                    CASE WHEN COUNT(CASE WHEN a.approved_to <> "" THEN 1 END) > 0 THEN "Checking" ELSE "" END AS approved_to');
+                    a.total_vat,
+                    a.on_site_cost,
+                    CASE
+                        -- Masih ada proses approval
+                        WHEN SUM(
+                            CASE
+                                WHEN a.deleted <> 2
+                                AND a.approved_to IS NOT NULL
+                                AND a.approved_to <> ""
+                                THEN 1 ELSE 0
+                            END
+                        ) > 0
+                        THEN "Checking"
+
+                        -- Semua ditolak
+                        WHEN SUM(
+                            CASE
+                                WHEN a.deleted = 2
+                                THEN 1 ELSE 0
+                            END
+                        ) = COUNT(*)
+                        THEN "Disapprove"
+
+                        -- Semua disetujui
+                        WHEN SUM(
+                            CASE
+                                WHEN a.deleted <> 2
+                                AND (a.approved_to IS NULL OR a.approved_to = "")
+                                THEN 1 ELSE 0
+                            END
+                        ) = COUNT(*)
+                        THEN "Approved"
+
+                        -- Approved + Disapprove
+                        ELSE "Partially Approved"
+                    END AS approved_to,
+
+                    CASE
+                        WHEN SUM(CASE WHEN a.deleted = 2 THEN 1 ELSE 0 END) = COUNT(*) THEN 2
+                        ELSE 0
+                    END AS deleted
+                ');
+
+                // CASE WHEN COUNT(CASE WHEN a.approved_to <> "" THEN 1 END) > 0 THEN "Checking" ELSE "" END AS approved_to');
                 $this->db->from('purchase_orders a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->join('item_familys c', 'b.item_family_id = c.id');
@@ -265,7 +436,13 @@ class Purchase_orders extends CI_Controller
                 $this->db->join('(SELECT po_no, MIN(status) AS max_status FROM purchase_order_receipts GROUP BY po_no) f', 'a.po_no = f.po_no', 'left');
                 $this->db->join('(SELECT po_no, COUNT(status) as total_status_close FROM purchase_orders WHERE status = 1 GROUP BY po_no) g', 'a.po_no = g.po_no', 'left');
                 $this->db->join('(SELECT po_no, COUNT(status) as total_status_complete FROM purchase_orders WHERE status = 2 GROUP BY po_no) h', 'a.po_no = h.po_no', 'left');
-                $this->db->where('a.deleted', 0);
+                $this->db->where_in('a.deleted', [0, 2]);
+
+                $this->db->join('users u', 'u.username = a.created_by', 'left');
+                if (!empty($user->department_id) && !in_array($user->department, $this->crud->getIgnoreDept())) {
+                    $this->db->where('u.department_id', $user->department_id);
+                }
+
                 if ($filter_from != "" or $filter_to != "") {
                     $this->db->where('a.po_date >=', $filter_from);
                     $this->db->where('a.po_date <=', $filter_to);
@@ -308,12 +485,6 @@ class Purchase_orders extends CI_Controller
                         $status = "0";
                     }
 
-                    if ($record['approved_to'] == "" || $record['approved_to'] == null) {
-                        $approved_to = "";
-                    } else {
-                        $approved_to = "Checking";
-                    }
-
                     // if ($record['status_pi'] == 1) {
                     //     $status_pi = "1";
                     // } else {
@@ -334,14 +505,17 @@ class Purchase_orders extends CI_Controller
                         "status_pi" => $record['status_pi'],
                         "status1" => $record['total_status'],
                         "status2" => $record['total_status_close'],
+                        "on_site_cost" => $record['on_site_cost'],
+                        "total_vat" => $record['total_vat'],
                         "total_dp" => $record['total_dp'],
                         "total_sub" => $record['total_sub'],
-                        "total_grand" => ($record['total_price'] - $record['total_dp']),
+                        // "total_grand" => ($record['total_price'] - $record['total_dp']),
+                        "total_grand" => $record['total_grand'],
                         "state" => "closed",
                         "approved_to" => $record['approved_to'], //$approved_to,
                         "approved_by" => $record['approved_by'],
                         "approved_date" => $record['approved_date'],
-                        "total_sub" => $record['total_sub'],
+                        "deleted" => $record['deleted'],
                         "datatable" => 1,
                         "is_all_closed" => ($record['total_status'] == $record['total_status_close']) ? 1 : 0,
                     );
@@ -362,19 +536,26 @@ class Purchase_orders extends CI_Controller
                     f.max_status as status_pi,
                     a.price,
                     a.status, 
-                    (a.qty * a.price) as total_price,
-                    (CASE WHEN a.approved = (SELECT (CASE WHEN i.user_approval_1 IS NOT NULL AND i.user_approval_1 != "" THEN 1 ELSE 0 END +
-                    CASE WHEN i.user_approval_2 IS NOT NULL AND i.user_approval_2 != "" THEN 1 ELSE 0 END +
-                    CASE WHEN i.user_approval_3 IS NOT NULL AND i.user_approval_3 != "" THEN 1 ELSE 0 END +
-                    CASE WHEN i.user_approval_4 IS NOT NULL AND i.user_approval_4 != "" THEN 1 ELSE 0 END +
-                    CASE WHEN i.user_approval_5 IS NOT NULL AND i.user_approval_5 != "" THEN 1 ELSE 0 END) as status_approval FROM approvals i WHERE table_name = "purchase_orders") THEN 1 ELSE 0 END) as status_approval');
+                    (a.qty * a.price) as total_price
+                ');
+
+                    // (CASE WHEN a.approved = (SELECT (
+                    //     CASE WHEN i.user_approval_1 IS NOT NULL AND i.user_approval_1 != "" THEN 1 ELSE 0 END +
+                    //     CASE WHEN i.user_approval_2 IS NOT NULL AND i.user_approval_2 != "" THEN 1 ELSE 0 END +
+                    //     CASE WHEN i.user_approval_3 IS NOT NULL AND i.user_approval_3 != "" THEN 1 ELSE 0 END +
+                    //     CASE WHEN i.user_approval_4 IS NOT NULL AND i.user_approval_4 != "" THEN 1 ELSE 0 END +
+                    //     CASE WHEN i.user_approval_5 IS NOT NULL AND i.user_approval_5 != "" THEN 1 ELSE 0 END
+                    // ) as status_approval FROM approvals i WHERE table_name = "purchase_orders") 
+                    //     THEN 1 ELSE 0 END) 
+                    // as status_approval
+
                 $this->db->from('purchase_orders a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->join('item_familys c', 'b.item_family_id= c.id');
                 $this->db->join('suppliers d', 'a.supplier_id = d.id');
                 $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
                 $this->db->join('(SELECT po_no, item_rm_id, MAX(status) AS max_status FROM purchase_order_receipts GROUP BY po_no, item_rm_id) f', 'a.po_no = f.po_no and a.item_rm_id = f.item_rm_id', 'left');
-                $this->db->where('a.deleted', 0);
+                $this->db->where_in('a.deleted', [0, 2]);
                 if ($filter_from != "" or $filter_to != "") {
                     $this->db->where('a.po_date >=', $filter_from);
                     $this->db->where('a.po_date <=', $filter_to);
@@ -441,62 +622,123 @@ class Purchase_orders extends CI_Controller
         echo json_encode($records);
     }
 
+    public function validateApproval()
+    {
+        $result = $this->crud->validateApprovalV2('purchase_orders');
+        echo json_encode($result);
+    }
+
+    // private function generatePoNo($request_no, $supplier_id, $item_rm_id)
+    // {
+    //     $items = $this->crud->read('item_rm', [], ['id' => $item_rm_id]);
+    //     $category = $this->crud->read('item_categories', [], ['id' => $items->item_category_id]);
+
+    //     $datenow  = $category->number . date("y");
+    //     $datenow2 = $category->number . date("ym");
+
+    //     $has_additional_code = preg_match('/-A\d+$/', $request_no);
+
+    //     if ($has_additional_code) {
+    //         return str_replace("PR", "PO", $request_no);
+    //     }
+
+    //     $sqlGetID = $this->db->query("
+    //         SELECT MAX(po_no) AS kode
+    //         FROM purchase_orders
+    //         WHERE po_no LIKE 'PO{$datenow}%'
+    //         AND po_no NOT LIKE '%-A%'
+    //     ");
+
+    //     $rowID = $sqlGetID->row();
+    //     $kode  = $rowID->kode;
+
+    //     if ($kode == NULL) {
+    //         return "PO{$datenow2}-0001";
+    //     }
+
+    //     $purchaseOrder = $this->db
+    //         ->select('po.po_no')
+    //         ->from('purchase_orders po')
+    //         ->join('item_rm ir', 'ir.id = po.item_rm_id')
+    //         ->where('po.request_no', $request_no)
+    //         ->where('po.supplier_id', $supplier_id)
+    //         ->where('ir.item_category_id', $items->item_category_id)
+    //         ->get()
+    //         ->row();
+
+    //     if ($purchaseOrder) {
+    //         return $purchaseOrder->po_no;
+    //     }
+
+    //     $urutan = (int) substr($kode, -4);
+    //     $urutan++;
+
+    //     return "PO{$datenow2}-" . sprintf("%04s", $urutan);
+    // }
+
+    private function generatePoNo($request_no, $supplier_id, $item_rm_id)
+    {
+        $item = $this->crud->read('item_rm', [], ['id' => $item_rm_id]);
+        $category = $this->crud->read('item_categories', [], ['id' => $item->item_category_id]);
+
+        if (preg_match('/-A\d+$/', $request_no)) {
+            return str_replace('PR', 'PO', $request_no);
+        }
+
+        $exist = $this->db
+            ->select('po.po_no')
+            ->from('purchase_orders po')
+            ->join('item_rm ir', 'ir.id = po.item_rm_id')
+            ->where('po.request_no', $request_no)
+            ->where('po.supplier_id', $supplier_id)
+            ->where('ir.item_category_id', $item->item_category_id)
+            ->get()
+            ->row();
+
+        if ($exist) {
+            return $exist->po_no;
+        }
+
+        $creator = $this->db
+            ->select('IFNULL(NULLIF(d.name, ""), "ADM") AS department')
+            ->from('purchase_requests pr')
+            ->join('users u', 'u.username = pr.created_by', 'left')
+            ->join('departments d', 'd.id = u.department_id', 'left')
+            ->where('pr.request_no', $request_no)
+            ->get()
+            ->row();
+
+        $department = strtoupper($creator->department ?? 'ADM');
+        $categoryCode = strtoupper($category->number);
+        $period = date('ym');
+
+        $last = $this->db->query("
+            SELECT MAX(
+                CAST(SUBSTRING_INDEX(po_no, '-', -1) AS UNSIGNED)
+            ) AS seq
+            FROM purchase_orders
+            WHERE po_no LIKE 'PO-{$categoryCode}-%-{$period}-%'
+            AND po_no NOT LIKE '%-A%'
+        ")->row();
+
+        $seq = ($last && $last->seq) ? $last->seq + 1 : 1;
+
+        return sprintf('PO-%s-%s-%s-%03d', $categoryCode, $department, $period, $seq);
+    }
+
     public function create()
     {
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post = $this->input->post();
                 $items = $this->crud->read('item_rm', [], ['id' => $post['item_rm_id']]);
-                $categorys = $this->crud->read('item_categories', [], ['id' => $items->item_category_id]);
                 $suppliers = $this->crud->read('suppliers', [], ["id" => $post['supplier_id']]);
-                $supplier_items = $this->crud->read('supplier_items', [], ["item_rm_id" => $items->id, "supplier_id" => $post['supplier_id']]);
-                $purchaseRequests = $this->crud->read('purchase_requests', [], ["request_no" => $post['request_no']]);
                 $config = $this->crud->read("config");
 
-                // Ambil division dan kategori
-                $divisions = $purchaseRequests->division;
-                $datenow = $categorys->number . date("y");
-                $datenow2 = $categorys->number . date("ym");
-                $table_approval = ($purchaseRequests->division==="DIV01")?'purchase_orders':'purchase_orders_2';
-                // Deteksi pola request_no apakah memiliki tambahan seperti "-A01"
-                $request_no = $post['request_no'];
-                $has_additional_code = preg_match('/-A\d+$/', $request_no);
+                // $table_approval = ($purchaseRequests->division==="DIV01")?'purchase_orders':'purchase_orders_2'
 
-                if ($has_additional_code) {
-                    // Jika request_no memiliki tambahan, langsung konversi formatnya
-                    $po_no = str_replace("PR", "PO", $request_no);
-                } else {
-                    // Jika tidak ada tambahan, buat po_no baru dengan urutan otomatis
-                    $sqlGetID = $this->db->query("SELECT max(po_no) as kode FROM purchase_orders WHERE po_no LIKE 'PO$datenow%' AND po_no NOT LIKE '%-A%'");
-                    $rowID = $sqlGetID->row();
-                    $kode = $rowID->kode;
-
-                    if ($kode == NULL) {
-                        $autoID = "0001";
-                        $po_no = "PO" . $datenow2 . "-" . $autoID;
-                    } else {
-                        // $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id']]);
-
-                        $purchaseOrder = $this->db
-                            ->select('po.*')
-                            ->from('purchase_orders po')
-                            ->join('item_rm ir', 'ir.id = po.item_rm_id')
-                            ->where('po.request_no', $post['request_no'])
-                            ->where('po.supplier_id', $post['supplier_id'])
-                            ->where('ir.item_category_id', $items->item_category_id)
-                            ->get()
-                            ->row();
-
-                        if ($purchaseOrder) {
-                            $po_no = $purchaseOrder->po_no;
-                        } else {
-                            $urutan = (int)substr($kode, -4);
-                            $urutan++;
-                            $autoID = sprintf("%04s", $urutan);
-                            $po_no = "PO" . $datenow2 . "-" . $autoID;
-                        }
-                    }
-                }
+                $table_approval = 'purchase_orders';
+                $po_no = $this->generatePoNo($post['request_no'], $post['supplier_id'], $post['item_rm_id']);
 
                 // Tentukan pajak
                 $taxes = $suppliers->vat_status == "VAT" ? $config->tax : 0;
@@ -523,18 +765,24 @@ class Purchase_orders extends CI_Controller
                     "month_3" => $post['month_3'],
                     "month_4" => $post['month_4'],
                     "total_sub" => $post['total_sub'],
-                    "disc_pr" => $post['disc_pr'],
                     "total_vat" => $post['total_vat'],
-                    "income_tax" => $post['income_tax'],
-                    "income_total" => $post['income_total'],
+                    // "disc_pr" => $post['disc_pr'],
+                    // "income_tax" => $post['income_tax'],
+                    // "income_total" => $post['income_total'],
+                    // "total_dp" => $post['total_dp'],
+                    // "discount_total" => $post['discount_total'],
+                    "on_site_cost" => $post['on_site_cost'],
                     "total_grand" => $post['total_grand'],
-                    "total_dp" => $post['total_dp'],
-                    "discount_total" => $post['discount_total'],
                 );
 
 
                 // Simpan purchase order baru
-                $send = $this->crud->createPO('purchase_orders',$table_approval, $data);
+                $send = $this->crud->createV2('purchase_orders',$table_approval, $data);
+
+                if (!$send['status']) {
+                    echo json_encode($send);
+                    return;
+                }
 
                 // Update status purchase request
                 $this->db->where('request_no', $post['request_no']);
@@ -653,11 +901,11 @@ class Purchase_orders extends CI_Controller
                 "month_3" => $post['month_3'],
                 "month_4" => $post['month_4'],
                 "total_sub" => $post['total_sub'],
-                "disc_pr" => $post['disc_pr'],
-                "discount_total" => $post['discount_total'],
-                "income_tax" => $post['income_tax'],
-                "income_total" => $post['income_total'],
-                "total_dp" => $post['total_dp'],
+                // "disc_pr" => $post['disc_pr'],
+                // "discount_total" => $post['discount_total'],
+                // "income_tax" => $post['income_tax'],
+                // "income_total" => $post['income_total'],
+                // "total_dp" => $post['total_dp'],
                 "total_grand" => $post['total_grand'],
                 "total_vat" => $post['total_vat'],
                 // "revision" => (@$purchaseOrder->revision + 1),
@@ -676,7 +924,8 @@ class Purchase_orders extends CI_Controller
                 $dataBefore = $purchaseOrder;
 
                 if ($row) {
-                    $this->approval('purchase_orders', $row->id, $dataBefore);
+                    // $this->approval('purchase_orders', $row->id, $dataBefore);
+                    $this->crud->approvalsV2('purchase_orders', 'purchase_orders', $row->id, $dataBefore);
                 }
             }
 
@@ -694,36 +943,36 @@ class Purchase_orders extends CI_Controller
         }
     }
 
-    public function approval($table, $table_id, $data)
-    {
-        $query = $this->db->query("DESCRIBE $table");
-        $fields = $query->result_array();
+    // public function approval($table, $table_id, $data)
+    // {
+    //     $query = $this->db->query("DESCRIBE $table");
+    //     $fields = $query->result_array();
 
-        $approval = $this->crud->read('approvals', [], ["table_name" => $table]);
+    //     $approval = $this->crud->read('approvals', [], ["table_name" => $table]);
 
-        $fieldExists = false;
-        foreach ($fields as $field) {
-            if ($field['Field'] == "approved") {
-                $fieldExists = true;
-                break;
-            }
-        }
+    //     $fieldExists = false;
+    //     foreach ($fields as $field) {
+    //         if ($field['Field'] == "approved") {
+    //             $fieldExists = true;
+    //             break;
+    //         }
+    //     }
 
-        if ($fieldExists) {
-            if (!empty($approval)) {
-                $formApprove = [
-                    "approved" => 1,
-                    "approved_to" => $approval->user_approval_1,
-                    "approved_by" => $this->session->username,
-                    "approved_date" => null,
-                    "approved_data" => json_encode($data),
-                ];
+    //     if ($fieldExists) {
+    //         if (!empty($approval)) {
+    //             $formApprove = [
+    //                 "approved" => 1,
+    //                 "approved_to" => $approval->user_approval_1,
+    //                 "approved_by" => $this->session->username,
+    //                 "approved_date" => null,
+    //                 "approved_data" => json_encode($data),
+    //             ];
 
-                $this->db->where(["id" => $table_id]);
-                $this->db->update($table, $formApprove);
-            }
-        }
-    }
+    //             $this->db->where(["id" => $table_id]);
+    //             $this->db->update($table, $formApprove);
+    //         }
+    //     }
+    // }
 
 
     // public function update_all_approve()
@@ -791,7 +1040,7 @@ class Purchase_orders extends CI_Controller
     {
         $data = $this->input->post();
         $send = $this->crud->delete('purchase_orders', $data);
-        $update = $this->crud->update('purchase_requests', ["request_no" => $data['request_no'], "item_rm_id" => $data['item_rm_id']], ["status" => 0]);
+        $update = $this->crud->updateNotApproval('purchase_requests', ["request_no" => $data['request_no'], "item_rm_id" => $data['item_rm_id']], ["status" => 0]);
         echo $send;
     }
 
@@ -813,25 +1062,230 @@ class Purchase_orders extends CI_Controller
         echo json_encode($dates);
     }
 
+    private function getDepartmentEmail($department_id)
+    {
+        $department = $this->crud->read('departments', [], ['id' => $department_id]);
+
+        if (!$department) {
+            return 'adm@banshu-rubber.com';
+        }
+
+        switch (strtoupper(trim($department->name))) {
+            case 'ENG':
+                return 'engineering@banshu-rubber.com';
+
+            case 'MTC':
+                return 'maintenance@banshu-rubber.com';
+
+            case 'QA':
+                return 'qa@banshu-rubber.com';
+
+            case 'PRD':
+                return 'production@banshu-rubber.com';
+
+            default:
+                return 'mcl@banshu-rubber.com';
+        }
+    }
+
     public function print_po($po_no)
     {
         $purchase_orders_total = $this->crud->reads('purchase_orders', [], ["po_no" => base64_decode($po_no)]);
         $purchase_orders = $this->crud->read('purchase_orders', [], ["po_no" => base64_decode($po_no)], "", "revision", "desc");
         $supplier = $this->crud->read('suppliers', [], ["id" => $purchase_orders->supplier_id]);
+
         $config = $this->db->get('config')->row();
         $config_iso = $this->db->get('config_iso')->row();
-        $signatures = $this->db->get('signatures')->row();
+        
+        // $signatures = $this->db->get('signatures')->row();
+        
         $purchaseRequests = $this->crud->read('purchase_requests', [], ["request_no" => $purchase_orders->request_no]);
-        $table_approval = ($purchaseRequests->division==="DIV01")?'purchase_orders':'purchase_orders_2';
-        $plant = ($purchaseRequests->division==="DIV01")?'RUBBER PART':'EXTRUDER';
-        $approval=$this->db->query("SELECT *, CASE 
-            WHEN user_approval_1 = '$purchase_orders->approved_by' THEN '1'
-            WHEN user_approval_2 = '$purchase_orders->approved_by' THEN '2'
-            WHEN user_approval_3 = '$purchase_orders->approved_by' THEN '3'
-            WHEN user_approval_4 = '$purchase_orders->approved_by' THEN '4'
-            WHEN user_approval_5 = '$purchase_orders->approved_by' THEN '5'
-            ELSE '0' END AS approved_by FROM approvals WHERE table_name = '$table_approval'");
-            $sqlApproval = $approval->row();
+        $currentUser = $this->crud->currentUserDept();
+        // $table_approval = ($purchaseRequests->division==="DIV01")?'purchase_orders':'purchase_orders_2';
+
+        $creator = $this->db
+            ->select('u.department_id, d.plant_id')
+            ->from('users u')
+            ->join('departments d', 'd.id = u.department_id', 'left')
+            ->where('u.username', $purchase_orders->created_by)
+            ->get()
+            ->row();
+
+        $requester = $this->db
+            ->select('u.department_id, d.plant_id')
+            ->from('users u')
+            ->join('departments d', 'd.id = u.department_id', 'left')
+            ->where('u.username', $purchaseRequests->created_by)
+            ->get()
+            ->row();
+
+        $department_id = !empty($requester->department_id)
+            ? $requester->department_id
+            : (!empty($creator->department_id) ? $creator->department_id : null);
+        $plant_id = !empty($requester->plant_id)
+            ? $requester->plant_id
+            : (!empty($creator->plant_id) ? $creator->plant_id : null);
+
+        $emailReply = $this->getDepartmentEmail($department_id);
+        $isAdmin = empty($currentUser->department_id);
+
+        if (!$isAdmin && (
+                $currentUser->department_id != @$creator->department_id ||
+                $currentUser->plant_id != @$creator->plant_id
+            ) &&
+             !in_array($currentUser->department, $this->crud->getIgnoreDept())
+        ) {
+            show_error('Unauthorized', 403);
+        }
+
+        $table_approval = 'purchase_orders';
+        $plant = ($purchaseRequests->division === "DIV01") ? 'RUBBER PART' : 'EXTRUDER';
+        // $checkPoNrm = (strpos($purchase_orders->po_no, "PONRM") === 0);
+
+        $approvalPr = $this->crud->read('approvals', [], [
+                'table_name'    => 'purchase_requests',
+                'department_id' => $department_id,
+                'plant_id'      => $plant_id
+            ]
+        );
+
+        $approval = $this->db->query("
+            SELECT *,
+            CASE
+                WHEN user_approval_1 = '$purchase_orders->approved_by' THEN '1'
+                WHEN user_approval_2 = '$purchase_orders->approved_by' THEN '2'
+                WHEN user_approval_3 = '$purchase_orders->approved_by' THEN '3'
+                WHEN user_approval_4 = '$purchase_orders->approved_by' THEN '4'
+                WHEN user_approval_5 = '$purchase_orders->approved_by' THEN '5'
+                ELSE '0'
+            END AS approved_by
+            FROM approvals
+            WHERE table_name = '$table_approval'
+            AND department_id = '$department_id'
+            AND plant_id = '$plant_id'
+        ");
+
+        $sqlApproval = $approval->row();
+        if(empty($sqlApproval)){
+            $sqlApproval = (object) [
+                'approved_by' => 0,
+                'user_approval_1' => '',
+                'user_approval_2' => '',
+                'user_approval_3' => '',
+                'user_approval_4' => '',
+                'user_approval_5' => ''
+            ];
+        }
+
+        $createdUser = $purchaseRequests->created_by;
+        $approvedLevel = !empty($sqlApproval) ? (int)$sqlApproval->approved_by : 0;
+
+        
+        $approvalData = [];
+
+        $buildApproval = function($title, $username, $show){
+
+            $user = null;
+
+            if(!empty($username)){
+                $user = $this->crud->read(
+                    'users',
+                    [],
+                    ['username'=>$username]
+                );
+            }
+
+            if($show && $user){
+                $this->createQrcode(
+                    md5($user->name),
+                    "assets/image/qrcode/"
+                );
+            }
+
+            return [
+
+                'title'    => $title,
+
+                'show'     => $show,
+
+                'username' => $username,
+
+                'name'     => $show && $user
+                                ? $user->name
+                                : '',
+
+                'position' => $show && $user
+                                ? $user->position
+                                : '',
+
+                'barcode'  => $show && $user
+                                ? base_url(
+                                    'assets/image/qrcode/'.
+                                    md5($user->name).
+                                    '.png'
+                                )
+                                : ''
+
+            ];
+
+        };
+
+        $approvalData[] = $buildApproval(
+            'Created',
+            $createdUser,
+            true
+        );
+
+        $getApprovalUsers = function($approvalRow){
+            $users = [];
+
+            if(empty($approvalRow)){
+                return $users;
+            }
+
+            for($i = 1; $i <= 5; $i++){
+                $field = 'user_approval_'.$i;
+
+                if(!empty($approvalRow->$field)){
+                    $users[] = $approvalRow->$field;
+                }
+            }
+
+            return $users;
+        };
+
+        $approvalPrUsers = $getApprovalUsers($approvalPr);
+        $approvalPoUsers = $getApprovalUsers($sqlApproval);
+        $firstPoApproval = !empty($approvalPoUsers) ? $approvalPoUsers[0] : null;
+        $knownUsers = [];
+
+        foreach($approvalPrUsers as $approvalPrUser){
+            if(!in_array($approvalPrUser, $knownUsers)){
+                $knownUsers[] = $approvalPrUser;
+            }
+        }
+
+        if(!empty($firstPoApproval) && !in_array($firstPoApproval, $knownUsers)){
+            $knownUsers[] = $firstPoApproval;
+        }
+
+        foreach($knownUsers as $knownUser){
+            $approvalData[] = $buildApproval(
+                'Known',
+                $knownUser,
+                ($knownUser === $firstPoApproval) ? ($approvedLevel >= 1) : true
+            );
+        }
+
+        foreach(array_slice($approvalPoUsers, 1) as $index => $approvedUser){
+            $approvalData[] = $buildApproval(
+                'Approved',
+                $approvedUser,
+                ($approvedLevel >= ($index + 2))
+            );
+        }
+
+        $approvalData = array_reverse($approvalData);
 
         $poDate = date('Y-m-d', strtotime($purchase_orders->po_date)); 
         $cutoffDate = '2025-09-01';
@@ -890,12 +1344,31 @@ class Purchase_orders extends CI_Controller
         //     $user2='PRESDIR';
         // }
 
-        if($user1!==null){
+        // if($user1 !== null){
+        //     $user_1 = $this->crud->read('users', [], ["username" => $user1]);
+        //     $users_1 = '<img src="' . base_url('assets/image/qrcode/' . md5($user_1->name) . '.png') . '" width="80"/>';
+        // }
+
+        // $user_2 = $this->crud->read('users', [], ["username" => $user2]);
+        // $users_2 = '<img src="' . base_url('assets/image/qrcode/' . md5($user_2->name) . '.png') . '" width="80"/>';
+
+        if ($user1 !== null) {
+
             $user_1 = $this->crud->read('users', [], ["username" => $user1]);
-            $users_1 = '<img src="' . base_url('assets/image/qrcode/' . md5($user_1->name) . '.png') . '" width="80"/>';
+
+            if ($user_1) {
+                $users_1 = '<img src="' . base_url('assets/image/qrcode/' . md5($user_1->name) . '.png') . '" width="80"/>';
+            } else {
+                $users_1 = '';
+            }
         }
         $user_2 = $this->crud->read('users', [], ["username" => $user2]);
-        $users_2 = '<img src="' . base_url('assets/image/qrcode/' . md5($user_2->name) . '.png') . '" width="80"/>';
+
+        if ($user_2) {
+            $users_2 = '<img src="' . base_url('assets/image/qrcode/' . md5($user_2->name) . '.png') . '" width="80"/>';
+        } else {
+            $users_2 = '';
+        }
 
         $po_period = $purchase_orders->po_date;
         $month = date('m', strtotime($po_period));
@@ -922,11 +1395,21 @@ class Purchase_orders extends CI_Controller
         $month_4 = $bulan_array[(($month + 4 - 1) % 12) + 1] . "-" . (($month + 4 > 12) ? $year + 1 : $year);
 
         //Generate QRcode
+        // $this->createQrcode($purchase_orders->po_no, "assets/image/qrcode/");
+        // if($user1!==null){
+        //     $this->createQrcode(md5($user_1->name), "assets/image/qrcode/");
+        // }
+        // $this->createQrcode(md5($user_2->name), "assets/image/qrcode/");
+
         $this->createQrcode($purchase_orders->po_no, "assets/image/qrcode/");
-        if($user1!==null){
+
+        if ($user1 !== null && $user_1) {
             $this->createQrcode(md5($user_1->name), "assets/image/qrcode/");
         }
-        $this->createQrcode(md5($user_2->name), "assets/image/qrcode/");
+
+        if ($user_2) {
+            $this->createQrcode(md5($user_2->name), "assets/image/qrcode/");
+        }
 
         //Config Page
         $rows = $this->getRowsPerPage(1);
@@ -1157,12 +1640,36 @@ class Purchase_orders extends CI_Controller
             }
             if (($i + 1) == $page) {
 
+                $supplierVatStatus = $supplier->vat_status;
+
+                $supplierVat = 0;
+                if($supplierVatStatus && $supplier->vat != 0) {
+                    $supplierVat = $supplier->vat;
+                }
+
+                $totalVat = floor($record['total_sub'] * $supplierVat / 100);
+                $totalOnSiteCost = $record['on_site_cost'];
+                $totalGrand = $record['total_grand'];
+
                 $html .= '
                 <tr>
-                    <th style="text-align:center;" colspan="4">Sub Total</th>
-                    <th style="text-align:right;">' . number_format($total_qty, 2, ',', '.') . '</th>
-                    <th style="text-align:right;" colspan="3"></th>
+                    <th style="text-align:right; padding-right: 10px;" colspan="8">Sub Total</th>
                     <th style="text-align:right;">' . number_format($record['total_sub'], 2, ',', '.') . '</th>
+                    <th style="text-align:right;" colspan="5"></th> 
+                </tr>
+                <tr>
+                    <th style="text-align:right; padding-right: 10px;" colspan="8">VAT</th>
+                    <th style="text-align:right;">' . number_format($totalVat) . '</th>
+                    <th style="text-align:right;" colspan="5"></th> 
+                </tr>
+                <tr>
+                    <th style="text-align:right; padding-right: 10px;" colspan="8">On Site Cost</th>
+                    <th style="text-align:right;">' . number_format($totalOnSiteCost) . '</th>
+                    <th style="text-align:right;" colspan="5"></th> 
+                </tr>
+                <tr>
+                    <th style="text-align:right; padding-right: 10px;" colspan="8">Grand Total</th>
+                    <th style="text-align:right;">' . number_format($totalGrand) . '</th>
                     <th style="text-align:right;" colspan="5"></th> 
                 </tr>
                 </table>';
@@ -1207,23 +1714,100 @@ class Purchase_orders extends CI_Controller
                             </tr>
                         </table><div style="border: 1px solid black; padding:10px;" class="containerpo">';
                 }
+
                 // Memindahkan informasi approval ke sini
                 if($user1!==null){
                     $html .= '<div style="width:100%; display: grid; grid-template-columns: auto;">
                         <div style="width:100%; display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                    ';
+
+                    $html .= '
+
                         <div style="text-align: center;">
-                            <div style="margin-top: 30px;">Supplier Approval</div>
-                            <div></div>
-                            <div style="margin-top: 100px;">(.........................)</div>
-                        </div>
-                        <div style="text-align: center; display: flex; flex-direction:row;">
-                            <div style="text-align: center;">
-                                <div style="margin-top: 30px;">Approved By</div>
-                                <div style="margin-top: 10px;"><img src="' . base_url('assets/image/qrcode/' . md5($user_2->name) . '.png') . '" width="80"/></div>
-                                <div style="margin-top: 10px;">' . $user_2->name . '</div>
-                                <div>' . $user_2->position . '</div>
+                            <table style="width:100%; border-collapse:collapse; margin-top:28px;" border="1" cellpadding="4">
+                                <tr style="text-align:center;">
+                                    <td>Supplier Approval</td>
+                                </tr>
+
+                                <tr style="height:100px; text-align:center; vertical-align:center;">
+                                </tr>
+
+                                <tr style="text-align:center;">
+                                    <td style="height: 20px;"></td>
+                                </tr>
+
+                                <tr style="text-align:center;">
+                                    <td style="height: 20px;"></td>
+                                </tr>
+                            </table>
+                        </div>';
+
+                        $html .= '
+                            <div style="width:75%; text-align:center;">
+                                <table style="width:100%; border-collapse:collapse; table-layout:fixed; margin-top:30px;" border="1" cellpadding="3">';
+
+                                
+                            $html .= '<tr style="text-align:center;">';
+
+                            foreach ($approvalData as $approval){
+
+                                $html .= '<td>'.$approval['title'].'</td>';
+
+                            }
+
+                            $html .= '</tr>';
+
+                            $html .= '<tr style="height:100px;text-align:center;vertical-align:middle;">';
+
+
+                            foreach($approvalData as $approval){
+
+                                $html.='<td>';
+
+                                if($approval['show']){
+
+                                    $html.='<img src="'.
+                                        $approval['barcode'].
+                                        '" width="80"/>';
+
+                                }
+
+                                $html.='</td>';
+
+                            }
+
+                            $html.='</tr>';
+
+
+                            $html.='<tr style="text-align:center;">';
+
+                            foreach($approvalData as $approval){
+
+                                $html.='<td>'.$approval['name'].'</td>';
+
+                            }
+
+                            $html.='</tr>';
+
+                            $html.='<tr style="text-align:center;">';
+
+                            foreach($approvalData as $approval){
+
+                                $html.='<td>'.$approval['position'].'</td>';
+
+                            }
+
+                            $html.='</tr>';
+
+                            $html .= '</tr>';
+                            
+                            $html .= '
+                                </table>
                             </div>
-                        </div>
+                        ';
+
+                    $html .= '
+
                     </div>
                     <div style="text-align: right; margin-top: 45px; font-style: italic; font-size:10px;">
                         Electronic Auto Generating Approval No Need Signature
@@ -1239,7 +1823,9 @@ class Purchase_orders extends CI_Controller
                     <table style="width:100%; font-size:12px; margin-top:20px;">
                         <tr>
                             <td width="20">1.</td>
-                            <td>Please sign, stamp & reply email to : mcl@banshu-rubber.com. Maximum one day after PO received.</td>
+                            <td>
+                                Please sign, stamp & reply email to : ' . $emailReply . '. Maximum one day after PO received.
+                            </td>
                         </tr>
                         <tr>
                             <td>2.</td>
@@ -1252,51 +1838,128 @@ class Purchase_orders extends CI_Controller
                     </table>
     
                     </div>';
-
                 }
+
                 if($user1==null){
-                    
-                $html .= '<div style="width:100%; display: grid; grid-template-columns: auto;">
-                <div style="width:100%; display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-                <div style="text-align: center;">
-                    <div style="margin-top: 30px;">Supplier Approval</div>
-                    <div></div>
-                    <div style="margin-top: 100px;">(.........................)</div>
-                </div>
-                <div style="text-align: center;">
-                    <div style="margin-top: 30px;">Approved By</div>
-                    <div style="margin-top: 10px;"><img src="' . base_url('assets/image/qrcode/' . md5($user_2->name) . '.png') . '" width="80"/></div>
-                    <div style="margin-top: 10px;">' . $user_2->name . '</div>
-                    <div>' . $user_2->position . '</div>
-                </div>
-                </div>
-                <div style="text-align: right; margin-top: 45px; font-style: italic; font-size:10px;">
-                    Electronic Auto Generating Approval No Need Signature
-                </div>
+                    $html .= '<div style="width:100%; display: grid; grid-template-columns: auto;">
+                    <div style="width:100%; display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                    ';
+
+                    $html .= '
+
+                        <div style="text-align: center;">
+                            <table style="width:100%; border-collapse:collapse; margin-top:28px;" border="1" cellpadding="4">
+                                <tr style="text-align:center;">
+                                    <td>Supplier Approval</td>
+                                </tr>
+
+                                <tr style="height:100px; text-align:center; vertical-align:center;">
+                                </tr>
+
+                                <tr style="text-align:center;">
+                                    <td style="height: 25px;"></td>
+                                </tr>
+
+                                <tr style="text-align:center;">
+                                    <td style="height: 25px;"></td>
+                                </tr>
+                            </table>
+                        </div>';
+
+                        $html .= '
+                            <div style="width:75%; text-align:center;">
+                                <table style="width:100%; border-collapse:collapse; table-layout:fixed; margin-top:30px;" border="1" cellpadding="3">';
+
+                                
+                            $html .= '<tr style="text-align:center;">';
+
+                            foreach ($approvalData as $approval){
+
+                                $html .= '<td>'.$approval['title'].'</td>';
+
+                            }
+
+                            $html .= '</tr>';
+
+
+                            $html .= '<tr style="height:100px;text-align:center;vertical-align:middle;">';
+
+                            foreach($approvalData as $approval){
+
+                                $html.='<td>';
+
+                                if($approval['show']){
+
+                                    $html.='<img src="'.
+                                        $approval['barcode'].
+                                        '" width="80"/>';
+
+                                }
+
+                                $html.='</td>';
+
+                            }
+
+                            $html.='<tr style="text-align:center;">';
+
+                            foreach($approvalData as $approval){
+
+                                $html.='<td>'.$approval['name'].'</td>';
+
+                            }
+
+                            $html.='</tr>';
+
+                            $html.='<tr style="text-align:center;">';
+
+                            foreach($approvalData as $approval){
+
+                                $html.='<td>'.$approval['position'].'</td>';
+
+                            }
+
+                            $html.='</tr>';
+
+                            $html .= '</tr>';
+                            
+                            $html .= '
+
+                                </table>
+                            </div>
+                        ';
+
+                    $html .= '
+
+                    </div>
+                    <div style="text-align: right; margin-top: 45px; font-style: italic; font-size:10px;">
+                        Electronic Auto Generating Approval No Need Signature
+                    </div>
+                        </div>
+
+                    <div style="font-size:12px; margin-top:20px;">
+                        <tr>
+                            <td>Term & Condition</td>
+                        </tr>
                     </div>
 
-                <div style="font-size:12px; margin-top:20px;">
-                    <tr>
-                        <td>Term & Condition</td>
-                    </tr>
-                </div>
+                    <table style="width:100%; font-size:12px; margin-top:20px;">
+                        <tr>
+                            <td width="20">1.</td>
+                            <td>
+                                Please sign, stamp & reply email to : ' . $emailReply . '. Maximum one day after PO received.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2.</td>
+                            <td>Please mention the Purchase Order Number in the Shipping & Billing Document.</td>
+                        </tr>
+                        <tr>
+                            <td>3.</td>
+                            <td>Please make sure delivery date is same with Purchase Order.</td>
+                        </tr>
+                    </table>
 
-                <table style="width:100%; font-size:12px; margin-top:20px;">
-                    <tr>
-                        <td width="20">1.</td>
-                        <td>Please sign, stamp & reply email to : mcl@banshu-rubber.com. Maximum one day after PO received.</td>
-                    </tr>
-                    <tr>
-                        <td>2.</td>
-                        <td>Please mention the Purchase Order Number in the Shipping & Billing Document.</td>
-                    </tr>
-                    <tr>
-                        <td>3.</td>
-                        <td>Please make sure delivery date is same with Purchase Order.</td>
-                    </tr>
-                </table>
-
-                </div>';
+                    </div>';
                 }
             } else {
                 $html .= '</table></div><div style="page-break-after:always;"/></div>';
@@ -1312,24 +1975,201 @@ class Purchase_orders extends CI_Controller
         $purchase_orders_total = $this->crud->reads('purchase_orders', [], ["po_no" => base64_decode($po_no)]);
         $purchase_orders = $this->crud->read('purchase_orders', [], ["po_no" => base64_decode($po_no)], "", "revision", "desc");
         $supplier = $this->crud->read('suppliers', [], ["id" => $purchase_orders->supplier_id]);
+
         $config = $this->db->get('config')->row();
         $config_iso = $this->db->get('config_iso')->row();
-        $signatures = $this->db->get('signatures')->row();
+
+        // $signatures = $this->db->get('signatures')->row();
+
         $purchaseRequests = $this->crud->read('purchase_requests', [], ["request_no" => $purchase_orders->request_no]);
-        $table_approval = ($purchaseRequests->division==="DIV01")?'purchase_orders':'purchase_orders_2';
+        $currentUser = $this->crud->currentUserDept();
+        // $table_approval = ($purchaseRequests->division==="DIV01")?'purchase_orders':'purchase_orders_2';
+
+
+        $creator = $this->db
+            ->select('u.department_id, d.plant_id')
+            ->from('users u')
+            ->join('departments d', 'd.id = u.department_id', 'left')
+            ->where('u.username', $purchase_orders->created_by)
+            ->get()
+            ->row();
+
+        $requester = $this->db
+            ->select('u.department_id, d.plant_id')
+            ->from('users u')
+            ->join('departments d', 'd.id = u.department_id', 'left')
+            ->where('u.username', $purchaseRequests->created_by)
+            ->get()
+            ->row();
+
+        $department_id = !empty($requester->department_id)
+            ? $requester->department_id
+            : (!empty($creator->department_id) ? $creator->department_id : null);
+        $plant_id = !empty($requester->plant_id)
+            ? $requester->plant_id
+            : (!empty($creator->plant_id) ? $creator->plant_id : null);
+
+        $emailReply = $this->getDepartmentEmail($department_id);
+        $isAdmin = empty($currentUser->department_id);
+
+        if (!$isAdmin && (
+                $currentUser->department_id != @$creator->department_id ||
+                $currentUser->plant_id != @$creator->plant_id
+            ) &&
+             !in_array($currentUser->department, $this->crud->getIgnoreDept())
+        ) {
+            show_error('Unauthorized', 403);
+        }
+
+
+        $table_approval = 'purchase_orders';
         $plant = ($purchaseRequests->division==="DIV01")?'RUBBER PART':'EXTRUDER';
-        // $approval = $this->crud->read('approvals', [], ["table_name" => "purchase_orders"]);
-        // $user_1 = $this->crud->read('users', [], ["username" => $approval->user_approval_1]);
-        // $user_1 = $this->crud->read('users', [], ["username" => $approval->user_approval_1]);
-        // $user_1 = $this->crud->read('users', [], ["username" => $purchase_orders->approved_by]);
-        $approval=$this->db->query("SELECT *, CASE 
-        WHEN user_approval_1 = '$purchase_orders->approved_by' THEN '1'
-        WHEN user_approval_2 = '$purchase_orders->approved_by' THEN '2'
-        WHEN user_approval_3 = '$purchase_orders->approved_by' THEN '3'
-        WHEN user_approval_4 = '$purchase_orders->approved_by' THEN '4'
-        WHEN user_approval_5 = '$purchase_orders->approved_by' THEN '5'
-        ELSE '0' END AS approved_by FROM approvals WHERE table_name = '$table_approval'");
+
+        $approvalPr = $this->crud->read('approvals', [], [
+                'table_name'    => 'purchase_requests',
+                'department_id' => $department_id,
+                'plant_id'      => $plant_id
+            ]
+        );
+
+
+        $approval = $this->db->query("
+            SELECT *,
+            CASE
+                WHEN user_approval_1 = '$purchase_orders->approved_by' THEN '1'
+                WHEN user_approval_2 = '$purchase_orders->approved_by' THEN '2'
+                WHEN user_approval_3 = '$purchase_orders->approved_by' THEN '3'
+                WHEN user_approval_4 = '$purchase_orders->approved_by' THEN '4'
+                WHEN user_approval_5 = '$purchase_orders->approved_by' THEN '5'
+                ELSE '0'
+            END AS approved_by
+            FROM approvals
+            WHERE table_name = '$table_approval'
+            AND department_id = '$department_id'
+            AND plant_id = '$plant_id'
+        ");
+
         $sqlApproval = $approval->row();
+        if(empty($sqlApproval)){
+            $sqlApproval = (object) [
+                'approved_by' => 0,
+                'user_approval_1' => '',
+                'user_approval_2' => '',
+                'user_approval_3' => '',
+                'user_approval_4' => '',
+                'user_approval_5' => ''
+            ];
+        }
+
+        $createdUser = $purchaseRequests->created_by;
+        $approvedLevel = !empty($sqlApproval) ? (int)$sqlApproval->approved_by : 0;
+
+        
+        $approvalData = [];
+
+        $buildApproval = function($title, $username, $show){
+
+            $user = null;
+
+            if(!empty($username)){
+                $user = $this->crud->read(
+                    'users',
+                    [],
+                    ['username'=>$username]
+                );
+            }
+
+            if($show && $user){
+                $this->createQrcode(
+                    md5($user->name),
+                    "assets/image/qrcode/"
+                );
+            }
+
+            return [
+
+                'title'    => $title,
+
+                'show'     => $show,
+
+                'username' => $username,
+
+                'name'     => $show && $user
+                                ? $user->name
+                                : '',
+
+                'position' => $show && $user
+                                ? $user->position
+                                : '',
+
+                'barcode'  => $show && $user
+                                ? base_url(
+                                    'assets/image/qrcode/'.
+                                    md5($user->name).
+                                    '.png'
+                                )
+                                : ''
+
+            ];
+
+        };
+
+        $approvalData[] = $buildApproval(
+            'Created',
+            $createdUser,
+            true
+        );
+
+        $getApprovalUsers = function($approvalRow){
+            $users = [];
+
+            if(empty($approvalRow)){
+                return $users;
+            }
+
+            for($i = 1; $i <= 5; $i++){
+                $field = 'user_approval_'.$i;
+
+                if(!empty($approvalRow->$field)){
+                    $users[] = $approvalRow->$field;
+                }
+            }
+
+            return $users;
+        };
+
+        $approvalPrUsers = $getApprovalUsers($approvalPr);
+        $approvalPoUsers = $getApprovalUsers($sqlApproval);
+        $firstPoApproval = !empty($approvalPoUsers) ? $approvalPoUsers[0] : null;
+        $knownUsers = [];
+
+        foreach($approvalPrUsers as $approvalPrUser){
+            if(!in_array($approvalPrUser, $knownUsers)){
+                $knownUsers[] = $approvalPrUser;
+            }
+        }
+
+        if(!empty($firstPoApproval) && !in_array($firstPoApproval, $knownUsers)){
+            $knownUsers[] = $firstPoApproval;
+        }
+
+        foreach($knownUsers as $knownUser){
+            $approvalData[] = $buildApproval(
+                'Known',
+                $knownUser,
+                ($knownUser === $firstPoApproval) ? ($approvedLevel >= 1) : true
+            );
+        }
+
+        foreach(array_slice($approvalPoUsers, 1) as $index => $approvedUser){
+            $approvalData[] = $buildApproval(
+                'Approved',
+                $approvedUser,
+                ($approvedLevel >= ($index + 2))
+            );
+        }
+
+        $approvalData = array_reverse($approvalData);
 
         $poDate = date('Y-m-d', strtotime($purchase_orders->po_date)); 
         $cutoffDate = '2025-09-01';
@@ -1388,12 +2228,24 @@ class Purchase_orders extends CI_Controller
         //     $user2='PRESDIR';
         // }
 
-    if($user1!==null){
-        $user_1 = $this->crud->read('users', [], ["username" => $user1]);
-        // $users_1 = '<img src="' . base_url('assets/image/qrcode/' . md5($user_1->name) . '.png') . '" width="80"/>';
-    }
-    $user_2 = $this->crud->read('users', [], ["username" => $user2]);
-    // $users_2 = '<img src="' . base_url('assets/image/qrcode/' . md5($user_2->name) . '.png') . '" width="80"/>';
+        if ($user1 !== null) {
+
+            $user_1 = $this->crud->read('users', [], ["username" => $user1]);
+
+            if ($user_1) {
+                $users_1 = '<img src="' . base_url('assets/image/qrcode/' . md5($user_1->name) . '.png') . '" width="80"/>';
+            } else {
+                $users_1 = '';
+            }
+        }
+        $user_2 = $this->crud->read('users', [], ["username" => $user2]);
+
+        if ($user_2) {
+            $users_2 = '<img src="' . base_url('assets/image/qrcode/' . md5($user_2->name) . '.png') . '" width="80"/>';
+        } else {
+            $users_2 = '';
+        }
+
 
         $po_period = $purchase_orders->po_date;
         $month = date('m', strtotime($po_period));
@@ -1414,11 +2266,6 @@ class Purchase_orders extends CI_Controller
             12 => "Dec"
         );
 
-        // $month_1 = $bulan_array[($month + 1)] . "-" . $currentYear;
-        // $month_2 = $bulan_array[($month + 2)] . "-" . $currentYear;
-        // $month_3 = $bulan_array[($month + 3)] . "-" . $currentYear;
-        // $month_4 = $bulan_array[($month + 4)] . "-" . $currentYear;
-
         $month_1 = $bulan_array[(($month + 1 - 1) % 12) + 1] . "-" . $currentYear;
         $month_2 = $bulan_array[(($month + 2 - 1) % 12) + 1] . "-" . $currentYear;
         $month_3 = $bulan_array[(($month + 3 - 1) % 12) + 1] . "-" . $currentYear;
@@ -1438,11 +2285,23 @@ class Purchase_orders extends CI_Controller
 
 
         //Generate QRcode
-        $this->createQrcode($purchase_orders->po_no, "assets/image/qrcode/");
+        // $this->createQrcode($purchase_orders->po_no, "assets/image/qrcode/");
         // if($user1!==null){
         //     $this->createQrcode(md5($user_1->name), "assets/image/qrcode/");
         // }
-        $this->createQrcode(md5($user_2->name), "assets/image/qrcode/");
+        // $this->createQrcode(md5($user_2->name), "assets/image/qrcode/");
+
+
+        $this->createQrcode($purchase_orders->po_no, "assets/image/qrcode/");
+
+        if ($user1 !== null && $user_1) {
+            $this->createQrcode(md5($user_1->name), "assets/image/qrcode/");
+        }
+
+        if ($user_2) {
+            $this->createQrcode(md5($user_2->name), "assets/image/qrcode/");
+        }
+
 
         // if ($purchase_orders->approved == 0) {
         //     $users_1 = '';
@@ -1675,20 +2534,44 @@ class Purchase_orders extends CI_Controller
                 <td style="text-align:center;">' . $record['currency'] . '</td>
                 <td style="text-align:right;">' . number_format($record['total'], 2) . '</td>
                 <td style="text-align:center;">' . $record['delivery_date'] . '</td>
-                <td style="text-align:right;">' . $record['remarks'] . '</td>
+                <td style="text-align:left;">' . $record['remarks'] . '</td>
               </tr>';
                 $no++;
             }
 
             if (($i + 1) == $page) {
 
+                $supplierVatStatus = $supplier->vat_status;
+
+                $supplierVat = 0;
+                if($supplierVatStatus && $supplier->vat != 0) {
+                    $supplierVat = $supplier->vat;
+                }
+
+                $totalVat = floor($record['total_sub'] * $supplierVat / 100);
+                $totalOnSiteCost = $record['on_site_cost'];
+                $totalGrand = $record['total_grand'];
+
                 $html .= '
-                <tr>    
-                    <th style="text-align:center;" colspan="4">Sub Total</th>
-                    <th style="text-align:right;">' . number_format($total_qty, 2, ',', '.') . '</th>
-                    <th style="text-align:right;" colspan="3"></th>
+                <tr>
+                    <th style="text-align:right; padding-right: 10px;" colspan="8">Sub Total</th>
                     <th style="text-align:right;">' . number_format($record['total_sub'], 2, ',', '.') . '</th>
-                    <th style="text-align:right;" colspan="2"></th> 
+                    <th style="text-align:right;" colspan="5"></th> 
+                </tr>
+                <tr>
+                    <th style="text-align:right; padding-right: 10px;" colspan="8">VAT</th>
+                    <th style="text-align:right;">' . number_format($totalVat) . '</th>
+                    <th style="text-align:right;" colspan="5"></th> 
+                </tr>
+                <tr>
+                    <th style="text-align:right; padding-right: 10px;" colspan="8">On Site Cost</th>
+                    <th style="text-align:right;">' . number_format($totalOnSiteCost) . '</th>
+                    <th style="text-align:right;" colspan="5"></th> 
+                </tr>
+                <tr>
+                    <th style="text-align:right; padding-right: 10px;" colspan="8">Grand Total</th>
+                    <th style="text-align:right;">' . number_format($totalGrand) . '</th>
+                    <th style="text-align:right;" colspan="5"></th> 
                 </tr>
                 </table>';
                 $html .= '</table>';
@@ -1733,23 +2616,101 @@ class Purchase_orders extends CI_Controller
                             </tr>
                         </table><div style="border: 1px solid black; padding:10px;" class="containerpo">';
                 }
+
+
                 // Memindahkan informasi approval ke sini
                 if($user1!==null){
                     $html .= '<div style="width:100%; display: grid; grid-template-columns: auto;">
                         <div style="width:100%; display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                    ';
+
+                    $html .= '
+
                         <div style="text-align: center;">
-                            <div style="margin-top: 30px;">Supplier Approval</div>
-                            <div></div>
-                            <div style="margin-top: 100px;">(.........................)</div>
-                        </div>
-                        <div style="text-align: center; display: flex; flex-direction:row;">
-                            <div style="text-align: center;">
-                                <div style="margin-top: 30px;">Approved By</div>
-                                <div style="margin-top: 10px;"><img src="' . base_url('assets/image/qrcode/' . md5($user_2->name) . '.png') . '" width="80"/></div>
-                                <div style="margin-top: 10px;">' . $user_2->name . '</div>
-                                <div>' . $user_2->position . '</div>
+                            <table style="width:100%; border-collapse:collapse; margin-top:28px;" border="1" cellpadding="4">
+                                <tr style="text-align:center;">
+                                    <td>Supplier Approval</td>
+                                </tr>
+
+                                <tr style="height:100px; text-align:center; vertical-align:center;">
+                                </tr>
+
+                                <tr style="text-align:center;">
+                                    <td style="height: 20px;"></td>
+                                </tr>
+
+                                <tr style="text-align:center;">
+                                    <td style="height: 20px;"></td>
+                                </tr>
+                            </table>
+                        </div>';
+
+                        $html .= '
+                            <div style="width:75%; text-align:center;">
+                                <table style="width:100%; border-collapse:collapse; table-layout:fixed; margin-top:30px;" border="1" cellpadding="3">';
+
+                                
+                            $html .= '<tr style="text-align:center;">';
+
+                            foreach ($approvalData as $approval){
+
+                                $html .= '<td>'.$approval['title'].'</td>';
+
+                            }
+
+                            $html .= '</tr>';
+
+                            $html .= '<tr style="height:100px;text-align:center;vertical-align:middle;">';
+
+
+                            foreach($approvalData as $approval){
+
+                                $html.='<td>';
+
+                                if($approval['show']){
+
+                                    $html.='<img src="'.
+                                        $approval['barcode'].
+                                        '" width="80"/>';
+
+                                }
+
+                                $html.='</td>';
+
+                            }
+
+                            $html.='</tr>';
+
+
+                            $html.='<tr style="text-align:center;">';
+
+                            foreach($approvalData as $approval){
+
+                                $html.='<td>'.$approval['name'].'</td>';
+
+                            }
+
+                            $html.='</tr>';
+
+                            $html.='<tr style="text-align:center;">';
+
+                            foreach($approvalData as $approval){
+
+                                $html.='<td>'.$approval['position'].'</td>';
+
+                            }
+
+                            $html.='</tr>';
+
+                            $html .= '</tr>';
+                            
+                            $html .= '
+                                </table>
                             </div>
-                        </div>
+                        ';
+
+                    $html .= '
+
                     </div>
                     <div style="text-align: right; margin-top: 45px; font-style: italic; font-size:10px;">
                         Electronic Auto Generating Approval No Need Signature
@@ -1765,7 +2726,9 @@ class Purchase_orders extends CI_Controller
                     <table style="width:100%; font-size:12px; margin-top:20px;">
                         <tr>
                             <td width="20">1.</td>
-                            <td>Please sign, stamp & reply email to : mcl@banshu-rubber.com. Maximum one day after PO received.</td>
+                            <td>
+                                Please sign, stamp & reply email to : ' . $emailReply . '. Maximum one day after PO received.
+                            </td>
                         </tr>
                         <tr>
                             <td>2.</td>
@@ -1778,101 +2741,129 @@ class Purchase_orders extends CI_Controller
                     </table>
     
                     </div>';
-
                 }
+
                 if($user1==null){
-                    
-                $html .= '<div style="width:100%; display: grid; grid-template-columns: auto;">
-                <div style="width:100%; display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-                <div style="text-align: center;">
-                    <div style="margin-top: 30px;">Supplier Approval</div>
-                    <div></div>
-                    <div style="margin-top: 100px;">(.........................)</div>
-                </div>
-                <div style="text-align: center;">
-                    <div style="margin-top: 30px;">Approved By</div>
-                    <div style="margin-top: 10px;"><img src="' . base_url('assets/image/qrcode/' . md5($user_2->name) . '.png') . '" width="80"/></div>
-                    <div style="margin-top: 10px;">' . $user_2->name . '</div>
-                    <div>' . $user_2->position . '</div>
-                </div>
-                </div>
-                <div style="text-align: right; margin-top: 45px; font-style: italic; font-size:10px;">
-                    Electronic Auto Generating Approval No Need Signature
-                </div>
+                    $html .= '<div style="width:100%; display: grid; grid-template-columns: auto;">
+                    <div style="width:100%; display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                    ';
+
+                    $html .= '
+
+                        <div style="text-align: center;">
+                            <table style="width:100%; border-collapse:collapse; margin-top:28px;" border="1" cellpadding="4">
+                                <tr style="text-align:center;">
+                                    <td>Supplier Approval</td>
+                                </tr>
+
+                                <tr style="height:100px; text-align:center; vertical-align:center;">
+                                </tr>
+
+                                <tr style="text-align:center;">
+                                    <td style="height: 25px;"></td>
+                                </tr>
+
+                                <tr style="text-align:center;">
+                                    <td style="height: 25px;"></td>
+                                </tr>
+                            </table>
+                        </div>';
+
+                        $html .= '
+                            <div style="width:75%; text-align:center;">
+                                <table style="width:100%; border-collapse:collapse; table-layout:fixed; margin-top:30px;" border="1" cellpadding="3">';
+
+                                
+                            $html .= '<tr style="text-align:center;">';
+
+                            foreach ($approvalData as $approval){
+
+                                $html .= '<td>'.$approval['title'].'</td>';
+
+                            }
+
+                            $html .= '</tr>';
+
+
+                            $html .= '<tr style="height:100px;text-align:center;vertical-align:middle;">';
+
+                            foreach($approvalData as $approval){
+
+                                $html.='<td>';
+
+                                if($approval['show']){
+
+                                    $html.='<img src="'.
+                                        $approval['barcode'].
+                                        '" width="80"/>';
+
+                                }
+
+                                $html.='</td>';
+
+                            }
+
+                            $html.='<tr style="text-align:center;">';
+
+                            foreach($approvalData as $approval){
+
+                                $html.='<td>'.$approval['name'].'</td>';
+
+                            }
+
+                            $html.='</tr>';
+
+                            $html.='<tr style="text-align:center;">';
+
+                            foreach($approvalData as $approval){
+
+                                $html.='<td>'.$approval['position'].'</td>';
+
+                            }
+
+                            $html.='</tr>';
+
+                            $html .= '</tr>';
+                            
+                            $html .= '
+
+                                </table>
+                            </div>
+                        ';
+
+                    $html .= '
+
+                    </div>
+                    <div style="text-align: right; margin-top: 45px; font-style: italic; font-size:10px;">
+                        Electronic Auto Generating Approval No Need Signature
+                    </div>
+                        </div>
+
+                    <div style="font-size:12px; margin-top:20px;">
+                        <tr>
+                            <td>Term & Condition</td>
+                        </tr>
                     </div>
 
-                <div style="font-size:12px; margin-top:20px;">
-                    <tr>
-                        <td>Term & Condition</td>
-                    </tr>
-                </div>
+                    <table style="width:100%; font-size:12px; margin-top:20px;">
+                        <tr>
+                            <td width="20">1.</td>
+                            <td>
+                                Please sign, stamp & reply email to : ' . $emailReply . '. Maximum one day after PO received.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2.</td>
+                            <td>Please mention the Purchase Order Number in the Shipping & Billing Document.</td>
+                        </tr>
+                        <tr>
+                            <td>3.</td>
+                            <td>Please make sure delivery date is same with Purchase Order.</td>
+                        </tr>
+                    </table>
 
-                <table style="width:100%; font-size:12px; margin-top:20px;">
-                    <tr>
-                        <td width="20">1.</td>
-                        <td>Please sign, stamp & reply email to : mcl@banshu-rubber.com. Maximum one day after PO received.</td>
-                    </tr>
-                    <tr>
-                        <td>2.</td>
-                        <td>Please mention the Purchase Order Number in the Shipping & Billing Document.</td>
-                    </tr>
-                    <tr>
-                        <td>3.</td>
-                        <td>Please make sure delivery date is same with Purchase Order.</td>
-                    </tr>
-                </table>
-
-                </div>';
+                    </div>';
                 }
-                // $html .= '<div style="width:100%; display: grid; grid-template-columns: auto;">
-                //     <div style="width:100%; display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-                //     <div style="text-align: center;">
-                //         <div style="margin-top: 30px;">Supplier Approval</div>
-                //         <div></div>
-                //         <div style="margin-top: 100px;">(.........................)</div>
-                //     </div>
-                //     <div style="text-align: center; display: flex; flex-direction:row;">
-                //         <div style="text-align: center; margin-right:10px">
-                //             <div style="margin-top: 30px;">Approved By</div>
-                //             <div style="margin-top: 10px;"><img src="' . base_url('assets/image/qrcode/' . md5($user_1->name) . '.png') . '" width="80"/></div>
-                //             <div style="margin-top: 10px;">' . $user_1->name . '</div>
-                //             <div>' . $user_1->position . '</div>
-                //         </div>
-                //         <div style="text-align: center;">
-                //             <div style="margin-top: 30px;">Approved By</div>
-                //             <div style="margin-top: 10px;"><img src="' . base_url('assets/image/qrcode/' . md5($user_2->name) . '.png') . '" width="80"/></div>
-                //             <div style="margin-top: 10px;">' . $user_2->name . '</div>
-                //             <div>' . $user_2->position . '</div>
-                //         </div>
-                //     </div>
-                // </div>
-                // <div style="text-align: right; margin-top: 45px; font-style: italic; font-size:10px;">
-                //     Electronic Auto Generating Approval No Need Signature
-                // </div>
-                //     </div>
-
-                // <div style="font-size:12px; margin-top:20px;">
-                //     <tr>
-                //         <td>Term & Condition</td>
-                //     </tr>
-                // </div>
-
-                // <table style="width:100%; font-size:12px; margin-top:20px;">
-                //     <tr>
-                //         <td width="20">1.</td>
-                //         <td>Please sign, stamp & reply email to : mcl@banshu-rubber.com. Maximum one day after PO received.</td>
-                //     </tr>
-                //     <tr>
-                //         <td>2.</td>
-                //         <td>Please mention the Purchase Order Number in the Shipping & Billing Document.</td>
-                //     </tr>
-                //     <tr>
-                //         <td>3.</td>
-                //         <td>Please make sure delivery date is same with Purchase Order.</td>
-                //     </tr>
-                // </table>
-
-                // </div>';
             } else {
                 $html .= '</table></div><div style="page-break-after:always;"/></div>';
             }
@@ -2010,9 +3001,9 @@ class Purchase_orders extends CI_Controller
     function getRowsPerPage($pageNumber)
     {
         if ($pageNumber == 1) {
-            return 18; // Set 20 rows for the first page
+            return 15; // Set 20 rows for the first page
         } else {
-            return 25; // Set 25 rows for subsequent pages
+            return 22; // Set 25 rows for subsequent pages
         }
     }
 }

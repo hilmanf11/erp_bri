@@ -2,10 +2,10 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'po_no',width:180,halign:'center',resizable:true">PO No</th>
+            <th rowspan="2" data-options="field:'po_no',width:200,halign:'center',resizable:true">PO No</th>
             <th rowspan="2" data-options="field:'status',width:80,align:'center',formatter:statusformat,styler:statusStyle">Status PO</th>
             <th rowspan="2" data-options="field:'status_pi',width:80,align:'center',formatter:statusformatFinance,styler:statusStyleFinance">Status<br>Invoice</th>
-            <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center',formatter:formatApproved,styler:styleApproved">Status <br>Approve</th>
+            <th rowspan="2" data-options="field:'approved_to',width:120,halign:'center',formatter:formatApprovedStatus,styler:styleApprovedStatus">Status <br>Approve</th>
             <th rowspan="2" data-options="field:'approved_by',width:100,halign:'center'">Approve By</th>
             <th rowspan="2" data-options="field:'approved_date',width:130,halign:'center'">Approve Date</th>
             <th rowspan="2" data-options="field:'request_no',width:150,halign:'center'">Request No</th>
@@ -117,7 +117,7 @@
                         <b style="width:35%; display:inline-block;">SUB TOTAL</b>
                         <input style="width:60%; text-align:right;" id="total_sub" name="total_sub" readonly class="easyui-numberbox" value="0" readonly data-options="precision:2,groupSeparator:','">
                     </div>
-                    <div class="fitem">
+                    <div class="fitem" hidden>
                         <b style="width:35%; display:inline-block;">DISC %</b>
                         <input style="width:10%;" id="disc_pr" name="disc_pr" value="0" class="easyui-numberbox">
                         <input style="width:50%; text-align:right;" id="discount_total" name="discount_total" readonly class="easyui-numberbox" readonly value="0" data-options="precision:2,groupSeparator:','">
@@ -126,14 +126,18 @@
                         <b style="width:35%; display:inline-block;">VAT</b>
                         <input style="width:60%; text-align:right;" id="total_vat" name="total_vat" readonly class="easyui-numberbox" value="0" readonly data-options="precision:2,groupSeparator:','">
                     </div>
-                    <div class="fitem">
+                    <!-- <div class="fitem" hidden>
                         <b style="width:35%; display:inline-block;">INCOME TAX</b>
                         <input style="width:10%;" id="income_tax" name="income_tax" value="0" class="easyui-numberbox">
                         <input style="width:50%; text-align:right;" id="income_total" name="income_total" readonly class="easyui-numberbox" value="0" readonly data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem">
+                    </div> -->
+                    <div class="fitem" hidden>
                         <b style="width:35%; display:inline-block;">DOWN PAYMENT</b>
                         <input style="width:60%; text-align:right;" id="total_dp" name="total_dp" required class="easyui-numberbox" value="0" data-options="precision:2,groupSeparator:','">
+                    </div>
+                    <div class="fitem">
+                        <b style="width:35%; display:inline-block;">ON SITE COST</b>
+                        <input style="width:60%; text-align:right;" id="on_site_cost" name="on_site_cost" class="easyui-numberbox" value="0" data-options="precision:2,groupSeparator:','">
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">GRAND TOTAL</b>
@@ -195,11 +199,12 @@
                             // Buka dialog setelah sedikit penundaan untuk memastikan loading ditampilkan dengan benar
                             setTimeout(() => {
                                 $('#dlg_insert').dialog('open');
-                                $('#frm_calculate').hide();
+                                // $('#frm_calculate').hide();
+                                $('#request_no').combobox('enable');
                                 $("#btnPreview").linkbutton('enable');
                                 $('#dg_request').datagrid('loadData', []);
                                 $("#request_no").combobox({
-                                    url: '<?= base_url('purchase/purchase_requests/readRequestno') ?>',
+                                    url: '<?= base_url('purchase/purchase_orders/readRequestno') ?>',
                                     valueField: 'request_no',
                                     textField: 'request_no',
                                     prompt: "Select Purchase Request No",
@@ -251,6 +256,7 @@
                     $('#dlg_insert').dialog('open');
                     $('#frm_insert').form('load', row);
                     $('#frm_calculate').show();
+                    $('#request_no').combobox('disable');
                     $("#btnPreview").linkbutton('disable');
 
                     preview('<?= base_url('purchase/purchase_orders/datatable_updates') ?>?po_no=' + btoa(row.po_no));
@@ -271,7 +277,7 @@
         var po_date = $("#po_date").datebox('getValue');
 
         if (url == "") {
-            var url = '<?= base_url('purchase/purchase_requests/reads') ?>?request_no=' + request_no;
+            var url = '<?= base_url('purchase/purchase_orders/readPreview') ?>?request_no=' + request_no;
         }
 
         if (request_no == "") {
@@ -849,41 +855,76 @@
                             var totalrows = rows.length;
 
                             if (totalrows > 0) {
-                                var total_subs = 0;
-                                for (let i = 0; i < totalrows; i++) {
-                                    total_subs += parseFloat(rows[i].total);
+                                // var total_subs = 0;
+                                // for (let i = 0; i < totalrows; i++) {
+                                //     total_subs += parseFloat(rows[i].total);
+                                // }
+
+                                // var supplierId = rows.length ? rows[0].supplier_id : '';
+                                // $("#total_sub").numberbox('setValue', total_subs);
+
+                                // calculateTotal(total_subs, supplierId);
+
+                                var supplierId = rows[0].supplier_id;
+
+                                console.log('ROWSS : ', rows);
+
+                                if (rows[0].po_no) {
+
+                                    total_subs = parseFloat(rows[0].total_sub) || 0;
+
+                                    $("#total_sub").numberbox('setValue', rows[0].total_sub);
+                                    $("#total_vat").numberbox('setValue', rows[0].total_vat);
+                                    $("#on_site_cost").numberbox('setValue', rows[0].on_site_cost);
+                                    $("#total_grand").numberbox('setValue', rows[0].total_grand);
+
+                                } else {
+
+                                    total_subs = rows.reduce(function(sum,row){
+                                        return sum + (parseFloat(row.total)||0);
+                                    },0);
+
+                                    calculateTotal(total_subs,supplierId);
                                 }
 
-                                $("#total_sub").numberbox('setValue', total_subs);
-                                calculateTotal(total_subs);
+                                // calculateTotal(total_subs);
 
-                                $("#disc_pr").numberbox({
+                                // $("#disc_pr").numberbox({
+                                //     onChange: function() {
+                                //         var disc_pr = $("#disc_pr").numberbox('getValue');
+                                //         var income_tax = $("#income_tax").numberbox('getValue');
+                                //         var total_dp = $("#total_dp").numberbox('getValue');
+
+                                //         calculateTotal(total_subs, disc_pr, income_tax, total_dp);
+                                //     }
+                                // });
+
+                                // $("#income_tax").numberbox({
+                                //     onChange: function() {
+                                //         var disc_pr = $("#disc_pr").numberbox('getValue');
+                                //         var income_tax = $("#income_tax").numberbox('getValue');
+                                //         var total_dp = $("#total_dp").numberbox('getValue');
+
+                                //         calculateTotal(total_subs, disc_pr, income_tax, total_dp);
+                                //     }
+                                // });
+
+                                // $("#total_dp").numberbox({
+                                //     onChange: function() {
+                                //         var disc_pr = $("#disc_pr").numberbox('getValue');
+                                //         var income_tax = $("#income_tax").numberbox('getValue');
+                                //         var total_dp = $("#total_dp").numberbox('getValue');
+
+                                //         calculateTotal(total_subs, disc_pr, income_tax, total_dp);
+                                //     }
+                                // });
+
+                                $("#on_site_cost").numberbox({
                                     onChange: function() {
-                                        var disc_pr = $("#disc_pr").numberbox('getValue');
-                                        var income_tax = $("#income_tax").numberbox('getValue');
-                                        var total_dp = $("#total_dp").numberbox('getValue');
+                                        var on_site_cost = $("#on_site_cost").numberbox('getValue');
+                                        var supplierId = rows.length ? rows[0].supplier_id : '';
 
-                                        calculateTotal(total_subs, disc_pr, income_tax, total_dp);
-                                    }
-                                });
-
-                                $("#income_tax").numberbox({
-                                    onChange: function() {
-                                        var disc_pr = $("#disc_pr").numberbox('getValue');
-                                        var income_tax = $("#income_tax").numberbox('getValue');
-                                        var total_dp = $("#total_dp").numberbox('getValue');
-
-                                        calculateTotal(total_subs, disc_pr, income_tax, total_dp);
-                                    }
-                                });
-
-                                $("#total_dp").numberbox({
-                                    onChange: function() {
-                                        var disc_pr = $("#disc_pr").numberbox('getValue');
-                                        var income_tax = $("#income_tax").numberbox('getValue');
-                                        var total_dp = $("#total_dp").numberbox('getValue');
-
-                                        calculateTotal(total_subs, disc_pr, income_tax, total_dp);
+                                        calculateTotal(total_subs, supplierId, on_site_cost);
                                     }
                                 });
 
@@ -897,9 +938,35 @@
         }
     }
 
-    function calculateTotal(total_subs, disc_pr = 0, income_tax = 0, total_dp = 0) {
-        var discount_total = (total_subs * (disc_pr / 100));
-        $("#discount_total").numberbox('setValue', discount_total);
+    // function calculateTotal(total_subs, disc_pr = 0, income_tax = 0, total_dp = 0) {
+    // var discount_total = (total_subs * (disc_pr / 100));
+    // $("#discount_total").numberbox('setValue', discount_total);
+
+    //     $.ajax({
+    //         type: "post",
+    //         url: "<?= base_url('admin/config/read') ?>",
+    //         dataType: "json",
+    //         success: function(config) {
+    //             $("#total_sub").numberbox('setValue', total_subs);
+
+    //             var taxes = config.tax;
+    //             var total_vat = Math.floor((total_subs - discount_total) * (taxes / 100));
+    //             $("#total_vat").numberbox('setValue', total_vat);
+
+    //             var income_total = ((total_subs - discount_total) * (income_tax / 100));
+    //             $("#income_total").numberbox('setValue', income_total);
+
+    //             var total_grand = ((total_subs - discount_total) + total_vat - income_total - total_dp);
+    //             $("#total_grand").numberbox('setValue', total_grand);
+    //         }
+    //     });
+    // }
+
+
+    function calculateTotalV1(total_subs, on_site_cost = 0) {
+
+        total_subs = parseFloat(total_subs) || 0;
+        on_site_cost = parseFloat(on_site_cost) || 0;
 
         $.ajax({
             type: "post",
@@ -909,13 +976,37 @@
                 $("#total_sub").numberbox('setValue', total_subs);
 
                 var taxes = config.tax;
-                var total_vat = Math.floor((total_subs - discount_total) * (taxes / 100));
+                var total_vat = Math.floor(total_subs * (taxes / 100));
                 $("#total_vat").numberbox('setValue', total_vat);
 
-                var income_total = ((total_subs - discount_total) * (income_tax / 100));
-                $("#income_total").numberbox('setValue', income_total);
+                var total_grand = (total_subs  + total_vat + on_site_cost);
+                $("#total_grand").numberbox('setValue', total_grand);
+            }
+        });
+    }
 
-                var total_grand = ((total_subs - discount_total) + total_vat - income_total - total_dp);
+    function calculateTotal(total_subs, supplier_id, on_site_cost = 0) {
+
+        total_subs   = parseFloat(total_subs) || 0;
+        on_site_cost = parseFloat(on_site_cost) || 0;
+
+        $.ajax({
+            type: "POST",
+            url: "<?= base_url('purchase/purchase_orders/readVatSupplier') ?>",
+            data: {
+                supplier_id: supplier_id
+            },
+            dataType: "json",
+            success: function(result) {
+
+                $("#total_sub").numberbox('setValue', total_subs);
+
+                var tax = parseFloat(result.tax) || 0;
+
+                var total_vat = Math.floor(total_subs * tax / 100);
+                $("#total_vat").numberbox('setValue', total_vat);
+
+                var total_grand = total_subs + total_vat + on_site_cost;
                 $("#total_grand").numberbox('setValue', total_grand);
             }
         });
@@ -941,11 +1032,15 @@
             return sum + (parseFloat(r.total) || 0);
         }, 0);
 
-        var disc_pr   = $("#disc_pr").numberbox('getValue');
-        var incomeTax = $("#income_tax").numberbox('getValue');
-        var totalDp   = $("#total_dp").numberbox('getValue');
+        // var disc_pr   = $("#disc_pr").numberbox('getValue');
+        // var incomeTax = $("#income_tax").numberbox('getValue');
+        // var totalDp   = $("#total_dp").numberbox('getValue');
 
-        calculateTotal(totalSub, disc_pr, incomeTax, totalDp);
+        var supplierId = rows.length ? rows[0].supplier_id : '';
+        var totalOnSiteCost   = parseFloat($("#on_site_cost").numberbox('getValue')) || 0;
+
+        // calculateTotal(totalSub, disc_pr, incomeTax, totalDp);
+        calculateTotal(totalSub, supplierId, totalOnSiteCost);
     }
 
     function upsertRemark(existing, newText, keyword) {
@@ -1238,10 +1333,10 @@
                     //     toastr.warning("Total Sub , VAT and Grand Total is 0 for selected PO no, Please Update first for Calculated", "Information");
                     // }
 
-                    if (response.has_unapproved) {
-                        toastr.warning("There are still unapproved items, please approve all items first.", "Warning");
-                        return;
-                    }
+                    // if (response.has_unapproved) {
+                    //     toastr.warning("There are still unapproved items, please approve all items first.", "Warning");
+                    //     return;
+                    // }
 
                     // Menentukan jenis cetak berdasarkan jenis po_no
                     var printUrl = "";
@@ -1327,8 +1422,38 @@
                             // endEditing();
                             if (totalrows > 0) {
                                 $.messager.confirm('Warning', 'Are you sure you want Process this Data?', function(r) {
-                                    if (r) {
-                                        // Menyimpan hasil dari setiap operasi dalam array
+
+                                    if(!r){
+                                        return;
+                                    }
+
+                                    $.ajax({
+                                        url: "<?= base_url('purchase/purchase_orders/validateApproval') ?>",
+                                        type: "POST",
+                                        dataType: "json",
+                                        success: function(validate) {
+
+                                            if (!validate.status) {
+                                                Swal.fire({
+                                                    title: validate.title,
+                                                    text: validate.message,
+                                                    icon: validate.theme
+                                                });
+
+                                                return;
+                                            }
+
+                                            console.log('VALID : ', validate);
+                                            
+
+                                            processSave();
+
+                                        }
+                                    });
+
+                                    // Menyimpan hasil dari setiap operasi dalam array
+                                    
+                                    function processSave() {
                                         var results = [];
 
                                         for (var i = 0; i < totalrows; i++) {
@@ -1352,12 +1477,13 @@
                                             var remark_revision = '';
 
                                             var total_sub = $("#total_sub").numberbox('getValue');
-                                            var disc_pr = $("#disc_pr").numberbox('getValue');
-                                            var discount_total = $("#discount_total").numberbox('getValue');
+                                            // var disc_pr = $("#disc_pr").numberbox('getValue');
+                                            // var discount_total = $("#discount_total").numberbox('getValue');
                                             var total_vat = $("#total_vat").numberbox('getValue');
-                                            var income_tax = $("#income_tax").numberbox('getValue');
-                                            var income_total = $("#income_total").numberbox('getValue');
-                                            var total_dp = $("#total_dp").numberbox('getValue');
+                                            // var income_tax = $("#income_tax").numberbox('getValue');
+                                            // var income_total = $("#income_total").numberbox('getValue');
+                                            // var total_dp = $("#total_dp").numberbox('getValue');
+                                            var on_site_cost = $("#on_site_cost").numberbox('getValue');
                                             var total_grand = $("#total_grand").numberbox('getValue');
 
 
@@ -1391,40 +1517,58 @@
                                                     '&month_3=' + month_3 +
                                                     '&month_4=' + month_4 +
                                                     '&total_sub=' + total_sub +
-                                                    '&disc_pr=' + disc_pr +
                                                     '&total_vat=' + total_vat +
-                                                    '&income_tax=' + income_tax +
-                                                    '&income_total=' + income_total +
-                                                    '&total_grand=' + total_grand +
-                                                    '&total_dp=' + total_dp +
-                                                    '&discount_total=' + discount_total,
+                                                    // '&disc_pr=' + disc_pr +
+                                                    // '&income_tax=' + income_tax +
+                                                    // '&income_total=' + income_total +
+                                                    // '&total_dp=' + total_dp +
+                                                    // '&discount_total=' + discount_total,
+                                                    '&on_site_cost=' + on_site_cost +
+                                                    '&total_grand=' + total_grand,
                                                 dataType: "json",
                                                 success: function(result) {
                                                     results.push(result);
-                                                },
-                                                complete: function() {
-                                                    // Cek jika semua request telah selesai
+
                                                     if (results.length === totalrows) {
-                                                        // Menampilkan satu Swal.fire untuk semua hasil
-                                                        Swal.fire({
-                                                            title: 'Data Saved Successfully',
-                                                            icon: 'success',
-                                                            confirmButtonText: 'Ok',
-                                                            allowOutsideClick: false
-                                                        }).then((result) => {
-                                                            if (result.isConfirmed) {
-                                                                window.location.reload();
-                                                            }
-                                                        });
-                                                    }
-                                                }
+
+                                                            Swal.fire({
+                                                                title: 'Data Saved Successfully',
+                                                                icon: 'success',
+                                                                confirmButtonText: 'Ok',
+                                                                allowOutsideClick: false
+                                                            }).then((result) => {
+                                                                if (result.isConfirmed) {
+                                                                    window.location.reload();
+                                                                }
+                                                            });
+
+                                                        }
+                                                },
+                                                // complete: function() {
+                                                //     // Cek jika semua request telah selesai
+                                                //     if (results.length === totalrows) {
+                                                //         // Menampilkan satu Swal.fire untuk semua hasil
+                                                //         Swal.fire({
+                                                //             title: 'Data Saved Successfully',
+                                                //             icon: 'success',
+                                                //             confirmButtonText: 'Ok',
+                                                //             allowOutsideClick: false
+                                                //         }).then((result) => {
+                                                //             if (result.isConfirmed) {
+                                                //                 window.location.reload();
+                                                //             }
+                                                //         });
+                                                //     }
+                                                // }
                                             });
                                         }
-                                        // setTimeout(window.open("<?= base_url('purchase/purchase_orders/print_po/') ?>" + window.btoa(po_no), "_blank"), 3000);
-                                        readPo();
-                                        $('#dg').treegrid('reload');
-                                        $('#dlg_insert').dialog('close');
                                     }
+
+                                    // setTimeout(window.open("<?= base_url('purchase/purchase_orders/print_po/') ?>" + window.btoa(po_no), "_blank"), 3000);
+                                    readPo();
+
+                                    $('#dg').treegrid('reload');
+                                    $('#dlg_insert').dialog('close');
                                 });
                             } else {
                                 toastr.warning("Please select one of the data in the table first!", "Information");
@@ -1610,4 +1754,41 @@
             return "<b>" + formatter.format(value) + "</b>";
         }
     };
+
+
+    function styleApprovedStatus(value, row) {
+
+        value = formatApprovedStatus(value, row);
+        switch (value) {
+            case 'Approved':
+                return 'background:#53D636;color:#fff;';
+
+            case 'Partially Approved':
+                return 'background:#FFB22C;color:#fff;';
+
+            case 'Disapprove':
+                return 'background:#FF0000;color:#fff;';
+
+            case 'Checking':
+                return 'background:#FF5F5F;color:#fff;';
+        }
+
+        return '';
+    }
+
+    function formatApprovedStatus(value, row) {
+        if (value == 'Approved' || value == 'Partially Approved' || value == 'Disapprove' || value == 'Checking') {
+            return value;
+        }
+
+        if (row.deleted == 2) {
+            return 'Disapprove';
+        }
+
+        if (value == "" || value == null) {
+            return 'Approved';
+        }
+
+        return 'Checking';
+    }
 </script>
