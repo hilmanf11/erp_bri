@@ -1498,7 +1498,7 @@
 			dataType: "html",
 			success: function(response) {
 				$('#deliveryToSubcontNotif').html(response);
-				console.log(response);
+				// console.log(response);
 				
 				checkNotificationEmpty();
 			}
