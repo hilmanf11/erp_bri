@@ -164,7 +164,7 @@ class Item_rm extends CI_Controller
         }
     }
 
-    public function uploadatt()
+    public function uploadatt($isImage = "")
     {
         // Pastikan file disimpan dalam direktori yang diinginkan
         $uploadDir = 'assets/image/item_rm/';
@@ -175,11 +175,24 @@ class Item_rm extends CI_Controller
                 $file = $_FILES['file'];
 
                 // Validasi ekstensi file yang diunggah
-                $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+
+                if($isImage != "") {
+                    $allowedExtensions = ['jpg', 'jpeg', 'png'];
+                } else {
+                    $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+                }
+
                 $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
 
                 if (!in_array($fileExtension, $allowedExtensions)) {
-                    echo json_encode(['success' => false, 'message' => 'Only files with the extension .pdf, .jpg, or .png are allowed.']);
+
+                    if($isImage != "") {
+
+                        echo json_encode(['success' => false, 'message' => 'Only files with the extension .jpg, .jpeg, or .png are allowed.']);
+                    } else {
+
+                        echo json_encode(['success' => false, 'message' => 'Only files with the extension .pdf, .jpg, .jpeg, or .png are allowed.']);
+                    }
                     exit; // Menghentikan proses lebih lanjut jika ekstensi tidak valid
                 }
 
