@@ -3,6 +3,7 @@
     <thead>
         <tr>
             <th field="ck" checkbox="true"></th>
+            <th data-options="field:'print',width:70,align:'center',formatter:printFormatter">Print</th>
             <th data-options="field:'po_no',width:150">PO No</th>
             <th data-options="field:'po_date',width:100">PO Date</th>
             <th data-options="field:'item_number',width:200">Product No</th>
@@ -15,7 +16,8 @@
             <th data-options="field:'qty',width:80,formatter: numberformat">Qty</th>
             <th data-options="field:'currency',width:80">Currency</th>
             <th data-options="field:'discount',width:80,formatter: numberformat">Discount</th>
-            <th data-options="field:'price',width:120,formatter: numberformat">Price</th>
+            <th data-options="field:'last_price',width:120,formatter: numberformat">Last Price</th>
+            <th data-options="field:'new_price',width:120,formatter: numberformat">New Price</th>
             <th data-options="field:'total',width:120,formatter: numberformat">Amount</th>
             <th data-options="field:'remarks',width:150">Remarks</th>
             <th data-options="field:'month_1',width:80">Month 1</th>
@@ -35,6 +37,26 @@
 </div>
 
 <script>
+    function printFormatter(value, row) {
+        var print = "printPo('" + row.po_no + "')";
+        return '<a class="btn btn-primary w-100" onclick="' + print + '" style="pointer-events:visible;opacity:1;"><i class="fa fa-print"></i></a>';
+    }
+
+    function printPo(po_no) {
+		var printUrl = "";
+
+		// if (po_no.includes("-A")) {
+
+        if(/-A\d{2}$/.test(po_no)) {
+			printUrl = "<?= base_url('purchase/Purchase_orders/print_po_additional/') ?>" + window.btoa(po_no);
+		} else {
+			printUrl = "<?= base_url('purchase/Purchase_orders/print_po/') ?>" + window.btoa(po_no);
+		}
+
+		window.open(printUrl, "_blank");
+    }
+
+
     //RELOAD
     function reload() {
         window.location.reload();

@@ -64,6 +64,23 @@
         return "<b>" + formatter.format(value) + "</b>";
     }
 
+    function printPo(po_no) {
+
+		var printUrl = "";
+
+		// if (po_no.includes("-A")) {
+
+		if(/-A\d{2}$/.test(po_no)) {
+			printUrl = "<?= base_url('purchase/Purchase_orders/print_po_additional/') ?>" + window.btoa(po_no);
+		} else {
+			printUrl = "<?= base_url('purchase/Purchase_orders/print_po/') ?>" + window.btoa(po_no);
+		}
+
+		window.open(printUrl, "_blank");
+
+        // window.open('<?= base_url('purchase/Purchase_orders/print_po/') ?>' + btoa(poNo), '_blank');
+    }
+
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
@@ -78,6 +95,15 @@
 					field: 'ck',
 					checkbox: "true",
 				},{
+                    field: 'print',
+                    width: 100,
+                    align: 'center',
+                    title: "Print",
+                    formatter: function(value, row) {
+                        var print = "printPo('" + row.po_no + "')";
+                        return '<a class="btn btn-primary w-100" onClick="' + print + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-print"></i></a>';
+                    }
+                },{
 					field: 'request_no',
 					width: 180,
 					halign: 'center',
