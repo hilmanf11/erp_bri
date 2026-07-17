@@ -402,11 +402,11 @@ class Setting_subconts extends CI_Controller
                 'subcont_code' => $data->val($i, 2),
                 'teaching_factory_code' => $data->val($i, 3),
                 'item_fg_id' => $data->val($i, 4),
-                // 'share_order' => $data->val($i, 4),
-                'type' => $data->val($i, 5),
-                'currency' => $data->val($i, 6),
-                'price' => $data->val($i, 7),
-                'valid_date' => $data->val($i, 8),
+                'share_order' => $data->val($i, 5),
+                'type' => $data->val($i, 6),
+                'currency' => $data->val($i, 7),
+                'price' => $data->val($i, 8),
+                'valid_date' => $data->val($i, 9),
                 // 'capacity' => $data->val($i, 9),
                 // 'leadtime' => $data->val($i, 10),
                 // 'status' => $data->val($i, 11)
@@ -545,6 +545,7 @@ class Setting_subconts extends CI_Controller
                     "subcont_id"            => $hasSubcont ? $subcont->id : null,
                     "teaching_factory_id"   => $hasTefa ? $teaching_factory->id : null,
                     "item_fg_id"            => $item_fg->id,
+                    "share_order"           => $data['share_order'],
                     "type"                  => $data['type'],
                     "currency"              => $data['currency'],
                     "price"                 => $data['price'],
@@ -562,6 +563,7 @@ class Setting_subconts extends CI_Controller
 
                         if (!empty($checkExact)) {
                             $this->db->update('setting_subconts', [
+                                "share_order"=> $data['share_order'],
                                 "type"       => $data['type'],
                                 "currency"   => $data['currency'],
                                 "price"      => $data['price'],
@@ -729,12 +731,13 @@ class Setting_subconts extends CI_Controller
             <table id="setting_subconts" border="1">
                 <tr>
                     <th width="20">No</th>
-                    <th>subcont ID</th>
-                    <th>subcont Code</th>
-                    <th>subcont Name</th>
+                    <th>Subcont ID</th>
+                    <th>Subcont Code</th>
+                    <th>Subcont Name</th>
                     <th>Product ID</th>
                     <th>Product No.</th>
                     <th>Product Name</th>
+                    <th>Share Order</th>
                     <th>Type</th>
                     <th>Currency</th>
                     <th>Price</th>
@@ -751,6 +754,7 @@ class Setting_subconts extends CI_Controller
                         <td>' . $data['item_fg_id'] . '</td>
                         <td>' . $data['item_fg_number'] . '</td>
                         <td>' . $data['item_fg_name'] . '</td>
+                        <td>' . $data['share_order'] . '</td>
                         <td>' . $data['type'] . '</td>
                         <td>' . $data['currency'] . '</td>
                         <td>' . $data['price'] . '</td>
