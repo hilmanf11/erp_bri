@@ -71,7 +71,7 @@ class Scan_in_rfg extends CI_Controller
         }
     }
 
-    public function getSerialLabel()
+    public function getSerialLabelV1()
     {
         if ($this->input->post()) {
             $serial_label = $this->input->post('serial_label');
@@ -91,6 +91,89 @@ class Scan_in_rfg extends CI_Controller
         }
     }
 
+
+    public function getSerialLabel()
+    {
+        if (!$this->input->post()) {
+            return;
+        }
+
+        $serial_label = $this->input->post('serial_label');
+
+        $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom');
+        $this->db->from('label_packing_detail a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->where('a.serial_label', $serial_label);
+        $this->db->group_by('a.serial_label');
+        $rows = $this->db->get()->result_array();
+
+        if (!empty($rows)) {
+
+            echo json_encode([
+                'source' => 'packing',
+                'total'  => count($rows),
+                'rows'   => $rows
+            ]);
+            return;
+        }
+
+        $label = $this->db->get_where('fg_visual_checker_label', [
+            'serial_label' => $serial_label
+        ])->row_array();
+
+        if (!$label) {
+            echo json_encode([
+                'total' => 0
+            ]);
+            return;
+        }
+
+        if ($label['status'] == 1) {
+            echo json_encode([
+                'title'   => 'Available',
+                'message' => 'Label has already been scanned',
+                'theme'   => 'error'
+            ]);
+            return;
+        }
+
+        $this->db->select("a.item_fg_id, a.type_status, b.serial_label");
+        $this->db->from("scan_visual_checker_detail a");
+        $this->db->join("fg_visual_checker_label b", "a.scan_id = b.scan_id and a.item_fg_id = b.item_fg_id");
+        $this->db->where("b.serial_label", $serial_label);
+        $this->db->limit(1);
+        $labelScanVcReturn = $this->db->get()->row_array();
+
+        if ($labelScanVcReturn && $labelScanVcReturn['type_status'] == 'completed') {
+            echo json_encode([
+                'title' => 'Process Scanned',
+                'message' => 'Label is currently being processed in Visual Checker',
+                'theme'   => 'error',
+                'data' => $label
+            ]);
+            return;
+        }
+
+        $this->db->select("
+            a.item_fg_id,
+            a.serial_label,
+            a.qty as qty_packing,
+            c.number as item_number,
+            c.name as item_name,
+            c.uom
+        ");
+        $this->db->from('fg_visual_checker_label a');
+        $this->db->join('item_fg c','a.item_fg_id=c.id');
+        $this->db->where('a.serial_label',$serial_label);
+        $rows = $this->db->get()->result_array();
+
+        echo json_encode([
+            'source' => 'visual_checker',
+            'total'  => count($rows),
+            'rows'   => $rows
+        ]);
+    }
+
     public function create()
     {
         if ($this->input->post()) {
@@ -100,42 +183,119 @@ class Scan_in_rfg extends CI_Controller
                 $post['scan_by'] = $this->session->username;
                 $post['transaction_type'] = 'REFG-001';
 
-                // Cek apakah label sudah ada di label_packing_detail
-                $label_exists = $this->db->where('serial_label', $post['serial_label'])
-                                       ->where('item_fg_id', $post['item_fg_id'])
-                                       ->get('label_packing_detail')
-                                       ->num_rows();
+                $source = $post['source'];
 
-                if ($label_exists == 0) {
-                    echo json_encode(array("title" => "Not Registered", "message" => "Label not found in packing detail", "theme" => "error"));
+                // Validasi berdasarkan source
+                if ($source == 'packing') {
+
+                    $label_exists = $this->db
+                        ->where('serial_label', $post['serial_label'])
+                        ->where('item_fg_id', $post['item_fg_id'])
+                        ->count_all_results('label_packing_detail');
+
+                    if ($label_exists == 0) {
+                        echo json_encode([
+                            "title"   => "Not Registered",
+                            "message" => "Label not found in Packing Detail",
+                            "theme"   => "error"
+                        ]);
+                        return;
+                    }
+
+                } else if ($source == 'visual_checker') {
+
+                    $label_exists = $this->db
+                        ->where('serial_label', $post['serial_label'])
+                        ->where('item_fg_id', $post['item_fg_id'])
+                        ->count_all_results('fg_visual_checker_label');
+
+                    if ($label_exists == 0) {
+                        echo json_encode([
+                            "title"   => "Not Registered",
+                            "message" => "Label not found in Visual Checker",
+                            "theme"   => "error"
+                        ]);
+                        return;
+                    }
+
+                } else {
+                    echo json_encode([
+                        "title"   => "Not Registered",
+                        "message" => "Unknown label source",
+                        "theme"   => "error"
+                    ]);
                     return;
                 }
 
                 // Cek apakah sudah pernah di-scan sebelumnya
-                $already_scanned = $this->db->where('serial_label', $post['serial_label'])
-                                          ->where('item_fg_id', $post['item_fg_id'])
-                                          ->get('fg_scan_in_label')
-                                          ->num_rows();
+                $already_scanned = $this->db
+                            ->where('serial_label', $post['serial_label'])
+                            ->where('item_fg_id', $post['item_fg_id'])
+                            ->get('fg_scan_in_label')
+                            ->num_rows();
 
                 if ($already_scanned > 0) {
-                    echo json_encode(array("theme" => "error", "title" => "Available", "message" => "Data Receipt FG has been Scanning"));
+                    echo json_encode(array(
+                        "theme" => "error", 
+                        "title" => "Available", 
+                        "message" => "Data Receipt FG has been Scanning"
+                    ));
                     return;
                 }
 
+                unset($post['source']);
+                $this->db->trans_begin();
+
                 $send = $this->crud->create('fg_scan_in_label', $post);
                 if ($send) {
-                    echo json_encode([
-                        "theme" => "success",
-                        "title" => "Success",
-                        "message" => "Data Receipt FG has been Scanning"
-                    ]);
+                    if ($source == 'visual_checker') {
+                        $this->crud->update('fg_visual_checker_label', [
+                            'serial_label' => $post['serial_label'],
+                            'status'       => 0
+                        ], ['status' => 1]);
+
+                        $this->crud->update('fg_visual_checker_label_lot_tracking', [
+                            'serial_label' => $post['serial_label'],
+                            'status'       => 0
+                        ], ['status' => 1]);
+
+                        $message = "Data Visual Checker Label has been scanned successfully.";
+                    } else {
+
+                        $message = "Data Receipt FG has been scanned successfully.";
+                    }
+
+                    if ($this->db->trans_status() === FALSE) {
+                        $this->db->trans_rollback();
+
+                        echo json_encode([
+                            "theme"   => "error",
+                            "title"   => "Error",
+                            "message" => "Failed to save data"
+                        ]);
+
+                    } else {
+                        $this->db->trans_commit();
+
+                        echo json_encode([
+                            "theme"   => "success",
+                            "title"   => "Success",
+                            "message" => $message
+                        ]);
+
+                    }
+
                 } else {
+                    $this->db->trans_rollback();
+
                     echo json_encode([
-                        "theme" => "error",
-                        "title" => "Error",
+                        "theme"   => "error",
+                        "title"   => "Error",
                         "message" => "Failed to save data"
                     ]);
+
                 }
+
                 return;
             } else {
                 show_error(validation_errors());

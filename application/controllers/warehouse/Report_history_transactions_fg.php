@@ -368,14 +368,17 @@ class Report_history_transactions_fg extends CI_Controller
                         f.qty,
                         u.name as username,
                         t.name as trans_type,
-                        lp.compound_lot,
-                        lp.prod_date,
+                        COALESCE(lp.compound_lot, vcl.compound_lot_no) AS compound_lot,
+                        COALESCE(lp.prod_date, vcl.prod_date) AS prod_date,
                         f.created_date
                     FROM fg_scan_in_label f
                     JOIN users u ON f.created_by = u.username
                     JOIN transaction_type t ON f.transaction_type = t.type
                     LEFT JOIN label_packing_detail lpd ON f.serial_label = lpd.serial_label
                     LEFT JOIN label_packing lp ON lpd.serial_no = lp.serial_no
+
+                    LEFT JOIN fg_visual_checker_label vcl ON f.serial_label = vcl.serial_label
+
                     WHERE f.item_fg_id = '$item_fg_id' 
                     AND DATE(f.scan_date) BETWEEN '$filter_from' AND '$filter_to'
                     AND f.deleted = 0)
