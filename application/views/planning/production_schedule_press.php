@@ -114,7 +114,14 @@
         </div>
     </fieldset>
     <?= $button ?>
-    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
+
+    <a href="javascript:;" class="easyui-linkbutton" plain="true" onclick="calculate_compound()">
+        <i class="fa fa-calculator"></i> Calculate Compound
+    </a>
+
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');">
+        <i class="fa fa-info"></i> Help
+    </a>
 </div>
 
 <!-- Insert & Update -->
@@ -160,6 +167,28 @@
     </form>
 </div>
 
+<div id="dlg_calculate" class="easyui-dialog" title="Form Calculate Compound"
+     data-options="closed:true,modal:true"
+     style="width:520px; padding:10px; top:20px;">
+    <form id="cal_frm_insert" method="post" novalidate>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom:10px; border-radius:4px;">
+            <legend><b>Calculate Compound</b></legend>
+
+            <div class="fitem" style="margin-bottom:10px;">
+                <span style="width:35%; display:inline-block;">WP Press Date</span>
+                <input style="width:26%;" id="calculate_from" name="start_date" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox" required>
+                <span style="padding: 0 8px;">To</span>
+                <input style="width:25.9%;" id="calculate_to" name="end_date" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox" required>
+            </div>
+
+            <!-- <div class="fitem">
+                <span style="width:35%; display:inline-block;">Product No</span>
+                <input style="width:60%;" name="cal_item_fg_id" id="cal_item_fg_id" class="easyui-combogrid">
+            </div> -->
+        </fieldset>
+    </form>
+</div>
+
 <!-- Upload -->
 <div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
     <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
@@ -185,6 +214,11 @@
 <script>
     
     let suppressMonthYearChange = false;
+
+    function calculate_compound() {
+        $('#dlg_calculate').dialog('open');
+        $('#cal_frm_insert').form('clear');
+    }
 
     //HELP
     function helps() {
@@ -452,6 +486,70 @@
     $(function() {
         filter();
 
+        $('#dlg_calculate').dialog({
+            buttons: [{
+                text: 'Start',
+                iconCls: 'icon-ok',
+                handler: function() {
+                    var start_date = $('#calculate_from').datebox('getValue');
+                    var end_date   = $('#calculate_to').datebox('getValue');
+                    // var item_fg_id = $('#cal_item_fg_id').combogrid('getValue');
+
+                    if (!start_date || !end_date) {
+                        toastr.warning("WP Press Date is required", "Warning");
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'Recalculating Compound...',
+                        html: 'Please wait 5-10 minutes while data is being processed.',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                            $('#dlg_calculate').dialog('close');
+                        }
+                    });
+
+                    $.ajax({
+                        url: "<?= base_url('planning/production_schedule_press/calculate_compound') ?>",
+                        type: "POST",
+                        dataType: "json",
+                        data: {
+                            start_date: start_date,
+                            end_date: end_date,
+                            // cal_item_fg_id: item_fg_id
+                        },
+                        success: function(response) {
+                            Swal.close();
+
+                            if (response.status === "success") {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Calculation Completed',
+                                    text: response.message
+                                }).then(() => {
+                                    $('#dlg_calculate').dialog('close');
+                                    $('#dg_request').datagrid('reload');
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Calculation Failed',
+                                    text: response.message
+                                });
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            Swal.close();
+                            Swal.fire('Error', 'Failed to process request: ' + error, 'error');
+                        }
+                    });
+                }
+            }]
+        });
+
+
         //Save Data
         $('#dlg_insert').dialog({
             buttons: [{
@@ -477,6 +575,27 @@
                 }
             }]
         });
+
+        // $('#cal_item_fg_id').combogrid({
+        //     url: '<?= base_url('master/item_fg/readRubberPartAll') ?>',
+        //     panelWidth: 400,
+        //     idField: 'id',
+        //     textField: 'number',
+        //     mode: 'remote',
+        //     fitColumns: true,
+        //     prompt: "Choose Product No",
+        //     columns: [
+        //         [{
+        //             field: 'number',
+        //             title: 'Product No',
+        //             width: 200
+        //         }, {
+        //             field: 'name',
+        //             title: 'Product Name',
+        //             width: 200
+        //         }]
+        //     ],
+        // });
 
         //Get Customer
         $("#filter_machine_no").combogrid({
