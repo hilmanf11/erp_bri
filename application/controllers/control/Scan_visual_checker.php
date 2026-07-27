@@ -1081,6 +1081,21 @@ class Scan_visual_checker extends CI_Controller
                     'status'             => 0
                 ];
 
+                $exists = $this->db
+                    ->where('scan_id', $scan_id)
+                    ->where('workorder_label', $workorder_label)
+                    ->where('serial_label', $serial_label)
+                    ->where('type_status', 'scanning')
+                    ->count_all_results('scan_visual_checker_detail');
+
+                if($exists){
+                    throw new Exception(json_encode([
+                        'title'=>'Available',
+                        'message'=>'Label already exists',
+                        'theme'=>'warning'
+                    ]));
+                }
+
                 $this->crud->create('scan_visual_checker_detail', $data_to_insert);
 
                 if ($this->db->trans_status() === FALSE) {
@@ -2339,7 +2354,7 @@ class Scan_visual_checker extends CI_Controller
             $this->db->select("
                 a.scan_id,
                 a.item_fg_id,
-                a.qty_ok,
+                a.qty_ok AS qty_packing,
                 a.compound_lot_no,
                 a.workorder_label,
 
@@ -2377,35 +2392,161 @@ class Scan_visual_checker extends CI_Controller
             $rows_ok = $this->db->get()->result();
             $rows_ok_ref = $rows_ok;
 
-            foreach ($rows_ok as $row_ok) {
+            $existing_rfg_label = $this->db
+                ->where('scan_id', $scan_id)
+                ->where('item_fg_id', $item_fg_id)
+                ->where('deleted', 0)
+                ->get('fg_visual_checker_label')
+                ->row();
 
-                $std = (int)$row_ok->std_packing;
-                $qty_ok = (int)$row_ok->qty_ok;
+            if (!$existing_rfg_label && !empty($rows_ok)) {
+                usort($rows_ok, function($a, $b){
+                    return $b->qty_packing - $a->qty_packing;
+                });
 
-                if ($std <= 0) continue;
+                $std = (int)$rows_ok[0]->std_packing;
 
-                $sisa = $qty_ok % $std;
+                if ($std > 0) {
+                    $remaining_rows = [];
+                    foreach ($rows_ok as $row_ok) {
+                        $row_ok->qty_packing = (int)$row_ok->qty_packing;
 
-                if ($sisa > 0) {
+                        while ($row_ok->qty_packing >= $std) {
+                            $row_ok->qty_packing -= $std;
+                        }
 
-                    $this->db->where('scan_id', $scan_id);
-                    $this->db->where('item_fg_id', $row_ok->item_fg_id);
-                    $this->db->where('workorder_label', $row_ok->workorder_label);
-                    $this->db->where('compound_lot_no', $row_ok->compound_lot_no);
-
-                    $exist = $this->db->get('fg_visual_checker_label_lot_balance')->row();
-
-                    if (!$exist) {
-                        $this->crud->create('fg_visual_checker_label_lot_balance', [
-                            'scan_id' => $scan_id,
-                            'source_serial_label' => NULL,
-                            'item_fg_id' => $row_ok->item_fg_id,
-                            'workorder_label' => $row_ok->workorder_label,
-                            'compound_lot_no' => $row_ok->compound_lot_no,
-                            'qty_remaining' => $sisa,
-                            'status' => 0
-                        ]);
+                        if ($row_ok->qty_packing > 0) {
+                            $remaining_rows[] = $row_ok;
+                        }
                     }
+
+                    $lot_groups = [];
+                    foreach ($remaining_rows as $row_ok) {
+                        $lot_groups[$row_ok->compound_lot_no][] = $row_ok;
+                    }
+
+                    foreach ($lot_groups as $lot => &$lot_rows) {
+                        usort($lot_rows, function($a, $b){
+                            return $b->qty_packing - $a->qty_packing;
+                        });
+
+                        foreach ($lot_rows as $row_ok) {
+                            if ($row_ok->qty_packing == 0) continue;
+
+                            $current = [
+                                'qty' => 0,
+                                'rows' => []
+                            ];
+
+                            $need = $std;
+                            $take = min($row_ok->qty_packing, $need);
+
+                            $current['rows'][] = [
+                                'qty' => $take,
+                                'lot' => $row_ok->compound_lot_no,
+                                'wo'  => $row_ok->workorder_label
+                            ];
+
+                            $current['qty'] += $take;
+                            $row_ok->qty_packing -= $take;
+                            $need -= $take;
+
+                            if ($need > 0) {
+                                usort($lot_rows, function($a, $b){
+                                    return $a->qty_packing - $b->qty_packing;
+                                });
+
+                                foreach ($lot_rows as $r) {
+                                    if ($r->qty_packing == 0) continue;
+
+                                    $take = min($r->qty_packing, $need);
+
+                                    $current['rows'][] = [
+                                        'qty' => $take,
+                                        'lot' => $r->compound_lot_no,
+                                        'wo'  => $r->workorder_label
+                                    ];
+
+                                    $current['qty'] += $take;
+                                    $r->qty_packing -= $take;
+                                    $need -= $take;
+
+                                    if ($need == 0) break;
+                                }
+                            }
+
+                            if ($need > 0) {
+                                foreach ($lot_groups as $lot2 => &$other_rows) {
+                                    if ($lot2 == $lot) continue;
+
+                                    usort($other_rows, function($a, $b){
+                                        return $a->qty_packing - $b->qty_packing;
+                                    });
+
+                                    foreach ($other_rows as $r) {
+                                        if ($r->qty_packing == 0) continue;
+
+                                        $take = min($r->qty_packing, $need);
+
+                                        $current['rows'][] = [
+                                            'qty' => $take,
+                                            'lot' => $r->compound_lot_no,
+                                            'wo'  => $r->workorder_label
+                                        ];
+
+                                        $current['qty'] += $take;
+                                        $r->qty_packing -= $take;
+                                        $need -= $take;
+
+                                        if ($need == 0) break;
+                                    }
+
+                                    if ($need == 0) break;
+                                }
+                                unset($other_rows);
+                            }
+
+                            if ($current['qty'] > 0 && $current['qty'] < $std) {
+                                $lot_wo_counter = [];
+
+                                foreach ($current['rows'] as $r) {
+                                    if (!isset($lot_wo_counter[$r['lot']])) {
+                                        $lot_wo_counter[$r['lot']] = [];
+                                    }
+
+                                    if (!isset($lot_wo_counter[$r['lot']][$r['wo']])) {
+                                        $lot_wo_counter[$r['lot']][$r['wo']] = 0;
+                                    }
+
+                                    $lot_wo_counter[$r['lot']][$r['wo']] += $r['qty'];
+                                }
+
+                                foreach ($lot_wo_counter as $balance_lot => $wo_rows) {
+                                    foreach ($wo_rows as $wo => $qty) {
+                                        $this->db->where('scan_id', $scan_id);
+                                        $this->db->where('item_fg_id', $item_fg_id);
+                                        $this->db->where('workorder_label', $wo);
+                                        $this->db->where('compound_lot_no', $balance_lot);
+
+                                        $exist = $this->db->get('fg_visual_checker_label_lot_balance')->row();
+
+                                        if (!$exist) {
+                                            $this->crud->create('fg_visual_checker_label_lot_balance', [
+                                                'scan_id' => $scan_id,
+                                                'source_serial_label' => NULL,
+                                                'item_fg_id' => $item_fg_id,
+                                                'workorder_label' => $wo,
+                                                'compound_lot_no' => $balance_lot,
+                                                'qty_remaining' => $qty,
+                                                'status' => 0
+                                            ]);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    unset($lot_rows);
                 }
             }
 
