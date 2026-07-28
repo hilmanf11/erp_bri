@@ -1011,20 +1011,41 @@
         }]
     });
 
-    //CELLSTYLE APPROVE
+    // //CELLSTYLE APPROVE
+    // function styleApproved(value, row, index) {
+    //     if (value == "" || value === null) {
+    //         return 'background: #53D636; color:white;';
+    //     } else {
+    //         return 'background: #FF5F5F; color:white;';
+    //     }
+    // }
+    // //FORMATTER APPROVE
+    // function formatApproved(value) {
+    //     if (value == "" || value === null) {
+    //         return 'Approved';
+    //     } else {
+    //         return 'Checking';
+    //     }
+    // };
+
     function styleApproved(value, row, index) {
-        if (value == "" || value === null) {
-            return 'background: #53D636; color:white;';
-        } else {
-            return 'background: #FF5F5F; color:white;';
+        if (row.deleted == 2) {
+            return 'background:#FF0000;color:white;';
         }
+        if (value == "" || value === null) {
+            return 'background:#53D636;color:white;';
+        }
+        return 'background:#FF5F5F;color:white;';
     }
-    //FORMATTER APPROVE
-    function formatApproved(value) {
+
+    function formatApproved(value, row) {
+        if (row.deleted == 2) {
+            return 'Disapproved';
+        }
         if (value == "" || value === null) {
             return 'Approved';
-        } else {
-            return 'Checking';
         }
-    };
+        return 'Checking';
+    }
+
 </script>
