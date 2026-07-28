@@ -703,18 +703,18 @@ class Notifications extends CI_Controller
         }
     }
 
-    public function supplier_items_2($user, $name){
-        if (empty($this->session->username)) {
-            redirect('error_session');
-        } else {
-            $data['user'] = base64_decode($user);
-            $data['name'] = base64_decode($name);
-            $data['table'] = "supplier_items_2";
+    // public function supplier_items_2($user, $name){
+    //     if (empty($this->session->username)) {
+    //         redirect('error_session');
+    //     } else {
+    //         $data['user'] = base64_decode($user);
+    //         $data['name'] = base64_decode($name);
+    //         $data['table'] = "supplier_items_2";
             
-            $this->load->view('template/header', $data);
-            $this->load->view('notifications/supplier_items_2');
-        }
-    }
+    //         $this->load->view('template/header', $data);
+    //         $this->load->view('notifications/supplier_items_2');
+    //     }
+    // }
 
     public function delivery_notes($user, $name){
         if (empty($this->session->username)) {
@@ -799,6 +799,18 @@ class Notifications extends CI_Controller
             
             $this->load->view('template/header', $data);
             $this->load->view('notifications/delivery_rework_notif');
+        }
+    }
+    public function po_subcont_productions($user, $name){
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['user'] = base64_decode($user);
+            $data['name'] = base64_decode($name);
+            $data['table'] = "po_subcont_productions";
+            
+            $this->load->view('template/header', $data);
+            $this->load->view('notifications/po_subcont_productions');
         }
     }
     public function notification_data($table = "", $user = "", $name = "")
@@ -1278,6 +1290,54 @@ class Notifications extends CI_Controller
 
             $this->db->order_by('a.target_date', 'ASC');
             $this->db->order_by('a.dnr_no', 'ASC');
+        }
+
+        if ($table == 'po_subcont_productions') {
+
+            $this->db->select("
+                h.id,
+                h.po_no,
+                h.pr_no,
+                h.po_date,
+                h.due_date,
+                h.notes,
+                h.revision,
+                h.total_amount,
+                'IDR' as currency,
+                h.order_type,
+
+                s.id AS subcont_id,
+                s.number AS subcont_number,
+                s.name AS subcont_name,
+
+                h.approved,
+                h.approved_to,
+                h.approved_by,
+                h.approved_date,
+                h.approved_data,
+                h.status,
+
+                n.id AS id_notification
+            ");
+
+            $this->db->from('po_subcont_productions h');
+            $this->db->join(
+                'subconts s',
+                's.id = h.subcont_id'
+            );
+            $this->db->join(
+                'notifications n',
+                'n.table_id = h.id'
+            );
+
+            $this->db->where('n.users_id_to', $this->session->username);
+            $this->db->where('n.users_id_from', $user);
+            $this->db->where('n.table_name', $table);
+            $this->db->where('n.name', $name);
+            $this->db->where('n.deleted', 0);
+            $this->db->where('n.status', 0);
+
+            $this->db->order_by('n.created_date', 'DESC');
         }
 
             $records = $this->db->get()->result_array();
