@@ -33,6 +33,40 @@ class Pr_subcont_productions extends CI_Controller
         }
     }
 
+    public function reads()
+    {
+        $pr_no = $this->input->get('pr_no');
+        $subcont_id = $this->input->get('subcont_id');
+
+        $this->db->select("
+            a.id,
+            a.doc_no,
+            a.item_fg_id,
+
+            b.number AS item_number,
+            b.name AS item_name,
+            b.uom,
+
+            a.order_qty AS qty,
+            a.cost_price AS price,
+            (a.order_qty * a.cost_price) AS total,
+
+            '' AS po_no
+        ");
+
+        $this->db->from('pr_subcont_productions a');
+        $this->db->join('item_fg b', 'b.id = a.item_fg_id');
+
+        $this->db->where('a.deleted', 0);
+        $this->db->where('a.status', 0);
+        $this->db->where('a.doc_no', $pr_no);
+        $this->db->where('a.subcont_id', $subcont_id);
+
+        $this->db->order_by('b.number', 'ASC');
+
+        echo json_encode($this->db->get()->result_array());
+    }
+
     public function checkPRRegular($year, $month, $order_type, $subcont_id = '')
     {
         $year       = base64_decode($year);
@@ -844,7 +878,7 @@ class Pr_subcont_productions extends CI_Controller
     private function generate_doc_no($year, $month, $order_type, $subcont_id)
     {
         $doc    = ($order_type == 'Regular') ? 'PR' : 'PRA';
-        $prefix = $doc . '/SCP/' . $month . '/' . $year;
+        $prefix = $doc . '-SCP-' . $month . '-' . $year;
 
         $subconts = $this->db->distinct()->select('d.id AS subcont_id')
                 ->from('item_fg a')
@@ -872,7 +906,7 @@ class Pr_subcont_productions extends CI_Controller
         }
 
         $q = $this->db->query("
-            SELECT CAST(SUBSTRING_INDEX(doc_no,'/',1) AS UNSIGNED) AS seq
+            SELECT CAST(SUBSTRING_INDEX(doc_no,'-',1) AS UNSIGNED) AS seq
             FROM pr_subcont_productions
             WHERE p_month = '{$month}'
             AND p_year  = '{$year}'
@@ -886,7 +920,7 @@ class Pr_subcont_productions extends CI_Controller
             ? sprintf('%02d', $q->row()->seq + 1)
             : '01';
 
-        return $seq . '/' . $prefix;
+        return $seq . '-' . $prefix;
     }
 
     public function generate_doc_no_additional()
@@ -1375,7 +1409,7 @@ class Pr_subcont_productions extends CI_Controller
                 $html .= '<tr>
                     <td width="25" style="text-align:center;">'.$no.'</td>
                     <td width="250" style="text-align:left;">'.$data['subcont_name'].'</td>
-                    <td width="100" style="text-align:left;">'.$data['doc_no'].'</td>
+                    <td width="170" style="text-align:left;">'.$data['doc_no'].'</td>
                     <td width="100" style="text-align:left;">'.$data['order_type'].'</td>
                     <td width="100" style="text-align:left;">'.$data['item_fg_id'].'</td>
                     <td width="150" style="text-align:left;">'.$data['item_fg_number'].'</td>

@@ -81,17 +81,15 @@
 
 <div id="dlg-formula" class="easyui-dialog" title="Formula" style="width: 600px; padding:10px; top: 20px;" data-options="closed: true, modal:false">
     <ul>
-        <li>QTY ORDER = <b>(OST SO CUSTOMER - STOCK FG + FC M0 + (30% FC M1))</b></li>
-        <li>OST SO CUSTOMER = <b>(SO NEXT PERIOD, CUT OFF 15 TO 16 EVERY MONTH)</b></li>
-        <li>STOCK FG = <b>(DAILY STOCK)</b></li>
-        <li>
-            FC M0 = <b>(FORECAST FOR PERIOD WILL BE GENERATE)</b><br>
-            SAMPLE : IF GENERATE PERIOD JANUARY THAN FC M0 = <b>FC JANUARY</b>
-        </li>
-        <li>FC M1 = <b>(FORECAST FOR NEXT MONTH/PERIOD)</b></li>
+        <li>NEED QTY = ((FC M + OST SO + 50 % FC M2) - FG) * SHARE ORDER %</li>
+        <li>ORDER QTY = ROUND NEED QTY TO MPQ OR MULTIPLE</li>
+        <li>STOCK FG = DAILY STOCK D-1 FROM GENERATE DATE</li>
+        <li>FC M = FORECAST FOR PERIOD WILL BE GENERATE</li>
+        <li>FC M2 = FORECAST FOR NEXT MONTH/PERIOD</li>
     </ul>
 
-    <i>*) Next month everything is the same</i>
+    <i>*) Based on formula from PPC July, 7th 2026</i>
+
 </div>
 
 <div id="p" class="easyui-panel" title="Print Preview" style="width:100%;">
