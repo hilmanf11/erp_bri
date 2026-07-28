@@ -54,6 +54,7 @@
                     <option value="delivery_notes">Delivery Notes</option>
                     <option value="delivery_to_subconts">Delivery To Subconts</option>
                     <option value="delivery_rework">Delivery Rework</option>
+                    <option value="po_subcont_productions">PO To Sub Prod</option>
                 </select>
             </div>
             <div class="fitem">

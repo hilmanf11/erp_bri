@@ -80,6 +80,7 @@ class Approvals extends CI_Controller
                     }
                 }
             }
+            $this->db->order_by("a.table_name", "ASC");
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -170,6 +171,7 @@ class Approvals extends CI_Controller
 
         $this->db->where('a.deleted', 0);
         $this->db->where('a.status', 0);
+        $this->db->order_by("a.table_name", "ASC");
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
