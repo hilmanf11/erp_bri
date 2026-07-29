@@ -1590,7 +1590,7 @@ class Purchase_orders extends CI_Controller
                                         <th rowspan="2" width="30" style="text-align:center;">No</th>
                                         <th rowspan="2" width="150" style="text-align:center;">Part No</th>
                                         <th rowspan="2" width="150" style="text-align:center;">Part Name</th>
-                                        <th rowspan="2" width="50" style="text-align:center;">Specification</th>
+                                        <th rowspan="2" width="50" style="text-align:center;">Description</th>
                                         <th rowspan="2" width="50" style="text-align:center;">Qty</th>
                                         <th rowspan="2" width="50" style="text-align:center;">Uom</th>
                                         
@@ -2505,7 +2505,7 @@ class Purchase_orders extends CI_Controller
                 <th width="30" style="text-align:center;">No</th>
                 <th width="150" style="text-align:center;">Part No</th>
                 <th width="150" style="text-align:center;">Part Name</th>
-                <th width="50" style="text-align:center;">Specification</th>
+                <th width="50" style="text-align:center;">Description</th>
                 <th width="50" style="text-align:center;">Qty</th>
                 <th width="50" style="text-align:center;">Uom</th>
                 <th width="50" style="text-align:center;">Unit<br>Price</th>
