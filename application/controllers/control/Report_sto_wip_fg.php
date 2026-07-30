@@ -1255,4 +1255,277 @@ class Report_sto_wip_fg extends CI_Controller
 
         echo $html;
     }
+
+    public function excel_label()
+    {
+        $format  = date("Ymd");
+        header("Content-type: application/vnd-ms-excel");
+        header("Content-Disposition: attachment; filename=report_sto_wip_fg_labels_$format.xls");
+
+        $filter_period_month    = base64_decode($this->input->get("filter_period_month"));
+        $filter_period_year     = base64_decode($this->input->get("filter_period_year"));
+        $filter_location        = base64_decode($this->input->get("filter_location"));
+        $filter_location_name   = base64_decode($this->input->get("filter_location_name"));
+        $filter_doc_no          = base64_decode($this->input->get("filter_doc_no"));
+        $filter_label_type      = base64_decode($this->input->get("filter_label_type"));
+        $filter_item_fg         = base64_decode($this->input->get("filter_item_fg"));
+
+        $this->db->select('*');
+        $this->db->from('config');
+        $config = $this->db->get()->row();
+
+        $period_month_display = date('F', mktime(0, 0, 0, (int)$filter_period_month, 1));
+        $schedule_display = $period_month_display . ' ' . $filter_period_year;
+        $location_display = $filter_location != '' ? $filter_location_name : '-';
+
+        $cut_of_stock = $filter_period_year . '-' . str_pad($filter_period_month, 2, '0', STR_PAD_LEFT) . '-25';
+        $overflow = 'overflow: hidden;';
+
+        $html = '<html>
+                 <head>
+                    <title>Print Data</title>
+                </head>
+                <style>
+                    body {
+                        font-family: Arial, Helvetica, sans-serif;
+                    }
+                    #sto_wip_fg tr:hover {
+                        background-color: #ddd;
+                    }
+
+                    .table-container {
+                        overflow: auto;
+                    }
+                    table#sto_wip_fg {
+                        border-collapse: separate;
+                        border-spacing: 0;
+                        /* width: max-content; */
+                        font-size: 12px;
+                    }
+                    table#sto_wip_fg {
+                        border: none;
+                    }
+                    table#sto_wip_fg th, table#sto_wip_fg td {
+                        border: 1px solid #ddd;
+                        border-right: none;
+                        border-bottom: none;
+                    }
+                    table#sto_wip_fg th:last-child, table#sto_wip_fg td:last-child {
+                        border-right: 1px solid #ddd;
+                    }
+                    table#sto_wip_fg tr:last-child td {
+                        border-bottom: 1px solid #ddd;
+                    }
+
+                    .header {
+                        position: sticky;
+                        top: 0;
+                        background-color: white;
+                        z-index: 10;
+                        padding-bottom: 20px !important;
+                    }
+                    #sto_wip_fg thead th {
+                        position: sticky;
+                        top: 0;
+                        z-index: 200;
+                        background: #f2f2f2;
+                    }
+
+                    #table-detail {
+                        max-height: 72vh;
+                        margin-left: 18px;
+                        background: white !important;
+                    }
+                    #table-detail::before {
+                        content: "";
+                        position: sticky;
+                        left: 0;
+                        width: 18px;
+                        background: white;
+                        z-index: 10;
+                        display: block;
+                    }
+
+                    #sto_wip_fg th,
+                    #sto_wip_fg td {
+                        padding: 4px 8px;
+                        white-space: nowrap;
+                    }
+                    .table-container {
+                        max-height: 72vh;
+                        overflow: auto;
+                    }
+
+                    .freeze-col {
+                        position: sticky;
+                        left: 0;
+                        background: white;
+                        z-index: 50;
+                    }
+
+                    #sto_wip_fg thead .freeze-col {
+                        z-index: 250;
+                    }
+
+                    #sto_wip_fg th,
+                    #sto_wip_fg td {
+                        box-sizing: border-box;
+                    }
+
+                    .freeze-col {
+                        position: sticky;
+                        background: #fff;
+                        z-index: 20;
+                    }
+
+                    table#sto_wip_fg {
+                        width: max-content;
+                    }
+
+                </style>
+                <body style="margin: 0; '.$overflow.'">
+                <div class="header" style="padding: 18px;">
+                <center>
+                    <div style="float: left; font-size: 12px; text-align: left;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                    <img src="' . $config->favicon . '" width="30">
+                                </td>
+                                <td style="font-size: 14px; text-align: left; margin:2px;">
+                                    <b>' . $config->name . '</b><br>
+                                    <small>' . $config->description . '</small>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div style="float: right; font-size: 12px; text-align: right;">
+                        Print Date ' . date("d M Y H:m:s") . ' <br>
+                        Print By ' . $this->session->username . '  
+                    </div>
+                    <br><br>
+                    <div style="float: centet; font-size: 16px; text-align: center;">
+                        <h3>REPORT STO WIP FG LABEL</h3>
+                    </div>
+                </center>
+                <table style="width: 40%; font-size:12px;">
+                    <tr>
+                        <th style="width:100px; text-align:left;">Location</th>
+                        <td style="width:10px;">:</td>
+                        <td style="width:200px;">'. $location_display .'</td>
+                    </tr>
+                    <tr>
+                        <th style="width:100px; text-align:left;">Cut Of Stock</th>
+                        <td style="width:10px;">:</td>
+                        <td style="width:200px;">' . $cut_of_stock . '</td>
+                    </tr>
+                    <tr>
+                        <th style="width:100px; text-align:left;">Period</th>
+                        <td style="width:10px;">:</td>
+                        <td style="width:200px;">' . $schedule_display . '</td>
+                    </tr>
+                </table>
+                </div>';
+
+                $html .= '<div class="table-container" style="overflow:auto; margin: 0 18px;">
+                            <table id="sto_wip_fg" style="width: 100%; padding: 0px;" border="1">
+                            <thead style="position: sticky; z-index: 100; top: 0px; background: #f2f2f2;">
+                            <tr>
+                                <th rowspan="2">No</th>
+                                <th rowspan="2">STO Doc No</th>
+                                <th rowspan="2">Product ID</th>
+                                <th rowspan="2">Product No</th>
+                                <th rowspan="2">Product Name</th>
+                                <th rowspan="2">Qty STO</th>
+                                <th rowspan="2">Workorder</th>
+                                <th rowspan="2">Serial Label</th>
+                                <th rowspan="2">Label Type</th>
+                                <th rowspan="2">Uom</th>
+                                
+                                <th colspan="2">Created</th>
+                            </tr>
+                            <tr>
+                                <th>By</th>
+                                <th>Date</th>
+                            </tr>
+                            </thead>
+                            ';
+
+                    $this->db->select("
+                        h.id,
+                        h.doc_no,
+                        h.created_by,
+                        h.created_date,
+
+                        d.item_fg_id,
+                        d.label_type,
+
+                        d.qty AS qty_sto,
+                        d.workorder,
+
+                        COALESCE(d.workorder_label, d.serial_label) as serial_label,
+
+                        fg.number AS item_fg_number,
+                        fg.name AS item_fg_name,
+                        fg.uom
+                    ");
+                    $this->db->from('sto_wip_fg h');
+                    $this->db->join('sto_wip_fg_detail d', 'd.sto_wip_fg_id = h.id');
+                    $this->db->join('item_fg fg', 'fg.id = d.item_fg_id', 'left');
+
+                    $this->db->where('h.type_status', 'completed');
+                    $this->db->where('h.deleted', 0);
+
+                    if (!empty($filter_location)) {
+                        $this->db->where('h.location', $filter_location);
+                    }
+                    if (!empty($filter_period_month)) {
+                        $this->db->where('h.period_month', $filter_period_month);
+                    }
+                    if (!empty($filter_period_year)) {
+                        $this->db->where('h.period_year', $filter_period_year);
+                    }
+                    if (!empty($filter_doc_no)) {
+                        $this->db->where('h.doc_no', $filter_doc_no);
+                    }
+                    if (!empty($filter_label_type)) {
+                        $this->db->where('d.label_type', $filter_label_type);
+                    }
+                    if (!empty($filter_item_fg)) {
+                        $this->db->where('d.item_fg_id', $filter_item_fg);
+                    }
+
+                    $this->db->order_by('h.doc_no', 'ASC');
+                    $this->db->order_by('d.item_fg_id', 'ASC');
+
+                    $rows = $this->db->get()->result();
+
+                    $no = 1;
+                    foreach ($rows as $row) {
+
+                        $html .= '
+                        <tr align="center">
+                            <td>'.$no.'</td>
+                            <td>'.$row->doc_no.'</td>
+                            <td>'.$row->item_fg_id.'</td>
+                            <td>'.$row->item_fg_number.'</td>
+                            <td>'.$row->item_fg_name.'</td>
+                            <td align="right">'.number_format($row->qty_sto,0,",",".").'</td>
+                            <td>'.$row->workorder.'</td>
+                            <td>'.$row->serial_label.'</td>
+                            <td>'.$row->label_type.'</td>
+                            <td>'.$row->uom.'</td>
+                            <td width="120px">'.$row->created_by.'</td>
+                            <td width="30px">'.$row->created_date.'</td>
+                        </tr>';
+
+                        $no++;
+                    }
+
+                $html .= '</table></div></div>';
+
+        $html .='</body></html>';
+
+        echo $html;
+    }
 }

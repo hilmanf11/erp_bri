@@ -55,6 +55,8 @@
         </fieldset>
 
         <?= $button ?>
+
+        <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="excel_label()"><i class="fa fa-file"></i> Export Label</a>
     </div>
 
 </div>
@@ -163,6 +165,50 @@
 
         window.location.assign('<?= base_url('control/report_sto_wip_fg/print/excel') ?>' + url);
     }
+
+    function excel_label() {
+        var filter_period_month = $("#filter_period_month").combobox("getValue");
+        var filter_period_year  = $("#filter_period_year").combobox("getValue");
+        var filter_location     = $("#filter_location_code").textbox("getValue");
+        var filter_doc_no       = $("#filter_doc_no").combobox("getValue");
+        var filter_label_type   = $("#filter_label_type").combogrid('getValue');
+        var filter_item_fg      = $("#filter_item_fg").combogrid("getValue");
+        var filter_deviation    = $("#filter_deviation").combobox("getValue");
+        var filter_display      = $("#filter_display").combobox('getValue');
+        var filter_location_name    = $("#filter_location_name").textbox("getValue");
+
+        if (!filter_period_month) {
+            toastr.warning('Period Month is required!');
+            $('#filter_location').combobox('textbox').focus();
+            return false;
+        }
+
+        if (!filter_period_year) {
+            toastr.warning('Period Year is required!');
+            $('#filter_location').combobox('textbox').focus();
+            return false;
+        }
+
+        if (!filter_location) {
+            toastr.warning('Location is required!');
+            $('#filter_location').combogrid('showPanel');
+            $('#filter_location').combogrid('textbox').focus();
+            return false;
+        }
+
+        var url = "?filter_period_month=" + window.btoa(filter_period_month) +
+            "&filter_period_year=" + window.btoa(filter_period_year) +
+            "&filter_location=" + window.btoa(filter_location) +
+            "&filter_doc_no=" + window.btoa(filter_doc_no) +
+            "&filter_label_type=" + window.btoa(filter_label_type) +
+            "&filter_item_fg=" + window.btoa(filter_item_fg) +
+            "&filter_deviation=" + window.btoa(filter_deviation) +
+            "&filter_display=" + window.btoa(filter_display) +
+            "&filter_location_name=" + window.btoa(filter_location_name);
+
+        window.location.assign('<?= base_url('control/report_sto_wip_fg/excel_label') ?>' + url);
+    }
+
 
     function pdf() {
         var filter_period_month = $("#filter_period_month").combobox("getValue");
