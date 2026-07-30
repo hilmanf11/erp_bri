@@ -37,6 +37,24 @@ class Output_production_press extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readWp()
+    {
+        $filter_from = base64_decode($this->input->get('filter_from'));
+        $filter_to   = base64_decode($this->input->get('filter_to'));
+
+        $send = $this->crud->query("
+            SELECT wp
+            FROM output_production_press
+            WHERE deleted = 0
+            AND trans_date >= '$filter_from'
+            AND trans_date <= '$filter_to'
+            GROUP BY wp
+            ORDER BY (wp + 0) ASC, wp ASC
+        ");
+
+        echo json_encode($send);
+    }
+
     // public function readItemFg($period="")
     // {
     //     $post = isset($_POST['q']) ? $_POST['q'] : "";
@@ -238,7 +256,7 @@ class Output_production_press extends CI_Controller
             $filter_to = $this->input->get('filter_to');
             // $filter_division = $this->input->get('filter_division');
             
-            $filter_period = $this->input->get('filter_period');
+            // $filter_period = $this->input->get('filter_period');
             // $filter_trans_date = $this->input->get('filter_trans_date');
             $filter_number = $this->input->get('filter_number');
             $filter_shift = $this->input->get('filter_shift');
@@ -247,9 +265,9 @@ class Output_production_press extends CI_Controller
             $filter_item_fg_id = $this->input->get('filter_item_fg_id');
             $filter_status = $this->input->get('filter_status');
 
-            if (empty($filter_period)) {
-                $filter_period = date('Ym');
-            }
+            // if (empty($filter_period)) {
+            //     $filter_period = date('Ym');
+            // }
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -272,11 +290,12 @@ class Output_production_press extends CI_Controller
             //     $this->db->where('b.division_id', $filter_division);
             // }
 
-            if ($filter_period != "") {
-                $this->db->where('a.period', $filter_period);
-            }else{
-                $this->db->where('a.trans_date', date('Y-m-d'));
-            }
+            // if ($filter_period != "") {
+            //     $this->db->where('a.period', $filter_period);
+            // }else{
+            //     $this->db->where('a.trans_date', date('Y-m-d'));
+            // }
+
             // if ($filter_trans_date != "") {
             //     $this->db->where('a.trans_date', $filter_trans_date);
             // }
@@ -3145,7 +3164,7 @@ class Output_production_press extends CI_Controller
         // $filter_item_fg_id = $this->input->get('filter_item_fg_id');
         // $filter_division = $this->input->get('filter_division');
 
-        $filter_period = $this->input->get('filter_period');
+        // $filter_period = $this->input->get('filter_period');
         // $filter_trans_date = $this->input->get('filter_trans_date');
         $filter_number = $this->input->get('filter_number');
         $filter_shift = $this->input->get('filter_shift');
@@ -3154,9 +3173,9 @@ class Output_production_press extends CI_Controller
         $filter_item_fg_id = $this->input->get('filter_item_fg_id');
         $filter_status = $this->input->get('filter_status');
 
-        if (empty($filter_period)) {
-            $filter_period = date('Ym');
-        }
+        // if (empty($filter_period)) {
+        //     $filter_period = date('Ym');
+        // }
 
         //Config
         $this->db->select('*');
@@ -3202,6 +3221,17 @@ class Output_production_press extends CI_Controller
         $this->db->join('machines c', 'a.machine_id = c.id', 'left');
 
         $this->db->join('bom d', 'a.item_fg_id = d.item_fg_id and d.priority = 1', 'left');
+
+        // $this->db->join("
+        //     (
+        //         SELECT item_fg_id, item_rm_id
+        //         FROM bom
+        //         WHERE priority = 1
+        //     ) d",
+        //     "a.item_fg_id = d.item_fg_id",
+        //     "left"
+        // );
+
         $this->db->join('item_rm e', 'd.item_rm_id = e.id', 'left');
 
         // $this->db->join("
@@ -3234,9 +3264,9 @@ class Output_production_press extends CI_Controller
             $this->db->where('a.trans_date <=', $filter_to);
         }
 
-        if ($filter_period != "") {
-            $this->db->where('a.period', $filter_period);
-        }
+        // if ($filter_period != "") {
+        //     $this->db->where('a.period', $filter_period);
+        // }
         // if ($filter_trans_date != "") {
         //     $this->db->where('a.trans_date', $filter_trans_date);
         // }
