@@ -1478,38 +1478,97 @@ class Scan_visual_checker extends CI_Controller
 
 
 
-    private function generateSerialLabel($prefix, $productNo)
+    private function acquireRfgLabelSequenceLock()
+    {
+        $lock = $this->db
+            ->query("SELECT GET_LOCK('rfg_label_sequence_lock', 10) AS locked")
+            ->row();
+
+        return !empty($lock) && (int) $lock->locked === 1;
+    }
+
+    private function releaseRfgLabelSequenceLock()
+    {
+        $this->db->query("SELECT RELEASE_LOCK('rfg_label_sequence_lock')");
+    }
+
+    private function generateSerialLabel($prefix, $productNo, $prod_date = "", $shift = "", $item_fg_id = "")
     {
         while (true) {
 
-            $sql = "
-                SELECT serial_label
-                FROM fg_visual_checker_label
-                WHERE serial_label LIKE ?
-                ORDER BY serial_label DESC
-                LIMIT 1
-                FOR UPDATE
-            ";
+            if (!empty($prod_date) && !empty($shift) && !empty($item_fg_id)) {
+                $last = $this->db
+                    ->query("
+                        SELECT MAX(sequence_no) AS sequence_no
+                        FROM (
+                            SELECT CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(serial_label, '|', 4), '|', -1) AS UNSIGNED) AS sequence_no
+                            FROM fg_visual_checker_label
+                            WHERE deleted = 0
+                                AND prod_date = ?
+                                AND shift = ?
+                                AND item_fg_id = ?
+                                AND serial_label LIKE ?
 
-            $last = $this->db->query($sql, [$prefix . '|%'])->row();
+                            UNION ALL
 
-            $sequence = 1;
-            if ($last) {
-                $parts = explode('|', $last->serial_label);
+                            SELECT CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(serial_label, '|', 4), '|', -1) AS UNSIGNED) AS sequence_no
+                            FROM po_subcont_production_labels
+                            WHERE deleted = 0
+                                AND prod_date = ?
+                                AND shift = ?
+                                AND item_fg_id = ?
+                                AND serial_label LIKE ?
+                        ) labels
+                    ", [
+                        $prod_date,
+                        $shift,
+                        $item_fg_id,
+                        $prefix . '|%',
+                        $prod_date,
+                        $shift,
+                        $item_fg_id,
+                        $prefix . '|%'
+                    ])
+                    ->row();
 
-                if (isset($parts[3])) {
-                    $sequence = intval($parts[3]) + 1;
-                }
+                $sequence = !empty($last->sequence_no) ? ((int) $last->sequence_no + 1) : 1;
+            } else {
+                $sql = "
+                    SELECT MAX(sequence_no) AS sequence_no
+                    FROM (
+                        SELECT CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(serial_label, '|', 4), '|', -1) AS UNSIGNED) AS sequence_no
+                        FROM fg_visual_checker_label
+                        WHERE deleted = 0
+                            AND serial_label LIKE ?
+
+                        UNION ALL
+
+                        SELECT CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(serial_label, '|', 4), '|', -1) AS UNSIGNED) AS sequence_no
+                        FROM po_subcont_production_labels
+                        WHERE deleted = 0
+                            AND serial_label LIKE ?
+                    ) labels
+                ";
+
+                $last = $this->db->query($sql, [$prefix . '|%', $prefix . '|%'])->row();
+                $sequence = !empty($last->sequence_no) ? ((int) $last->sequence_no + 1) : 1;
             }
 
             $serial = implode('|', [$prefix, sprintf('%03d', $sequence), $productNo]);
 
-            $check = $this->db
+            $exists_fg = $this->db
                 ->where('serial_label', $serial)
+                ->where('deleted', 0)
                 ->get('fg_visual_checker_label')
                 ->row();
 
-            if (!$check) {
+            $exists_po = $this->db
+                ->where('serial_label', $serial)
+                ->where('deleted', 0)
+                ->get('po_subcont_production_labels')
+                ->row();
+
+            if (!$exists_fg && !$exists_po) {
                 return $serial;
             }
         }
@@ -1587,6 +1646,14 @@ class Scan_visual_checker extends CI_Controller
 
         $std_packing = $label_packing_details[0]->std_packing;
         $detail = $label_packing_details[0];
+        $sequence_lock_acquired = false;
+
+        if (!$this->acquireRfgLabelSequenceLock()) {
+            $this->db->trans_rollback();
+            show_error("Failed to acquire label sequence lock", 500);
+        }
+
+        $sequence_lock_acquired = true;
 
         $existing_print_labels = $this->db
             ->where('scan_id', $scan_id)
@@ -1754,6 +1821,7 @@ class Scan_visual_checker extends CI_Controller
             }
 
             $this->db->trans_commit();
+            $this->releaseRfgLabelSequenceLock();
 
             $html .= '<script>window.print()</script>
                     </body>
@@ -2153,7 +2221,7 @@ class Scan_visual_checker extends CI_Controller
             }else{
 
                 // $serial_label = $prefix . sprintf("%04d",$sequence);
-                $serial_label = $this->generateSerialLabel($prefix, $detail->product_no);
+                $serial_label = $this->generateSerialLabel($prefix, $detail->product_no, $press_date, $shift, $item_fg_id);
 
 
 
@@ -2248,6 +2316,10 @@ class Scan_visual_checker extends CI_Controller
             $this->db->trans_rollback();
         }else{
             $this->db->trans_commit();
+        }
+
+        if ($sequence_lock_acquired) {
+            $this->releaseRfgLabelSequenceLock();
         }
 
         $html .= '<script>window.print()</script>
