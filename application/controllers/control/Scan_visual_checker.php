@@ -1081,6 +1081,21 @@ class Scan_visual_checker extends CI_Controller
                     'status'             => 0
                 ];
 
+                $exists = $this->db
+                    ->where('scan_id', $scan_id)
+                    ->where('workorder_label', $workorder_label)
+                    ->where('serial_label', $serial_label)
+                    ->where('type_status', 'scanning')
+                    ->count_all_results('scan_visual_checker_detail');
+
+                if($exists){
+                    throw new Exception(json_encode([
+                        'title'=>'Available',
+                        'message'=>'Label already exists',
+                        'theme'=>'warning'
+                    ]));
+                }
+
                 $this->crud->create('scan_visual_checker_detail', $data_to_insert);
 
                 if ($this->db->trans_status() === FALSE) {
@@ -1356,39 +1371,40 @@ class Scan_visual_checker extends CI_Controller
         }
     }
 
-    private function generateSerialLabel($prefix)
-    {
-        while(true){
 
-            $sql = "
-                SELECT serial_label
-                FROM fg_visual_checker_label
-                WHERE serial_label LIKE ?
-                ORDER BY serial_label DESC
-                LIMIT 1
-                FOR UPDATE
-            ";
+    // private function generateSerialLabel($prefix)
+    // {
+    //     while(true){
 
-            $last = $this->db->query($sql, [$prefix.'%'])->row();
+    //         $sql = "
+    //             SELECT serial_label
+    //             FROM fg_visual_checker_label
+    //             WHERE serial_label LIKE ?
+    //             ORDER BY serial_label DESC
+    //             LIMIT 1
+    //             FOR UPDATE
+    //         ";
 
-            $sequence = 1;
+    //         $last = $this->db->query($sql, [$prefix.'%'])->row();
 
-            if($last){
-                $sequence = intval(substr($last->serial_label, -4)) + 1;
-            }
+    //         $sequence = 1;
 
-            $serial = $prefix . sprintf("%04d",$sequence);
+    //         if($last){
+    //             $sequence = intval(substr($last->serial_label, -3)) + 1;
+    //         }
 
-            $check = $this->db
-                ->where('serial_label',$serial)
-                ->get('fg_visual_checker_label')
-                ->row();
+    //         $serial = $prefix . sprintf("%03d",$sequence);
 
-            if(!$check){
-                return $serial;
-            }
-        }
-    }
+    //         $check = $this->db
+    //             ->where('serial_label',$serial)
+    //             ->get('fg_visual_checker_label')
+    //             ->row();
+
+    //         if(!$check){
+    //             return $serial;
+    //         }
+    //     }
+    // }
 
 
     private function generateSerialLabelReturn($prefix)
@@ -1461,6 +1477,44 @@ class Scan_visual_checker extends CI_Controller
     }
 
 
+
+    private function generateSerialLabel($prefix, $productNo)
+    {
+        while (true) {
+
+            $sql = "
+                SELECT serial_label
+                FROM fg_visual_checker_label
+                WHERE serial_label LIKE ?
+                ORDER BY serial_label DESC
+                LIMIT 1
+                FOR UPDATE
+            ";
+
+            $last = $this->db->query($sql, [$prefix . '|%'])->row();
+
+            $sequence = 1;
+            if ($last) {
+                $parts = explode('|', $last->serial_label);
+
+                if (isset($parts[3])) {
+                    $sequence = intval($parts[3]) + 1;
+                }
+            }
+
+            $serial = implode('|', [$prefix, sprintf('%03d', $sequence), $productNo]);
+
+            $check = $this->db
+                ->where('serial_label', $serial)
+                ->get('fg_visual_checker_label')
+                ->row();
+
+            if (!$check) {
+                return $serial;
+            }
+        }
+    }
+
     public function print_label_rfg($item_fg_id, $scan_id) 
     {
         $item_fg_id = base64_decode($item_fg_id);
@@ -1468,7 +1522,7 @@ class Scan_visual_checker extends CI_Controller
         
         $username = $this->session->username;
 
-        if(empty($item_fg_id)){
+        if(empty($item_fg_id) || empty($scan_id)){
             show_error("Missing parameter",400);
         }
         
@@ -1491,6 +1545,7 @@ class Scan_visual_checker extends CI_Controller
             e.number,
 
             g.trans_date as prod_date,
+            g.shift as shift,
 
             h.name AS qc,
         ");
@@ -1521,6 +1576,7 @@ class Scan_visual_checker extends CI_Controller
         $label_packing_details = $this->db->get()->result();
         
         if (empty($label_packing_details)) {
+            $this->db->trans_rollback();
             echo "<center><h3>Data not found</h3></center>";
             return;
         }
@@ -1531,6 +1587,180 @@ class Scan_visual_checker extends CI_Controller
 
         $std_packing = $label_packing_details[0]->std_packing;
         $detail = $label_packing_details[0];
+
+        $existing_print_labels = $this->db
+            ->where('scan_id', $scan_id)
+            ->where('item_fg_id', $item_fg_id)
+            ->where('deleted', 0)
+            ->order_by('created_date', 'ASC')
+            ->order_by('id', 'ASC')
+            ->get('fg_visual_checker_label')
+            ->result();
+
+        if (!empty($existing_print_labels)) {
+            $html = '<html>
+                        <head>
+                            <title>Label Packing - '.$detail->item_fg_id.'</title>
+                            <link rel="icon" type="image/png" href="' . base_url('assets/image/icon.png') . '">
+                            <style>
+                                body { 
+                                    font-family: Arial, Helvetica, sans-serif; 
+                                    margin: 2; 
+                                }
+                                table { 
+                                    border-collapse: collapse; 
+                                    width: 7.5cm; 
+                                    height: 8cm; 
+                                    font-size: 11px;
+                                    border: 2px solid black; 
+                                    table-layout: fixed; 
+                                }
+                                th, td { 
+                                    border: 1px solid black; 
+                                    padding: 2px; 
+                                    text-align: left; 
+                                }
+                                th { 
+                                    text-align: center; 
+                                    font-size: 14px; 
+                                    font-weight: bold; 
+                                }
+                                .header { 
+                                    text-align: center; 
+                                    font-size: 15px; 
+                                    font-weight: bold; 
+                                }
+                                .logo { 
+                                    text-align: center; 
+                                    width: 100%; 
+                                    padding: 3px; 
+                                }
+                                .operator-sign, 
+                                .qc-sign, 
+                                .qr-code { 
+                                    font-size: 12px; 
+                                    text-align: center; 
+                                    height: 20mm; 
+                                    vertical-align: bottom; 
+                                    font-weight: bold; 
+                                }
+                                .qc-sign { 
+                                    text-align: center; 
+                                    height: 20mm; 
+                                }
+                                .qr-code img { 
+                                    width: 60px; 
+                                    height: 60px; 
+                                    display: block; 
+                                    margin: 0 auto; 
+                                }
+                                .serial-label { 
+                                    font-size: 11px; 
+                                    text-align: center; 
+                                    word-wrap: break-word; 
+                                    overflow: hidden; 
+                                    font-weight: bold; 
+                                }
+                                @page {
+                                        size: 7.5cm 8cm;
+                                        margin: 0;
+                                }
+                                @media print {
+                                        .printLabel {
+                                            page-break-after: always;
+                                            width: 7.5cm;
+                                            height: 8cm;
+                                            display: block;
+                                            padding: 0mm;
+                                            margin: 0;
+                                        }
+
+                                        table {
+                                            width: 100%;
+                                            font-size: 12px;
+                                            margin: 0;
+                                            padding: 0;
+                                        }
+
+                                        body {
+                                            margin: 0;
+                                            padding: 0;
+                                        }
+                                    }
+                            </style>
+                        </head>
+                    <body>';
+
+            foreach ($existing_print_labels as $existing_label) {
+                $serial_label = $existing_label->serial_label;
+
+                if (!file_exists(FCPATH . 'assets/image/qrcode/' . $serial_label . '.png')) {
+                    $this->createQrcode($serial_label, "assets/image/qrcode/");
+                }
+
+                $qty_packing_formatted = number_format($existing_label->qty, 0, ',', '.') . ' ' . strtoupper($detail->uom);
+                $serial_label_display = preg_replace('/^((?:[^|]*\|){3}[^|]*).*/', '$1', $serial_label);
+
+                $html .= '<div class="printLabel">
+                            <table style="max-width: 7.5cm; max-height:8cm;">
+                            <tr>
+                                <th class="logo" colspan="6" style="text-align: center;">
+                                    <img src="' . base_url('assets/image/bri_logo.png') . '" width="25" align="left"/>
+                                    <span class="header" style="font-size: 20px; height: 20px;">LABEL PACKING</span>
+                                </th>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="width: 30%;"><b>Part No:</b></td>
+                                <td colspan="4" style="font-weight: bold;">' . $detail->product_no . '</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="width: 30%;"><b>Part Name:</b></td>
+                                <td colspan="4" style="font-weight: bold;">' . $detail->product_name . '</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="width: 30%;"><b>Qty/pack:</b></td>
+                                <td colspan="4" style="font-weight: bold;">' . $qty_packing_formatted . '</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="width: 30%;"><b>Material:</b></td>
+                                <td colspan="4" style="font-weight: bold;">' . $detail->number . '</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="width: 30%;"><b>Prod Date:</b></td>
+                                <td colspan="4" style="font-weight: bold;">' . $existing_label->prod_date . '</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="width: 30%;"><b>Pack Date:</b></td>
+                                <td colspan="4" style="font-weight: bold;">' . $existing_label->pack_date . '</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="width: 30%;"><b>LOT No:</b></td>
+                                <td colspan="4" style="font-weight: bold;">' . $existing_label->compound_lot_no . '</td>
+                            </tr>
+                            <tr>
+                                <th colspan="2">QC</th>
+                                <th colspan="4">QR Code</th>
+                            </tr>
+                            <tr>
+                                <td class="operator-sign" colspan="2">' . $detail->qc . '</td>
+                                <td class="qr-code" colspan="4">
+                                    <img src="' . base_url('assets/image/qrcode/' . $serial_label . '.png') . '"/>
+                                    <div class="serial-label">' . $serial_label_display . '</div>
+                                </td>
+                            </tr>
+                        </table>
+                </div>';
+                // <div class="serial-label">' . $serial_label . '</div>
+            }
+
+            $this->db->trans_commit();
+
+            $html .= '<script>window.print()</script>
+                    </body>
+                </html>';
+
+            die($html);
+        }
 
 
         $labels = [];
@@ -1766,8 +1996,10 @@ class Scan_visual_checker extends CI_Controller
         $today = date('Y-m-d');
         $lot_label_counter = [];
         
-        $date_prefix = date('ymd');
-        $prefix = $date_prefix . $item_fg_id;
+        // $date_prefix = date('ymd');
+        // $prefix = $date_prefix . $item_fg_id;
+
+        // $prefix = implode('|', [date('dmY', strtotime($press_date)), $shift, (int)$detail->std_packing]);
 
         foreach($labels as $label){
 
@@ -1841,13 +2073,77 @@ class Scan_visual_checker extends CI_Controller
 
             $lot_index = $lot_label_counter[$dominant_lot];
 
+
+
+            // ambil production press berdasarkan qty terbesar
+            $press_candidates = [];
+
+            foreach ($lot_wo_counter as $lot => $wo_rows) {
+
+                foreach ($wo_rows as $wo => $qty) {
+
+                    $press = $this->db
+                        ->select('g.trans_date, g.shift')
+                        ->from('output_production_press_detail f')
+                        ->join(
+                            'output_production_press g',
+                            'g.number = f.number_output
+                            AND g.workorder = f.workorder',
+                            'left'
+                        )
+                        ->where('f.workorder_label', $wo)
+                        ->limit(1)
+                        ->get()
+                        ->row();
+
+                    if ($press) {
+                        $press_candidates[] = [
+                            'qty'        => $qty,
+                            'trans_date' => $press->trans_date,
+                            'shift'      => $press->shift
+                        ];
+                    }
+                }
+            }
+
+
+            $press_date  = null;
+            $press_shift = null;
+
+            if (!empty($press_candidates)) {
+
+                usort($press_candidates, function ($a, $b) {
+
+                    // qty terbesar
+                    if ($a['qty'] != $b['qty']) {
+                        return $b['qty'] - $a['qty'];
+                    }
+
+                    // jika qty sama ambil tanggal production paling tua
+                    return strtotime($a['trans_date']) - strtotime($b['trans_date']);
+                });
+
+                $press_date  = $press_candidates[0]['trans_date'];
+                $press_shift = $press_candidates[0]['shift'];
+            }
+
+            $shiftCode = [
+                '1' => 'A',
+                '2' => 'B',
+                '3' => 'C'
+            ];
+
+            $shift = isset($shiftCode[$press_shift]) ? $shiftCode[$press_shift] : '';
+
+            $dateCode = date('dmY', strtotime($press_date));
+            $prefix = implode('|', [$dateCode, $shift, (int)$detail->std_packing]);
+
             $this->db->where('scan_id', $detail->scan_id);
             $this->db->where('item_fg_id', $item_fg_id);
             $this->db->where('compound_lot_no', $dominant_lot);
-            $this->db->where('prod_date', $detail->prod_date);
+            $this->db->where('prod_date', $press_date);
             $this->db->limit(1, $lot_index - 1);
             $existing_label = $this->db->get('fg_visual_checker_label')->row();
-
 
             if($existing_label){
 
@@ -1857,14 +2153,15 @@ class Scan_visual_checker extends CI_Controller
             }else{
 
                 // $serial_label = $prefix . sprintf("%04d",$sequence);
-                $serial_label = $this->generateSerialLabel($prefix);
+                $serial_label = $this->generateSerialLabel($prefix, $detail->product_no);
 
 
 
                 $insert = [
                     'scan_id' => $detail->scan_id,
                     'item_fg_id' => $item_fg_id,
-                    'prod_date' => $detail->prod_date,
+                    'prod_date' => $press_date,
+                    'shift'     => $shift,
                     'pack_date' => $today,
                     'qty' => $label['qty'],
                     'compound_lot_no' => $dominant_lot,
@@ -1894,6 +2191,7 @@ class Scan_visual_checker extends CI_Controller
             }
 
             $qty_packing_formatted = number_format($label['qty'], 0, ',', '.') . ' ' . strtoupper($detail->uom);
+            $serial_label_display = preg_replace('/^((?:[^|]*\|){3}[^|]*).*/', '$1', $serial_label);
 
             $html .= '<div class="printLabel">
                         <table style="max-width: 7.5cm; max-height:8cm;">
@@ -1921,7 +2219,7 @@ class Scan_visual_checker extends CI_Controller
                         </tr>
                         <tr>
                             <td colspan="2" style="width: 30%;"><b>Prod Date:</b></td>
-                            <td colspan="4" style="font-weight: bold;">' . $detail->prod_date . '</td>
+                            <td colspan="4" style="font-weight: bold;">' . $press_date . '</td>
                         </tr>
                         <tr>
                             <td colspan="2" style="width: 30%;"><b>Pack Date:</b></td>
@@ -1939,7 +2237,7 @@ class Scan_visual_checker extends CI_Controller
                             <td class="operator-sign" colspan="2">' . $qc . '</td>
                             <td class="qr-code" colspan="4">
                                 <img src="' . base_url('assets/image/qrcode/' . $serial_label . '.png') . '"/>
-                                <div class="serial-label">' . $serial_label . '</div>
+                                <div class="serial-label">' . $serial_label_display . '</div>
                             </td>
                         </tr>
                     </table>
@@ -2056,7 +2354,7 @@ class Scan_visual_checker extends CI_Controller
             $this->db->select("
                 a.scan_id,
                 a.item_fg_id,
-                a.qty_ok,
+                a.qty_ok AS qty_packing,
                 a.compound_lot_no,
                 a.workorder_label,
 
@@ -2094,35 +2392,161 @@ class Scan_visual_checker extends CI_Controller
             $rows_ok = $this->db->get()->result();
             $rows_ok_ref = $rows_ok;
 
-            foreach ($rows_ok as $row_ok) {
+            $existing_rfg_label = $this->db
+                ->where('scan_id', $scan_id)
+                ->where('item_fg_id', $item_fg_id)
+                ->where('deleted', 0)
+                ->get('fg_visual_checker_label')
+                ->row();
 
-                $std = (int)$row_ok->std_packing;
-                $qty_ok = (int)$row_ok->qty_ok;
+            if (!$existing_rfg_label && !empty($rows_ok)) {
+                usort($rows_ok, function($a, $b){
+                    return $b->qty_packing - $a->qty_packing;
+                });
 
-                if ($std <= 0) continue;
+                $std = (int)$rows_ok[0]->std_packing;
 
-                $sisa = $qty_ok % $std;
+                if ($std > 0) {
+                    $remaining_rows = [];
+                    foreach ($rows_ok as $row_ok) {
+                        $row_ok->qty_packing = (int)$row_ok->qty_packing;
 
-                if ($sisa > 0) {
+                        while ($row_ok->qty_packing >= $std) {
+                            $row_ok->qty_packing -= $std;
+                        }
 
-                    $this->db->where('scan_id', $scan_id);
-                    $this->db->where('item_fg_id', $row_ok->item_fg_id);
-                    $this->db->where('workorder_label', $row_ok->workorder_label);
-                    $this->db->where('compound_lot_no', $row_ok->compound_lot_no);
-
-                    $exist = $this->db->get('fg_visual_checker_label_lot_balance')->row();
-
-                    if (!$exist) {
-                        $this->crud->create('fg_visual_checker_label_lot_balance', [
-                            'scan_id' => $scan_id,
-                            'source_serial_label' => NULL,
-                            'item_fg_id' => $row_ok->item_fg_id,
-                            'workorder_label' => $row_ok->workorder_label,
-                            'compound_lot_no' => $row_ok->compound_lot_no,
-                            'qty_remaining' => $sisa,
-                            'status' => 0
-                        ]);
+                        if ($row_ok->qty_packing > 0) {
+                            $remaining_rows[] = $row_ok;
+                        }
                     }
+
+                    $lot_groups = [];
+                    foreach ($remaining_rows as $row_ok) {
+                        $lot_groups[$row_ok->compound_lot_no][] = $row_ok;
+                    }
+
+                    foreach ($lot_groups as $lot => &$lot_rows) {
+                        usort($lot_rows, function($a, $b){
+                            return $b->qty_packing - $a->qty_packing;
+                        });
+
+                        foreach ($lot_rows as $row_ok) {
+                            if ($row_ok->qty_packing == 0) continue;
+
+                            $current = [
+                                'qty' => 0,
+                                'rows' => []
+                            ];
+
+                            $need = $std;
+                            $take = min($row_ok->qty_packing, $need);
+
+                            $current['rows'][] = [
+                                'qty' => $take,
+                                'lot' => $row_ok->compound_lot_no,
+                                'wo'  => $row_ok->workorder_label
+                            ];
+
+                            $current['qty'] += $take;
+                            $row_ok->qty_packing -= $take;
+                            $need -= $take;
+
+                            if ($need > 0) {
+                                usort($lot_rows, function($a, $b){
+                                    return $a->qty_packing - $b->qty_packing;
+                                });
+
+                                foreach ($lot_rows as $r) {
+                                    if ($r->qty_packing == 0) continue;
+
+                                    $take = min($r->qty_packing, $need);
+
+                                    $current['rows'][] = [
+                                        'qty' => $take,
+                                        'lot' => $r->compound_lot_no,
+                                        'wo'  => $r->workorder_label
+                                    ];
+
+                                    $current['qty'] += $take;
+                                    $r->qty_packing -= $take;
+                                    $need -= $take;
+
+                                    if ($need == 0) break;
+                                }
+                            }
+
+                            if ($need > 0) {
+                                foreach ($lot_groups as $lot2 => &$other_rows) {
+                                    if ($lot2 == $lot) continue;
+
+                                    usort($other_rows, function($a, $b){
+                                        return $a->qty_packing - $b->qty_packing;
+                                    });
+
+                                    foreach ($other_rows as $r) {
+                                        if ($r->qty_packing == 0) continue;
+
+                                        $take = min($r->qty_packing, $need);
+
+                                        $current['rows'][] = [
+                                            'qty' => $take,
+                                            'lot' => $r->compound_lot_no,
+                                            'wo'  => $r->workorder_label
+                                        ];
+
+                                        $current['qty'] += $take;
+                                        $r->qty_packing -= $take;
+                                        $need -= $take;
+
+                                        if ($need == 0) break;
+                                    }
+
+                                    if ($need == 0) break;
+                                }
+                                unset($other_rows);
+                            }
+
+                            if ($current['qty'] > 0 && $current['qty'] < $std) {
+                                $lot_wo_counter = [];
+
+                                foreach ($current['rows'] as $r) {
+                                    if (!isset($lot_wo_counter[$r['lot']])) {
+                                        $lot_wo_counter[$r['lot']] = [];
+                                    }
+
+                                    if (!isset($lot_wo_counter[$r['lot']][$r['wo']])) {
+                                        $lot_wo_counter[$r['lot']][$r['wo']] = 0;
+                                    }
+
+                                    $lot_wo_counter[$r['lot']][$r['wo']] += $r['qty'];
+                                }
+
+                                foreach ($lot_wo_counter as $balance_lot => $wo_rows) {
+                                    foreach ($wo_rows as $wo => $qty) {
+                                        $this->db->where('scan_id', $scan_id);
+                                        $this->db->where('item_fg_id', $item_fg_id);
+                                        $this->db->where('workorder_label', $wo);
+                                        $this->db->where('compound_lot_no', $balance_lot);
+
+                                        $exist = $this->db->get('fg_visual_checker_label_lot_balance')->row();
+
+                                        if (!$exist) {
+                                            $this->crud->create('fg_visual_checker_label_lot_balance', [
+                                                'scan_id' => $scan_id,
+                                                'source_serial_label' => NULL,
+                                                'item_fg_id' => $item_fg_id,
+                                                'workorder_label' => $wo,
+                                                'compound_lot_no' => $balance_lot,
+                                                'qty_remaining' => $qty,
+                                                'status' => 0
+                                            ]);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    unset($lot_rows);
                 }
             }
 

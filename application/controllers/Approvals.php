@@ -27,15 +27,28 @@ class Approvals extends CI_Controller
             $user = $this->crud->read('users', [], ["username" => $data->created_by]);
             $approval = $this->crud->read('approvals', [], ["table_name" => $table_name]);
             $table_approval = $table_name;
-            if($table_name==="purchase_orders"){
-                $purchaseRequests = $this->crud->read('purchase_requests', [], ["request_no" => $data->request_no]);
-                $table_approval = ($purchaseRequests->division==="DIV01")?'purchase_orders':'purchase_orders_2';
-                $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
+
+            if(
+                $table_name === "purchase_orders" || 
+                $table_name === "purchase_requests" ||
+                $table_name === "supplier_items" ||
+                $table_name === "po_subcont_productions"
+            ){
+                $approval = $this->crud->getApprovalV2($table_approval, $data->created_by);
             }
-            if($table_name==="supplier_items"){
-                $table_approval = (preg_match('/\bExtruder\b/i', $user->position))?'supplier_items_2':'supplier_items';
-                $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
-            }
+
+
+            // if($table_name==="purchase_orders"){
+            //     $purchaseRequests = $this->crud->read('purchase_requests', [], ["request_no" => $data->request_no]);
+            //     $table_approval = ($purchaseRequests->division==="DIV01")?'purchase_orders':'purchase_orders_2';
+            //     $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
+            // }
+
+            // if($table_name==="supplier_items"){
+            //     $table_approval = (preg_match('/\bExtruder\b/i', $user->position))?'supplier_items_2':'supplier_items';
+            //     $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
+            // }
+
             if($table_name==="delivery_notes"){
                 $table_approval = (preg_match('/\bExtruder\b/i', $user->position))?'delivery_notes_2':'delivery_notes';
                 $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
@@ -135,15 +148,27 @@ class Approvals extends CI_Controller
         $user = $this->crud->read('users', [], ["username" => $data->created_by]);
         $approval = $this->crud->read('approvals', [], ["table_name" => $tablename]);
         $table_approval = $tablename;
-        if($tablename==="purchase_orders"){
-            $purchaseRequests = $this->crud->read('purchase_requests', [], ["request_no" => $data->request_no]);
-            $table_approval = ($purchaseRequests->division==="DIV01")?'purchase_orders':'purchase_orders_2';
-            $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
+
+        if(
+            $tablename === "purchase_orders" ||
+            $tablename === "purchase_requests" ||
+            $tablename === "supplier_items" ||
+            $tablename === "po_subcont_productions"
+        ){
+            $approval = $this->crud->getApprovalV2($table_approval, $data->created_by);
         }
-        if($tablename==="supplier_items"){
-            $table_approval = (preg_match('/\bExtruder\b/i', $user->position))?'supplier_items_2':'supplier_items';
-            $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
-        }
+
+        // if($tablename==="purchase_orders"){
+        //     $purchaseRequests = $this->crud->read('purchase_requests', [], ["request_no" => $data->request_no]);
+        //     $table_approval = ($purchaseRequests->division==="DIV01")?'purchase_orders':'purchase_orders_2';
+        //     $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
+        // }
+
+        // if($tablename==="supplier_items"){
+        //     $table_approval = (preg_match('/\bExtruder\b/i', $user->position))?'supplier_items_2':'supplier_items';
+        //     $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
+        // }
+
         if($tablename==="delivery_notes"){
             $table_approval = (preg_match('/\bExtruder\b/i', $user->position))?'delivery_notes_2':'delivery_notes';
             $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
@@ -218,6 +243,13 @@ class Approvals extends CI_Controller
                 if ($approval_column) {
                     $preceding_values['user_created_by'] = $data->created_by;
                     foreach ($preceding_values as $col_name => $value_approved) {
+
+                    if($tablename == "po_subcont_productions") {
+                        $desc = "PO TO SUB PROD";
+                    }else{
+                        $desc = strtoupper(str_replace("_", " ", $tablename));
+                    }
+
                     $this->crud->create("notifications", [
                         "users_id_from" => $this->session->username,
                         "users_id_to" => $value_approved,
@@ -225,7 +257,7 @@ class Approvals extends CI_Controller
                         "table_id" => $id,
                         "table_name" => $table_approval,
                         "name" => "Approved",
-                        "description" => 'Data in Module ' . strtoupper(str_replace("_", " ", $tablename)) . ' has been approved',
+                        "description" => 'Data in Module ' . $desc . ' has been approved',
                         "status" => 0,
                     ]);
                     }
@@ -276,16 +308,27 @@ class Approvals extends CI_Controller
     }
     $table_approval = $tablename;
 
-    if ($tablename === "purchase_orders") {
-        $purchaseRequests = $this->crud->read('purchase_requests', [], ["request_no" => $read->request_no]);
-        $table_approval = ($purchaseRequests->division === "DIV01") ? 'purchase_orders' : 'purchase_orders_2';
-        $read_table_approvals = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
+    if(
+        $tablename === "purchase_orders" ||
+        $tablename === "purchase_requests" ||
+        $tablename === "supplier_items" ||
+        $tablename === "po_subcont_productions"
+    ){
+        $read_table_approvals = $this->crud->getApprovalV2($table_approval, $read->created_by);
     }
-    if ($tablename === "supplier_items") {
-        $user = $this->crud->read('users', [], ["username" => $read->created_by]);
-        $table_approval = (preg_match('/\bExtruder\b/i', $user->position)) ? 'supplier_items_2' : 'supplier_items';
-        $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
-    }
+
+    // if ($tablename === "purchase_orders") {
+    //     $purchaseRequests = $this->crud->read('purchase_requests', [], ["request_no" => $read->request_no]);
+    //     $table_approval = ($purchaseRequests->division === "DIV01") ? 'purchase_orders' : 'purchase_orders_2';
+    //     $read_table_approvals = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
+    // }
+
+    // if ($tablename === "supplier_items") {
+    //     $user = $this->crud->read('users', [], ["username" => $read->created_by]);
+    //     $table_approval = (preg_match('/\bExtruder\b/i', $user->position)) ? 'supplier_items_2' : 'supplier_items';
+    //     $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
+    // }
+
     if ($tablename === "delivery_notes") {
         $user = $this->crud->read('users', [], ["username" => $read->created_by]);
         $table_approval = (preg_match('/\bExtruder\b/i', $user->position)) ? 'delivery_notes_2' : 'delivery_notes';
@@ -354,6 +397,12 @@ class Approvals extends CI_Controller
         } else {
             echo json_encode(array("title" => "Disapproved", "message" => "No records found.", "theme" => "error"));
         }
+    } else {
+        echo json_encode([
+            "title" => "Error",
+            "message" => "Approval tidak ditemukan",
+            "theme" => "error"
+        ]);
     }
 }
 
@@ -489,7 +538,9 @@ class Approvals extends CI_Controller
 
         $delivery_rework = $this->crud->reads('delivery_rework', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
 
-        $totalRows = (count($users) + count($purchase_orders) + count($suppliers) + count($supplier_items) + count($purchase_requests) + count($delivery_notes) + count($delivery_to_subconts) + count($delivery_rework)); //+ count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) 
+        $po_subcont_productions = $this->crud->reads('po_subcont_productions', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
+
+        $totalRows = (count($users) + count($purchase_orders) + count($suppliers) + count($supplier_items) + count($purchase_requests) + count($delivery_notes) + count($delivery_to_subconts) + count($delivery_rework) + count($po_subcont_productions)); //+ count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) 
         if ($totalRows > 0) {
             echo '<span class="badge">' . $totalRows . '</span>';
         } else {
@@ -516,6 +567,8 @@ class Approvals extends CI_Controller
         $delivery_to_subconts = $this->crud->reads('delivery_to_subconts', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
 
         $delivery_rework = $this->crud->reads('delivery_rework', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
+
+        $po_subcont_productions = $this->crud->reads('po_subcont_productions', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
 
         foreach ($users as $user) {
             $this->approvalMessage($user->approved_by, $user->approved_to, "users");
@@ -565,6 +618,9 @@ class Approvals extends CI_Controller
         foreach ($delivery_rework as $delivery_note) {
             $this->approvalMessage($delivery_note->approved_by, $delivery_note->approved_to, "delivery_rework");
         }
+        foreach ($po_subcont_productions as $po_sub_prod) {
+            $this->approvalMessage($po_sub_prod->approved_by, $po_sub_prod->approved_to, "po_subcont_productions");
+        }
     }
 
     public function approvalMessage($approved_by, $approved_to, $table)
@@ -575,6 +631,12 @@ class Approvals extends CI_Controller
             $avatar = base_url('assets/image/users/default.png');
         } else {
             $avatar = $user->avatar;
+        }
+
+        if($table === "po_subcont_productions") {
+            $tableName = "PO To Sub Prod";
+        } else {
+            $tableName = $table;
         }
 
         $link = "approvalDetail('$table', '$approved_to', '$approved_by')";
@@ -590,7 +652,7 @@ class Approvals extends CI_Controller
                                 </td>
                                 <td style="padding-left: 10px;">
                                     <b>' . $user->name . '</b><br>
-                                    <small>Sent a request to approve data <b>' . strtoupper(str_replace("_", " ", $table)) . '</b></small>
+                                    <small>Sent a request to approve data <b>' . strtoupper(str_replace("_", " ", $tableName)) . '</b></small>
                                 </td>
                             </tr>
                         </table>
@@ -635,17 +697,17 @@ class Approvals extends CI_Controller
         }
     }
 
-    public function purchase_orders_2($approved_to, $approved_by){
-        if (empty($this->session->username)) {
-            redirect('error_session');
-        } else {
-            $data['approved_to'] = base64_decode($approved_to);
-            $data['approved_by'] = base64_decode($approved_by);
-            $data['table'] = "purchase_orders";
-            $this->load->view('template/header', $data);
-            $this->load->view('approval/purchase_orders');
-        }
-    }
+    // public function purchase_orders_2($approved_to, $approved_by){
+    //     if (empty($this->session->username)) {
+    //         redirect('error_session');
+    //     } else {
+    //         $data['approved_to'] = base64_decode($approved_to);
+    //         $data['approved_by'] = base64_decode($approved_by);
+    //         $data['table'] = "purchase_orders";
+    //         $this->load->view('template/header', $data);
+    //         $this->load->view('approval/purchase_orders');
+    //     }
+    // }
 
     public function delivery_notes($approved_to, $approved_by){
         if (empty($this->session->username)) {
@@ -719,6 +781,18 @@ class Approvals extends CI_Controller
         }
     }
 
+    public function po_subcont_productions($approved_to, $approved_by){
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['approved_to'] = base64_decode($approved_to);
+            $data['approved_by'] = base64_decode($approved_by);
+            $data['table'] = "po_subcont_productions";
+            $this->load->view('template/header', $data);
+            $this->load->view('approval/po_subcont_productions');
+        }
+    }
+
     public function approvalUsers($approved_to, $approved_by)
     {
         $approved_to = base64_decode($approved_to);
@@ -756,15 +830,40 @@ class Approvals extends CI_Controller
             a.discount,
             d.currency, 
             a.qty,
-            a.price,
+            a.price as new_price,
             a.total,
-            a.total_sub');
+            a.total_sub,
+            COALESCE(
+                (
+                    SELECT h.price
+                    FROM supplier_item_histories h
+                    WHERE h.supplier_id = a.supplier_id
+                    AND h.item_rm_id = a.item_rm_id
+                    AND h.deleted = 0
+                    AND h.price <> e.price
+                    AND h.valid_date >= CURDATE()
+                    ORDER BY h.created_date DESC
+                    LIMIT 1
+                ),
+                (
+                    SELECT h.price
+                    FROM supplier_item_histories h
+                    WHERE h.supplier_id = a.supplier_id
+                    AND h.item_rm_id = a.item_rm_id
+                    AND h.deleted = 0
+                    AND h.price <> e.price
+                    ORDER BY h.created_date DESC
+                    LIMIT 1
+                )
+            ) as last_price
+        ');
         $this->db->from('purchase_orders a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('item_familys c', 'b.item_family_id = c.id');
         $this->db->join('suppliers d', 'a.supplier_id = d.id');
         $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id', 'left');
                 // $this->db->join('(SELECT po_no, COUNT(status) as total_status_close FROM purchase_orders WHERE status = 1 GROUP BY po_no) g', 'a.po_no = g.po_no', 'left');
+        $this->db->where('a.deleted', 0);
         $this->db->where('a.approved_to', $approved_to);
         $this->db->where('a.approved_by', $approved_by);
         $this->db->order_by('a.created_date', 'DESC');
@@ -789,6 +888,7 @@ class Approvals extends CI_Controller
         $this->db->join('item_familys c', 'b.item_family_id = c.id');
         $this->db->where('a.approved_to', $approved_to);
         $this->db->where('a.approved_by', $approved_by);
+        $this->db->where('a.deleted', 0);
         // $this->db->group_by('request_no');
         $this->db->order_by('a.created_date', 'DESC');
         $records = $this->db->get()->result_array();
@@ -928,6 +1028,53 @@ class Approvals extends CI_Controller
         $this->db->where('a.deleted', 0);
         $this->db->group_by(['a.id', 'a.item_fg_id', 'a.workorder']);
         $this->db->order_by('a.created_date', 'DESC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalPoSubcontProductions($approved_to, $approved_by)
+    {
+        $approved_to = base64_decode($approved_to);
+        $approved_by = base64_decode($approved_by);
+
+        $this->db->select("
+            h.id,
+            h.po_no,
+            h.pr_no,
+            h.po_date,
+            h.due_date,
+            h.notes,
+            h.revision,
+            h.total_amount,
+            'IDR' as currency,
+            h.order_type,
+
+            s.id as subcont_id,
+            s.number as subcont_number,
+            s.name as subcont_name,
+
+            h.approved,
+            h.approved_to,
+            h.approved_by,
+            h.approved_date,
+            h.approved_data,
+            h.status
+        ");
+
+        $this->db->from('po_subcont_productions h');
+        $this->db->join(
+            'subconts s',
+            's.id = h.subcont_id'
+        );
+
+        $this->db->where('h.deleted', 0);
+        $this->db->where('h.approved_to', $approved_to);
+        $this->db->where('h.approved_by', $approved_by);
+
+        $this->db->order_by('h.created_date', 'DESC');
+        $this->db->group_by('h.po_no');
+
         $records = $this->db->get()->result_array();
 
         die(json_encode($records));

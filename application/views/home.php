@@ -689,6 +689,11 @@
 			toastr.error("Notification Cannot get Data", "Error");
 		} else {
 			var outputString = table.replace(/_/g, ' ');
+
+			if(table == "po_subcont_productions") {
+				outputString = "Purchase Order Supplier Product";
+			}
+
 			var header_approval = outputString.toUpperCase();
 			$("#header_approval").html("APPROVAL " + header_approval);
 
@@ -1460,6 +1465,11 @@
 			toastr.error("Notification Cannot get Data", "Error");
 		} else {
 			var outputString = table.replace(/_/g, ' ');
+
+			if(table == "po_subcont_productions") {
+				outputString = "Purchase Order Supplier Product";
+			}
+
 			var header_notification = outputString.toUpperCase();
 			
 			if(table == 'delivery_to_subconts_notif' || table == 'delivery_rework_notif') {
@@ -1498,7 +1508,7 @@
 			dataType: "html",
 			success: function(response) {
 				$('#deliveryToSubcontNotif').html(response);
-				console.log(response);
+				// console.log(response);
 				
 				checkNotificationEmpty();
 			}

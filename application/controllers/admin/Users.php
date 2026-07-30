@@ -71,22 +71,39 @@ class Users extends CI_Controller
             $filters = json_decode($this->input->post('filterRules'));
             $page   = $this->input->post('page');
             $rows   = $this->input->post('rows');
+
             //Pagination 1-10
             $page   = isset($page) ? intval($page) : 1;
             $rows   = isset($rows) ? intval($rows) : 10;
             $offset = ($page - 1) * $rows;
             $result = array();
+
+            $fieldMap = [
+                'name'       => 'a.name',
+                'department' => 'b.name',
+            ];
+
             //Select Query
-            $this->db->select('*');
-            $this->db->from('users');
-            $this->db->where('deleted', 0);
+            $this->db->select('a.*, b.id as department, b.name as department_name');
+            $this->db->from('users a');
+            $this->db->join('departments b', 'b.id = a.department_id', 'left');
+            $this->db->where('a.deleted', 0);
+
             //Filter Automatic
-            if (@count($filters) > 0) {
+            // if (@count($filters) > 0) {
+            //     foreach ($filters as $filter) {
+            //         $this->db->like("a.$filter->field", $filter->value);
+            //     }
+            // }
+
+            if (!empty($filters)) {
                 foreach ($filters as $filter) {
-                    $this->db->like($filter->field, $filter->value);
+                    $field = isset($fieldMap[$filter->field]) ? $fieldMap[$filter->field] : 'a.' . $filter->field;
+                    $this->db->like($field, $filter->value);
                 }
             }
-            $this->db->order_by('name', 'ASC');
+
+            $this->db->order_by('a.name', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -106,11 +123,17 @@ class Users extends CI_Controller
             if ($this->form_validation->run() == TRUE) {
                 $post = $this->input->post();
 
+                if (isset($post['department'])) {
+                    $post['department_id'] = $post['department'];
+                    unset($post['department']);
+                }
+
                 $dataFinal = array(
                     "number" => $post['number'],
                     "name" => $post['name'],
                     "username" => $post['username'],
                     "password" => $post['password'],
+                    "department_id" => $post['department_id'],
                     "position" => $post['position'],
                     "email" => $post['email'],
                     "phone" => $post['phone'],
@@ -170,18 +193,45 @@ class Users extends CI_Controller
         }
     }
     //UPDATE DATA
+    // public function update()
+    // {
+    //     if ($this->input->post()) {
+    //         $id = base64_decode($this->input->get('id'));
+    //         $upload = $this->crud->upload('avatar', ["jpg", "png", "jpeg"], 'assets/image/users/', ["id" => $id], "users", "avatar");
+    //         $postFinal   = array_merge($this->input->post(), ["api_key" => $this->generate_api(), "avatar" => $upload]);
+    //         $users = $this->crud->update('users', ["id" => $id], $postFinal);
+    //         echo $users;
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+
     public function update()
     {
         if ($this->input->post()) {
             $id = base64_decode($this->input->get('id'));
             $upload = $this->crud->upload('avatar', ["jpg", "png", "jpeg"], 'assets/image/users/', ["id" => $id], "users", "avatar");
-            $postFinal   = array_merge($this->input->post(), ["api_key" => $this->generate_api(), "avatar" => $upload]);
+
+            $post = $this->input->post();
+
+            if (isset($post['department'])) {
+                $post['department_id'] = $post['department'];
+                unset($post['department']);
+            }
+
+            $postFinal = array_merge($post, [
+                "api_key" => $this->generate_api(),
+                "avatar"  => $upload
+            ]);
+
             $users = $this->crud->update('users', ["id" => $id], $postFinal);
+
             echo $users;
         } else {
             show_error("Cannot Process your request");
         }
     }
+
     //DELETE DATA
     public function delete()
     {
@@ -200,10 +250,25 @@ class Users extends CI_Controller
         //Config
         $config = $this->crud->read('config');
         $post = $this->input->get();
-        $this->db->select('*');
-        $this->db->from('users');
-        $this->db->where('deleted', 0);
-        $this->db->like($post);
+
+        $this->db->select('a.*, b.name as department');
+        $this->db->from('users a');
+        $this->db->join('departments b', 'b.id = a.department_id', 'left');
+        $this->db->where('a.deleted', 0);
+
+        $fieldMap = [
+            'department' => 'b.name',
+        ];
+
+        foreach ($post as $field => $value) {
+            if ($value === '' || $value === null) {
+                continue;
+            }
+
+            $this->db->like($fieldMap[$field] ?? 'a.' . $field, $value);
+        }
+
+        $this->db->order_by('a.name', 'ASC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
@@ -230,15 +295,13 @@ class Users extends CI_Controller
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
+                <th>Department</th>
                 <th>Number ID</th>
                 <th>Fullname</th>
                 <th>Username</th>
                 <th>Email</th>
                 <th>Phone</th>
                 <th>Position</th>
-                <th>Division</th>
-                <th>Department</th>
-                <th>Sub Department</th>
                 <th>Status</th>
             </tr>';
         $no = 1;
@@ -250,15 +313,13 @@ class Users extends CI_Controller
             }
             $html .= '  <tr>
                             <td>' . $no . '</td>
+                            <td>' . $data['department'] . '</td>
                             <td>' . $data['number'] . '</td>
                             <td>' . $data['name'] . '</td>
                             <td>' . $data['username'] . '</td>
                             <td>' . $data['email'] . '</td>
                             <td>' . $data['phone'] . '</td>
                             <td>' . $data['position'] . '</td>
-                            <td>' . $data['division'] . '</td>
-                            <td>' . $data['department'] . '</td>
-                            <td>' . $data['sub_department'] . '</td>
                             <td>' . $status . '</td>
                         </tr>';
             $no++;

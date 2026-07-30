@@ -128,7 +128,7 @@ class Supplier_items extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.id, a.supplier_id, a.item_rm_id, a.maker, a.item_supplier, a.mpq, a.moq, a.share_order, a.leadtime, a.currency, a.price, a.valid_date, a.safety_stock, a.calculate, a.created_date, a.created_by, a.updated_date, a.updated_by, a.approved_date, a.approved_by, b.number as supplier_number, b.name as supplier_name, b.type, b.status, b.currency as supplier_currency, c.number as item_rm_number, c.number_internal as item_rm_number_internal, c.name as item_rm_name, c.item_family_id as item_rm_family, d.name as item_family_name, (CASE WHEN a.approved_to = "" THEN a.approved_to ELSE "Checking" END) as approved_to');
+            $this->db->select('a.id, a.supplier_id, a.item_rm_id, a.maker, a.item_supplier, a.mpq, a.moq, a.share_order, a.leadtime, a.currency, a.price, a.valid_date, a.safety_stock, a.calculate, a.created_date, a.created_by, a.updated_date, a.updated_by, a.approved_date, a.approved_by, b.number as supplier_number, b.name as supplier_name, b.type, b.status, b.currency as supplier_currency, c.number as item_rm_number, c.number_internal as item_rm_number_internal, c.name as item_rm_name, c.item_family_id as item_rm_family, d.name as item_family_name, (CASE WHEN a.approved_to = "" THEN a.approved_to ELSE "Checking" END) as approved_to, a.deleted');
             // $this->db->select('a.*, b.number as supplier_number, b.name as supplier_name, b.type, b.status,b.currency as supplier_currency, c.number as item_rm_number, c.name as item_rm_name, c.item_family_id as item_rm_family, d.name as item_family_name');
             $this->db->from('supplier_items a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id', 'left');
@@ -222,6 +222,34 @@ class Supplier_items extends CI_Controller
     }
 
     //CREATE DATA
+    // public function create()
+    // {
+    //     if ($this->input->post()) {
+    //         $post = $this->input->post();
+
+    //         $supplier_items = $this->crud->read("supplier_items", [], ["supplier_id" => $post['supplier_id'], "item_rm_id" => $post['item_rm_id']]);
+    //         $supplier_item_histories = $this->crud->read("supplier_item_histories", [], ["supplier_id" => $post['supplier_id'], "item_rm_id" => $post['item_rm_id'], "price" => $post['price']]);
+    //         $user = $this->crud->read("users", [], ["username" => $this->session->username]);
+
+    //         $table_approval = (preg_match('/\bExtruder\b/i', $user->position))?'supplier_items_2':'supplier_items';
+              
+    //         if (@$supplier_items->supplier_id != "") {
+    //             $send = $this->crud->update('supplier_items', ["supplier_id" => $post['supplier_id'], "item_rm_id" => $post['item_rm_id']], $post);
+    //             if (@$supplier_item_histories->supplier_id == "") {
+    //                 $send2 = $this->crud->create('supplier_item_histories', $post);
+    //             }
+    //         } else {
+    //             //$send = $this->crud->create('supplier_items', $post);
+    //             $send = $this->crud->createPO('supplier_items',$table_approval, $post);
+    //             $send2 = $this->crud->create('supplier_item_histories', $post);
+    //         }
+    //         echo $send;
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+
+    //CREATE DATA
     public function create()
     {
         if ($this->input->post()) {
@@ -229,21 +257,27 @@ class Supplier_items extends CI_Controller
 
             $supplier_items = $this->crud->read("supplier_items", [], ["supplier_id" => $post['supplier_id'], "item_rm_id" => $post['item_rm_id']]);
             $supplier_item_histories = $this->crud->read("supplier_item_histories", [], ["supplier_id" => $post['supplier_id'], "item_rm_id" => $post['item_rm_id'], "price" => $post['price']]);
-            $user = $this->crud->read("users", [], ["username" => $this->session->username]);
-
-            $table_approval = (preg_match('/\bExtruder\b/i', $user->position))?'supplier_items_2':'supplier_items';
+            
+            // $user = $this->crud->read("users", [], ["username" => $this->session->username]);
+            // $table_approval = (preg_match('/\bExtruder\b/i', $user->position))?'supplier_items_2':'supplier_items';
+            
+            $table_approval = 'supplier_items';
               
             if (@$supplier_items->supplier_id != "") {
-                $send = $this->crud->update('supplier_items', ["supplier_id" => $post['supplier_id'], "item_rm_id" => $post['item_rm_id']], $post);
+                $send = $this->crud->updateV2('supplier_items', $table_approval, [
+                    "supplier_id" => $post['supplier_id'], 
+                    "item_rm_id" => $post['item_rm_id']
+                ], $post);
+
                 if (@$supplier_item_histories->supplier_id == "") {
                     $send2 = $this->crud->create('supplier_item_histories', $post);
                 }
             } else {
                 //$send = $this->crud->create('supplier_items', $post);
-                $send = $this->crud->createPO('supplier_items',$table_approval, $post);
+                $send = $this->crud->createV2('supplier_items',$table_approval, $post);
                 $send2 = $this->crud->create('supplier_item_histories', $post);
             }
-            echo $send;
+            echo json_encode($send);
         } else {
             show_error("Cannot Process your request");
         }

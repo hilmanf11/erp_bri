@@ -3,14 +3,17 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'request_no',width:200,halign:'center',sortable:true">Request No</th>
-            <th rowspan="2" data-options="field:'status',width:120,align:'center',formatter:statusformat,styler:statusStyle">Status</th>
-            <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', align:'center', styler:styleApproved, formatter:formatApproved">Approval</th>
+            <th rowspan="2" data-options="field:'status',width:120,align:'center',formatter:statusformat,styler:statusStyle">Status PR</th>
+            <th rowspan="2" data-options="field:'approved_to',width:120,halign:'center', align:'center', styler:styleApprovedStatus, formatter:formatApprovedStatus">Status </br>Approve</th>
+            <th rowspan="2" data-options="field:'approved_by',width:100,halign:'center'">Approve By</th>
+            <th rowspan="2" data-options="field:'approved_date',width:130,halign:'center'">Approve Date</th>
             <th rowspan="2" data-options="field:'request_date',width:150,halign:'center',sortable:true">Request Date</th>
             <th rowspan="2" data-options="field:'expected_date',width:100,halign:'center'">Expected Date</th>
             <th rowspan="2" data-options="field:'request_name',width:150,halign:'center'">Request Name</th>
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Part No External</th>
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Part Name</th>
-            <th rowspan="2" data-options="field:'category_name',width:150,halign:'center'">Product Family</th>
+            <th rowspan="2" data-options="field:'category_name',width:150,halign:'center'">Category</th>
+            <th rowspan="2" data-options="field:'product_family_name',width:150,halign:'center'">Product Family</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right'">Total Qty</th>
             <th rowspan="2" data-options="field:'plant',width:120,align:'center'">Plant</th>
@@ -18,15 +21,12 @@
             <th rowspan="2" data-options="field:'po_no',width:120,align:'center'">Po No</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
-            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Approved</th>
         </tr>
         <tr>
             <th data-options="field:'created_by',width:100,align:'center'"> By</th>
             <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
             <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
             <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
-            <th data-options="field:'approved_by',width:100,align:'center'"> By</th>
-            <th data-options="field:'approved_date',width:150,align:'center'"> Date</th>
         </tr>
     </thead>
 </table>
@@ -95,7 +95,7 @@
             <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Category</span>
-                    <input style="width:60%;" name="item_category_id" id="item_category_id" class="easyui-combobox" required>
+                    <input style="width:60%;" name="item_category_id" id="item_category_id" class="easyui-combobox" data-options="editable: false" required>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Family</span>
@@ -138,7 +138,12 @@
     function add() {
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
+        
+        editIndex = undefined;
+
         $("#item_category_id").combobox('enable');
+        $("#request_date").datebox('enable');
+        $("#expected_date").datebox('enable');
         $("#item_family_id").combobox('enable');
         $('#request_no').textbox('clear');
         $('#item_category_id').combobox('clear');
@@ -153,7 +158,12 @@
     function add_additional() {
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
+
+        editIndex = undefined;
+
         $("#item_category_id").combobox('enable');
+        $("#request_date").datebox('enable');
+        $("#expected_date").datebox('enable');
         $("#item_family_id").combobox('enable');
         $('#request_no').textbox('clear');
         $('#item_category_id').combobox('clear');
@@ -201,8 +211,10 @@
         });
     }
 
+    editIndex = undefined;
+
     function addTable(item_family_id, link = "") {
-        var lastIndex;
+        // var lastIndex;
         var dg = $('#dg2').datagrid({
             url: link,
             singleSelect: true,
@@ -246,8 +258,14 @@
                             ],
                             onSelect: function(value, rows) {
                                 var dg = $('#dg2');
-                                var row = dg.datagrid('getSelected');
-                                var rowIndex = dg.datagrid('getRowIndex', row);
+                                // var row = dg.datagrid('getSelected');
+                                // var rowIndex = dg.datagrid('getRowIndex', row);
+
+                                var rowIndex = editIndex;
+                                if (rowIndex == undefined) {
+                                    return;
+                                }
+
                                 var ed = dg.datagrid('getEditor', {
                                     index: rowIndex,
                                     field: 'item_rm_id'
@@ -365,13 +383,29 @@
                     }
                 }]
             ],
-            onClickRow: function(rowIndex) {
-                if (lastIndex != rowIndex) {
-                    $(this).datagrid('endEdit', lastIndex);
-                    $(this).datagrid('beginEdit', rowIndex);
+            // onClickRow: function(rowIndex) {
+            //     if (lastIndex != rowIndex) {
+            //         $(this).datagrid('endEdit', lastIndex);
+            //         $(this).datagrid('beginEdit', rowIndex);
+            //     }
+            //     lastIndex = rowIndex;
+            // },
+            onClickRow: function(index) {
+
+                if (editIndex !== index) {
+
+                    if (!endEditing()) {
+                        $(this).datagrid('selectRow', editIndex);
+                        return;
+                    }
+
+                    $(this).datagrid('selectRow', index)
+                        .datagrid('beginEdit', index);
+
+                    editIndex = index;
                 }
-                lastIndex = rowIndex;
             },
+
             onBeginEdit: function(rowIndex, row) {
                 var editors = $('#dg2').datagrid('getEditors', rowIndex);
             }
@@ -379,7 +413,7 @@
     }
 
     function addTableAdditional(item_family_id, link = "") {
-        var lastIndex;
+        // var lastIndex;
         var dg = $('#dg2').datagrid({
             url: link,
             singleSelect: true,
@@ -423,8 +457,14 @@
                             ],
                             onSelect: function(value, rows) {
                                 var dg = $('#dg2');
-                                var row = dg.datagrid('getSelected');
-                                var rowIndex = dg.datagrid('getRowIndex', row);
+                                // var row = dg.datagrid('getSelected');
+                                // var rowIndex = dg.datagrid('getRowIndex', row);
+
+                                var rowIndex = editIndex;
+                                if (rowIndex == undefined) {
+                                    return;
+                                }
+
                                 var ed = dg.datagrid('getEditor', {
                                     index: rowIndex,
                                     field: 'item_rm_id'
@@ -534,13 +574,30 @@
                     }
                 }]
             ],
-            onClickRow: function(rowIndex) {
-                if (lastIndex != rowIndex) {
-                    $(this).datagrid('endEdit', lastIndex);
-                    $(this).datagrid('beginEdit', rowIndex);
+            // onClickRow: function(rowIndex) {
+            //     if (lastIndex != rowIndex) {
+            //         $(this).datagrid('endEdit', lastIndex);
+            //         $(this).datagrid('beginEdit', rowIndex);
+            //     }
+            //     lastIndex = rowIndex;
+            // },
+
+            onClickRow: function(index) {
+
+                if (editIndex !== index) {
+
+                    if (!endEditing()) {
+                        $(this).datagrid('selectRow', editIndex);
+                        return;
+                    }
+
+                    $(this).datagrid('selectRow', index)
+                        .datagrid('beginEdit', index);
+
+                    editIndex = index;
                 }
-                lastIndex = rowIndex;
             },
+
             // onBeginEdit: function(rowIndex, row) {
             //     var editors = $('#dg2').datagrid('getEditors', rowIndex);
             // },
@@ -585,27 +642,180 @@
         }
     }
 
+    // function append() {
+    //     var item_family_id = $("#item_family_id").combobox('getValue');
+    //     if (item_family_id != "") {
+    //         if (endEditing()) {
+    //             $('#dg2').datagrid('appendRow', {
+    //                 qty: ''
+    //             });
+    //             editIndex = $('#dg2').datagrid('getRows').length - 1;
+    //             $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
+    //         }
+    //     } else {
+    //         toastr.error("Please Choose Product Family first");
+    //     }
+    // }
+
     function append() {
+
         var item_family_id = $("#item_family_id").combobox('getValue');
-        if (item_family_id != "") {
-            if (endEditing()) {
-                $('#dg2').datagrid('appendRow', {
-                    qty: ''
-                });
-                editIndex = $('#dg2').datagrid('getRows').length - 1;
-                $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
-            }
-        } else {
+        if (!item_family_id) {
             toastr.error("Please Choose Product Family first");
+            return;
         }
+
+        if (!endEditing()) {
+            return;
+        }
+
+        $('#dg2').datagrid('appendRow', {
+            qty: ''
+        });
+
+        editIndex = $('#dg2').datagrid('getRows').length - 1;
+        $('#dg2')
+            .datagrid('selectRow', editIndex)
+            .datagrid('beginEdit', editIndex);
     }
 
+    // function removeit() {
+    //     var dg = $('#dg2');
+    //     var row = dg.datagrid('getSelected');
+    //     var rowIndex = row ? dg.datagrid('getRowIndex', row) : editIndex;
+
+    //     if (rowIndex == undefined || rowIndex < 0) {
+    //         toastr.warning("Please select one of the data in the table first!", "Information");
+    //         return false;
+    //     }
+
+    //     row = dg.datagrid('getRows')[rowIndex];
+
+    //     function deleteGridRow() {
+    //         if (editIndex != undefined) {
+    //             dg.datagrid('cancelEdit', editIndex);
+    //         }
+
+    //         dg.datagrid('cancelEdit', rowIndex);
+    //         dg.datagrid('deleteRow', rowIndex);
+    //         dg.datagrid('clearSelections');
+    //         editIndex = undefined;
+    //     }
+
+    //     if (!row.id || $('#frm_insert').data('mode') !== 'update') {
+    //         deleteGridRow();
+    //         return true;
+    //     }
+
+    //     $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
+    //         if (!r) {
+    //             return;
+    //         }
+
+    //         $.ajax({
+    //             method: 'post',
+    //             url: '<?= base_url('purchase/purchase_requests/delete') ?>',
+    //             data: {
+    //                 id: row.id
+    //             },
+    //             dataType: 'json',
+    //             success: function(result) {
+    //                 deleteGridRow();
+    //                 readRequestno();
+    //                 $('#dg').treegrid('reload');
+    //                 toastr.success(result.message);
+    //             },
+    //             error: function(jqXHR) {
+    //                 toastr.error(jqXHR.statusText);
+    //                 $.messager.alert("Error", jqXHR.statusText, 'error');
+    //             }
+    //         });
+    //     });
+    // }
+
     function removeit() {
+
+        var dg = $('#dg2');
+
         if (editIndex == undefined) {
-            return true;
+
+            var row = dg.datagrid('getSelected');
+
+            if (!row) {
+                toastr.warning("Please select one of the data in the table first!");
+                return;
+            }
+
+            editIndex = dg.datagrid('getRowIndex', row);
         }
-        $('#dg2').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
-        editIndex = undefined;
+
+        var row = dg.datagrid('getRows')[editIndex];
+
+        function finishDelete() {
+
+            dg.datagrid('cancelEdit', editIndex);
+            dg.datagrid('deleteRow', editIndex);
+
+            var rows = dg.datagrid('getRows');
+
+            if (rows.length > 0) {
+
+                var nextIndex = editIndex;
+
+                if (nextIndex >= rows.length) {
+                    nextIndex = rows.length - 1;
+                }
+
+                dg.datagrid('selectRow', nextIndex);
+                dg.datagrid('beginEdit', nextIndex);
+
+                editIndex = nextIndex;
+
+            } else {
+
+                editIndex = undefined;
+            }
+        }
+
+        if (!row.id || $('#frm_insert').data('mode') !== 'update') {
+            finishDelete();
+            return;
+        }
+
+        // $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r){
+
+        //     if (!r) return;
+
+            $.ajax({
+
+                method:'post',
+                url:'<?= base_url('purchase/purchase_requests/delete') ?>',
+                data:{
+                    id:row.id
+                },
+                dataType:'json',
+
+                success:function(result){
+
+                    finishDelete();
+
+                    readRequestno();
+                    $('#dg').treegrid('reload');
+
+                    toastr.success(result.message);
+
+                },
+
+                error:function(jqXHR){
+
+                    toastr.error(jqXHR.statusText);
+
+                }
+
+            });
+
+        // });
+
     }
 
     //EDIT DATA
@@ -616,10 +826,11 @@
                 if (row.status == "0") {
                     $('#dlg_insert').dialog('open');
                     $('#frm_insert').form('load', row);
+                    $('#frm_insert').data('mode', 'update');
                     // $("#item_family_id").combobox('disable');
                     $("#item_category_id").combobox('disable');
-                    $("#request_date").combobox('disable');
-                    $("#expected_date").combobox('disable');
+                    $("#request_date").datebox('disable');
+                    $("#expected_date").datebox('disable');
                     $('.f-expected-date').show();
 
 
@@ -629,8 +840,9 @@
                         $('#request_no').textbox('setValue', row.request_no);
                         $("#item_category_id").combobox('setValue', row.category_id);
                         $("#item_family_id").combobox('setValue', row.item_family_id);
-                        $("#plant").combobox('setValue', row.plant);
-                    }, 1500);
+                        $("#plant").combobox('setValue', row.plant_id);
+                        // $("#plant").combobox('setText', row.plant);
+                    }, 500);
 
                     addTable(row.item_family_number, '<?= base_url('purchase/purchase_requests/datatable_updates?request_no=') ?>' + window.btoa(row.request_no));
                 } else {
@@ -652,27 +864,34 @@
                 if (r) {
                     for (var i = 0; i < rows.length; i++) {
                         var row = rows[i];
-                        if (row.state == "closed") {
+                        if (row.datatable == "1") {
                             toastr.error("Please Select Detail of PR <br>" + row.id);
                         } else {
-                            $.ajax({
-                                method: 'post',
-                                url: '<?= base_url('purchase/purchase_requests/delete') ?>',
-                                data: {
-                                    id: row.id
-                                },
-                                success: function(result) {
-                                    readRequestno();
-                                    var result = eval('(' + result + ')');
-                                },
-                                error: function(jqXHR, textStatus, errorThrown) {
-                                    toastr.error(jqXHR.statusText);
-                                    $.messager.alert("Error", jqXHR.statusText, 'error');
-                                },
-                                complete: function(data) {
-                                    $('#dg').treegrid('reload');
-                                }
-                            });
+
+                            if (row.status == "0") {
+
+                                $.ajax({
+                                    method: 'post',
+                                    url: '<?= base_url('purchase/purchase_requests/delete') ?>',
+                                    data: {
+                                        id: row.id
+                                    },
+                                    success: function(result) {
+                                        readRequestno();
+                                        var result = eval('(' + result + ')');
+                                        toastr.success(result.message);
+                                    },
+                                    error: function(jqXHR, textStatus, errorThrown) {
+                                        toastr.error(jqXHR.statusText);
+                                        $.messager.alert("Error", jqXHR.statusText, 'error');
+                                    },
+                                    complete: function(data) {
+                                        $('#dg').treegrid('reload');
+                                    }
+                                });
+                            } else {
+                                toastr.error("You cannot delete this data, because status Purchase Request is CONVERTED");
+                            }
                         }
                     }
                 }
@@ -742,6 +961,9 @@
                     $(e.data.target).combobox('clear').combobox('textbox').focus();
                 }
             }],
+            onLoadSuccess: (res) => {
+                // console.log('RES : ', res);
+            }
         });
     }
 
@@ -822,7 +1044,7 @@
                     var request_date = $("#request_date").datebox('getValue');
                     var request_name = $("#request_name").textbox('getValue');
                     var expected_date = $("#expected_date").datebox('getValue');
-                    var plant = $("#plant").datebox('getValue');
+                    var plant = $("#plant").combobox('getValue');
 
                     let mode = $('#frm_insert').data('mode') || 'normal';
 
@@ -1093,4 +1315,41 @@
             return 'Checking';
         }
     };
+
+
+    function styleApprovedStatus(value, row) {
+
+        value = formatApprovedStatus(value, row);
+        switch (value) {
+            case 'Approved':
+                return 'background:#53D636;color:#fff;';
+
+            case 'Partially Approved':
+                return 'background:#FFB22C;color:#fff;';
+
+            case 'Disapprove':
+                return 'background:#FF0000;color:#fff;';
+
+            case 'Checking':
+                return 'background:#FF5F5F;color:#fff;';
+        }
+
+        return '';
+    }
+
+    function formatApprovedStatus(value, row) {
+        if (value == 'Approved' || value == 'Partially Approved' || value == 'Disapprove' || value == 'Checking') {
+            return value;
+        }
+
+        if (row.deleted == 2) {
+            return 'Disapprove';
+        }
+
+        if (value == "" || value == null) {
+            return 'Approved';
+        }
+
+        return 'Checking';
+    }
 </script>

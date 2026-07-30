@@ -4,11 +4,13 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'table_name',width:150,halign:'center'">Module</th>
-            <th rowspan="2" data-options="field:'user_approval_name_1',width:100,align:'center'">Approval 1</th>
-            <th rowspan="2" data-options="field:'user_approval_name_2',width:100,align:'center'">Approval 2</th>
-            <th rowspan="2" data-options="field:'user_approval_name_3',width:100,align:'center'">Approval 3</th>
-            <th rowspan="2" data-options="field:'user_approval_name_4',width:100,align:'center'">Approval 4</th>
-            <th rowspan="2" data-options="field:'user_approval_name_5',width:100,align:'center'">Approval 5</th>
+            <th rowspan="2" data-options="field:'plant_name',width:150,halign:'center'">Plant</th>
+            <th rowspan="2" data-options="field:'department_name',width:150,halign:'center'">Department</th>
+            <th rowspan="2" data-options="field:'user_approval_name_1',width:150,align:'left'">Approval 1</th>
+            <th rowspan="2" data-options="field:'user_approval_name_2',width:150,align:'left'">Approval 2</th>
+            <th rowspan="2" data-options="field:'user_approval_name_3',width:150,align:'left'">Approval 3</th>
+            <th rowspan="2" data-options="field:'user_approval_name_4',width:150,align:'left'">Approval 4</th>
+            <th rowspan="2" data-options="field:'user_approval_name_5',width:150,align:'left'">Approval 5</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -30,6 +32,14 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Plant</span>
+                <input style="width:60%;" name="plant" id="plant" class="easyui-combogrid">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Department</span>
+                <input style="width:60%;" name="department" id="department" class="easyui-combogrid">
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Module</span>
                 <select style="width:60%;" name="table_name" id="table_name" required="true" data-options="prompt:'Select Module'" class="easyui-combobox">
                     <option value="users">Users</option>
@@ -44,6 +54,7 @@
                     <option value="delivery_notes">Delivery Notes</option>
                     <option value="delivery_to_subconts">Delivery To Subconts</option>
                     <option value="delivery_rework">Delivery Rework</option>
+                    <option value="po_subcont_productions">PO To Sub Prod</option>
                 </select>
             </div>
             <div class="fitem">
@@ -84,6 +95,14 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
+
+            reloadDepartment(row.plant_id);
+            $('#department').combogrid('grid').datagrid({
+                onLoadSuccess: function () {
+                    $('#department').combogrid('setValue', row.department_id);
+                }
+            });
+
             url_save = '<?= base_url('admin/approvals/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.info("Please select one of the data in the table first");
@@ -298,4 +317,67 @@
             ]
         });
     });
+
+    $('#plant').combogrid({
+        url: '<?= base_url('master/divisions/reads'); ?>',
+        panelWidth: 500,
+        idField: 'id',
+        textField: 'name',
+        mode: 'remote',
+        fitColumns: true,
+        // required: true,
+        prompt: "Choose Plant",
+        columns: [
+            [{
+                field: 'id',
+                title: 'Plant ID',
+                width: 150
+            }, {
+                field: 'number',
+                title: 'Plant Number',
+                width: 150
+            }, {
+                field: 'name',
+                title: 'Plant Name',
+                width: 200
+            }]
+        ],
+        onSelect: function(index, row) {
+            $('#department').combogrid('clear');
+            reloadDepartment(row.id);
+        }
+    });
+
+    $('#department').combogrid({
+        url: '<?= base_url('master/departments/reads'); ?>',
+        panelWidth: 320,
+        idField: 'id',
+        textField: 'name',
+        mode: 'remote',
+        fitColumns: true,
+        // required: true,
+        prompt: "Choose Department",
+        columns: [
+            [{
+                field: 'id',
+                title: 'Dept ID',
+                width: 120
+            }, {
+                field: 'name',
+                title: 'Dept Name',
+                width: 200
+            }]
+        ]
+    });
+
+    function reloadDepartment(plant_id = '') {
+        $('#department').combogrid({
+            queryParams: {
+                plant_id: plant_id
+            }
+        });
+
+        $('#department').combogrid('grid').datagrid('reload');
+    }
+
 </script>

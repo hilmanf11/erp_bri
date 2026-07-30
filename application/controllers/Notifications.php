@@ -546,20 +546,19 @@ class Notifications extends CI_Controller
             $this->load->view('notifications/purchase_orders');
         }
     }
-    
 
-    public function purchase_orders_2($user, $name){
-        if (empty($this->session->username)) {
-            redirect('error_session');
-        } else {
-            $data['user'] = base64_decode($user);
-            $data['name'] = base64_decode($name);
-            $data['table'] = "purchase_orders_2";
+    // public function purchase_orders_2($user, $name){
+    //     if (empty($this->session->username)) {
+    //         redirect('error_session');
+    //     } else {
+    //         $data['user'] = base64_decode($user);
+    //         $data['name'] = base64_decode($name);
+    //         $data['table'] = "purchase_orders_2";
             
-            $this->load->view('template/header', $data);
-            $this->load->view('notifications/purchase_orders_2');
-        }
-    }
+    //         $this->load->view('template/header', $data);
+    //         $this->load->view('notifications/purchase_orders_2');
+    //     }
+    // }
 
     public function purchase_requests($user, $name){
         if (empty($this->session->username)) {
@@ -704,18 +703,18 @@ class Notifications extends CI_Controller
         }
     }
 
-    public function supplier_items_2($user, $name){
-        if (empty($this->session->username)) {
-            redirect('error_session');
-        } else {
-            $data['user'] = base64_decode($user);
-            $data['name'] = base64_decode($name);
-            $data['table'] = "supplier_items_2";
+    // public function supplier_items_2($user, $name){
+    //     if (empty($this->session->username)) {
+    //         redirect('error_session');
+    //     } else {
+    //         $data['user'] = base64_decode($user);
+    //         $data['name'] = base64_decode($name);
+    //         $data['table'] = "supplier_items_2";
             
-            $this->load->view('template/header', $data);
-            $this->load->view('notifications/supplier_items_2');
-        }
-    }
+    //         $this->load->view('template/header', $data);
+    //         $this->load->view('notifications/supplier_items_2');
+    //     }
+    // }
 
     public function delivery_notes($user, $name){
         if (empty($this->session->username)) {
@@ -802,6 +801,18 @@ class Notifications extends CI_Controller
             $this->load->view('notifications/delivery_rework_notif');
         }
     }
+    public function po_subcont_productions($user, $name){
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['user'] = base64_decode($user);
+            $data['name'] = base64_decode($name);
+            $data['table'] = "po_subcont_productions";
+            
+            $this->load->view('template/header', $data);
+            $this->load->view('notifications/po_subcont_productions');
+        }
+    }
     public function notification_data($table = "", $user = "", $name = "")
     {
         $user = base64_decode($user);
@@ -823,27 +834,29 @@ class Notifications extends CI_Controller
             $this->db->where('h.users_id_from', $user);
             $this->db->where('h.name', $name);
             $this->db->where('h.deleted', 0);
+            $this->db->where('h.status', 0);
             $this->db->order_by('h.created_date', 'DESC');
         }
-        if($table=='purchase_orders_2'){
-            $this->db->select('a.id,a.po_no, a.request_no, a.total_dp, a.delivery_date as eta,
-                    a.po_date, a.remarks, b.number as item_number, b.name as item_name,
-                    c.name as item_family_name, d.name as supplier_name, d.currency, e.mpq, e.moq, b.uom, a.month_1, a.month_2,
-                    a.month_3,a.discount, a.qty, a.price, a.total, a.total_sub, h.id as id_notification');
-            $this->db->from('purchase_orders a');
-            $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-            $this->db->join('item_familys c', 'b.item_family_id = c.id');
-            $this->db->join('suppliers d', 'a.supplier_id = d.id');
-            $this->db->join('notifications h', 'a.id = h.table_id');
-            $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
-            $this->db->join('(SELECT po_no, COUNT(status) as total_status_close FROM purchase_orders WHERE status = 1 GROUP BY po_no) g', 'a.po_no = g.po_no', 'left');
-            $this->db->where('h.users_id_to', $this->session->username);
-            $this->db->where('h.table_name', $table);
-            $this->db->where('h.users_id_from', $user);
-            $this->db->where('h.name', $name);
-            $this->db->where('h.deleted', 0);
-            $this->db->order_by('h.created_date', 'DESC');
-        }
+
+        // if($table=='purchase_orders_2'){
+        //     $this->db->select('a.id,a.po_no, a.request_no, a.total_dp, a.delivery_date as eta,
+        //             a.po_date, a.remarks, b.number as item_number, b.name as item_name,
+        //             c.name as item_family_name, d.name as supplier_name, d.currency, e.mpq, e.moq, b.uom, a.month_1, a.month_2,
+        //             a.month_3,a.discount, a.qty, a.price, a.total, a.total_sub, h.id as id_notification');
+        //     $this->db->from('purchase_orders a');
+        //     $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+        //     $this->db->join('item_familys c', 'b.item_family_id = c.id');
+        //     $this->db->join('suppliers d', 'a.supplier_id = d.id');
+        //     $this->db->join('notifications h', 'a.id = h.table_id');
+        //     $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
+        //     $this->db->join('(SELECT po_no, COUNT(status) as total_status_close FROM purchase_orders WHERE status = 1 GROUP BY po_no) g', 'a.po_no = g.po_no', 'left');
+        //     $this->db->where('h.users_id_to', $this->session->username);
+        //     $this->db->where('h.table_name', $table);
+        //     $this->db->where('h.users_id_from', $user);
+        //     $this->db->where('h.name', $name);
+        //     $this->db->where('h.deleted', 0);
+        //     $this->db->order_by('h.created_date', 'DESC');
+        // }
         
         if($table=='purchase_requests'){
             $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom, d.po_no, c.name as category_name, h.id as id_notification');
@@ -857,6 +870,7 @@ class Notifications extends CI_Controller
             $this->db->where('h.users_id_from', $user);
             $this->db->where('h.name', $name);
             $this->db->where('h.deleted', 0);
+            $this->db->where('h.status', 0);
             $this->db->order_by('h.created_date', 'DESC');
         }
 
@@ -1276,6 +1290,54 @@ class Notifications extends CI_Controller
 
             $this->db->order_by('a.target_date', 'ASC');
             $this->db->order_by('a.dnr_no', 'ASC');
+        }
+
+        if ($table == 'po_subcont_productions') {
+
+            $this->db->select("
+                h.id,
+                h.po_no,
+                h.pr_no,
+                h.po_date,
+                h.due_date,
+                h.notes,
+                h.revision,
+                h.total_amount,
+                'IDR' as currency,
+                h.order_type,
+
+                s.id AS subcont_id,
+                s.number AS subcont_number,
+                s.name AS subcont_name,
+
+                h.approved,
+                h.approved_to,
+                h.approved_by,
+                h.approved_date,
+                h.approved_data,
+                h.status,
+
+                n.id AS id_notification
+            ");
+
+            $this->db->from('po_subcont_productions h');
+            $this->db->join(
+                'subconts s',
+                's.id = h.subcont_id'
+            );
+            $this->db->join(
+                'notifications n',
+                'n.table_id = h.id'
+            );
+
+            $this->db->where('n.users_id_to', $this->session->username);
+            $this->db->where('n.users_id_from', $user);
+            $this->db->where('n.table_name', $table);
+            $this->db->where('n.name', $name);
+            $this->db->where('n.deleted', 0);
+            $this->db->where('n.status', 0);
+
+            $this->db->order_by('n.created_date', 'DESC');
         }
 
             $records = $this->db->get()->result_array();

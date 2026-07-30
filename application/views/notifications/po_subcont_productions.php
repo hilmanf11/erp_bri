@@ -66,25 +66,14 @@
 
     function printPo(po_no) {
 
-		var printUrl = "";
-
-		// if (po_no.includes("-A")) {
-
-		if(/-A\d{2}$/.test(po_no)) {
-			printUrl = "<?= base_url('purchase/Purchase_orders/print_po_additional/') ?>" + window.btoa(po_no);
-		} else {
-			printUrl = "<?= base_url('purchase/Purchase_orders/print_po/') ?>" + window.btoa(po_no);
-		}
-
+		var printUrl = "<?= base_url('purchase/Po_subcont_productions/print_po/') ?>" + window.btoa(po_no);
 		window.open(printUrl, "_blank");
-
-        // window.open('<?= base_url('purchase/Purchase_orders/print_po/') ?>' + btoa(poNo), '_blank');
     }
 
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('notifications/notification_data/purchase_orders/') ?>' + "<?= base64_encode($user) ?>" + "/" + "<?= base64_encode($name) ?>",
+            url: '<?= base_url('notifications/notification_data/po_subcont_productions/') ?>' + "<?= base64_encode($user) ?>" + "/" + "<?= base64_encode($name) ?>",
             pagination: false,
             singleSelect: false,
             clientPaging: false,
@@ -104,11 +93,6 @@
                         return '<a class="btn btn-primary w-100" onClick="' + print + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-print"></i></a>';
                     }
                 },{
-					field: 'request_no',
-					width: 180,
-					halign: 'center',
-					title: "PR NO",
-				},{
 					field: 'po_no',
 					width: 180,
 					halign: 'center',
@@ -118,77 +102,43 @@
 					width: 100,
 					align: 'center',
 					title: "PO Date",
-				}, {
-					field: 'item_number',
-					width: 200,
-					halign: 'center',
-					title: "Product No",
-				}, {
-					field: 'item_name',
+				},{
+					field: 'due_date',
 					width: 100,
-					halign: 'center',
-					title: "Product Name",
-				}, {
-					field: 'item_family_name',
-					width: 150,
-					halign: 'center',
-					title: "Product Family",
-				}, {
-					field: 'uom',
-					width: 80,
 					align: 'center',
-					title: "UoM",
-				}, {
-					field: 'supplier_name',
+					title: "Due Date",
+				},{
+					field: 'subcont_name',
 					width: 250,
 					halign: 'center',
-					title: "Supplier"
-				}, {
-					field: 'qty',
-					width: 80,
-					halign: 'center',
-					align: 'right',
-					title: "Qty",
-					formatter: numberformat,
+					title: "Supplier Name"
 				}, {
 					field: 'currency',
 					width: 80,
 					align: 'center',
 					title: "Currency",
 				}, {
-					field: 'price',
+					field: 'total_amount',
 					width: 100,
 					halign: 'center',
 					align: 'right',
-					title: "Price",
-					formatter: numberformat,
+					title: "Total Amount",
+					formatter: numberformatPrice,
 				}, {
-					field: 'total',
-					width: 100,
-					halign: 'center',
-					align: 'right',
-					title: "Total",
-					formatter: numberformat,
-				}, {
-					field: 'eta',
-					width: 100,
-					align: 'center',
-					title: "ETA",
-				}, {
-                    field: 'month_1',
-                    width: 80,
+                    field: 'notes',
+                    width: 200,
                     halign: 'center',
-                    title: "Month 1",
+                    title: "Notes",
 				}, {
-                    field: 'month_2',
-                    width: 80,
+                    field: 'revision',
+                    width: 150,
                     halign: 'center',
-                    title: "Month 2",
+                    title: "Revision",
 				}, {
-                    field: 'month_3',
-                    width: 80,
+                    field: 'order_type',
+                    width: 120,
                     halign: 'center',
-                    title: "Month 3",
+                    title: "Order Type",
 				}]
 			],
         }).datagrid('enableFilter');

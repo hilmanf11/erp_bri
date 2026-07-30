@@ -38,6 +38,35 @@ class Crud extends CI_Model
         return $autoid;
     }
 
+    function currentUserDept()
+    {
+        return $this->db
+            ->select('
+                u.id,
+                u.username,
+                u.name,
+                u.department_id,
+
+                dept.id AS dept_id,
+                dept.name AS department,
+                dept.plant_id,
+
+                div.id AS plant_id,
+                div.name AS plant
+            ')
+            ->from('users u')
+            ->join('departments dept', 'dept.id = u.department_id', 'left')
+            ->join('divisions div', 'div.id = dept.plant_id', 'left')
+            ->where('u.username', $this->session->username)
+            ->get()
+            ->row();
+    }
+
+    function getIgnoreDept()
+    {
+        return ["LINE UP"];
+    }
+
     function query($query)
     {
         $query = $this->db->query($query);
@@ -512,6 +541,230 @@ class Crud extends CI_Model
                 $this->db->update($table, $formApprove);
             }
         }
+    }
+
+
+    function createV2($table, $table_approval, $values)
+    {
+        if ($this->session->username != "") {
+
+            if (empty($values['id'])) {
+                $id = $this->autoid($table);
+            } else {
+                $id = $values['id'];
+            }
+
+            if (!empty($values['id'])) {
+                $data = array_merge($values, [
+                    "created_by"   => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            } else {
+                $data = array_merge($values, [
+                    "id"           => $id,
+                    "created_by"   => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            }
+
+            if ($this->db->insert($table, $data)) {
+                $this->logs("Create", json_encode($data), $table);
+
+                $this->approvalsV2($table, $table_approval, $id, []);
+
+                return [
+                    'status' => true,
+                    'title' => 'Good Job',
+                    'message' => 'Data Saved Successfully',
+                    'theme' => 'success'
+                ];
+            }
+
+            return log_message('error', 'There is an error in your system or data');
+        }
+
+        return log_message('error', 'Your Session has been Expired');
+    }
+
+
+    function approvalsV2($table, $table_approval, $table_id, $data = [])
+    {
+        $query = $this->db->query("DESCRIBE $table");
+        $fields = $query->result_array();
+
+        $fieldExists = false;
+        foreach ($fields as $field) {
+            if ($field['Field'] == 'approved') {
+                $fieldExists = true;
+                break;
+            }
+        }
+
+        if (!$fieldExists) {
+            return;
+        }
+
+        $approval = $this->getApprovalV2($table_approval, $this->session->username);
+
+        if (!empty($approval)) {
+            $formApprove = [
+                "approved"      => 1,
+                "approved_to"   => $approval->user_approval_1,
+                "approved_by"   => $this->session->username,
+                "approved_data" => json_encode($data),
+            ];
+        } else {
+            $formApprove = [
+                "approved"      => 1,
+                "approved_to"   => "",
+                "approved_by"   => $this->session->username,
+                "approved_data" => json_encode($data),
+            ];
+        }
+
+        $this->db->where("id", $table_id);
+        $this->db->update($table, $formApprove);
+    }
+
+    function getApprovalV2($table_approval, $username)
+    {
+        $user = $this->db
+            ->select('u.department_id, dept.plant_id')
+            ->from('users u')
+            ->join('departments dept', 'dept.id = u.department_id', 'left')
+            ->where('u.username', $username)
+            ->get()
+            ->row();
+
+        if (empty($user)) {
+            return null;
+        }
+
+        if (empty($user->department_id)) {
+            return null;
+        }
+
+        return $this->read('approvals', [], [
+            'table_name'    => $table_approval,
+            'plant_id'      => $user->plant_id,
+            'department_id' => $user->department_id
+        ]);
+    }
+
+    function validateApprovalV2($table_approval)
+    {
+        $user = $this->db
+            ->select('u.department_id, dept.plant_id')
+            ->from('users u')
+            ->join('departments dept', 'dept.id = u.department_id', 'left')
+            ->where('u.username', $this->session->username)
+            ->get()
+            ->row();
+
+        if (empty($user->department_id)) {
+            return [
+                'status'   => true,
+                'approval' => null
+            ];
+        }
+
+        if (empty($user->plant_id)) {
+            return [
+                'status'  => false,
+                'title'   => 'Warning',
+                'message' => 'Your department has not been assigned to a Plant. Please contact Administrator.',
+                'theme'   => 'warning'
+            ];
+        }
+
+        $approval = $this->read('approvals', [], [
+            'table_name'    => $table_approval,
+            'plant_id'      => $user->plant_id,
+            'department_id' => $user->department_id
+        ]);
+
+        if (empty($approval)) {
+            return [
+                'status'  => false,
+                'title'   => 'Warning',
+                'message' => 'Approval configuration was not found for your Department.',
+                'theme'   => 'warning'
+            ];
+        }
+
+        return [
+            'status'   => true,
+            'approval' => $approval
+        ];
+    }
+
+    function updateNotApproval($table, $where, $values)
+    {
+        if ($this->session->username != "") {
+            $data = array_merge($values, [
+                "updated_by" => $this->session->username,
+                "updated_date" => date('Y-m-d H:i:s')
+            ]);
+
+            $dataBefore = $this->read($table, [], $where);
+
+            $this->db->where($where);
+            if ($this->db->update($table, $data)) {
+                $this->logs("Update Before", json_encode($dataBefore), $table);
+                $this->logs("Update New", json_encode($data), $table);
+
+                return json_encode(array("title" => "Good Job", "message" => "Data Updated Successfully", "theme" => "success"));
+            } else {
+                return log_message('error', 'There is an error in your system or data');
+            }
+        } else {
+            return log_message('error', 'Your Session has been Expired');
+        }
+    }
+
+    public function updateV2($table, $tableApproval, $where, $values)
+    {
+        if ($this->session->username == "") {
+            return log_message('error', 'Your Session has been Expired');
+        }
+
+        $data = array_merge($values, [
+            "updated_by"   => $this->session->username,
+            "updated_date" => date('Y-m-d H:i:s')
+        ]);
+
+        $dataBefore = $this->read($table, [], $where);
+
+        $this->db->where($where);
+
+        if ($this->db->update($table, $data)) {
+
+            $this->logs("Update Before", json_encode($dataBefore), $table);
+            $this->logs("Update New", json_encode($data), $table);
+
+            $read = $this->read($table, [], $where);
+
+            $this->approvalsV2(
+                $table,
+                $tableApproval,
+                $read->id,
+                $dataBefore
+            );
+
+            return [
+                'status'  => true,
+                'title'   => 'Good Job',
+                'message' => 'Data Updated Successfully',
+                'theme'   => 'success'
+            ];
+        }
+
+        return [
+            'status'  => false,
+            'title'   => 'Error',
+            'message' => 'There is an error in your system or data',
+            'theme'   => 'error'
+        ];
     }
 
     function connectionInfo()

@@ -103,6 +103,35 @@ class Production_schedule_press extends CI_Controller
         return $result_wp;
     }
 
+    private function _getMixDate($press_date, $offset = 3)
+    {
+        $mix_date = $press_date;
+        $working_days = 0;
+
+        while ($working_days < $offset) {
+
+            $mix_date = date('Y-m-d', strtotime($mix_date . ' -1 day'));
+
+            $dayOfWeek = date('w', strtotime($mix_date));
+            $isWeekend = ($dayOfWeek == 0 || $dayOfWeek == 6);
+
+            $holiday = $this->db
+                ->select('remarks')
+                ->from('calendars')
+                ->where('working_date', $mix_date)
+                ->get()
+                ->row();
+
+            $isHoliday = (!empty($holiday) && trim($holiday->remarks) != '');
+
+            if (!$isWeekend && !$isHoliday) {
+                $working_days++;
+            }
+        }
+
+        return $mix_date;
+    }
+
     private function _getNextAlphabet($alfabet)
     {
         $list = range('A','O');
@@ -119,6 +148,239 @@ class Production_schedule_press extends CI_Controller
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $send = $this->crud->reads('production_schedule_press', ["name" => $post]);
         echo json_encode($send);
+    }
+
+    public function calculate_compound()
+    {
+        $start_date = $this->input->post('start_date');
+        $end_date   = $this->input->post('end_date');
+        // $item_fg_id = $this->input->post('cal_item_fg_id');
+
+        if (!$start_date || !$end_date) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'WP Press Date is required'
+            ]);
+            return;
+        }
+
+        
+        $this->db->select('wp_press_date,item_fg_id');
+        $this->db->from('production_schedule_mixing_detail');
+        $this->db->where('wp_press_date >=', $start_date);
+        $this->db->where('wp_press_date <=', $end_date);
+
+        // if (!empty($item_fg_id)) {
+        //     $this->db->where('item_fg_id', $item_fg_id);
+        // }
+
+        $this->db->limit(1);
+
+        $alreadyCalculated = $this->db->get()->row();
+        if ($alreadyCalculated) {
+
+            // if (!empty($item_fg_id)) {
+
+            //     $checkItemFG = $this->crud->read('item_fg', ['id' => $alreadyCalculated->item_fg_id]);
+            //     $item_fg = $checkItemFG->number ?? $alreadyCalculated->item_fg_id;
+
+            //     echo json_encode([
+            //         'status' => 'error',
+            //         'message' => 'Compound calculation already exists for Product No ' .
+            //             $item_fg . ' within the WP Press Date range ' . $start_date . ' to ' . $end_date . '.'
+            //     ]);
+
+            // } else {
+            //     echo json_encode([
+            //         'status' => 'error',
+            //         'message' => 'Compound calculation already exists within the WP Press Date range ' .
+            //             $start_date . ' to ' . $end_date . '.'
+            //     ]);
+
+            // }
+
+            if (!empty($start_date) && !empty($end_date)) {
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => 'Compound calculation already exists within the WP Press Date range ' .
+                        $start_date . ' to ' . $end_date . '.'
+                ]);
+
+            }
+            return;
+        }
+
+        $this->db->trans_begin();
+
+        try {
+
+            $this->db->select("
+                p.period,
+                p.trans_date as wp_press_date,
+                p.wp as wp_press,
+                p.item_fg_id,
+                p.workorder as workorder_press,
+
+                SUM(p.qty) qty_press,
+
+                b.item_rm_id,
+                b.composition
+            ");
+
+            $this->db->from('production_schedule_press p');
+            $this->db->join('bom b', 'b.item_fg_id = p.item_fg_id AND b.priority = 1 AND b.deleted = 0');
+            $this->db->where('p.deleted', 0);
+            $this->db->where('p.trans_date >=', $start_date);
+            $this->db->where('p.trans_date <=', $end_date);
+
+            // if (!empty($item_fg_id)) {
+            //     $this->db->where('p.item_fg_id', $item_fg_id);
+            // }
+
+            $this->db->group_by(['p.period', 'p.trans_date', 'p.item_fg_id', 'p.workorder']);
+
+            $rows = $this->db->get()->result();
+            if (!$rows) {
+                throw new Exception('No data found');
+            }
+
+            // $womMap = $this->generateWorkorderMixCompoundMap($rows);
+            $headers = [];
+
+            foreach ($rows as $row) {
+                $qty_need_gram = $row->qty_press * $row->composition;
+                $qty_need_kg = $qty_need_gram / 1000;
+
+                // $header_key = $row->period . '_' . $row->item_rm_id;
+
+                $mix_date = $this->_getMixDate($row->wp_press_date);
+                $mix_period = date('Ym', strtotime($mix_date));
+                $wp_mix_date = date('ymd', strtotime($mix_date));
+                $wp_mix_compound = $this->_calculate_wp($mix_date);
+                $header_key = $mix_period . '_' . $row->item_rm_id;
+
+                if (!isset($headers[$header_key])) {
+
+                    $header = $this->db
+                        ->where('period', $mix_period)
+                        ->where('item_rm_id', $row->item_rm_id)
+                        ->where('deleted', 0)
+                        ->get('production_schedule_mixing')
+                        ->row();
+
+                    if (!$header) {
+
+                        $this->crud->create('production_schedule_mixing', [
+                            'period' => $mix_period,
+                            'item_rm_id' => $row->item_rm_id,
+                            'status' => 0,
+                        ]);
+
+                        $header = $this->db
+                            ->where('period', $mix_period)
+                            ->where('item_rm_id', $row->item_rm_id)
+                            ->where('deleted', 0)
+                            ->get('production_schedule_mixing')
+                            ->row();
+                    }
+
+                    $headers[$header_key] = [
+                        'id' => $header->id,
+                        // 'period' => $mix_period,
+                        // 'item_rm_id' => $row->item_rm_id,
+                        // 'total_qty_gram' => 0,
+                        // 'total_qty_kg' => 0
+                    ];
+                }
+
+                // $headers[$header_key]['total_qty_gram'] += $qty_need_gram;
+                // $headers[$header_key]['total_qty_kg'] += $qty_need_kg;
+
+                // $mix_date = date('Y-m-d', strtotime($row->wp_press_date . ' -3 days'));
+
+                // $mix_date = $this->_getMixDate($row->wp_press_date);
+                // $workorder_mix_compound = $this->workorder_mix_compound(
+                //     $mix_date,
+                //     $row->item_rm_id
+                // );
+                // $wp_mix_date  = date('ymd', strtotime($mix_date));
+                // $wp_mix_compound = $this->_calculate_wp($mix_date);
+
+
+                // $mix_date = $this->_getMixDate($row->wp_press_date);
+                // $wp_mix_date = date('ymd', strtotime($mix_date));
+
+
+
+                // $workorder_mix_compound = $womMap[$wp_mix_date][$row->item_rm_id];
+                // $wp_mix_compound = $this->_calculate_wp($mix_date);
+
+                $this->crud->create('production_schedule_mixing_detail', [
+                        'production_schedule_mixing_id' => $headers[$header_key]['id'],
+                        'period'                        => $mix_period,
+                        'item_rm_id'                    => $row->item_rm_id,
+                        'item_fg_id'                    => $row->item_fg_id,
+                        'wp_press_date'                 => $row->wp_press_date,
+                        'workorder_press'               => $row->workorder_press,
+                        'wp_mix_date'                   => $wp_mix_date,
+                        // 'workorder_mix_compound'        => $workorder_mix_compound,
+                        'workorder_mix_compound'        => '',
+                        'wp_mix_compound'               => $wp_mix_compound,
+                        'composition'                   => $row->composition,
+                        'qty_press'                     => $row->qty_press,
+                        'qty_need_gram'                 => $qty_need_gram,
+                        'qty_need_kg'                   => $qty_need_kg,
+                        'status'                        => 0,
+                    ]
+                );
+
+            }
+
+            // foreach ($headers as $header) {
+
+            //     $this->db->where('id', $header['id']);
+            //     $this->db->update('production_schedule_mixing', [
+            //             'total_qty_gram' => $header['total_qty_gram'],
+            //             'total_qty_kg' => $header['total_qty_kg']
+            //         ]
+            //     );
+            // }
+
+            foreach ($headers as $header) {
+                $total = $this->db
+                    ->select('
+                        SUM(qty_need_gram) AS total_qty_gram,
+                        SUM(qty_need_kg) AS total_qty_kg
+                    ', false)
+                    ->where('production_schedule_mixing_id', $header['id'])
+                    ->where('deleted', 0)
+                    ->where('status', 0)
+                    ->get('production_schedule_mixing_detail')
+                    ->row();
+
+                $this->db
+                    ->where('id', $header['id'])
+                    ->update('production_schedule_mixing', [
+                        'total_qty_gram' => $total->total_qty_gram ?: 0,
+                        'total_qty_kg'   => $total->total_qty_kg ?: 0,
+                    ]);
+            }
+
+            $this->db->trans_commit();
+
+            echo json_encode([
+                'status' => 'success',
+                'message' => 'Compound calculation has been completed successfully'
+            ]);
+
+        } catch (Exception $e) {
+            $this->db->trans_rollback();
+
+            echo json_encode([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 
     // public function getCapacity()
@@ -535,6 +797,74 @@ class Production_schedule_press extends CI_Controller
 
         return $workOrderNo;
     }
+
+    private function generateWorkorderMixCompoundMap($rows)
+    {
+        $temp = [];
+        $result = [];
+
+        foreach ($rows as $row) {
+
+            $mix_date = $this->_getMixDate($row->wp_press_date);
+            $wp_mix_date = date('ymd', strtotime($mix_date));
+
+            $temp[$wp_mix_date][$row->item_rm_id] = true;
+        }
+
+        foreach ($temp as $wp_mix_date => $items) {
+
+            $itemRmIds = array_keys($items);
+
+            sort($itemRmIds, SORT_NATURAL);
+
+            $seq = 1;
+
+            foreach ($itemRmIds as $item_rm_id) {
+
+                $result[$wp_mix_date][$item_rm_id] =
+                    'WOM' .
+                    $wp_mix_date .
+                    '-' .
+                    sprintf('%03d', $seq);
+
+                $seq++;
+            }
+        }
+
+        return $result;
+    }
+
+    public function workorder_mix_compound($mix_date, $item_rm_id)
+    {
+        $wp_mix_date = date('ymd', strtotime($mix_date));
+
+        $existing = $this->db
+            ->select('workorder_mix_compound')
+            ->from('production_schedule_mixing_detail')
+            ->where('item_rm_id', $item_rm_id)
+            ->where('wp_mix_date', $wp_mix_date)
+            ->limit(1)
+            ->get()
+            ->row();
+
+        if ($existing) {
+            return $existing->workorder_mix_compound;
+        }
+
+        $last = $this->db
+            ->select('workorder_mix_compound')
+            ->from('production_schedule_mixing_detail')
+            ->where('wp_mix_date', $wp_mix_date)
+            ->order_by('workorder_mix_compound', 'DESC')
+            ->limit(1)
+            ->get()
+            ->row();
+
+        $seq = $last ? ((int)substr($last->workorder_mix_compound, -3) + 1) : 1;
+
+        return 'WOM' . $wp_mix_date . '-' . sprintf('%03d', $seq);
+    }
+
 
     // public function datatables()
     // {
@@ -1087,7 +1417,7 @@ class Production_schedule_press extends CI_Controller
                     $results[] = [
                         "status" => "failed",
                         "item" => "Line " . ($index + 1),
-                        "message" => "Invalid trans date format (must be YYYY-MM-DD)"
+                        "message" => "Invalid wp date format (must be YYYY-MM-DD)"
                     ];
                     continue;
                 }

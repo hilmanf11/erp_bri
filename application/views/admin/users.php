@@ -3,6 +3,7 @@
     <thead>
         <tr>
             <th field="ck" checkbox="true"></th>
+            <th data-options="field:'department_name',width:150">Department</th>
             <th data-options="field:'number',width:100">Number ID</th>
             <th data-options="field:'name',width:200">Name</th>
             <th data-options="field:'username',width:150">Username</th>
@@ -38,6 +39,10 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Password</span>
                 <input style="width:60%;" name="password" id="password" required="" class="easyui-passwordbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Department</span>
+                <input style="width:60%;" name="department" id="department" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Position</span>
@@ -211,6 +216,28 @@
                 width: 250
             }, ]
         ]
+    });
+
+    $('#department').combogrid({
+        url: '<?= base_url('master/departments/reads'); ?>',
+        panelWidth: 320,
+        idField: 'id',
+        textField: 'name',
+        mode: 'remote',
+        fitColumns: true,
+        required: true,
+        prompt: "Choose Department",
+        columns: [
+            [{
+                field: 'id',
+                title: 'Dept ID',
+                width: 120
+            }, {
+                field: 'name',
+                title: 'Dept Name',
+                width: 200
+            }]
+        ],
     });
 
     //CELLSTYLE STATUS

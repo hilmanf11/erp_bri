@@ -37,6 +37,24 @@ class Output_production_press extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readWp()
+    {
+        $filter_from = base64_decode($this->input->get('filter_from'));
+        $filter_to   = base64_decode($this->input->get('filter_to'));
+
+        $send = $this->crud->query("
+            SELECT wp
+            FROM output_production_press
+            WHERE deleted = 0
+            AND trans_date >= '$filter_from'
+            AND trans_date <= '$filter_to'
+            GROUP BY wp
+            ORDER BY (wp + 0) ASC, wp ASC
+        ");
+
+        echo json_encode($send);
+    }
+
     // public function readItemFg($period="")
     // {
     //     $post = isset($_POST['q']) ? $_POST['q'] : "";
@@ -238,7 +256,7 @@ class Output_production_press extends CI_Controller
             $filter_to = $this->input->get('filter_to');
             // $filter_division = $this->input->get('filter_division');
             
-            $filter_period = $this->input->get('filter_period');
+            // $filter_period = $this->input->get('filter_period');
             // $filter_trans_date = $this->input->get('filter_trans_date');
             $filter_number = $this->input->get('filter_number');
             $filter_shift = $this->input->get('filter_shift');
@@ -247,9 +265,9 @@ class Output_production_press extends CI_Controller
             $filter_item_fg_id = $this->input->get('filter_item_fg_id');
             $filter_status = $this->input->get('filter_status');
 
-            if (empty($filter_period)) {
-                $filter_period = date('Ym');
-            }
+            // if (empty($filter_period)) {
+            //     $filter_period = date('Ym');
+            // }
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -272,11 +290,12 @@ class Output_production_press extends CI_Controller
             //     $this->db->where('b.division_id', $filter_division);
             // }
 
-            if ($filter_period != "") {
-                $this->db->where('a.period', $filter_period);
-            }else{
-                $this->db->where('a.trans_date', date('Y-m-d'));
-            }
+            // if ($filter_period != "") {
+            //     $this->db->where('a.period', $filter_period);
+            // }else{
+            //     $this->db->where('a.trans_date', date('Y-m-d'));
+            // }
+
             // if ($filter_trans_date != "") {
             //     $this->db->where('a.trans_date', $filter_trans_date);
             // }
@@ -697,154 +716,219 @@ class Output_production_press extends CI_Controller
             show_error("Cannot process your request.");
         }
 
-        $items = $this->input->post('items');
-        $errors = [];
-        $success_count = 0;
+        try {
 
-        $this->db->trans_begin();
+            $items = $this->input->post('items');
+            $errors = [];
+            $success_count = 0;
 
-        foreach ($items as $post) {
+            $this->db->trans_begin();
 
-            $dataFinal = [
-                "item_fg_id" => $post['item_fg_id'],
-                "machine_id" => $post['machine_id'],
-                "mold_id" => $post['mold_id'],
-                "planning_qty" => $post['planning_qty'],
-                "qty_ok" => $post['qty_ok'],
-                "qty_ng" => $post['qty_ng'],
-                "qty_ng_mold" => $post['qty_ng_mold'],
-                "workorder" => !empty($post['workorder']) ? $post['workorder'] : null,
-                "actual_cavity" => $post['actual_cavity'],
-                "operator" => $post['operator'],
-                "pic" => $post['pic'],
-                "actual_curing_time" => $post['actual_curing_time'],
-                "shift_hour" => $post['shift_hour'],
-                "actual_shoot" => $post['actual_shoot'],
-                "total_compound_used" => $post['total_compound_used'],
-                "waste" => $post['waste'],
-            ];
+            foreach ($items as $post) {
+                $this->debugOutputPress('START PROCESS', $post);
 
-            if (!isset($post['workorder']) || $post['workorder'] === '' || $post['workorder'] === 'null') {
-                $post['workorder'] = null;
-            }
+                $dataFinal = [
+                    "item_fg_id" => $post['item_fg_id'],
+                    "machine_id" => $post['machine_id'],
+                    "mold_id" => $post['mold_id'],
+                    "planning_qty" => $post['planning_qty'],
+                    "qty_ok" => $post['qty_ok'],
+                    "qty_ng" => $post['qty_ng'],
+                    "qty_ng_mold" => $post['qty_ng_mold'],
+                    "workorder" => !empty($post['workorder']) ? $post['workorder'] : null,
+                    "actual_cavity" => $post['actual_cavity'],
+                    "operator" => $post['operator'],
+                    "pic" => $post['pic'],
+                    "actual_curing_time" => $post['actual_curing_time'],
+                    "shift_hour" => $post['shift_hour'],
+                    "actual_shoot" => $post['actual_shoot'],
+                    "total_compound_used" => $post['total_compound_used'],
+                    "waste" => $post['waste'],
+                ];
 
-            if (!empty($post['item_fg_id']) && !empty($post['machine_id']) && !empty($post['mold_id'])) {
+                if (!isset($post['workorder']) || $post['workorder'] === '' || $post['workorder'] === 'null') {
+                    $post['workorder'] = null;
+                }
 
-                $machine_id = $post['machine_id'];
-                $item_fg_id = $post['item_fg_id'];
-                $mold_id    = $post['mold_id'];
-                $actual_cavity = $post['actual_cavity'];
+                if (!empty($post['item_fg_id']) && !empty($post['machine_id']) && !empty($post['mold_id'])) {
 
-                $mold = $this->crud->read("molds", [], ["id" => $mold_id]);
+                    $machine_id = $post['machine_id'];
+                    $item_fg_id = $post['item_fg_id'];
+                    $mold_id    = $post['mold_id'];
+                    $actual_cavity = $post['actual_cavity'];
 
-                if ($mold && $mold->cavity_actual != $actual_cavity) {
+                    $mold = $this->crud->read("molds", [], ["id" => $mold_id]);
 
-                    // update cavity molds
-                    $this->crud->update("molds", ["id" => $mold_id], [
-                        "cavity_actual" => $actual_cavity
-                    ]);
+                    if ($mold && $mold->cavity_actual != $actual_cavity) {
 
-                    $checkMachine = $this->db->get_where('machines', ['id' => $machine_id])->row();
-                    $checkItemFg = $this->db->get_where('item_fg', ['id' => $item_fg_id])->row();
-                    $checkMold = $this->db->get_where('molds', ['id' => $mold_id])->row();
+                        // update cavity molds
+                        $this->crud->update("molds", ["id" => $mold_id], [
+                            "cavity_actual" => $actual_cavity
+                        ]);
 
-                    // cek menu loading
-                    $dataItem = $this->crud->query("
-                        SELECT DISTINCT
-                            a.item_fg_id,
-                            d.number AS item_fg_number,
-                            d.name AS item_fg_name,
-                            a.machine_id,
-                            b.number AS machine_number,
-                            a.cycle_time,
-                            a.productcivity,
-                            c.cavity_actual,
-                            a.shift,
-                            a.shift_hour,
-                            d.item_family_number,
-                            d.mpq,
-                            c.id AS mold_id
-                        FROM menu_loadings a 
-                        JOIN machines b ON a.machine_id = b.id
-                        JOIN item_fg d ON a.item_fg_id = d.id
-                        JOIN molds c ON a.mold_id = c.id
-                        WHERE a.machine_id = '$machine_id'
-                        AND a.item_fg_id = '$item_fg_id'
-                        AND a.mold_id = '$mold_id'
-                    ");
+                        $this->debugOutputPress('UPDATE MOLD', $post);
 
-                    if (empty($dataItem)) {
-                        $errors[] = "Menu Loading data not found for Machine No. $checkMachine->number, Product No. $checkItemFg->number and Mold ID $checkMold->id";
-                        continue;
+                        $checkMachine = $this->db->get_where('machines', ['id' => $machine_id])->row();
+                        $checkItemFg = $this->db->get_where('item_fg', ['id' => $item_fg_id])->row();
+                        $checkMold = $this->db->get_where('molds', ['id' => $mold_id])->row();
+
+                        if (!$checkMachine || !$checkItemFg || !$checkMold) {
+                            $this->debugOutputPress('MASTER DATA NOT FOUND', $post);
+
+                            if (!$checkMachine) {
+                                $errors[] = "Machine not found. ID : {$machine_id}";
+                            }
+                            if (!$checkItemFg) {
+                                $errors[] = "Product not found. ID : {$item_fg_id}";
+                            }
+                            if (!$checkMold) {
+                                $errors[] = "Mold not found. ID : {$mold_id}";
+                            }
+
+                            continue;
+                        }
+
+                        // cek menu loading
+                        $dataItem = $this->crud->query("
+                            SELECT DISTINCT
+                                a.item_fg_id,
+                                d.number AS item_fg_number,
+                                d.name AS item_fg_name,
+                                a.machine_id,
+                                b.number AS machine_number,
+                                a.cycle_time,
+                                a.productcivity,
+                                c.cavity_actual,
+                                a.shift,
+                                a.shift_hour,
+                                d.item_family_number,
+                                d.mpq,
+                                c.id AS mold_id
+                            FROM menu_loadings a 
+                            JOIN machines b ON a.machine_id = b.id
+                            JOIN item_fg d ON a.item_fg_id = d.id
+                            JOIN molds c ON a.mold_id = c.id
+                            WHERE a.machine_id = '$machine_id'
+                            AND a.item_fg_id = '$item_fg_id'
+                            AND a.mold_id = '$mold_id'
+                        ");
+
+                        $this->debugOutputPress('READ MENU LOADING', $post);
+
+                        if (empty($dataItem)) {
+                            $errors[] = "Menu Loading data not found for Machine No. $checkMachine->number, Product No. $checkItemFg->number and Mold ID $checkMold->id";
+                            $this->debugOutputPress('MENU LOADING NOT FOUND', $post);
+                            continue;
+                        }
+
+                        $production_capacity = $this->crud->read("production_capacities", [], [
+                            "machine_id" => $machine_id,
+                            "item_fg_id" => $item_fg_id,
+                        ]);
+
+                        $this->debugOutputPress('READ PRODUCTION CAPACITY', $post);
+
+                        if(empty($production_capacity)) {
+                            $errors[] = "Production Capacity data not found for Machine No. $checkMachine->number, Product No. $checkItemFg->number , and Mold ID $checkMold->id";
+                            $this->debugOutputPress('PRODUCTION CAPACITY NOT FOUND', $post);
+                            continue;
+                        }
+
+                        // hitung kapasitas
+                        $cycle = $dataItem[0]->cycle_time;
+                        $productivity = $dataItem[0]->productcivity;
+                        $shift_hour = $dataItem[0]->shift_hour;
+                        $shift = $dataItem[0]->shift;
+
+                        $capacity_hour = ceil((3600 / $cycle) * $actual_cavity * ($productivity / 100));
+                        $capacity_shift = ceil($capacity_hour * $shift_hour);
+                        $capacity_day = ceil($capacity_shift * $shift);
+
+                        $this->crud->update("production_capacities", [
+                            "machine_id" => $machine_id,
+                            "item_fg_id" => $item_fg_id,
+                        ], [
+                            "capacity_hour" => $capacity_hour,
+                            "capacity_shift" => $capacity_shift,
+                            "capacity_day" => $capacity_day,
+                        ]);
+
+                        $this->debugOutputPress('UPDATE PRODUCTION CAPACITY', $post);
                     }
+                }
 
-                    $production_capacity = $this->crud->read("production_capacities", [], [
-                        "machine_id" => $machine_id,
-                        "item_fg_id" => $item_fg_id,
-                    ]);
+                if (!empty($post['id'])) {
+                    // UPDATE MODE
+                    $result = $this->crud->update(
+                        'output_production_press',
+                        ["id" => $post['id']],
+                        $dataFinal
+                    );
+                } else {
+                    // INSERT MODE
+                    $result = $this->crud->create('output_production_press', $post);
+                }
 
-                    if(empty($production_capacity)) {
-                        $errors[] = "Production Capacity data not found for Machine No. $checkMachine->number, Product No. $checkItemFg->number , and Mold ID $checkMold->id";
-                        continue;
-                    }
+                $this->debugOutputPress(
+                    empty($post['id']) ? 'INSERT OUTPUT PRESS' : 'UPDATE OUTPUT PRESS',
+                    $post
+                );
 
-                    // hitung kapasitas
-                    $cycle = $dataItem[0]->cycle_time;
-                    $productivity = $dataItem[0]->productcivity;
-                    $shift_hour = $dataItem[0]->shift_hour;
-                    $shift = $dataItem[0]->shift;
-
-                    $capacity_hour = ceil((3600 / $cycle) * $actual_cavity * ($productivity / 100));
-                    $capacity_shift = ceil($capacity_hour * $shift_hour);
-                    $capacity_day = ceil($capacity_shift * $shift);
-
-                    $this->crud->update("production_capacities", [
-                        "machine_id" => $machine_id,
-                        "item_fg_id" => $item_fg_id,
-                    ], [
-                        "capacity_hour" => $capacity_hour,
-                        "capacity_shift" => $capacity_shift,
-                        "capacity_day" => $capacity_day,
-                    ]);
+                if ($result) {
+                    $success_count++;
+                } else {
+                    $errors[] = "Failed saving output press for Machine ID {$post['machine_id']}";
                 }
             }
 
-            if (!empty($post['id'])) {
-                // UPDATE MODE
-                $result = $this->crud->update(
-                    'output_production_press',
-                    ["id" => $post['id']],
-                    $dataFinal
-                );
-            } else {
-                // INSERT MODE
-                $result = $this->crud->create('output_production_press', $post);
+            if ($this->db->trans_status() === FALSE || !empty($errors)) {
+                $this->debugOutputPress('ROLLBACK');
+                $this->db->trans_rollback();
+                echo json_encode([
+                    "title" => "Failed to Save",
+                    "message" => implode("\n", array_unique($errors)),
+                    "theme" => "error"
+                ]);
+                return;
             }
+            
+            $this->debugOutputPress('COMMIT');
+            $this->db->trans_commit();
 
-            if ($result) {
-                $success_count++;
-            } else {
-                $errors[] = "Failed saving output press for Machine ID {$post['machine_id']}";
-            }
-        }
-
-        if ($this->db->trans_status() === FALSE || !empty($errors)) {
-            $this->db->trans_rollback();
             echo json_encode([
-                "title" => "Failed to Save",
-                "message" => implode("\n", array_unique($errors)),
-                "theme" => "error"
+                "title" => "Success",
+                "message" => "Data saved successfully",
+                "theme" => "success"
             ]);
-            return;
+
+        } catch (Throwable $e) {
+
+            log_message('error', json_encode([
+                'step' => 'EXCEPTION',
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]));
+
+            throw $e; // supaya error tetap muncul seperti biasa
         }
+    }
 
-        $this->db->trans_commit();
+    private function debugOutputPress($step, $post = [])
+    {
+        $dbError = $this->db->error();
 
-        echo json_encode([
-            "title" => "Success",
-            "message" => "Data saved successfully",
-            "theme" => "success"
-        ]);
+        log_message('error', json_encode([
+            'step'         => $step,
+            'number'       => $post['number'] ?? null,
+            'machine_id'   => $post['machine_id'] ?? null,
+            'item_fg_id'   => $post['item_fg_id'] ?? null,
+            'mold_id'      => $post['mold_id'] ?? null,
+            'workorder'    => $post['workorder'] ?? null,
+            'trans_status' => $this->db->trans_status(),
+            'db_error'     => $dbError,
+            'time'         => date('Y-m-d H:i:s')
+        ]));
     }
 
     public function delete()
@@ -3080,7 +3164,7 @@ class Output_production_press extends CI_Controller
         // $filter_item_fg_id = $this->input->get('filter_item_fg_id');
         // $filter_division = $this->input->get('filter_division');
 
-        $filter_period = $this->input->get('filter_period');
+        // $filter_period = $this->input->get('filter_period');
         // $filter_trans_date = $this->input->get('filter_trans_date');
         $filter_number = $this->input->get('filter_number');
         $filter_shift = $this->input->get('filter_shift');
@@ -3089,9 +3173,9 @@ class Output_production_press extends CI_Controller
         $filter_item_fg_id = $this->input->get('filter_item_fg_id');
         $filter_status = $this->input->get('filter_status');
 
-        if (empty($filter_period)) {
-            $filter_period = date('Ym');
-        }
+        // if (empty($filter_period)) {
+        //     $filter_period = date('Ym');
+        // }
 
         //Config
         $this->db->select('*');
@@ -3137,6 +3221,17 @@ class Output_production_press extends CI_Controller
         $this->db->join('machines c', 'a.machine_id = c.id', 'left');
 
         $this->db->join('bom d', 'a.item_fg_id = d.item_fg_id and d.priority = 1', 'left');
+
+        // $this->db->join("
+        //     (
+        //         SELECT item_fg_id, item_rm_id
+        //         FROM bom
+        //         WHERE priority = 1
+        //     ) d",
+        //     "a.item_fg_id = d.item_fg_id",
+        //     "left"
+        // );
+
         $this->db->join('item_rm e', 'd.item_rm_id = e.id', 'left');
 
         // $this->db->join("
@@ -3169,9 +3264,9 @@ class Output_production_press extends CI_Controller
             $this->db->where('a.trans_date <=', $filter_to);
         }
 
-        if ($filter_period != "") {
-            $this->db->where('a.period', $filter_period);
-        }
+        // if ($filter_period != "") {
+        //     $this->db->where('a.period', $filter_period);
+        // }
         // if ($filter_trans_date != "") {
         //     $this->db->where('a.trans_date', $filter_trans_date);
         // }

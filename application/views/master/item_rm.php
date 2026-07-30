@@ -514,26 +514,33 @@
             accept: '.jpg, .png, .pdf',
             onChange: function() {
                 var files = $(this).filebox('files');
-                var formData = new FormData();
+                if (!files || files.length === 0) {
+                    return;
+                }
 
+                var formData = new FormData();
                 for (var i = 0; i < files.length; i++) {
                     var file = files[i];
                     formData.append('file', file, file.name);
                 }
 
                 $.ajax({
-                    url: '<?= base_url('master/item_rm/uploadatt') ?>',
+                    url: '<?= base_url('master/item_rm/uploadatt/images') ?>',
                     type: 'post',
                     data: formData,
                     contentType: false,
                     processData: false,
                     dataType: 'json',
                     success: function(data) {
+                        console.log('DATA : ', data);
+                        
                         if (data.success == true) {
                             toastr.success(data.message);
                             $('#attachment').textbox('setValue', data.filename);
                         } else {
                             toastr.error(data.message);
+                            $('#attachment').textbox('clear');
+                            $('#attachment_upload').filebox('clear');
                         }
                     }
                 });

@@ -99,7 +99,8 @@
                                         serial_label: serial_label,
                                         item_fg_id: row[i].item_fg_id,
                                         uom: row[i].uom,
-                                        qty: row[i].qty_packing
+                                        qty: row[i].qty_packing,
+                                        source: json.source,
                                     },
                                     dataType: "json",
                                     success: function(result) {
@@ -135,10 +136,31 @@
                                 });
                             }
                         } else {
-                            serialNotFound.play();
-                            toastr.warning("Label not found!");
+                            console.log('JSON : ', json);
+                            
+                            // serialNotFound.play();
+                            // toastr.warning("Label not found!");
+
+                            if (typeof json === 'string') {
+                                try {
+                                    json = JSON.parse(json);
+                                } catch (e) {
+                                    json = {};
+                                }
+                            }
+                            var theme = json.theme || 'error';
+                            var title = json.title || 'Error';
+                            var message = json.message || 'Failed to save data';
+
+                            if (title == "Not Registered") {
+                                serialNotFound.play();
+                            } else if (title == "Available") {
+                                serialDuplicate.play();
+                            }
+                            toastr.error(message, title);
                             $("#serial_label").val('');
                             $('#serial_label').focus();
+                            // $('#dg').datagrid('reload');
                         }
                     }
                 });

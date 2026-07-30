@@ -13,7 +13,7 @@ class Approvals extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('table_name', 'Module', 'required|min_length[2]|max_length[50]|is_unique[approvals.table_name]');
+        // $this->form_validation->set_rules('table_name', 'Module', 'required|min_length[2]|max_length[50]|is_unique[approvals.table_name]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -46,13 +46,21 @@ class Approvals extends CI_Controller
                 d.name as user_approval_name_3,
                 e.name as user_approval_name_4,
                 f.name as user_approval_name_5,
-                ');
+                h.id as plant,
+                h.name as plant_name,
+                g.id as department,
+                g.name as department_name,
+            ');
             $this->db->from('approvals a');
             $this->db->join('users b', 'a.user_approval_1 = b.username', 'left');
             $this->db->join('users c', 'a.user_approval_2 = c.username', 'left');
             $this->db->join('users d', 'a.user_approval_3 = d.username', 'left');
             $this->db->join('users e', 'a.user_approval_4 = e.username', 'left');
             $this->db->join('users f', 'a.user_approval_5 = f.username', 'left');
+
+            $this->db->join('departments g', 'a.department_id = g.id', 'left');
+            $this->db->join('divisions h', 'a.plant_id = h.id', 'left');
+
             $this->db->where('a.deleted', 0);
             $this->db->where('a.status', 0);
             if (@count($filters) > 0) {
@@ -72,6 +80,7 @@ class Approvals extends CI_Controller
                     }
                 }
             }
+            $this->db->order_by("a.table_name", "ASC");
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -88,13 +97,17 @@ class Approvals extends CI_Controller
     public function create()
     {
         if ($this->input->post()) {
-            if ($this->form_validation->run() == TRUE) {
-                $post = $this->input->post();
-                $send = $this->crud->create('approvals', $post);
-                echo $send;
-            } else {
-                show_error(validation_errors());
-            }
+            $post = $this->input->post();
+            $post['department'] = strtoupper(trim($post['department']));
+
+            $post['plant_id'] = empty($post['plant']) ? null : $post['plant'];
+            unset($post['plant']);
+
+            $post['department_id'] = empty($post['department']) ? null : $post['department'];
+            unset($post['department']);
+
+            $send = $this->crud->create('approvals', $post);
+            echo $send;
         } else {
             show_error("Cannot Process your request");
         }
@@ -105,6 +118,13 @@ class Approvals extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
+
+            $post['plant_id'] = empty($post['plant']) ? null : $post['plant'];
+            unset($post['plant']);
+
+            $post['department_id'] = empty($post['department']) ? null : $post['department'];
+            unset($post['department']);
+
             $send = $this->crud->update('approvals', ["id" => $id], $post);
             echo $send;
         } else {
@@ -136,15 +156,22 @@ class Approvals extends CI_Controller
             d.name as user_approval_name_3,
             e.name as user_approval_name_4,
             f.name as user_approval_name_5,
-            ');
+            h.name as plant,
+            g.name as department
+        ');
         $this->db->from('approvals a');
         $this->db->join('users b', 'a.user_approval_1 = b.username', 'left');
         $this->db->join('users c', 'a.user_approval_2 = c.username', 'left');
         $this->db->join('users d', 'a.user_approval_3 = d.username', 'left');
         $this->db->join('users e', 'a.user_approval_4 = e.username', 'left');
         $this->db->join('users f', 'a.user_approval_5 = f.username', 'left');
+
+        $this->db->join('departments g', 'a.department_id = g.id', 'left');
+        $this->db->join('divisions h', 'a.plant_id = h.id', 'left');
+
         $this->db->where('a.deleted', 0);
         $this->db->where('a.status', 0);
+        $this->db->order_by("a.table_name", "ASC");
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
@@ -172,6 +199,8 @@ class Approvals extends CI_Controller
         <tr>
         <th width="20">No</th>
         <th>Module</th>
+        <th>Plant</th>
+        <th>Department</th>
         <th>Approval 1</th>
         <th>Approval 2</th>
         <th>Approval 3</th>
@@ -183,6 +212,8 @@ class Approvals extends CI_Controller
             $html .= '<tr>
             <td>' . $no . '</td>
             <td>' . $data['table_name'] . '</td>
+            <td>' . $data['plant'] . '</td>
+            <td>' . $data['department'] . '</td>
             <td>' . $data['user_approval_1'] . '</td>
             <td>' . $data['user_approval_2'] . '</td>
             <td>' . $data['user_approval_3'] . '</td>

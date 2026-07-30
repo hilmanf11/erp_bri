@@ -39,11 +39,17 @@ class Equivalent extends CI_Controller
     //GET DATA
     public function readRmId()
     {
+        $post = isset($_POST['q']) ? $_POST['q'] : '';
+
         $this->db->select('a.id, a.number, a.name');
         $this->db->from('item_rm a');
         $this->db->join('item_familys b','a.item_family_id = b.id');
         $this->db->where('a.deleted', 0);
-        $this->db->where('a.number !=', 'CD');
+        $this->db->where('b.number !=', 'CD');
+
+        $this->db->like('a.number', $post);
+        $this->db->or_like('a.name', $post);
+
         $this->db->order_by('a.name', 'ASC');
         $records = $this->db->get()->result_array();
         echo json_encode($records);

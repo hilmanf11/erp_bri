@@ -54,7 +54,7 @@
                     <select style="width:60%;" id="filter_delivery_to" panelHeight="auto" class="easyui-combobox" data-options="editable:false">
                         <option selected value="SUBCONT">Subcont</option>
                         <option value="TEFA">Teaching Factory</option>
-                    </select>`
+                    </select>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Subcont</span>
@@ -282,17 +282,17 @@
                         }
                     }
                 }, 
-                
-                // {
-                //     field: 'share_order',
-                //     width: 200,
-                //     halign: 'center',
-                //     title: "Share Job Order %",
-                //     editor: {
-                //         type: 'numberbox'
-                //     }
-                // }, 
-                
+
+                {
+                    field: 'share_order',
+                    width: 200,
+                    halign: 'center',
+                    title: "Share Order %",
+                    editor: {
+                        type: 'numberbox'
+                    }
+                }, 
+
                 {
                     field: 'type',
                     width: 200,
@@ -708,12 +708,12 @@
                             width: 200
                         }, 
                         
-                        // {
-                        //     field: 'share_order',
-                        //     title: 'Share Job Order',
-                        //     halign: 'center',
-                        //     width: 130
-                        // }, 
+                        {
+                            field: 'share_order',
+                            title: 'Share Order',
+                            halign: 'center',
+                            width: 130
+                        }, 
                         
                         {
                             field: 'type',
@@ -793,7 +793,7 @@
                                     subcont_id: subcont_id,
                                     teaching_factory_id: teaching_factory_id,
                                     item_fg_id: rows[i].item_fg_id,
-                                    // share_order: rows[i].share_order,
+                                    share_order: rows[i].share_order,
                                     type: rows[i].type,
                                     currency: rows[i].currency,
                                     price: rows[i].price,

@@ -3,27 +3,16 @@
     <thead>
         <tr>
             <th field="ck" checkbox="true"></th>
-            <th data-options="field:'print',width:70,align:'center',formatter:printFormatter">Print</th>
-            <th data-options="field:'po_no',width:150">PO No</th>
+            <th data-options="field:'print',width:80,align:'center',formatter:printFormatter">Print</th>
+            <th data-options="field:'po_no',width:200">PO No</th>
             <th data-options="field:'po_date',width:100">PO Date</th>
-            <th data-options="field:'item_number',width:200">Product No</th>
-            <th data-options="field:'item_name',width:150">Product Name</th>
-            <th data-options="field:'item_family_name',width:120">Product Family</th>
-            <th data-options="field:'uom',width:80">Uom</th>
-            <th data-options="field:'supplier_name',width:220">Supplier Name</th>
-            <th data-options="field:'mpq',width:80">MPQ</th>
-            <th data-options="field:'moq',width:80">MOQ</th>
-            <th data-options="field:'qty',width:80,formatter: numberformat">Qty</th>
+            <th data-options="field:'due_date',width:100">Due Date</th>
+            <th data-options="field:'subcont_name',width:200">Supplier Name</th>
             <th data-options="field:'currency',width:80">Currency</th>
-            <th data-options="field:'discount',width:80,formatter: numberformat">Discount</th>
-            <th data-options="field:'last_price',width:120,formatter: numberformat">Last Price</th>
-            <th data-options="field:'new_price',width:120,formatter: numberformat">New Price</th>
-            <th data-options="field:'total',width:120,formatter: numberformat">Amount</th>
-            <th data-options="field:'remarks',width:150">Remarks</th>
-            <th data-options="field:'month_1',width:80">Month 1</th>
-            <th data-options="field:'month_2',width:80">Month 2</th>
-            <th data-options="field:'month_3',width:80">Month 3</th>
-            <th data-options="field:'month_4',width:80">Month 4</th>
+            <th data-options="field:'total_amount',width:120,formatter: numberformatPrice">Total Amount</th>
+            <th data-options="field:'notes',width:200">Notes</th>
+            <th data-options="field:'revision',width:150">Revision</th>
+            <th data-options="field:'order_type',width:120">Order Type</th>
         </tr>
     </thead>
 </table>
@@ -43,15 +32,7 @@
     }
 
     function printPo(po_no) {
-		var printUrl = "";
-
-		// if (po_no.includes("-A")) {
-
-        if(/-A\d{2}$/.test(po_no)) {
-			printUrl = "<?= base_url('purchase/Purchase_orders/print_po_additional/') ?>" + window.btoa(po_no);
-		} else {
-			printUrl = "<?= base_url('purchase/Purchase_orders/print_po/') ?>" + window.btoa(po_no);
-		}
+		var printUrl = "<?= base_url('purchase/Po_subcont_productions/print_po/') ?>" + window.btoa(po_no);
 
 		window.open(printUrl, "_blank");
     }
@@ -213,7 +194,7 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('approvals/approvalPurchaseOrders/') ?>' + "<?= base64_encode($approved_to) ?>" + "/" + "<?= base64_encode($approved_by) ?>",
+            url: '<?= base_url('approvals/approvalPoSubcontProductions/') ?>' + "<?= base64_encode($approved_to) ?>" + "/" + "<?= base64_encode($approved_by) ?>",
             pagination: false,
             singleSelect: false,
             clientPaging: false,
