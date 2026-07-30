@@ -268,7 +268,7 @@
 
             // preview("<?= base_url('purchase/po_subcont_productions/datatableUpdates?po_no=') ?>" + btoa(row.po_no));
             var url = "<?= base_url('purchase/po_subcont_productions/datatableUpdates?po_no=') ?>" + btoa(row.po_no);
-            console.log(url);
+            // console.log(url);
             preview(url);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
@@ -614,8 +614,8 @@
                             title:'Status PO',
                             width:100,
                             align:'center',
-                            formatter:statusformat,
-                            styler:statusStyle
+                            formatter:statusFormatDetail,
+                            styler:statusStyleDetail
                         },
                         {
                             field:'status_si',
@@ -630,7 +630,7 @@
                         $('#dg').datagrid('fixDetailRowHeight', index);
                     },
                     onLoadSuccess: function(data) {
-                        console.log(data);
+                        // console.log('Data : ', data);
                         setTimeout(function() {
                             $('#dg').datagrid('fixDetailRowHeight', index);
                         }, 0);
@@ -990,8 +990,6 @@
             return "<b style='color:green;'>OPEN</b>";
         } else if (value == 1) {
             return "<b style='color:red;'>CLOSED</b>";
-        } else if (value == 2) {
-            return "<b style='color:white;'>COMPLETE</b>";
         }
     }
 
@@ -1000,10 +998,25 @@
             return 'background-color:#C8FFCC;';
         } else if (value == 1) {
             return 'background-color:#FFC8C8;';
-        } else if (value == 2) {
-            return 'background-color:#4B54E7;';
         }
     }
+
+    function statusFormatDetail(value, row) {
+        if (value == 0) {
+            return "<b style='color:green;'>OPEN</b>";
+        } else if (value == 1) {
+            return "<b style='color:red;'>CLOSED</b>";
+        }
+    }
+
+    function statusStyleDetail(value, row, index) {
+        if (value == 0) {
+            return 'background-color:#C8FFCC;';
+        } else if (value == 1) {
+            return 'background-color:#FFC8C8;';
+        }
+    }
+
 
     function styleApprovedStatus(value, row) {
         value = formatApprovedStatus(value, row);

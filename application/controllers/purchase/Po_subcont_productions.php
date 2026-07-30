@@ -304,7 +304,7 @@ class Po_subcont_productions extends CI_Controller
                 d.qty,
                 d.unit_price,
                 d.amount,
-                h.status as status_po,
+                d.status as status_po,
                 '0' as status_si
             ");
 
