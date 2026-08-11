@@ -1411,9 +1411,9 @@ class Pr_subcont_productions extends CI_Controller
                     <td width="250" style="text-align:left;">'.$data['subcont_name'].'</td>
                     <td width="170" style="text-align:left;">'.$data['doc_no'].'</td>
                     <td width="100" style="text-align:left;">'.$data['order_type'].'</td>
-                    <td width="100" style="text-align:left;">'.$data['item_fg_id'].'</td>
-                    <td width="150" style="text-align:left;">'.$data['item_fg_number'].'</td>
-                    <td width="200" style="text-align:left;">'.$data['item_fg_name'].'</td>
+                    <td width="100" style="text-align:left;mso-number-format:\@;">'.$data['item_fg_id'].'</td>
+                    <td width="150" style="text-align:left;mso-number-format:\@;">'.$data['item_fg_number'].'</td>
+                    <td width="200" style="text-align:left;mso-number-format:\@;">'.$data['item_fg_name'].'</td>
                     <td width="80" style="text-align:right;">'.$this->format_number($data['ost_so']).'</td>
                     <td width="80" style="text-align:right;">'.$this->format_number($data['total_stock']).'</td>
                     <td width="100" style="text-align:right;">'.$this->format_number($data['fc_m1']).'</td>
