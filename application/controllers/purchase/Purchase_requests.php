@@ -88,7 +88,7 @@ class Purchase_requests extends CI_Controller
         $this->db->select('a.request_no, a.request_date, a.request_name');
         $this->db->from('purchase_requests a');
         $this->db->join('users u', 'u.username = a.created_by', 'left');
-        $this->db->where('a.status', 0);
+        // $this->db->where('a.status', 0);
         // $this->db->where('a.approved_to', '');
 
         if (!empty($user->department_id) && !in_array($user->department, $this->crud->getIgnoreDept())) {
