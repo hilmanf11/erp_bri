@@ -4,6 +4,7 @@
         <tr>
             <th field="ck" checkbox="true"></th>
             <th data-options="field:'print',width:70,align:'center',formatter:printFormatter">Print</th>
+            <th data-options="field:'preview',width:70,align:'center',formatter:previewFormatter">Preview</th>
             <th data-options="field:'po_no',width:150">PO No</th>
             <th data-options="field:'po_date',width:100">PO Date</th>
             <th data-options="field:'item_number',width:200">Product No</th>
@@ -48,14 +49,46 @@
 		// if (po_no.includes("-A")) {
 
         if(/-A\d{2}$/.test(po_no)) {
-			printUrl = "<?= base_url('purchase/Purchase_orders/print_po_additional/') ?>" + window.btoa(po_no);
+			printUrl = "<?= base_url('purchase/Purchase_orders/print_po_additional_pdf/') ?>" + window.btoa(po_no);
 		} else {
-			printUrl = "<?= base_url('purchase/Purchase_orders/print_po/') ?>" + window.btoa(po_no);
+			printUrl = "<?= base_url('purchase/Purchase_orders/print_po_pdf/') ?>" + window.btoa(po_no);
 		}
 
 		window.open(printUrl, "_blank");
     }
 
+    function previewFormatter(value, row) {
+        return `
+            <a href="javascript:void(0)"
+            class="btn btn-warning w-100" style="pointer-events:visible;opacity:1;" onclick="previewPo('${row.po_no}')" title="Preview">
+                <i class="fa fa-eye"></i>
+            </a>
+        `;
+    }
+
+    function previewPo(po_no) {
+
+        let url = "";
+
+        if (/-A\d{2}$/.test(po_no)) {
+            url = "<?= base_url('purchase/Purchase_orders/print_po_additional_pdf/') ?>" + window.btoa(po_no);
+        } else {
+            url = "<?= base_url('purchase/Purchase_orders/print_po_pdf/') ?>" + window.btoa(po_no);
+        }
+
+        window.parent.$('<div/>').dialog({
+            title: 'Preview Purchase Order',
+            width: '60%',
+            height: '90%',
+            modal: true,
+            maximizable: true,
+            content: '<iframe src="' + url + '" style="width:100%;height:99%;border:none;"></iframe>',
+            onClose: function () {
+                $(this).dialog('destroy');
+            }
+        });
+
+    }
 
     //RELOAD
     function reload() {

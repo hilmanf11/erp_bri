@@ -71,14 +71,38 @@
 		// if (po_no.includes("-A")) {
 
 		if(/-A\d{2}$/.test(po_no)) {
-			printUrl = "<?= base_url('purchase/Purchase_orders/print_po_additional/') ?>" + window.btoa(po_no);
+			printUrl = "<?= base_url('purchase/Purchase_orders/print_po_additional_pdf/') ?>" + window.btoa(po_no);
 		} else {
-			printUrl = "<?= base_url('purchase/Purchase_orders/print_po/') ?>" + window.btoa(po_no);
+			printUrl = "<?= base_url('purchase/Purchase_orders/print_po_pdf/') ?>" + window.btoa(po_no);
 		}
 
 		window.open(printUrl, "_blank");
 
         // window.open('<?= base_url('purchase/Purchase_orders/print_po/') ?>' + btoa(poNo), '_blank');
+    }
+
+    function previewPo(po_no) {
+
+        let url = "";
+
+        if (/-A\d{2}$/.test(po_no)) {
+            url = "<?= base_url('purchase/Purchase_orders/print_po_additional_pdf/') ?>" + window.btoa(po_no);
+        } else {
+            url = "<?= base_url('purchase/Purchase_orders/print_po_pdf/') ?>" + window.btoa(po_no);
+        }
+
+        window.parent.$('<div/>').dialog({
+            title: 'Preview Purchase Order',
+            width: '60%',
+            height: '90%',
+            modal: true,
+            maximizable: true,
+            content: '<iframe src="' + url + '" style="width:100%;height:99%;border:none;"></iframe>',
+            onClose: function () {
+                $(this).dialog('destroy');
+            }
+        });
+
     }
 
     $(function() {
@@ -96,12 +120,21 @@
 					checkbox: "true",
 				},{
                     field: 'print',
-                    width: 100,
+                    width: 70,
                     align: 'center',
                     title: "Print",
                     formatter: function(value, row) {
                         var print = "printPo('" + row.po_no + "')";
                         return '<a class="btn btn-primary w-100" onClick="' + print + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-print"></i></a>';
+                    }
+                },{
+                    field: 'preview',
+                    width: 70,
+                    align: 'center',
+                    title: "Preview",
+                    formatter: function(value, row) {
+                        var print = "previewPo('" + row.po_no + "')";
+                        return '<a class="btn btn-warning w-100" onClick="' + print + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i></a>';
                     }
                 },{
 					field: 'request_no',
