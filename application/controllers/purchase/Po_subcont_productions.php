@@ -662,7 +662,7 @@ class Po_subcont_productions extends CI_Controller
     }
 
 
-    public function print_po($po_no)
+    public function print_po($po_no, $mode = 'print')
     {
         $purchase_order = $this->crud->read('po_subcont_productions', [], ["po_no" => base64_decode($po_no)], "", "revision", "desc");
         $purchase_orders_total = $this->crud->reads('po_subcont_production_details', [], ["po_subcont_productions_id" => $purchase_order->id]);
@@ -846,16 +846,32 @@ class Po_subcont_productions extends CI_Controller
                             padding-bottom: 2px;
                             text-align: center;color: black;
                         }
-                        @media screen {
-                            .print {
-                                display: none !important;
-                            }
+                            ';
+
+                        if($mode == 'preview'){
+                            $html .= '
+                                .print{
+                                    display:block !important;
+                                }
+
+                                .noprint{
+                                    display:none !important;
+                                }';
+                        } else {
+                            $html .= '
+                                @media screen {
+                                    .print {
+                                        display: none !important;
+                                    }
+                                }
+                                @media print {
+                                    .noprint {
+                                        display: none !important;
+                                    }
+                                }';
                         }
-                        @media print {
-                            .noprint {
-                                display: none !important;
-                            }
-                        }
+
+                        $html .='
                     </style>
                     <body>
                         <div style="margin:20%;" class="noprint">
@@ -1112,12 +1128,21 @@ class Po_subcont_productions extends CI_Controller
                     ';
 
                         $html .= '
-                            <table style="width:28%; margin-top:10px; font-size:12px;">
+                            <table style="width:20%;  margin-top:10px; border-collapse:collapse;" border="1" cellpadding="4">
+                                <tr style="text-align:center;">
+                                    <td>Supplier Approval</td>
+                                </tr>
+
                                 <tr>
-                                    <td style="vertical-align:top;">
-                                        <b>Notes :</b><br><br>
-                                        ' . (!empty($purchase_order->notes) ? nl2br($purchase_order->notes) : '') . '
-                                    </td>
+                                    <td style="height:103px;"></td>
+                                </tr>
+
+                                <tr style="text-align:center;">
+                                    <td style="height:24px;"></td>
+                                </tr>
+
+                                <tr style="text-align:center;">
+                                    <td style="height:24px;"></td>
                                 </tr>
                             </table>';
 
@@ -1181,11 +1206,21 @@ class Po_subcont_productions extends CI_Controller
 
                                 </table>
                             </div>
+                            </div>
                         ';
+
+                        $html .= '
+                            <table style="width:90%; margin-top:10px; font-size:12px;">
+                                <tr>
+                                    <td style="vertical-align:top;">
+                                        <b>Notes :</b><br><br>
+                                        ' . (!empty($purchase_order->notes) ? nl2br($purchase_order->notes) : '') . '
+                                    </td>
+                                </tr>
+                            </table>';
 
                     $html .= '
 
-                    </div>
                     </div>
 
                     </div>';
@@ -1268,7 +1303,12 @@ class Po_subcont_productions extends CI_Controller
             }
             $hal++;
         }
-        $html .= '<script>window.print()</script>';
+        // $html .= '<script>window.print()</script>';
+
+        if($mode == 'print'){
+            $html .= '<script>window.print()</script>';
+        }
+
         die($html);
     }
 

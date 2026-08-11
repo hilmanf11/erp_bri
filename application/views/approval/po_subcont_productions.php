@@ -4,6 +4,7 @@
         <tr>
             <th field="ck" checkbox="true"></th>
             <th data-options="field:'print',width:80,align:'center',formatter:printFormatter">Print</th>
+            <th data-options="field:'preview',width:80,align:'center',formatter:previewFormatter">Preview</th>
             <th data-options="field:'po_no',width:200">PO No</th>
             <th data-options="field:'po_date',width:100">PO Date</th>
             <th data-options="field:'due_date',width:100">Due Date</th>
@@ -32,11 +33,38 @@
     }
 
     function printPo(po_no) {
-		var printUrl = "<?= base_url('purchase/Po_subcont_productions/print_po/') ?>" + window.btoa(po_no);
+		var printUrl = "<?= base_url('purchase/Po_subcont_productions/print_po/') ?>" + window.btoa(po_no) + "/print";
 
 		window.open(printUrl, "_blank");
     }
 
+    function previewFormatter(value, row){
+        return `
+            <a href="javascript:void(0)"
+            class="btn btn-warning w-100" style="pointer-events:visible;opacity:1;" onclick="previewPo('${row.po_no}')" title="Preview">
+                <i class="fa fa-eye"></i>
+            </a>
+        `;
+    }
+
+    function previewPo(po_no){
+
+        var url = "<?= base_url('purchase/Po_subcont_productions/print_po/') ?>"
+                + window.btoa(po_no)
+                + "/preview";
+
+        window.parent.$('<div/>').dialog({
+            title: 'Preview Purchase Order',
+            width: '60%',
+            height: '90%',
+            modal: true,
+            maximizable: true,
+            content: '<iframe src="' + url + '" style="width:100%;height:99%;border:none;"></iframe>',
+            onClose: function () {
+                $(this).dialog('destroy');
+            }
+        });
+    }
 
     //RELOAD
     function reload() {

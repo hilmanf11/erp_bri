@@ -302,7 +302,7 @@
 		<div style="background: black; color: #d0d0d0; padding: 10px; text-align: center;">
 			<h2 style="font-size: 20px !important;" id="header_approval"></h2>
 		</div>
-		<iframe src="" scrolling="yes" id="pageApproval" style="border: 0; width: 100%; height: 93%; margin:0;"></iframe>
+		<iframe src="" scrolling="yes" id="pageApproval" style="border: 0; width: 100%; height: 83%; margin:0;"></iframe>
 	</div>
 
 	<!-- NOTIFICATIONS -->
