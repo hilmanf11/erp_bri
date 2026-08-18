@@ -1,3 +1,9 @@
+<style>
+    .swal2-validation-message {
+        background: #fff !important;
+    }
+</style>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -162,8 +168,72 @@
         }
 	}
 
+    // function disapprove() {
+	// 	var rows = $('#dg').datagrid('getSelections');
+    //     if (rows.length > 0) {
+    //         Swal.fire({
+    //             title: 'Disapprove Data',
+    //             text: "Are you sure? You want to disapprove this data!",
+    //             icon: 'warning',
+    //             showCancelButton: true,
+    //             allowOutsideClick: false,
+    //             allowEscapeKey: false,
+    //             confirmButtonText: 'Yes, Dispprove it!'
+    //         }).then((result) => {
+    //             if (result.isConfirmed) {
+    //                 Swal.fire({
+    //                     title: 'Please Wait...',
+    //                     showConfirmButton: false,
+    //                     allowOutsideClick: false,
+    //                     allowEscapeKey: false,
+    //                     didOpen: () => {
+    //                         Swal.showLoading();
+    //                     },
+    //                 });
+
+    //                 requestApprove(rows.length, rows);
+    //                 function requestApprove(total, json, number = 1, value = 0) {
+    //                     if (value < 100) {
+    //                         var row = json[number-1];
+    //                         value = Math.floor((number / total) * 100);
+
+    //                         $.ajax({
+    //                             method: 'post',
+    //                             url: '<?= base_url('approvals/disapprove') ?>',
+    //                             data: {
+    //                                 id: row.id,
+	// 								tablename: "<?= $table ?>"
+    //                             },
+    //                             success: function(result) {
+    //                                 var result = eval('(' + result + ')');
+    //                                 requestApprove(total, json, number + 1, value);
+
+    //                                 if (number == total) {
+    //                                     $('#dg').datagrid('reload');
+    //                                     Swal.close();
+    //                                     Swal.fire(
+    //                                         'Disapprove Completed',
+    //                                         'Disapprove Data has been completed, You cannot restore data that has been disapproved',
+    //                                         'success'
+    //                                     );
+    //                                 }
+    //                             },
+    //                             error: function(jqXHR, textStatus, errorThrown) {
+    //                                 toastr.error(jqXHR.statusText);
+    //                             },
+    //                         });
+    //                     }
+    //                 }
+    //             }
+    //         });
+    //     } else {
+    //         toastr.info("Please select one of the data in the table first");
+    //     }
+	// }
+
     function disapprove() {
-		var rows = $('#dg').datagrid('getSelections');
+        var rows = $('#dg').datagrid('getSelections');
+
         if (rows.length > 0) {
             Swal.fire({
                 title: 'Disapprove Data',
@@ -172,58 +242,99 @@
                 showCancelButton: true,
                 allowOutsideClick: false,
                 allowEscapeKey: false,
-                confirmButtonText: 'Yes, Dispprove it!'
+                confirmButtonText: 'Yes, Disapprove it!'
             }).then((result) => {
+
                 if (result.isConfirmed) {
+
                     Swal.fire({
-                        title: 'Please Wait...',
-                        showConfirmButton: false,
+                        title: 'Disapprove Reason',
+                        input: 'textarea',
+                        inputLabel: 'Reason',
+                        inputPlaceholder: 'Enter the reason for disapproval...',
+                        inputAttributes: {
+                            'aria-label': 'Disapprove reason'
+                        },
+                        showCancelButton: true,
                         allowOutsideClick: false,
                         allowEscapeKey: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        },
-                    });
+                        confirmButtonText: 'Submit',
+                        cancelButtonText: 'Cancel',
+                        inputValidator: (value) => {
+                            if (!value || !value.trim()) {
+                                return 'Reason is required!';
+                            }
+                        }
+                    }).then((reasonResult) => {
 
-                    requestApprove(rows.length, rows);
-                    function requestApprove(total, json, number = 1, value = 0) {
-                        if (value < 100) {
-                            var row = json[number-1];
-                            value = Math.floor((number / total) * 100);
+                        if (reasonResult.isConfirmed) {
 
-                            $.ajax({
-                                method: 'post',
-                                url: '<?= base_url('approvals/disapprove') ?>',
-                                data: {
-                                    id: row.id,
-									tablename: "<?= $table ?>"
-                                },
-                                success: function(result) {
-                                    var result = eval('(' + result + ')');
-                                    requestApprove(total, json, number + 1, value);
+                            var reason = reasonResult.value.trim();
 
-                                    if (number == total) {
-                                        $('#dg').datagrid('reload');
-                                        Swal.close();
-                                        Swal.fire(
-                                            'Disapprove Completed',
-                                            'Disapprove Data has been completed, You cannot restore data that has been disapproved',
-                                            'success'
-                                        );
-                                    }
-                                },
-                                error: function(jqXHR, textStatus, errorThrown) {
-                                    toastr.error(jqXHR.statusText);
+                            Swal.fire({
+                                title: 'Please Wait...',
+                                showConfirmButton: false,
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
                                 },
                             });
+
+                            requestApprove(rows.length, rows, 1, 0, reason);
                         }
-                    }
+                    });
                 }
             });
+
+            function requestApprove(total, json, number = 1, value = 0, reason = '') {
+                if (value < 100) {
+                    var row = json[number - 1];
+                    value = Math.floor((number / total) * 100);
+
+                    $.ajax({
+                        method: 'post',
+                        url: '<?= base_url('approvals/disapprove') ?>',
+                        data: {
+                            id: row.id,
+                            tablename: "<?= $table ?>",
+                            reason: reason
+                        },
+                        success: function(result) {
+                            var result = eval('(' + result + ')');
+
+                            requestApprove(
+                                total,
+                                json,
+                                number + 1,
+                                value,
+                                reason
+                            );
+
+                            if (number == total) {
+                                $('#dg').datagrid('reload');
+
+                                Swal.close();
+
+                                Swal.fire(
+                                    'Disapprove Completed',
+                                    'Disapprove Data has been completed, You cannot restore data that has been disapproved',
+                                    'success'
+                                );
+                            }
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            toastr.error(jqXHR.statusText);
+                        },
+                    });
+                }
+            }
+
         } else {
             toastr.info("Please select one of the data in the table first");
         }
-	}
+    }
+
 
     function numberformat(value, row) {
 		const formatter = new Intl.NumberFormat('id-ID');

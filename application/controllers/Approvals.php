@@ -300,6 +300,7 @@ class Approvals extends CI_Controller
 {
     $id = $this->input->post('id');
     $tablename = $this->input->post('tablename');
+    $reason = trim($this->input->post('reason', true) ?? '');
     $read = $this->crud->read($tablename, [], ["id" => $id]);
     $read_table_approvals = $this->crud->read('approvals', [], ["table_name" => $tablename]);
     $data = json_decode($read->approved_data, true); // Decode sebagai array
@@ -346,12 +347,29 @@ class Approvals extends CI_Controller
     }
     if (!empty($read_table_approvals->id)) {
         /* Default */
+        // if (empty($data)) {
+        //     $send = $this->db->update($tablename, ["deleted" => 2], ["id" => $id]);
+        // } else {
+        //     $data = array_merge($data, ["deleted" => 2]); // $data sudah pasti array
+        //     $send = $this->db->update($tablename, $data, ["id" => $id]);
+        // }
+
         if (empty($data)) {
-            $send = $this->db->update($tablename, ["deleted" => 2], ["id" => $id]);
+            $update_data = [
+                "deleted" => 2
+            ];
         } else {
-            $data = array_merge($data, ["deleted" => 2]); // $data sudah pasti array
-            $send = $this->db->update($tablename, $data, ["id" => $id]);
+            $update_data = array_merge($data, [
+                "deleted" => 2
+            ]);
         }
+
+        if ($reason !== '') {
+            $update_data['reason_approval'] = $reason;
+        }
+
+        $this->db->update($tablename, $update_data, ["id" => $id]);
+
         $columns = ['user_approval_1', 'user_approval_2', 'user_approval_3', 'user_approval_4', 'user_approval_5'];
 
         $approval_column = null;
