@@ -225,7 +225,7 @@
         textField: 'name',
         mode: 'remote',
         fitColumns: true,
-        required: true,
+        // required: true,
         prompt: "Choose Department",
         columns: [
             [{
