@@ -2204,6 +2204,49 @@ class Purchase_orders extends CI_Controller
         die($html);
     }
 
+    // private function normalizePdf($inputPath, $outputPath)
+    // {
+    //     $qpdf = '/opt/homebrew/bin/qpdf';
+
+    //     $command = sprintf(
+    //         '%s --object-streams=disable %s %s 2>&1',
+    //         escapeshellarg($qpdf),
+    //         escapeshellarg($inputPath),
+    //         escapeshellarg($outputPath)
+    //     );
+
+    //     exec($command, $output, $exitCode);
+
+    //     return $exitCode === 0 && file_exists($outputPath);
+    // }
+
+    private function normalizePdf($inputPath, $outputPath)
+    {
+        $qpdf = '/usr/bin/qpdf';
+
+        if (!function_exists('exec')) {
+            return false;
+        }
+
+        $output = [];
+        $exitCode = -1;
+
+        $command = sprintf(
+            '%s --object-streams=disable %s %s 2>&1',
+            escapeshellarg($qpdf),
+            escapeshellarg($inputPath),
+            escapeshellarg($outputPath)
+        );
+
+        exec($command, $output, $exitCode);
+
+        return (
+            $exitCode === 0 &&
+            is_file($outputPath) &&
+            filesize($outputPath) > 0
+        );
+    }
+
     public function print_po_pdf($po_no)
     {
         $html = $this->generatePoHtml($po_no, true);
@@ -2284,41 +2327,108 @@ class Purchase_orders extends CI_Controller
             $pdf->useTemplate($tpl, $x, $y, $newWidth, $newHeight);
         }
 
+        // if (!empty($attachmentPath) && file_exists($attachmentPath)) {
+        //     $pageCount = $pdf->setSourceFile($attachmentPath);
+
+        //     for ($page = 1; $page <= $pageCount; $page++) {
+        //         $tpl = $pdf->importPage($page);
+        //         $size = $pdf->getTemplateSize($tpl);
+
+        //         // $pdf->AddPage(
+        //         //     $size['orientation'],
+        //         //     [$size['width'], $size['height']]
+        //         // );
+
+        //         // $pdf->useTemplate($tpl);
+
+        //         $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
+
+        //         $pdf->AddPage($orientation, 'A4');
+
+        //         $pageWidth  = ($orientation == 'P') ? 210 : 297;
+        //         $pageHeight = ($orientation == 'P') ? 297 : 210;
+
+        //         $scale = min(
+        //             $pageWidth / $size['width'],
+        //             $pageHeight / $size['height']
+        //         );
+
+        //         $newWidth  = $size['width'] * $scale;
+        //         $newHeight = $size['height'] * $scale;
+
+        //         $x = ($pageWidth - $newWidth) / 2;
+        //         $y = ($pageHeight - $newHeight) / 2;
+
+        //         $pdf->useTemplate($tpl, $x, $y, $newWidth, $newHeight);
+        //     }
+
+        // }
+
         if (!empty($attachmentPath) && file_exists($attachmentPath)) {
-            $pageCount = $pdf->setSourceFile($attachmentPath);
 
-            for ($page = 1; $page <= $pageCount; $page++) {
-                $tpl = $pdf->importPage($page);
-                $size = $pdf->getTemplateSize($tpl);
+            $pdfToMerge = $attachmentPath;
 
-                // $pdf->AddPage(
-                //     $size['orientation'],
-                //     [$size['width'], $size['height']]
-                // );
+            $normalizedPdf = $tempDir .
+                'normalized_' . md5($attachmentPath) . '.pdf';
 
-                // $pdf->useTemplate($tpl);
+            try {
+                $pageCount = $pdf->setSourceFile($pdfToMerge);
+            } catch (\Throwable $e) {
 
-                $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
+                $pdfToMerge = $normalizedPdf;
 
-                $pdf->AddPage($orientation, 'A4');
-
-                $pageWidth  = ($orientation == 'P') ? 210 : 297;
-                $pageHeight = ($orientation == 'P') ? 297 : 210;
-
-                $scale = min(
-                    $pageWidth / $size['width'],
-                    $pageHeight / $size['height']
-                );
-
-                $newWidth  = $size['width'] * $scale;
-                $newHeight = $size['height'] * $scale;
-
-                $x = ($pageWidth - $newWidth) / 2;
-                $y = ($pageHeight - $newHeight) / 2;
-
-                $pdf->useTemplate($tpl, $x, $y, $newWidth, $newHeight);
+                if (!$this->normalizePdf($attachmentPath, $pdfToMerge)) {
+                    $pageCount = 0;
+                } else {
+                    $pageCount = $pdf->setSourceFile($pdfToMerge);
+                }
             }
 
+            if ($pageCount > 0) {
+
+                for ($page = 1; $page <= $pageCount; $page++) {
+
+                    $tpl = $pdf->importPage($page);
+                    $size = $pdf->getTemplateSize($tpl);
+
+                    $orientation = ($size['width'] > $size['height'])
+                        ? 'L'
+                        : 'P';
+
+                    $pdf->AddPage($orientation, 'A4');
+
+                    $pageWidth = ($orientation === 'P')
+                        ? 210
+                        : 297;
+
+                    $pageHeight = ($orientation === 'P')
+                        ? 297
+                        : 210;
+
+                    $scale = min(
+                        $pageWidth / $size['width'],
+                        $pageHeight / $size['height']
+                    );
+
+                    $newWidth = $size['width'] * $scale;
+                    $newHeight = $size['height'] * $scale;
+
+                    $x = ($pageWidth - $newWidth) / 2;
+                    $y = ($pageHeight - $newHeight) / 2;
+
+                    $pdf->useTemplate(
+                        $tpl,
+                        $x,
+                        $y,
+                        $newWidth,
+                        $newHeight
+                    );
+                }
+            }
+
+            if (file_exists($normalizedPdf)) {
+                @unlink($normalizedPdf);
+            }
         }
 
         $pdf->SetTitle(base64_decode($po_no));
@@ -3480,42 +3590,109 @@ class Purchase_orders extends CI_Controller
 
         }
 
+        // if (!empty($attachmentPath) && file_exists($attachmentPath)) {
+        //     $pageCount = $pdf->setSourceFile($attachmentPath);
+
+        //     for ($page = 1; $page <= $pageCount; $page++) {
+        //         $tpl = $pdf->importPage($page);
+        //         $size = $pdf->getTemplateSize($tpl);
+
+        //         // $pdf->AddPage(
+        //         //     $size['orientation'],
+        //         //     [$size['width'], $size['height']]
+        //         // );
+
+        //         // $pdf->useTemplate($tpl);
+
+        //         $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
+
+        //         $pdf->AddPage($orientation, 'A4');
+
+        //         $pageWidth  = ($orientation == 'P') ? 210 : 297;
+        //         $pageHeight = ($orientation == 'P') ? 297 : 210;
+
+        //         $scale = min(
+        //             $pageWidth / $size['width'],
+        //             $pageHeight / $size['height']
+        //         );
+
+        //         $newWidth  = $size['width'] * $scale;
+        //         $newHeight = $size['height'] * $scale;
+
+        //         $x = ($pageWidth - $newWidth) / 2;
+        //         $y = ($pageHeight - $newHeight) / 2;
+
+        //         $pdf->useTemplate($tpl, $x, $y, $newWidth, $newHeight);
+
+        //     }
+
+        // }
+
+
         if (!empty($attachmentPath) && file_exists($attachmentPath)) {
-            $pageCount = $pdf->setSourceFile($attachmentPath);
 
-            for ($page = 1; $page <= $pageCount; $page++) {
-                $tpl = $pdf->importPage($page);
-                $size = $pdf->getTemplateSize($tpl);
+            $pdfToMerge = $attachmentPath;
 
-                // $pdf->AddPage(
-                //     $size['orientation'],
-                //     [$size['width'], $size['height']]
-                // );
+            $normalizedPdf = $tempDir .
+                'normalized_' . md5($attachmentPath) . '.pdf';
 
-                // $pdf->useTemplate($tpl);
+            try {
+                $pageCount = $pdf->setSourceFile($pdfToMerge);
+            } catch (\Throwable $e) {
+                $pdfToMerge = $normalizedPdf;
 
-                $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
-
-                $pdf->AddPage($orientation, 'A4');
-
-                $pageWidth  = ($orientation == 'P') ? 210 : 297;
-                $pageHeight = ($orientation == 'P') ? 297 : 210;
-
-                $scale = min(
-                    $pageWidth / $size['width'],
-                    $pageHeight / $size['height']
-                );
-
-                $newWidth  = $size['width'] * $scale;
-                $newHeight = $size['height'] * $scale;
-
-                $x = ($pageWidth - $newWidth) / 2;
-                $y = ($pageHeight - $newHeight) / 2;
-
-                $pdf->useTemplate($tpl, $x, $y, $newWidth, $newHeight);
-
+                if (!$this->normalizePdf($attachmentPath, $pdfToMerge)) {
+                    $pageCount = 0;
+                } else {
+                    $pageCount = $pdf->setSourceFile($pdfToMerge);
+                }
             }
 
+            if ($pageCount > 0) {
+
+                for ($page = 1; $page <= $pageCount; $page++) {
+
+                    $tpl = $pdf->importPage($page);
+                    $size = $pdf->getTemplateSize($tpl);
+
+                    $orientation = ($size['width'] > $size['height'])
+                        ? 'L'
+                        : 'P';
+
+                    $pdf->AddPage($orientation, 'A4');
+
+                    $pageWidth = ($orientation === 'P')
+                        ? 210
+                        : 297;
+
+                    $pageHeight = ($orientation === 'P')
+                        ? 297
+                        : 210;
+
+                    $scale = min(
+                        $pageWidth / $size['width'],
+                        $pageHeight / $size['height']
+                    );
+
+                    $newWidth = $size['width'] * $scale;
+                    $newHeight = $size['height'] * $scale;
+
+                    $x = ($pageWidth - $newWidth) / 2;
+                    $y = ($pageHeight - $newHeight) / 2;
+
+                    $pdf->useTemplate(
+                        $tpl,
+                        $x,
+                        $y,
+                        $newWidth,
+                        $newHeight
+                    );
+                }
+            }
+
+            if (file_exists($normalizedPdf)) {
+                @unlink($normalizedPdf);
+            }
         }
 
         $pdf->SetTitle(base64_decode($po_no));
