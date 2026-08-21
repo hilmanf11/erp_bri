@@ -1492,8 +1492,27 @@ class Scan_visual_checker extends CI_Controller
         $this->db->query("SELECT RELEASE_LOCK('rfg_label_sequence_lock')");
     }
 
+    private function getShiftCode($shift)
+    {
+        $shiftCode = [
+            '1' => 'A',
+            '2' => 'B',
+            '3' => 'C',
+            'A' => 'A',
+            'B' => 'B',
+            'C' => 'C'
+        ];
+
+        return isset($shiftCode[$shift]) ? $shiftCode[$shift] : $shift;
+    }
+
     private function generateSerialLabel($prefix, $productNo, $prod_date = "", $shift = "", $item_fg_id = "")
     {
+        $prefixParts = explode('|', $prefix);
+        $sequencePrefix = $prefixParts[0] . '|' . $prefixParts[1] . '|%';
+
+        $shiftCode = $this->getShiftCode($shift);
+
         while (true) {
 
             if (!empty($prod_date) && !empty($shift) && !empty($item_fg_id)) {
@@ -1501,6 +1520,18 @@ class Scan_visual_checker extends CI_Controller
                     ->query("
                         SELECT MAX(sequence_no) AS sequence_no
                         FROM (
+                            SELECT CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(nbf.serial_label, '|', 4), '|', -1) AS UNSIGNED) AS sequence_no
+                            FROM new_barcode_fg_detail nbf
+                            LEFT JOIN new_barcode_fg nb ON nb.serial_no = nbf.serial_no
+                            WHERE nbf.deleted = 0
+                                AND COALESCE(nb.deleted, 0) = 0
+                                AND nb.prod_date = ?
+                                AND nb.shift = ?
+                                AND nbf.item_fg_id = ?
+                                AND nbf.serial_label LIKE ?
+
+                            UNION ALL
+
                             SELECT CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(serial_label, '|', 4), '|', -1) AS UNSIGNED) AS sequence_no
                             FROM fg_visual_checker_label
                             WHERE deleted = 0
@@ -1523,11 +1554,17 @@ class Scan_visual_checker extends CI_Controller
                         $prod_date,
                         $shift,
                         $item_fg_id,
-                        $prefix . '|%',
+                        $sequencePrefix,
+
                         $prod_date,
-                        $shift,
+                        $shiftCode,
                         $item_fg_id,
-                        $prefix . '|%'
+                        $sequencePrefix,
+
+                        $prod_date,
+                        $shiftCode,
+                        $item_fg_id,
+                        $sequencePrefix
                     ])
                     ->row();
 
@@ -1536,6 +1573,13 @@ class Scan_visual_checker extends CI_Controller
                 $sql = "
                     SELECT MAX(sequence_no) AS sequence_no
                     FROM (
+                        SELECT CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(serial_label, '|', 4), '|', -1) AS UNSIGNED) AS sequence_no
+                        FROM new_barcode_fg_detail
+                        WHERE deleted = 0
+                            AND serial_label LIKE ?
+
+                        UNION ALL
+
                         SELECT CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(serial_label, '|', 4), '|', -1) AS UNSIGNED) AS sequence_no
                         FROM fg_visual_checker_label
                         WHERE deleted = 0
@@ -1550,26 +1594,32 @@ class Scan_visual_checker extends CI_Controller
                     ) labels
                 ";
 
-                $last = $this->db->query($sql, [$prefix . '|%', $prefix . '|%'])->row();
+                $last = $this->db->query($sql, [$prefix . '|%', $prefix . '|%', $prefix . '|%'])->row();
                 $sequence = !empty($last->sequence_no) ? ((int) $last->sequence_no + 1) : 1;
             }
 
-            $serial = implode('|', [$prefix, sprintf('%03d', $sequence), $productNo]);
+            $serial_label = implode('|', [$prefix, sprintf('%03d', $sequence), $productNo]);
 
             $exists_fg = $this->db
-                ->where('serial_label', $serial)
+                ->where('serial_label', $serial_label)
                 ->where('deleted', 0)
                 ->get('fg_visual_checker_label')
                 ->row();
 
+            $exists_packing = $this->db
+                ->where('serial_label', $serial_label)
+                ->where('deleted', 0)
+                ->get('new_barcode_fg_detail')
+                ->row();
+
             $exists_po = $this->db
-                ->where('serial_label', $serial)
+                ->where('serial_label', $serial_label)
                 ->where('deleted', 0)
                 ->get('po_subcont_production_labels')
                 ->row();
 
-            if (!$exists_fg && !$exists_po) {
-                return $serial;
+            if (!$exists_fg && !$exists_packing && !$exists_po) {
+                return $serial_label;
             }
         }
     }
@@ -2195,16 +2245,19 @@ class Scan_visual_checker extends CI_Controller
                 $press_shift = $press_candidates[0]['shift'];
             }
 
-            $shiftCode = [
-                '1' => 'A',
-                '2' => 'B',
-                '3' => 'C'
-            ];
+            // $shiftCode = [
+            //     '1' => 'A',
+            //     '2' => 'B',
+            //     '3' => 'C'
+            // ];
 
-            $shift = isset($shiftCode[$press_shift]) ? $shiftCode[$press_shift] : '';
+            // $shift = isset($shiftCode[$press_shift]) ? $shiftCode[$press_shift] : '';
+
+            $shift = (int) $press_shift;
+            $shiftCode = $this->getShiftCode($shift);
 
             $dateCode = date('dmY', strtotime($press_date));
-            $prefix = implode('|', [$dateCode, $shift, (int)$detail->std_packing]);
+            $prefix = implode('|', [$dateCode, $shiftCode, (int)$detail->std_packing]);
 
             $this->db->where('scan_id', $detail->scan_id);
             $this->db->where('item_fg_id', $item_fg_id);
@@ -2229,7 +2282,7 @@ class Scan_visual_checker extends CI_Controller
                     'scan_id' => $detail->scan_id,
                     'item_fg_id' => $item_fg_id,
                     'prod_date' => $press_date,
-                    'shift'     => $shift,
+                    'shift'     => $shiftCode,
                     'pack_date' => $today,
                     'qty' => $label['qty'],
                     'compound_lot_no' => $dominant_lot,
