@@ -755,13 +755,45 @@ class Por_subcont_productions extends CI_Controller
         $this->db->query("SELECT RELEASE_LOCK('rfg_label_sequence_lock')");
     }
 
+    private function getShiftCode($shift)
+    {
+        $shiftCode = [
+            '1' => 'A',
+            '2' => 'B',
+            '3' => 'C',
+            'A' => 'A',
+            'B' => 'B',
+            'C' => 'C'
+        ];
+
+        return isset($shiftCode[$shift]) ? $shiftCode[$shift] : $shift;
+    }
+
     private function generateRfgSerialLabel($prod_date, $shift, $item_fg_id, $prefix, $productNo)
     {
+        $prefixParts = explode('|', $prefix);
+        $sequencePrefix = $prefixParts[0] . '|' . $prefixParts[1] . '|%';
+
+        $shift = (int) $shift;
+        $shiftCode = $this->getShiftCode($shift);
+
         while (true) {
             $last = $this->db
                 ->query("
                     SELECT MAX(sequence_no) AS sequence_no
                     FROM (
+                        SELECT CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(nbf.serial_label, '|', 4), '|', -1) AS UNSIGNED) AS sequence_no
+                        FROM new_barcode_fg_detail nbf
+                        LEFT JOIN new_barcode_fg nb ON nb.serial_no = nbf.serial_no
+                        WHERE nbf.deleted = 0
+                            AND COALESCE(nb.deleted, 0) = 0
+                            AND nb.prod_date = ?
+                            AND nb.shift = ?
+                            AND nbf.item_fg_id = ?
+                            AND nbf.serial_label LIKE ?
+
+                        UNION ALL
+
                         SELECT CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(serial_label, '|', 4), '|', -1) AS UNSIGNED) AS sequence_no
                         FROM po_subcont_production_labels
                         WHERE deleted = 0
@@ -784,11 +816,17 @@ class Por_subcont_productions extends CI_Controller
                     $prod_date,
                     $shift,
                     $item_fg_id,
-                    $prefix . '|%',
+                    $sequencePrefix,
+
                     $prod_date,
-                    $shift,
+                    $shiftCode,
                     $item_fg_id,
-                    $prefix . '|%'
+                    $sequencePrefix,
+
+                    $prod_date,
+                    $shiftCode,
+                    $item_fg_id,
+                    $sequencePrefix
                 ])
                 ->row();
 
@@ -801,15 +839,23 @@ class Por_subcont_productions extends CI_Controller
                 ->get('po_subcont_production_labels')
                 ->row();
 
+            $exists_packing = $this->db
+                ->where('serial_label', $serial_label)
+                ->where('deleted', 0)
+                ->get('new_barcode_fg_detail')
+                ->row();
+
             $exists_fg = $this->db
                 ->where('serial_label', $serial_label)
                 ->where('deleted', 0)
                 ->get('fg_visual_checker_label')
                 ->row();
 
-            if (!$exists_po && !$exists_fg) {
+            if (!$exists_po && !$exists_fg && !$exists_packing) {
                 return $serial_label;
             }
+
+            // return $serial_label;
         }
     }
 
