@@ -200,8 +200,23 @@ class Report_outstanding_so extends CI_Controller
                 </table>
                 <br>';
 
+        $months = [
+            '01' => 'January',
+            '02' => 'February',
+            '03' => 'March',
+            '04' => 'April',
+            '05' => 'May',
+            '06' => 'June',
+            '07' => 'July',
+            '08' => 'August',
+            '09' => 'September',
+            '10' => 'October',
+            '11' => 'November',
+            '12' => 'December'
+        ];
+
         if ($filter_display == "RECAP") {
-            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, SUM(a.qty) as qty_order, SUM(a.delivery) as qty_delivery, SUM(a.outstanding) as qty_outstanding, b.name as customer_name, a.closing_reason, a.type_closing, a.delivery_date');
+            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, SUM(a.qty) as qty_order, SUM(a.delivery) as qty_delivery, SUM(a.outstanding) as qty_outstanding, b.name as customer_name, a.closing_reason, a.type_closing, a.delivery_date, a.p_month, a.p_year');
             $this->db->from('sales_orders a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             // $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
@@ -280,6 +295,8 @@ class Report_outstanding_so extends CI_Controller
             $html .= '<table id="customers" border="1">
                         <tr>
                             <th width="20">No</th>
+                            <th>Period Month</th>
+                            <th>Period Year</th>
                             <th>SO Date</th>
                             <th>Delivery Date</th>
                             <th>Customer Name</th>
@@ -300,6 +317,8 @@ class Report_outstanding_so extends CI_Controller
                 $qty_delivery += $data['qty_delivery'];
                 $qty_outstanding += $data['qty_outstanding'];
 
+                $month_name = isset($months[$data['p_month']]) ? $months[$data['p_month']] : '';
+
                 if($data['qty_outstanding'] !== 0 && ($data['closing_reason'] != '' || $data['type_closing'] != '') ) {
                     $status = "<b style='color:red;'>CLOSE</b>";
                 } else if (($data['qty_order'] - $data['qty_delivery']) > 0) {
@@ -312,6 +331,8 @@ class Report_outstanding_so extends CI_Controller
 
                 $html .= '<tr>
                             <td>' . $no . '</td>
+                            <td>' . $month_name. '</td>
+                            <td>' . $data['p_year'] . '</td>
                             <td>' . $data['sales_order_date'] . '</td>
                             <td>' . $data['delivery_date'] . '</td>
                             <td>' . $data['customer_name'] . '</td>
@@ -325,14 +346,14 @@ class Report_outstanding_so extends CI_Controller
             }
 
             $html .= '<tr>
-                        <th colspan="5" style="text-align:right;">TOTAL</th>
+                        <th colspan="7" style="text-align:right;">TOTAL</th>
                         <th style="text-align:right;">' . number_format($qty_order, 0, '.', '.') . '</th>
                         <th style="text-align:right;">' . number_format($qty_delivery, 0, '.', '.') . '</th>
                         <th style="text-align:right;">' . number_format($qty_outstanding, 0, '.', '.') . '</th>
                         <th>' . $status . '</th>
                     </tr>';
         } else {
-            $this->db->select('a.sales_order_no, a.item_fg_id, a.sales_order_date, a.customer_order_no, a.qty, a.delivery, a.outstanding, b.name as customer_name, c.number as item_fg_number, c.name as item_fg_name, a.closing_reason, a.type_closing, a.delivery_date');
+            $this->db->select('a.sales_order_no, a.item_fg_id, a.sales_order_date, a.customer_order_no, a.qty, a.delivery, a.outstanding, b.name as customer_name, c.number as item_fg_number, c.name as item_fg_name, a.closing_reason, a.type_closing, a.delivery_date, a.p_month, a.p_year');
             $this->db->from('sales_orders a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
@@ -414,6 +435,8 @@ class Report_outstanding_so extends CI_Controller
             $html .= '<table id="customers" border="1">
                         <tr>
                             <th width="20">No</th>
+                            <th>Period Month</th>
+                            <th>Period Year</th>
                             <th>SO Date</th>
                             <th>Delivery Date</th>
                             <th>Customer Name</th>
@@ -434,8 +457,12 @@ class Report_outstanding_so extends CI_Controller
                 $qty_delivery += $data['delivery'];
                 $qty_outstanding += $data['outstanding'];
 
+                $month_name = isset($months[$data['p_month']]) ? $months[$data['p_month']] : '';
+
                 $html .= '<tr>
                             <td>' . $no . '</td>
+                            <td>' . $month_name . '</td>
+                            <td>' . $data['p_year'] . '</td>
                             <td>' . $data['sales_order_date'] . '</td>
                             <td>' . $data['delivery_date'] . '</td>
                             <td style="mso-number-format:\@">' . $data['customer_name'] . '</td>
@@ -450,7 +477,7 @@ class Report_outstanding_so extends CI_Controller
             }
 
             $html .= '<tr>
-                        <th colspan="7" style="text-align:right;">TOTAL</th>
+                        <th colspan="9" style="text-align:right;">TOTAL</th>
                         <th style="text-align:right;">' . number_format($qty_order, 0, '.', '.') . '</th>
                         <th style="text-align:right;">' . number_format($qty_delivery, 0, '.', '.') . '</th>
                         <th style="text-align:right;">' . number_format($qty_outstanding, 0, '.', '.') . '</th>
