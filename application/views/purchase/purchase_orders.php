@@ -2,7 +2,8 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'po_no',width:200,halign:'center',resizable:true">PO No</th>
+            <th rowspan="2" data-options="field:'printed',width:90,align:'center', formatter:btnPrint">Print</th>
+            <th rowspan="2" data-options="field:'po_no',width:210,halign:'center',resizable:true">PO No</th>
             <th rowspan="2" data-options="field:'status',width:80,align:'center',formatter:statusformat,styler:statusStyle">Status PO</th>
             <th rowspan="2" data-options="field:'status_pi',width:80,align:'center',formatter:statusformatFinance,styler:statusStyleFinance">Status<br>Invoice</th>
             <th rowspan="2" data-options="field:'approved_to',width:120,halign:'center',formatter:formatApprovedStatus,styler:styleApprovedStatus">Status <br>Approve</th>
@@ -24,6 +25,7 @@
             <th rowspan="2" data-options="field:'currency',width:80,align:'center'">Currency</th>
             <th rowspan="2" data-options="field:'revision',width:80,align:'center'">Revision</th>
             <th rowspan="2" data-options="field:'remarks',width:100,halign:'center'">Remarks</th>
+            <th rowspan="2" data-options="field:'attachment',width:100,align:'center',formatter: btnDetails">Attachment</th>
             <th colspan="4" data-options="field:'',width:100,halign:'center'"> Forecast</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -90,19 +92,33 @@
 <!-- Insert -->
 <div id="dlg_insert" class="easyui-dialog" title="Convert Purchase Request to Purchase Order" data-options="closed: true,modal:true" style="width: 100%; height: 100%; padding:10px; top: 0; left: 0;">
     <form id="frm_insert" method="post" novalidate>
-        <fieldset style="width:60%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">PO Period</span>
-                <input style="width:28%;" name="po_date" id="po_date" value="<?= date("Y-m-d") ?>" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">PO Period</span>
+                    <input style="width:60%;" name="po_date" id="po_date" value="<?= date("Y-m-d") ?>" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">PR No</span>
+                    <input style="width:60%;" name="request_no" id="request_no" required class="easyui-combobox">
+                </div>
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">PR No</span>
-                <input style="width:60%;" name="request_no" id="request_no" required class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;"></span>
-                <a href="javascript:;" class="easyui-linkbutton" id="btnPreview" onclick="preview()"><i class="fa fa-search"></i> Preview Data</a>
+
+            <div style="width: 50%; float: left;">
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Attachment</span>
+                    <input style="width:60%;" name="attachment" id="attachment" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Attachment</span>
+                    <input style="width:60%;" name="attachment_upload" id="attachment_upload" class="easyui-filebox" accept=".pdf">
+                </div>
+
+                <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
+                    <span style="width:35%; display:inline-block;"></span>
+                    <a href="javascript:;" class="easyui-linkbutton" id="btnPreview" onclick="preview()"><i class="fa fa-search"></i> Preview Data</a>
+                </div>
             </div>
         </fieldset>
 
@@ -253,6 +269,9 @@
                 }
 
                 if (row.status_pi == "0" || row.status_pi == null) {
+
+                    $('#attachment_upload').filebox('clear');
+
                     $('#dlg_insert').dialog('open');
                     $('#frm_insert').form('load', row);
                     $('#frm_calculate').show();
@@ -1106,6 +1125,7 @@
                     url: '<?= base_url('purchase/purchase_orders/readPono?supplier_id=') ?>' + supp.id,
                     valueField: 'po_no',
                     textField: 'po_no',
+                    mode: 'remote',
                     prompt: "Select Purchase Order No",
                     icons: [{
                         iconCls: 'icon-clear',
@@ -1113,6 +1133,9 @@
                             $(e.data.target).combobox('clear').combobox('textbox').focus();
                         }
                     }],
+                    onSelect: function(po) {
+                        // console.log('PO : ', po);
+                    }
                 });
             }
         });
@@ -1231,6 +1254,20 @@
         window.location.assign('<?= base_url('purchase/purchase_orders/print/excel') ?>' + url);
     }
 
+    function btnDetails(val, row, index) {
+        if (row._parentId) {
+            return '-';
+        }
+
+        var attachment = row.attachment;
+
+        if (attachment != null && attachment != '') {
+            return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/purchase_orders/') ?>' + row.attachment + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+        } else {
+            return '-';
+        }
+    }
+
     function complete_po() {
         var rows = $('#dg').treegrid('getSelections');
 
@@ -1313,9 +1350,29 @@
         }
     }
 
-    function print_po() {
-        var po_no = $("#filter_po_no").combogrid('getValue');
-        console.log(po_no);
+
+    function btnPrint(val, row, index) {
+        if (row._parentId) {
+            return '';
+        }
+
+        var print = "print_po('" + row.po_no + "')"; 
+        if(row.printed == 0){
+            return '<a class="btn btn-primary w-100" onClick="' + print + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-print"></i></a>';
+        }else{
+            return '<a class="btn btn-secondary w-100" onClick="' + print + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-print"></i></a>';
+        }
+    }
+
+    function print_po(po_no = "") {
+        
+        if(po_no == ""){
+            po_no = $("#filter_po_no").combogrid('getValue');
+        }
+
+        // var po_no = $("#filter_po_no").combogrid('getValue');
+        // console.log(po_no);
+
         if (po_no == "") {
             toastr.warning("Please select Purchase Order No!", "Information");
         } else {
@@ -1340,10 +1397,10 @@
 
                     // Menentukan jenis cetak berdasarkan jenis po_no
                     var printUrl = "";
-                    if (po_no.includes("-A")) { // Jika po_no mengandung '-A08'
-                        printUrl = "<?= base_url('purchase/purchase_orders/print_po_additional/') ?>" + window.btoa(po_no);
+                    if (/-A\d{2}$/.test(po_no)) { // Jika po_no mengandung '-A08'
+                        printUrl = "<?= base_url('purchase/purchase_orders/print_po_additional_pdf/') ?>" + window.btoa(po_no);
                     } else { // Jika tidak, gunakan fungsi cetak standar
-                        printUrl = "<?= base_url('purchase/purchase_orders/print_po/') ?>" + window.btoa(po_no);
+                        printUrl = "<?= base_url('purchase/purchase_orders/print_po_pdf/') ?>" + window.btoa(po_no);
                     }
                     window.open(printUrl, "_blank");
                 },
@@ -1456,6 +1513,8 @@
                                     function processSave() {
                                         var results = [];
 
+                                        var attachment = $('#attachment').textbox('getValue');
+
                                         for (var i = 0; i < totalrows; i++) {
                                             var row = rows[i];
                                             console.log('INIT : ', row.qty, typeof row.qty);
@@ -1524,7 +1583,8 @@
                                                     // '&total_dp=' + total_dp +
                                                     // '&discount_total=' + discount_total,
                                                     '&on_site_cost=' + on_site_cost +
-                                                    '&total_grand=' + total_grand,
+                                                    '&total_grand=' + total_grand +
+                                                    '&attachment=' + attachment,
                                                 dataType: "json",
                                                 success: function(result) {
                                                     results.push(result);
@@ -1603,6 +1663,54 @@
                 }
             }]
         });
+    });
+
+    $('#attachment_upload').filebox({
+        buttonText: 'Browse File',
+        accept: '.pdf',
+        onChange: function() {
+            var files = $(this).filebox('files');
+            if (!files || files.length === 0) {
+                return;
+            }
+
+            var formData = new FormData();
+            for (var i = 0; i < files.length; i++) {
+                var file = files[i];
+                formData.append('file', file, file.name);
+            }
+
+            $.ajax({
+                url: '<?= base_url('purchase/purchase_orders/uploadatt') ?>',
+                type: 'post',
+                data: formData,
+                contentType: false,
+                processData: false,
+                dataType: 'json',
+                success: function(data) {
+                    console.log('DATA : ', data);
+                    
+                    if (data.success == true) {
+                        toastr.success(data.message);
+                        $('#attachment').textbox('setValue', data.filename);
+                    } else {
+                        toastr.error(data.message);
+                        $('#attachment').textbox('clear');
+                        $('#attachment_upload').filebox('clear');
+                    }
+                },
+                error: function(xhr) {
+                    if (xhr.status === 413) {
+                        toastr.error("The file size is too large, maximum 2MB", "Error");
+                    } else {
+                        toastr.error("Upload failed", "Error");
+                    }
+
+                    $('#attachment').textbox('clear');
+                    $('#attachment_upload').filebox('clear');
+                }
+            });
+        }
     });
 
     function buttonEdit(value, row, index) {

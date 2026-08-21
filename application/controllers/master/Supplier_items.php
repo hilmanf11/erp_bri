@@ -386,6 +386,8 @@ class Supplier_items extends CI_Controller
                 "valid_date" => $data['valid_date'],
             );
 
+            $table_approval = 'supplier_items';
+
             if (empty($supplier->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Supplier Code " . $data['supplier_id'] . " Not Found", "theme" => "error"));
             } elseif (empty($item_rm->number)) {
@@ -393,17 +395,20 @@ class Supplier_items extends CI_Controller
             } else {
                 // print_r($dataFinal);
                 if (@$supplier_items->supplier_id != "") {
-                    // echo @$supplier_items->supplier_id;
-                    // die();
-                    $send = $this->crud->update('supplier_items', ["supplier_id" => $dataFinal['supplier_id'], "item_rm_id" => $dataFinal['item_rm_id']], $dataFinal);
+
+                    $send = $this->crud->updateV2('supplier_items', $table_approval, [
+                        "supplier_id" => $dataFinal['supplier_id'], 
+                        "item_rm_id" => $dataFinal['item_rm_id']
+                    ], $dataFinal);
+
                     if (@$supplier_item_histories->supplier_id == "") {
                         $send2 = $this->crud->create('supplier_item_histories', $dataFinal);
                     }
                 } else {
-                    $send = $this->crud->create('supplier_items', $dataFinal);
+                    $send = $this->crud->createV2('supplier_items', $table_approval, $dataFinal);
                     $send2 = $this->crud->create('supplier_item_histories', $dataFinal);
                 }
-                echo $send;
+                echo json_encode($send);
             }
         } else {
             show_error("Cannot Process your request");

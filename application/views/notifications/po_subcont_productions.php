@@ -70,6 +70,25 @@
 		window.open(printUrl, "_blank");
     }
 
+    function previewPo(po_no){
+
+        var url = "<?= base_url('purchase/Po_subcont_productions/print_po/') ?>"
+                + window.btoa(po_no)
+                + "/preview";
+
+        window.parent.$('<div/>').dialog({
+            title: 'Preview Purchase Order',
+            width: '60%',
+            height: '90%',
+            modal: true,
+            maximizable: true,
+            content: '<iframe src="' + url + '" style="width:100%;height:99%;border:none;"></iframe>',
+            onClose: function () {
+                $(this).dialog('destroy');
+            }
+        });
+    }
+
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
@@ -85,12 +104,21 @@
 					checkbox: "true",
 				},{
                     field: 'print',
-                    width: 100,
+                    width: 80,
                     align: 'center',
                     title: "Print",
                     formatter: function(value, row) {
                         var print = "printPo('" + row.po_no + "')";
                         return '<a class="btn btn-primary w-100" onClick="' + print + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-print"></i></a>';
+                    }
+                },{
+                    field: 'preview',
+                    width: 80,
+                    align: 'center',
+                    title: "Preview",
+                    formatter: function(value, row) {
+                        var print = "previewPo('" + row.po_no + "')";
+                        return '<a class="btn btn-warning w-100" onClick="' + print + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i></a>';
                     }
                 },{
 					field: 'po_no',

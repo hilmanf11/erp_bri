@@ -416,7 +416,7 @@
             reloadWorkorderLabel();
 
             isFiltered = false;
-            disableExportButtons();
+            // disableExportButtons();
         }
     });
 
@@ -428,20 +428,20 @@
             isFiltered &&
             totalRows > 0;
 
-        if (enable) {
-            $('#print_recap').linkbutton('enable');
-            $('#export_recap').linkbutton('enable');
-            $('#export_detail').linkbutton('enable');
-        } else {
-            disableExportButtons();
-        }
+        // if (enable) {
+        //     $('#print_recap').linkbutton('enable');
+        //     $('#export_recap').linkbutton('enable');
+        //     $('#export_detail').linkbutton('enable');
+        // } else {
+        //     disableExportButtons();
+        // }
     }
 
-    function disableExportButtons() {
-        $('#print_recap').linkbutton('disable');
-        $('#export_recap').linkbutton('disable');
-        $('#export_detail').linkbutton('disable');
-    }
+    // function disableExportButtons() {
+    //     $('#print_recap').linkbutton('disable');
+    //     $('#export_recap').linkbutton('disable');
+    //     $('#export_detail').linkbutton('disable');
+    // }
 
     //CELLSTYLE STATUS
     function cellStyler(value, row, index) {

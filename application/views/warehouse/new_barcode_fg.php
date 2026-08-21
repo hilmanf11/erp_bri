@@ -168,33 +168,90 @@
                                         { field: 'item_name', title: 'Product Name', width: 150 },
                                     ]
                                 ],
+                                // onSelect: function (index, row) {
+                                //     console.log("Selected Row:", row);
+
+                                //     var dg = $('#dg2');
+                                //     var rowIndex = dg.datagrid('getRowIndex', dg.datagrid('getSelected'));
+
+                                //     var edItemFgId = dg.datagrid('getEditor', { index: rowIndex, field: 'item_fg_id' });
+                                //     $(edItemFgId.target).textbox('setValue', row.id);
+
+                                //     var edItemNumber = dg.datagrid('getEditor', { index: rowIndex, field: 'item_number' });
+                                //     $(edItemNumber.target).textbox('setValue', row.item_number);
+
+                                //     var edItemName = dg.datagrid('getEditor', { index: rowIndex, field: 'item_name' });
+                                //     $(edItemName.target).textbox('setValue', row.item_name);
+
+                                //     var edSpecification = dg.datagrid('getEditor', { index: rowIndex, field: 'specification' });
+                                //     $(edSpecification.target).textbox('setValue', row.specification);
+
+                                //     var edEndStock = dg.datagrid('getEditor', { index: rowIndex, field: 'end_stock' });
+                                //     $(edEndStock.target).textbox('setValue', row.end_stock);
+
+                                //     var edQtyPacking = dg.datagrid('getEditor', { index: rowIndex, field: 'qty_packing' });
+                                //     $(edQtyPacking.target).numberbox('setValue', row.box_sub);
+
+                                //     // Ambil data material dari specification di item_fg
+                                //     $(edItemRmNumber.target).textbox('setValue', row.specification || '-');
+                                //     $(edItemRmId.target).textbox('setValue', null);
+                                // }
                                 onSelect: function (index, row) {
                                     console.log("Selected Row:", row);
 
                                     var dg = $('#dg2');
-                                    var rowIndex = dg.datagrid('getRowIndex', dg.datagrid('getSelected'));
+                                    var selectedRow = dg.datagrid('getSelected');
+                                    var rowIndex = dg.datagrid('getRowIndex', selectedRow);
 
-                                    var edItemFgId = dg.datagrid('getEditor', { index: rowIndex, field: 'item_fg_id' });
-                                    $(edItemFgId.target).textbox('setValue', row.id);
+                                    if (rowIndex < 0) {
+                                        console.error('Row index tidak ditemukan');
+                                        return;
+                                    }
 
-                                    var edItemNumber = dg.datagrid('getEditor', { index: rowIndex, field: 'item_number' });
-                                    $(edItemNumber.target).textbox('setValue', row.item_number);
+                                    var editors = {
+                                        item_fg_id: dg.datagrid('getEditor', {
+                                            index: rowIndex,
+                                            field: 'item_fg_id'
+                                        }),
+                                        item_number: dg.datagrid('getEditor', {
+                                            index: rowIndex,
+                                            field: 'item_number'
+                                        }),
+                                        item_name: dg.datagrid('getEditor', {
+                                            index: rowIndex,
+                                            field: 'item_name'
+                                        }),
+                                        specification: dg.datagrid('getEditor', {
+                                            index: rowIndex,
+                                            field: 'specification'
+                                        }),
+                                        end_stock: dg.datagrid('getEditor', {
+                                            index: rowIndex,
+                                            field: 'end_stock'
+                                        })
+                                    };
 
-                                    var edItemName = dg.datagrid('getEditor', { index: rowIndex, field: 'item_name' });
-                                    $(edItemName.target).textbox('setValue', row.item_name);
+                                    if (editors.item_fg_id) {
+                                        $(editors.item_fg_id.target).textbox('setValue', row.id);
+                                    }
 
-                                    var edSpecification = dg.datagrid('getEditor', { index: rowIndex, field: 'specification' });
-                                    $(edSpecification.target).textbox('setValue', row.specification);
+                                    if (editors.item_number) {
+                                        $(editors.item_number.target).textbox('setValue', row.item_number);
+                                    }
 
-                                    var edEndStock = dg.datagrid('getEditor', { index: rowIndex, field: 'end_stock' });
-                                    $(edEndStock.target).textbox('setValue', row.end_stock);
+                                    if (editors.item_name) {
+                                        $(editors.item_name.target).textbox('setValue', row.item_name);
+                                    }
 
-                                    var edQtyPacking = dg.datagrid('getEditor', { index: rowIndex, field: 'qty_packing' });
-                                    $(edQtyPacking.target).numberbox('setValue', row.box_sub);
+                                    if (editors.specification) {
+                                        $(editors.specification.target)
+                                            .textbox('setValue', row.specification || '');
+                                    }
 
-                                    // Ambil data material dari specification di item_fg
-                                    $(edItemRmNumber.target).textbox('setValue', row.specification || '-');
-                                    $(edItemRmId.target).textbox('setValue', null);
+                                    if (editors.end_stock) {
+                                        $(editors.end_stock.target)
+                                            .textbox('setValue', row.end_stock || 0);
+                                    }
                                 }
                             }
                         }

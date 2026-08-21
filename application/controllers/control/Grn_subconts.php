@@ -665,10 +665,14 @@ class Grn_subconts extends CI_Controller
 
             $this->db->group_by([
                 'a.item_fg_id',
-                'a.delivery_note_no'
+                // 'a.delivery_note_no',
+                'source_name',
             ]);
 
+            $this->db->order_by('source_name', 'ASC');
             $this->db->order_by('a.incoming_date', 'ASC');
+            $this->db->order_by('a.workorder', 'ASC');
+            $this->db->order_by('a.workorder_label', 'ASC');
 
         if ($filter_from != "" && $filter_to != "") {
             $this->db->where('a.incoming_date >=', $filter_from);
@@ -765,11 +769,6 @@ class Grn_subconts extends CI_Controller
                     <td style="width:200px;"><b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></td>
                 </tr>
                 <tr>
-                    <th style="width:10px; text-align:left;">Source</th>
-                    <td style="width:10px;">:</td>
-                    <td style="width:200px;"><b>'. $records[0]["source_name"] .'</b></td>
-                </tr>
-                <tr>
                     <th style="width:10px; text-align:left;">Category</th>
                     <td style="width:10px;">:</td>
                     <td style="width:200px;"><b>Regular</b></td>
@@ -780,6 +779,7 @@ class Grn_subconts extends CI_Controller
             <table id="customers" border="1">
                     <tr>
                         <th style="width: 10px !important;">No</th>
+                        <th style="width: 120px;">Source Name</th>
                         <th style="width: 120px;">Product ID</th>
                         <th style="width: 120px;">Product No</th>
                         <th style="width: 150px;">Product Name</th>
@@ -796,6 +796,7 @@ class Grn_subconts extends CI_Controller
         foreach ($records as $row) {
             $html .= '<tr>
                         <td class="text-center">'.$no.'</td>
+                        <td class="no-wrap">'.$row['source_name'].'</td>
                         <td class="no-wrap">'.$row['item_fg_id'].'</td>
                         <td class="no-wrap" style="mso-number-format:&quot;@&quot;">'.$row['item_fg_number'].'</td>
                         <td class="no-wrap">'.$row['item_fg_name'].'</td>
@@ -812,7 +813,7 @@ class Grn_subconts extends CI_Controller
 
         $html .= '
                 <tr>
-                    <td colspan="4" style="text-align:right; font-weight:bold;">Grand Total</td>
+                    <td colspan="5" style="text-align:right; font-weight:bold;">Grand Total</td>
                     <td style="text-align:right; font-weight:bold;">' . number_format($total_qty_incoming, 0, ",", ".") . '</td>
                     <td style="text-align:right; font-weight:bold;">' . number_format($total_price, 2, ",", ".") . '</td>
                     <td style="text-align:right; font-weight:bold;">' . number_format($grand_total_price, 2, ",", ".") . '</td>
@@ -905,6 +906,7 @@ class Grn_subconts extends CI_Controller
                 'a.workorder_label'
             ]);
 
+            $this->db->order_by('source_name', 'ASC');
             $this->db->order_by('a.incoming_date', 'ASC');
             $this->db->order_by('a.workorder', 'ASC');
             $this->db->order_by('a.workorder_label', 'ASC');
@@ -1014,9 +1016,9 @@ class Grn_subconts extends CI_Controller
             <table id="customers" border="1">
                     <tr>
                         <th style="width: 10px !important;">No</th>
+                        <th style="width: 120px;">Source Name</th>
                         <th style="width: 100px;">Incoming Doc No</th>
                         <th style="width: 80px;">Incoming Date</th>
-                        <th style="width: 120px;">Source Name</th>
                         <th style="width: 120px;">Product ID</th>
                         <th style="width: 120px;">Product No</th>
                         <th style="width: 150px;">Product Name</th>
@@ -1040,9 +1042,9 @@ class Grn_subconts extends CI_Controller
 
             $html .= '<tr>
                         <td class="text-center">'.$no.'</td>
+                        <td class="no-wrap">'.$row['source_name'].'</td>
                         <td class="no-wrap">'.$row['incoming_doc_no'].'</td>
                         <td class="no-wrap" style="text-align: center;">'.date('Y-m-d', strtotime($row['incoming_date'])).'</td>
-                        <td class="no-wrap">'.$row['source_name'].'</td>
                         <td class="no-wrap">'.$row['item_fg_id'].'</td>
                         <td class="no-wrap" style="mso-number-format:&quot;@&quot;">'.$row['item_fg_number'].'</td>
                         <td class="no-wrap">'.$row['item_fg_name'].'</td>

@@ -1,6 +1,11 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+
+use Dompdf\Dompdf;
+use Dompdf\Options;
+use setasign\Fpdi\Fpdi;
+
 class Purchase_orders extends CI_Controller
 {
     public function __construct()
@@ -147,8 +152,8 @@ class Purchase_orders extends CI_Controller
 
         // $this->db->where('a.approved', '');
         // $this->db->like('a.supplier_id', $supplier_id);
-        // $this->db->like('a.po_no', $post);
 
+        $this->db->like('a.po_no', $post);
         $this->db->group_by('a.po_no');
         $this->db->order_by('a.created_date', 'desc');
 
@@ -386,6 +391,7 @@ class Purchase_orders extends CI_Controller
                     g.total_status_close,
                     a.total_vat,
                     a.on_site_cost,
+                    a.attachment,
                     CASE
                         -- Masih ada proses approval
                         WHEN SUM(
@@ -517,6 +523,8 @@ class Purchase_orders extends CI_Controller
                         "approved_date" => $record['approved_date'],
                         "deleted" => $record['deleted'],
                         "datatable" => 1,
+                        "attachment" => $record['attachment'],
+                        "printed" => 0,
                         "is_all_closed" => ($record['total_status'] == $record['total_status_close']) ? 1 : 0,
                     );
                 }
@@ -536,7 +544,7 @@ class Purchase_orders extends CI_Controller
                     f.max_status as status_pi,
                     a.price,
                     a.status, 
-                    (a.qty * a.price) as total_price
+                    (a.qty * a.price) as total_price,
                 ');
 
                     // (CASE WHEN a.approved = (SELECT (
@@ -773,6 +781,7 @@ class Purchase_orders extends CI_Controller
                     // "discount_total" => $post['discount_total'],
                     "on_site_cost" => $post['on_site_cost'],
                     "total_grand" => $post['total_grand'],
+                    "attachment" => $post['attachment'],
                 );
 
 
@@ -887,6 +896,12 @@ class Purchase_orders extends CI_Controller
 
             $isNeedApproval = $isRevisionChanged || $isQtyChanged || $isDateChanged;
 
+            $attachment = $purchaseOrder->attachment;
+
+            if (!empty($post['attachment'])) {
+                $attachment = $post['attachment'];
+            }
+
             $purchase_orders = $this->db->update('purchase_orders', [
                 "supplier_id" => $post['supplier_id'],
                 "qty" => $post['qty'],
@@ -911,6 +926,8 @@ class Purchase_orders extends CI_Controller
                 // "revision" => (@$purchaseOrder->revision + 1),
                 "revision" => $post['revision'],
                 "remark_revision" => $post['remark_revision'] ?? null,
+                "on_site_cost" => $post['on_site_cost'],
+                "attachment" => $attachment
             ], ["request_no" => $post['request_no'], "item_rm_id" => $items->id]);
 
 
@@ -1088,7 +1105,59 @@ class Purchase_orders extends CI_Controller
         }
     }
 
-    public function print_po($po_no)
+    public function uploadatt()
+    {
+        $uploadDir = 'assets/image/purchase_orders/';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (isset($_FILES['file'])) {
+                $file = $_FILES['file'];
+
+                $allowedExtensions = ['pdf'];
+
+                $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+                if (!in_array($fileExtension, $allowedExtensions)) {
+                    echo json_encode(['success' => false, 'message' => 'Only files with the extension .pdf are allowed.']);
+                    exit;
+                }
+
+                $maxFileSize = 2 * 1024 * 1024; // 2MB
+                if ($file['size'] > $maxFileSize) {
+                    echo json_encode(['success' => false, 'message' => 'The file size is too large, maximum 2MB']);
+                    exit;
+                }
+
+                if ($file['error'] === UPLOAD_ERR_OK) {
+                    $fileName = uniqid() . '_' . $file['name'];
+                    $uploadPath = $uploadDir . $fileName;
+
+                    if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+                        echo json_encode(['success' => true, 'message' => 'File Upload Success.', 'filename' => $fileName]);
+                    } else {
+                        echo json_encode(['success' => false, 'message' => 'File Upload Failed.']);
+                    }
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Error while Upload.']);
+                }
+            } else {
+                echo json_encode(['success' => false, 'message' => 'File Not Found.']);
+            }
+        } else {
+            echo json_encode(['success' => false, 'message' => 'The required request method is POST.']);
+        }
+    }
+
+    private function imageToBase64($path)
+    {
+        if (!file_exists($path)) {
+            return '';
+        }
+
+        return 'data:image/png;base64,' . base64_encode(file_get_contents($path));
+    }
+
+    private function generatePoHtml($po_no, $is_pdf = false)
     {
         $purchase_orders_total = $this->crud->reads('purchase_orders', [], ["po_no" => base64_decode($po_no)]);
         $purchase_orders = $this->crud->read('purchase_orders', [], ["po_no" => base64_decode($po_no)], "", "revision", "desc");
@@ -1177,8 +1246,19 @@ class Purchase_orders extends CI_Controller
             ];
         }
 
+        $poDate = date('Y-m-d', strtotime($purchase_orders->po_date));
+
+        $cutoffDate = '2025-09-01';
+        $cutoffDate2 = '2026-08-07';
+
+        if ($poDate <= $cutoffDate2 && $purchase_orders->approved_by === 'pmbri') {
+            $approvedLevel = 1;
+        } else {
+            $approvedLevel = (int) $sqlApproval->approved_by;
+        }
+
         $createdUser = $purchaseRequests->created_by;
-        $approvedLevel = !empty($sqlApproval) ? (int)$sqlApproval->approved_by : 0;
+        // $approvedLevel = !empty($sqlApproval) ? (int)$sqlApproval->approved_by : 0;
 
         
         $approvalData = [];
@@ -1202,6 +1282,16 @@ class Purchase_orders extends CI_Controller
                 );
             }
 
+            $barcode = '';
+
+            if ($show && $user) {
+                $file = FCPATH . 'assets/image/qrcode/' . md5($user->name) . '.png';
+
+                if (file_exists($file)) {
+                    $barcode = 'data:image/png;base64,' . base64_encode(file_get_contents($file));
+                }
+            }
+
             return [
 
                 'title'    => $title,
@@ -1218,13 +1308,7 @@ class Purchase_orders extends CI_Controller
                                 ? $user->position
                                 : '',
 
-                'barcode'  => $show && $user
-                                ? base_url(
-                                    'assets/image/qrcode/'.
-                                    md5($user->name).
-                                    '.png'
-                                )
-                                : ''
+                'barcode'  => $barcode
 
             ];
 
@@ -1256,28 +1340,62 @@ class Purchase_orders extends CI_Controller
 
         $approvalPrUsers = $getApprovalUsers($approvalPr);
         $approvalPoUsers = $getApprovalUsers($sqlApproval);
-        $firstPoApproval = !empty($approvalPoUsers) ? $approvalPoUsers[0] : null;
+
+        /**
+         * Historical approval:
+         * PO <= 2026-08-07 masih menggunakan Plant Manager lama (pmbri).
+         * PO > 2026-08-07 menggunakan Plant Manager baru (pmbri02).
+         *
+         * Hanya pmbri02 yang diubah.
+         * User approval lainnya tetap.
+         */
+        if ($poDate <= $cutoffDate2) {
+
+            foreach ($approvalPrUsers as $key => $user) {
+                if ($user === 'pmbri02') {
+                    $approvalPrUsers[$key] = 'pmbri';
+                }
+            }
+
+            foreach ($approvalPoUsers as $key => $user) {
+                if ($user === 'pmbri02') {
+                    $approvalPoUsers[$key] = 'pmbri';
+                }
+            }
+        }
+        $firstPoApproval = !empty($approvalPoUsers)
+            ? $approvalPoUsers[0]
+            : null;
+
         $knownUsers = [];
 
-        foreach($approvalPrUsers as $approvalPrUser){
-            if(!in_array($approvalPrUser, $knownUsers)){
+        foreach ($approvalPrUsers as $approvalPrUser) {
+
+            if (!in_array($approvalPrUser, $knownUsers)) {
                 $knownUsers[] = $approvalPrUser;
             }
         }
 
-        if(!empty($firstPoApproval) && !in_array($firstPoApproval, $knownUsers)){
+        if (
+            !empty($firstPoApproval) &&
+            !in_array($firstPoApproval, $knownUsers)
+        ) {
             $knownUsers[] = $firstPoApproval;
         }
 
-        foreach($knownUsers as $knownUser){
+        foreach ($knownUsers as $knownUser) {
+
             $approvalData[] = $buildApproval(
                 'Known',
                 $knownUser,
-                ($knownUser === $firstPoApproval) ? ($approvedLevel >= 1) : true
+                ($knownUser === $firstPoApproval)
+                    ? ($approvedLevel >= 1)
+                    : true
             );
         }
 
-        foreach(array_slice($approvalPoUsers, 1) as $index => $approvedUser){
+        foreach (array_slice($approvalPoUsers, 1) as $index => $approvedUser) {
+
             $approvalData[] = $buildApproval(
                 'Approved',
                 $approvedUser,
@@ -1287,56 +1405,100 @@ class Purchase_orders extends CI_Controller
 
         $approvalData = array_reverse($approvalData);
 
-        $poDate = date('Y-m-d', strtotime($purchase_orders->po_date)); 
-        $cutoffDate = '2025-09-01';
-
         $user1 = null;
         $user2 = null;
 
-        if(intval($sqlApproval->approved_by)==5){
+        // if(intval($sqlApproval->approved_by)==5){
+
+        //     if ($poDate <= $cutoffDate) {
+        //         $user1 = 'DR001';
+        //         $user2 = 'PRESDIR';
+        //     } else {
+        //         $user1 = $sqlApproval->user_approval_4;
+        //         $user2 = $sqlApproval->user_approval_5;
+        //     }
+
+        // }
+        // if(intval($sqlApproval->approved_by)==4){
+
+        //     if ($poDate <= $cutoffDate) {
+        //         $user1 = 'DR001';
+        //         $user2 = 'PRESDIR';
+        //     } else {
+        //         $user1=$sqlApproval->user_approval_3;
+        //         $user2=$sqlApproval->user_approval_4;
+        //     }
+        // }
+        // if(intval($sqlApproval->approved_by)==3){
+
+        //     if ($poDate <= $cutoffDate) {
+        //         $user1 = 'DR001';
+        //         $user2 = 'PRESDIR';
+        //     } else {
+        //         $user1=$sqlApproval->user_approval_2;
+        //         $user2=$sqlApproval->user_approval_3;
+        //     }
+        // }
+        // if(intval($sqlApproval->approved_by)==2){
+
+        //     if ($poDate <= $cutoffDate) {
+        //         $user1 = 'scmbri01';
+        //         $user2 = 'DR001';
+        //     } else {
+        //         $user1=$sqlApproval->user_approval_1;
+        //         $user2=$sqlApproval->user_approval_2;
+        //     }
+        // }
+        // if(intval($sqlApproval->approved_by)==1){
+        //     $user1=null;
+        //     $user2=$sqlApproval->user_approval_1;
+        // }
+
+
+        if ($approvedLevel == 5) {
 
             if ($poDate <= $cutoffDate) {
                 $user1 = 'DR001';
                 $user2 = 'PRESDIR';
             } else {
-                $user1 = $sqlApproval->user_approval_4;
-                $user2 = $sqlApproval->user_approval_5;
+                $user1 = $approvalPoUsers[3] ?? null;
+                $user2 = $approvalPoUsers[4] ?? null;
             }
 
-        }
-        if(intval($sqlApproval->approved_by)==4){
-
-            if ($poDate <= $cutoffDate) {
-                $user1 = 'DR001';
-                $user2 = 'PRESDIR';
-            } else {
-                $user1=$sqlApproval->user_approval_3;
-                $user2=$sqlApproval->user_approval_4;
-            }
-        }
-        if(intval($sqlApproval->approved_by)==3){
+        } elseif ($approvedLevel == 4) {
 
             if ($poDate <= $cutoffDate) {
                 $user1 = 'DR001';
                 $user2 = 'PRESDIR';
             } else {
-                $user1=$sqlApproval->user_approval_2;
-                $user2=$sqlApproval->user_approval_3;
+                $user1 = $approvalPoUsers[2] ?? null;
+                $user2 = $approvalPoUsers[3] ?? null;
             }
-        }
-        if(intval($sqlApproval->approved_by)==2){
+
+        } elseif ($approvedLevel == 3) {
+
+            if ($poDate <= $cutoffDate) {
+                $user1 = 'DR001';
+                $user2 = 'PRESDIR';
+            } else {
+                $user1 = $approvalPoUsers[1] ?? null;
+                $user2 = $approvalPoUsers[2] ?? null;
+            }
+
+        } elseif ($approvedLevel == 2) {
 
             if ($poDate <= $cutoffDate) {
                 $user1 = 'scmbri01';
                 $user2 = 'DR001';
             } else {
-                $user1=$sqlApproval->user_approval_1;
-                $user2=$sqlApproval->user_approval_2;
+                $user1 = $approvalPoUsers[0] ?? null;
+                $user2 = $approvalPoUsers[1] ?? null;
             }
-        }
-        if(intval($sqlApproval->approved_by)==1){
-            $user1=null;
-            $user2=$sqlApproval->user_approval_1;
+
+        } elseif ($approvedLevel == 1) {
+
+            $user1 = null;
+            $user2 = $approvalPoUsers[0] ?? null;
         }
 
         // if(intval($sqlApproval->approved_by)==0){
@@ -1403,6 +1565,8 @@ class Purchase_orders extends CI_Controller
 
         $this->createQrcode($purchase_orders->po_no, "assets/image/qrcode/");
 
+        $poQrBase64 = $this->imageToBase64(FCPATH . 'assets/image/qrcode/' . $purchase_orders->po_no . '.png');
+
         if ($user1 !== null && $user_1) {
             $this->createQrcode(md5($user_1->name), "assets/image/qrcode/");
         }
@@ -1423,9 +1587,19 @@ class Purchase_orders extends CI_Controller
                         body {
                             font-family: Arial, Helvetica, sans-serif;
                         }
-                        #customers {
-                            border-collapse: collapse;width: 100%;
-                            font-size: 12px;
+                        #customers{
+                            width:100%;
+                            border-collapse:collapse;
+                            table-layout:fixed;
+                            font-size:12px;
+                        }
+
+                        #customers td,
+                        #customers th{
+                            border:1px solid #000;
+                            padding:2px;
+                            word-wrap:break-word;
+                            overflow-wrap:break-word;
                         }
                         #customers td, #customers th {
                             border: 1px solid black;padding: 2px;
@@ -1445,15 +1619,47 @@ class Purchase_orders extends CI_Controller
                                 display: none !important;
                             }
                         }
-                    </style>
-                    <body>
-                        <div style="margin:20%;" class="noprint">
-                            <center>
-                                <h1>Press CTRL + P for Print</h1>
-                            </center>
-                        </div>
-                        <div class="print">
-                        <div style="width:100%; display:flex, flex-direction:column">';
+
+                        ';
+
+                        if($is_pdf == true) {
+                            $html .= '
+                                @page{
+                                    margin:0;
+                                }
+
+                                html{
+                                    margin:0;
+                                    padding:0;
+                                }
+
+                                body{
+                                    margin:10px;
+                                    padding:0;
+                                }
+                            ';
+                        }
+
+                    $html .= '</style>
+                    <body>';
+
+            if (!$is_pdf) {
+
+                $html .= '
+                    <div style="margin:20%;" class="noprint">
+                        <center>
+                            <h1>Press CTRL + P for Print</h1>
+                        </center>
+                    </div>
+
+                    <div class="print">';
+            }
+
+            if ($is_pdf) {
+
+                $html .= '<div>';
+            }
+
         //Loop Page
         $no = 1;
         $hal = 1;
@@ -1481,14 +1687,14 @@ class Purchase_orders extends CI_Controller
                                 <th width="10">
                                     <img src="' . $config->favicon . '" width="60" />
                                 </th>
-                                <td width="250" style="padding:10px;">
+                                <td width="300" style="padding:10px;">
                                     <b style="font-size:14px;">' . $config->name . '</b><br>
                                     <span style="font-size:10px;">' . $config->address . '</span><br>
                                 </td>
                                 <th width="100" style="text-align:right;">
-                                    <table style="width:100%; font-size:10px;">
+                                    <table style="width:100%; font-size:10px; font-weight: normal;">
                                         <tr>
-                                            <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $purchase_orders->po_no . '.png') . '" width="60"/></td>
+                                            <td width="50" rowspan="4"><img src="' . $poQrBase64 . '" width="60"/></td>
                                             <td width="60">Doc No</td>
                                             <td width="5">:</td>
                                             <td width="100">' . $config_iso->doc_purchase_order . '</td>
@@ -1523,18 +1729,29 @@ class Purchase_orders extends CI_Controller
                                             <tr>
                                                 <td width="80">Supplier</td>
                                                 <td width="10">:</td>
-                                                <td width="30%"><b>' . @$supplier->name . '</b></td>
-                                                <td style="text-align:right;" rowspan="7">
-                                                    <div style="display:flex;flex-direction:column;">
-                                                        <div style="text-align:left;align-self:flex-end;">
-                                                            <h4>Plant : '. @$plant .'</h4>
-                                                            Page <span><b>' . $hal . '</b> of <b>' . $page . '</b></span><br><br>
-                                                            PO Periode: <b>' . date("F Y", strtotime($purchase_orders->po_date)) . '</b><br>
-                                                            Revision: <b>' . $purchase_orders->revision . '</b><br>
-                                                            Revision Date: <b>' . date("d F Y", strtotime($revision_date)) . '</b><br>
-                                                            Payment Terms: <b>' . $supplier->payment_term . ' Days</b>
-                                                        </div>
-                                                    </div>
+                                                <td width="50%"><b>' . @$supplier->name . '</b></td>
+                                                <td style="text-align:right; padding-left: 50px;" rowspan="7">
+                                                    <table style="width:100%;">
+                                                        <tr>
+                                                            <td style="text-align:left;">
+                                                                <h4 style="margin:0;">Plant : '. @$plant .'</h4>
+
+                                                                Page <b>' . $hal . '</b> of <b>' . $page . '</b><br><br>
+
+                                                                PO Periode :
+                                                                <b>' . date("F Y", strtotime($purchase_orders->po_date)) . '</b><br>
+
+                                                                Revision :
+                                                                <b>' . $purchase_orders->revision . '</b><br>
+
+                                                                Revision Date :
+                                                                <b>' . date("d F Y", strtotime($revision_date)) . '</b><br>
+
+                                                                Payment Terms :
+                                                                <b>' . $supplier->payment_term . ' Days</b>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
                                                 </td>
                                             </tr>
                                             <tr>
@@ -1585,26 +1802,45 @@ class Purchase_orders extends CI_Controller
                                             </tr>
                                     </table>';
             }
+
+            $showPrice = false;
+            $showAmount = false;
+
+            foreach ($records as $item) {
+
+                if ($item['price'] > 0) {
+                    $showPrice = true;
+                }
+
+                if ($item['total'] > 0) {
+                    $showAmount = true;
+                }
+
+            }
+
+            $widthPrice  = $showPrice ? 11 : 8;
+            $widthAmount = $showAmount ? 12 : 8;
+            $widthForecast = (!$showPrice && !$showAmount) ? 27 : 18;
+
             $html .= '<table id="customers">
                                     <tr>
-                                        <th rowspan="2" width="30" style="text-align:center;">No</th>
-                                        <th rowspan="2" width="150" style="text-align:center;">Part No</th>
-                                        <th rowspan="2" width="150" style="text-align:center;">Part Name</th>
-                                        <th rowspan="2" width="50" style="text-align:center;">Description</th>
-                                        <th rowspan="2" width="50" style="text-align:center;">Qty</th>
-                                        <th rowspan="2" width="50" style="text-align:center;">Uom</th>
-                                        
-                                        <th rowspan="2" width="50" style="text-align:center;">Unit<br>Price</th>
-                                        <th rowspan="2" width="50" style="text-align:center;">Currency</th>
-                                        <th rowspan="2" width="50" style="text-align:center;">Amount</th>
-                                        <th rowspan="2" width="80" style="text-align:center;">Delivery<br>Date</th>
-                                        <th colspan="4" width="80" style="text-align:center;">Forecast</th>
+                                        <th rowspan="2" style="width:3%">No</th>
+                                        <th rowspan="2" style="width:10.5%">Part No</th>
+                                        <th rowspan="2" style="width:10.5%">Part Name</th>
+                                        <th rowspan="2" style="width:9.5%">Description</th>
+                                        <th rowspan="2" style="width:6%">Qty</th>
+                                        <th rowspan="2" style="width:5%">Uom</th>
+                                        <th rowspan="2" style="width:'.$widthPrice.'%">Unit Price</th>
+                                        <th rowspan="2" style="width:7.7%">Currency</th>
+                                        <th rowspan="2" style="width:'.$widthAmount.'%">Amount</th>
+                                        <th rowspan="2" style="width:7.3%">Delivery Date</th>
+                                        <th colspan="4" style="width:'.$widthForecast.'%">Forecast</th>
 
                                         <tr>
-                                            <th width="80" style="text-align:center;">' . $month_1 . '</th>
-                                            <th width="80" style="text-align:center;">' . $month_2 . '</th>
-                                            <th width="80" style="text-align:center;">' . $month_3 . '</th>
-                                            <th width="80" style="text-align:center;">' . $month_4 . '</th>
+                                            <th style="text-align:center;width:4.5%;">' . $month_1 . '</th>
+                                            <th style="text-align:center;width:4.5%;">' . $month_2 . '</th>
+                                            <th style="text-align:center;width:4.5%;">' . $month_3 . '</th>
+                                            <th style="text-align:center;width:4.5%;">' . $month_4 . '</th>
                                         </tr>
                                     </tr>';
             $row = 0;
@@ -1620,9 +1856,9 @@ class Purchase_orders extends CI_Controller
                 $html .= '  
                             <tr>    
                                 <td style="text-align:center;">' . $no . '</td>
-                                <td>' . $record['item_id'] . '</td>
-                                <td><span style="font-size:10px;">' . $record['item_name'] . '</span></td>
-                                <td style="text-align:center;">' . $record['description'] . '</td>
+                                <td style="word-break:break-word;">' . $record['item_id'] . '</td>
+                                <td style="word-break:break-word;"><span style="font-size:10px;">' . $record['item_name'] . '</span></td>
+                                <td style="text-align:center;word-break:break-word;">' . $record['description'] . '</td>
                                 <td style="text-align:right;">' . number_format($record['qty'], 2, ',', '.') . '</td>
                                 <td style="text-align:center;">' . $record['uom'] . '</td>
                                 
@@ -1682,14 +1918,14 @@ class Purchase_orders extends CI_Controller
                                 <th width="10">
                                     <img src="' . $config->favicon . '" width="60" />
                                 </th>
-                                <td width="250" style="padding:10px;">
+                                <td width="300" style="padding:10px;">
                                     <b style="font-size:14px;">' . $config->name . '</b><br>
                                     <span style="font-size:10px;">' . $config->address . '</span><br>
                                 </td>
                                 <th width="100" style="text-align:right;">
-                                    <table style="width:100%; font-size:10px;">
+                                    <table style="width:100%; font-size:10px;font-weight: normal;">
                                         <tr>
-                                            <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $purchase_orders->po_no . '.png') . '" width="60"/></td>
+                                            <td width="50" rowspan="4"><img src="' . $poQrBase64 . '" width="60"/></td>
                                             <td width="60">Doc No</td>
                                             <td width="5">:</td>
                                             <td width="100">' . $config_iso->doc_purchase_order . '</td>
@@ -1717,260 +1953,495 @@ class Purchase_orders extends CI_Controller
 
                 // Memindahkan informasi approval ke sini
                 if($user1!==null){
-                    $html .= '<div style="width:100%; display: grid; grid-template-columns: auto;">
-                        <div style="width:100%; display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-                    ';
+
 
                     $html .= '
+                    <table style="width:100%; margin-top:40px; border-collapse:collapse;">
+                        <tr>
 
-                        <div style="text-align: center;">
-                            <table style="width:100%; border-collapse:collapse; margin-top:28px;" border="1" cellpadding="4">
-                                <tr style="text-align:center;">
-                                    <td>Supplier Approval</td>
-                                </tr>
+                            <td style="width:20%; vertical-align:top;">
 
-                                <tr style="height:100px; text-align:center; vertical-align:center;">
-                                </tr>
+                                <table style="width:100%; border-collapse:collapse;" border="1" cellpadding="4">
+                                    <tr style="text-align:center;">
+                                        <td>Supplier Approval</td>
+                                    </tr>
 
-                                <tr style="text-align:center;">
-                                    <td style="height: 20px;"></td>
-                                </tr>
+                                    <tr>
+                                        <td style="height:80px;"></td>
+                                    </tr>
 
-                                <tr style="text-align:center;">
-                                    <td style="height: 20px;"></td>
-                                </tr>
-                            </table>
-                        </div>';
+                                    <tr style="text-align:center;">
+                                        <td style="height:17px;"></td>
+                                    </tr>
 
-                        $html .= '
-                            <div style="width:75%; text-align:center;">
-                                <table style="width:100%; border-collapse:collapse; table-layout:fixed; margin-top:30px;" border="1" cellpadding="3">';
-
-                                
-                            $html .= '<tr style="text-align:center;">';
-
-                            foreach ($approvalData as $approval){
-
-                                $html .= '<td>'.$approval['title'].'</td>';
-
-                            }
-
-                            $html .= '</tr>';
-
-                            $html .= '<tr style="height:100px;text-align:center;vertical-align:middle;">';
-
-
-                            foreach($approvalData as $approval){
-
-                                $html.='<td>';
-
-                                if($approval['show']){
-
-                                    $html.='<img src="'.
-                                        $approval['barcode'].
-                                        '" width="80"/>';
-
-                                }
-
-                                $html.='</td>';
-
-                            }
-
-                            $html.='</tr>';
-
-
-                            $html.='<tr style="text-align:center;">';
-
-                            foreach($approvalData as $approval){
-
-                                $html.='<td>'.$approval['name'].'</td>';
-
-                            }
-
-                            $html.='</tr>';
-
-                            $html.='<tr style="text-align:center;">';
-
-                            foreach($approvalData as $approval){
-
-                                $html.='<td>'.$approval['position'].'</td>';
-
-                            }
-
-                            $html.='</tr>';
-
-                            $html .= '</tr>';
-                            
-                            $html .= '
+                                    <tr style="text-align:center;">
+                                        <td style="height:17px;"></td>
+                                    </tr>
                                 </table>
-                            </div>
-                        ';
+
+                            </td>
+
+                            <td style="width:5%;"></td>
+
+                            <td style="width:75%; vertical-align:top;">
+
+                                <table style="width:100%; border-collapse:collapse; table-layout:fixed;" border="1" cellpadding="3">';
+
+
+                    $html .= '<tr style="text-align:center;">';
+
+                    foreach ($approvalData as $approval) {
+                        $html .= '<td>' . $approval['title'] . '</td>';
+                    }
+
+                    $html .= '</tr>';
+
+
+                    $html .= '<tr style="height:100px !important; text-align:center; vertical-align:middle;">';
+
+                    foreach ($approvalData as $approval) {
+
+                        $html .= '<td>';
+
+                        if ($approval['show']) {
+
+                            $html .= '<img src="' . $approval['barcode'] . '" width="80"/>';
+
+                        }
+
+                        $html .= '</td>';
+
+                    }
+
+                    $html .= '</tr>';
+
+
+                    $html .= '<tr style="text-align:center;">';
+
+                    foreach ($approvalData as $approval) {
+
+                        $html .= '<td>' . $approval['name'] . '</td>';
+
+                    }
+
+                    $html .= '</tr>';
+
+                    $html .= '<tr style="text-align:center;">';
+
+                    foreach ($approvalData as $approval) {
+
+                        $html .= '<td>' . $approval['position'] . '</td>';
+
+                    }
+
+                    $html .= '</tr>';
 
                     $html .= '
+                                </table>
 
-                    </div>
-                    <div style="text-align: right; margin-top: 45px; font-style: italic; font-size:10px;">
-                        Electronic Auto Generating Approval No Need Signature
-                    </div>
-                        </div>
-    
-                    <div style="font-size:12px; margin-top:20px;">
-                        <tr>
-                            <td>Term & Condition</td>
-                        </tr>
-                    </div>
-    
-                    <table style="width:100%; font-size:12px; margin-top:20px;">
-                        <tr>
-                            <td width="20">1.</td>
-                            <td>
-                                Please sign, stamp & reply email to : ' . $emailReply . '. Maximum one day after PO received.
                             </td>
-                        </tr>
-                        <tr>
-                            <td>2.</td>
-                            <td>Please mention the Purchase Order Number in the Shipping & Billing Document.</td>
-                        </tr>
-                        <tr>
-                            <td>3.</td>
-                            <td>Please make sure delivery date is same with Purchase Order.</td>
+
                         </tr>
                     </table>
-    
-                    </div>';
+
+                    <div style="text-align:right; margin-top:30px; font-style:italic; font-size:10px;">
+                        Electronic Auto Generating Approval No Need Signature
+                    </div>
+
+                    <table style="margin-top:30px; font-size:12px;">
+                        <tr>
+                            <td><b>Term &amp; Condition</b></td>
+                        </tr>
+                    </table>
+
+                    <table style="width:100%; font-size:12px; border-collapse:collapse;">
+                        <tr>
+                            <td width="20" valign="top">1.</td>
+                            <td>Please sign, stamp &amp; reply email to : ' . $emailReply . '. Maximum one day after PO received.</td>
+                        </tr>
+                        <tr>
+                            <td valign="top">2.</td>
+                            <td>Please mention the Purchase Order Number in the Shipping &amp; Billing Document.</td>
+                        </tr>
+                        <tr>
+                            <td valign="top">3.</td>
+                            <td>Please make sure delivery date is same with Purchase Order.</td>
+                        </tr>
+                    </table>';
                 }
 
-                if($user1==null){
-                    $html .= '<div style="width:100%; display: grid; grid-template-columns: auto;">
-                    <div style="width:100%; display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-                    ';
+                if ($user1 == null) {
 
                     $html .= '
+                    <table style="width:100%; margin-top:40px; border-collapse:collapse;">
+                        <tr>
 
-                        <div style="text-align: center;">
-                            <table style="width:100%; border-collapse:collapse; margin-top:28px;" border="1" cellpadding="4">
-                                <tr style="text-align:center;">
-                                    <td>Supplier Approval</td>
-                                </tr>
+                            <td style="width:20%; vertical-align:top;">
 
-                                <tr style="height:100px; text-align:center; vertical-align:center;">
-                                </tr>
+                                <table style="width:100%; border-collapse:collapse;" border="1" cellpadding="4">
+                                    <tr style="text-align:center;">
+                                        <td>Supplier Approval</td>
+                                    </tr>
 
-                                <tr style="text-align:center;">
-                                    <td style="height: 25px;"></td>
-                                </tr>
+                                    <tr>
+                                        <td style="height:80px;"></td>
+                                    </tr>
 
-                                <tr style="text-align:center;">
-                                    <td style="height: 25px;"></td>
-                                </tr>
-                            </table>
-                        </div>';
+                                    <tr style="text-align:center;">
+                                        <td style="height:17px;"></td>
+                                    </tr>
 
-                        $html .= '
-                            <div style="width:75%; text-align:center;">
-                                <table style="width:100%; border-collapse:collapse; table-layout:fixed; margin-top:30px;" border="1" cellpadding="3">';
-
-                                
-                            $html .= '<tr style="text-align:center;">';
-
-                            foreach ($approvalData as $approval){
-
-                                $html .= '<td>'.$approval['title'].'</td>';
-
-                            }
-
-                            $html .= '</tr>';
-
-
-                            $html .= '<tr style="height:100px;text-align:center;vertical-align:middle;">';
-
-                            foreach($approvalData as $approval){
-
-                                $html.='<td>';
-
-                                if($approval['show']){
-
-                                    $html.='<img src="'.
-                                        $approval['barcode'].
-                                        '" width="80"/>';
-
-                                }
-
-                                $html.='</td>';
-
-                            }
-
-                            $html.='<tr style="text-align:center;">';
-
-                            foreach($approvalData as $approval){
-
-                                $html.='<td>'.$approval['name'].'</td>';
-
-                            }
-
-                            $html.='</tr>';
-
-                            $html.='<tr style="text-align:center;">';
-
-                            foreach($approvalData as $approval){
-
-                                $html.='<td>'.$approval['position'].'</td>';
-
-                            }
-
-                            $html.='</tr>';
-
-                            $html .= '</tr>';
-                            
-                            $html .= '
-
+                                    <tr style="text-align:center;">
+                                        <td style="height:17px;"></td>
+                                    </tr>
                                 </table>
-                            </div>
-                        ';
+
+                            </td>
+
+                            <td style="width:5%;"></td>
+
+                            <td style="width:75%; vertical-align:top;">
+
+                                <table style="width:100%; border-collapse:collapse; table-layout:fixed;" border="1" cellpadding="3">';
+
+                    $html .= '<tr style="text-align:center;">';
+
+                    foreach ($approvalData as $approval) {
+                        $html .= '<td>' . $approval['title'] . '</td>';
+                    }
+
+                    $html .= '</tr>';
+
+
+                    $html .= '<tr style="height:100px !important; text-align:center; vertical-align:middle;">';
+
+                    foreach ($approvalData as $approval) {
+
+                        $html .= '<td>';
+
+                        if ($approval['show']) {
+
+                            $html .= '<img src="' . $approval['barcode'] . '" width="80"/>';
+
+                        }
+
+                        $html .= '</td>';
+
+                    }
+
+                    $html .= '</tr>';
+
+
+                    $html .= '<tr style="text-align:center;">';
+
+                    foreach ($approvalData as $approval) {
+
+                        $html .= '<td>' . $approval['name'] . '</td>';
+
+                    }
+
+                    $html .= '</tr>';
+
+
+                    $html .= '<tr style="text-align:center;">';
+
+                    foreach ($approvalData as $approval) {
+
+                        $html .= '<td>' . $approval['position'] . '</td>';
+
+                    }
+
+                    $html .= '</tr>';
+
 
                     $html .= '
+                                </table>
 
-                    </div>
-                    <div style="text-align: right; margin-top: 45px; font-style: italic; font-size:10px;">
-                        Electronic Auto Generating Approval No Need Signature
-                    </div>
-                        </div>
-
-                    <div style="font-size:12px; margin-top:20px;">
-                        <tr>
-                            <td>Term & Condition</td>
-                        </tr>
-                    </div>
-
-                    <table style="width:100%; font-size:12px; margin-top:20px;">
-                        <tr>
-                            <td width="20">1.</td>
-                            <td>
-                                Please sign, stamp & reply email to : ' . $emailReply . '. Maximum one day after PO received.
                             </td>
-                        </tr>
-                        <tr>
-                            <td>2.</td>
-                            <td>Please mention the Purchase Order Number in the Shipping & Billing Document.</td>
-                        </tr>
-                        <tr>
-                            <td>3.</td>
-                            <td>Please make sure delivery date is same with Purchase Order.</td>
+
                         </tr>
                     </table>
 
-                    </div>';
+                    <div style="text-align:right; margin-top:30px; font-style:italic; font-size:10px;">
+                        Electronic Auto Generating Approval No Need Signature
+                    </div>
+
+                    <table style="margin-top:30px; font-size:12px;">
+                        <tr>
+                            <td><b>Term &amp; Condition</b></td>
+                        </tr>
+                    </table>
+
+                    <table style="width:100%; font-size:12px; border-collapse:collapse;">
+                        <tr>
+                            <td width="20" valign="top">1.</td>
+                            <td>Please sign, stamp &amp; reply email to : ' . $emailReply . '. Maximum one day after PO received.</td>
+                        </tr>
+                        <tr>
+                            <td valign="top">2.</td>
+                            <td>Please mention the Purchase Order Number in the Shipping &amp; Billing Document.</td>
+                        </tr>
+                        <tr>
+                            <td valign="top">3.</td>
+                            <td>Please make sure delivery date is same with Purchase Order.</td>
+                        </tr>
+                    </table>';
                 }
             } else {
                 $html .= '</table></div><div style="page-break-after:always;"/></div>';
             }
             $hal++;
         }
-        $html .= '<script>window.print()</script>';
+        // $html .= '<script>window.print()</script>';
+        $html .= '</div></body></html>';
+
+        return $html;
+    }
+
+    public function print_po($po_no)
+    {
+        $html = $this->generatePoHtml($po_no, false);
         die($html);
     }
 
-    public function print_po_additional($po_no)
+    // private function normalizePdf($inputPath, $outputPath)
+    // {
+    //     $qpdf = '/opt/homebrew/bin/qpdf';
+
+    //     $command = sprintf(
+    //         '%s --object-streams=disable %s %s 2>&1',
+    //         escapeshellarg($qpdf),
+    //         escapeshellarg($inputPath),
+    //         escapeshellarg($outputPath)
+    //     );
+
+    //     exec($command, $output, $exitCode);
+
+    //     return $exitCode === 0 && file_exists($outputPath);
+    // }
+
+    private function normalizePdf($inputPath, $outputPath)
+    {
+        $qpdf = '/usr/bin/qpdf';
+
+        if (!function_exists('exec')) {
+            return false;
+        }
+
+        $output = [];
+        $exitCode = -1;
+
+        $command = sprintf(
+            '%s --object-streams=disable %s %s 2>&1',
+            escapeshellarg($qpdf),
+            escapeshellarg($inputPath),
+            escapeshellarg($outputPath)
+        );
+
+        exec($command, $output, $exitCode);
+
+        return (
+            $exitCode === 0 &&
+            is_file($outputPath) &&
+            filesize($outputPath) > 0
+        );
+    }
+
+    public function print_po_pdf($po_no)
+    {
+        $html = $this->generatePoHtml($po_no, true);
+
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('chroot', FCPATH);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $pdfContent = $dompdf->output();
+
+        $tempDir = FCPATH . 'assets/temp/';
+
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0777, true);
+        }
+
+        $poPdf = $tempDir . base64_decode($po_no) . '.pdf';
+
+        file_put_contents($poPdf, $pdfContent);
+
+        $attachment = $this->db
+            ->select('attachment')
+            ->from('purchase_orders')
+            ->where('po_no', base64_decode($po_no))
+            ->where('deleted', 0)
+            ->where('attachment IS NOT NULL', null, false)
+            ->where('attachment !=', '')
+            ->limit(1)
+            ->get()
+            ->row();
+
+        $attachmentFile = !empty($attachment) ? $attachment->attachment : '';
+
+        $attachmentPath = '';
+        if (!empty($attachmentFile)) {
+            $attachmentPath = FCPATH . 'assets/image/purchase_orders/' .$attachmentFile;
+        }
+
+        $pdf = new Fpdi();
+
+        $pageCount = $pdf->setSourceFile($poPdf);
+
+        for ($page = 1; $page <= $pageCount; $page++) {
+            $tpl = $pdf->importPage($page);
+            $size = $pdf->getTemplateSize($tpl);
+
+            // $pdf->AddPage(
+            //     $size['orientation'],
+            //     [$size['width'], $size['height']]
+            // );
+
+            // $pdf->useTemplate($tpl);
+
+            $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
+
+            $pdf->AddPage($orientation, 'A4');
+
+            $pageWidth  = ($orientation == 'P') ? 210 : 297;
+            $pageHeight = ($orientation == 'P') ? 297 : 210;
+
+            $scale = min(
+                $pageWidth / $size['width'],
+                $pageHeight / $size['height']
+            );
+
+            $newWidth  = $size['width'] * $scale;
+            $newHeight = $size['height'] * $scale;
+
+            $x = ($pageWidth - $newWidth) / 2;
+            $y = ($pageHeight - $newHeight) / 2;
+
+            $pdf->useTemplate($tpl, $x, $y, $newWidth, $newHeight);
+        }
+
+        // if (!empty($attachmentPath) && file_exists($attachmentPath)) {
+        //     $pageCount = $pdf->setSourceFile($attachmentPath);
+
+        //     for ($page = 1; $page <= $pageCount; $page++) {
+        //         $tpl = $pdf->importPage($page);
+        //         $size = $pdf->getTemplateSize($tpl);
+
+        //         // $pdf->AddPage(
+        //         //     $size['orientation'],
+        //         //     [$size['width'], $size['height']]
+        //         // );
+
+        //         // $pdf->useTemplate($tpl);
+
+        //         $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
+
+        //         $pdf->AddPage($orientation, 'A4');
+
+        //         $pageWidth  = ($orientation == 'P') ? 210 : 297;
+        //         $pageHeight = ($orientation == 'P') ? 297 : 210;
+
+        //         $scale = min(
+        //             $pageWidth / $size['width'],
+        //             $pageHeight / $size['height']
+        //         );
+
+        //         $newWidth  = $size['width'] * $scale;
+        //         $newHeight = $size['height'] * $scale;
+
+        //         $x = ($pageWidth - $newWidth) / 2;
+        //         $y = ($pageHeight - $newHeight) / 2;
+
+        //         $pdf->useTemplate($tpl, $x, $y, $newWidth, $newHeight);
+        //     }
+
+        // }
+
+        if (!empty($attachmentPath) && file_exists($attachmentPath)) {
+
+            $pdfToMerge = $attachmentPath;
+
+            $normalizedPdf = $tempDir .
+                'normalized_' . md5($attachmentPath) . '.pdf';
+
+            try {
+                $pageCount = $pdf->setSourceFile($pdfToMerge);
+            } catch (\Throwable $e) {
+
+                $pdfToMerge = $normalizedPdf;
+
+                if (!$this->normalizePdf($attachmentPath, $pdfToMerge)) {
+                    $pageCount = 0;
+                } else {
+                    $pageCount = $pdf->setSourceFile($pdfToMerge);
+                }
+            }
+
+            if ($pageCount > 0) {
+
+                for ($page = 1; $page <= $pageCount; $page++) {
+
+                    $tpl = $pdf->importPage($page);
+                    $size = $pdf->getTemplateSize($tpl);
+
+                    $orientation = ($size['width'] > $size['height'])
+                        ? 'L'
+                        : 'P';
+
+                    $pdf->AddPage($orientation, 'A4');
+
+                    $pageWidth = ($orientation === 'P')
+                        ? 210
+                        : 297;
+
+                    $pageHeight = ($orientation === 'P')
+                        ? 297
+                        : 210;
+
+                    $scale = min(
+                        $pageWidth / $size['width'],
+                        $pageHeight / $size['height']
+                    );
+
+                    $newWidth = $size['width'] * $scale;
+                    $newHeight = $size['height'] * $scale;
+
+                    $x = ($pageWidth - $newWidth) / 2;
+                    $y = ($pageHeight - $newHeight) / 2;
+
+                    $pdf->useTemplate(
+                        $tpl,
+                        $x,
+                        $y,
+                        $newWidth,
+                        $newHeight
+                    );
+                }
+            }
+
+            if (file_exists($normalizedPdf)) {
+                @unlink($normalizedPdf);
+            }
+        }
+
+        $pdf->SetTitle(base64_decode($po_no));
+        $pdf->Output('I', base64_decode($po_no).'.pdf');
+
+        if (is_file($poPdf)) {
+            @unlink($poPdf);
+        }
+
+        exit;       
+    }
+
+    private function generatePoAdditionalHtml($po_no, $is_pdf = false)
     {
         $purchase_orders_total = $this->crud->reads('purchase_orders', [], ["po_no" => base64_decode($po_no)]);
         $purchase_orders = $this->crud->read('purchase_orders', [], ["po_no" => base64_decode($po_no)], "", "revision", "desc");
@@ -2061,8 +2532,19 @@ class Purchase_orders extends CI_Controller
             ];
         }
 
+        $poDate = date('Y-m-d', strtotime($purchase_orders->po_date));
+
+        $cutoffDate = '2025-09-01';
+        $cutoffDate2 = '2026-08-07';
+
+        if ($poDate <= $cutoffDate2 && $purchase_orders->approved_by === 'pmbri') {
+            $approvedLevel = 1;
+        } else {
+            $approvedLevel = (int) $sqlApproval->approved_by;
+        }
+
         $createdUser = $purchaseRequests->created_by;
-        $approvedLevel = !empty($sqlApproval) ? (int)$sqlApproval->approved_by : 0;
+        // $approvedLevel = !empty($sqlApproval) ? (int)$sqlApproval->approved_by : 0;
 
         
         $approvalData = [];
@@ -2086,6 +2568,16 @@ class Purchase_orders extends CI_Controller
                 );
             }
 
+            $barcode = '';
+
+            if ($show && $user) {
+                $file = FCPATH . 'assets/image/qrcode/' . md5($user->name) . '.png';
+
+                if (file_exists($file)) {
+                    $barcode = 'data:image/png;base64,' . base64_encode(file_get_contents($file));
+                }
+            }
+
             return [
 
                 'title'    => $title,
@@ -2102,13 +2594,7 @@ class Purchase_orders extends CI_Controller
                                 ? $user->position
                                 : '',
 
-                'barcode'  => $show && $user
-                                ? base_url(
-                                    'assets/image/qrcode/'.
-                                    md5($user->name).
-                                    '.png'
-                                )
-                                : ''
+                'barcode'  => $barcode
 
             ];
 
@@ -2140,28 +2626,62 @@ class Purchase_orders extends CI_Controller
 
         $approvalPrUsers = $getApprovalUsers($approvalPr);
         $approvalPoUsers = $getApprovalUsers($sqlApproval);
-        $firstPoApproval = !empty($approvalPoUsers) ? $approvalPoUsers[0] : null;
+
+        /**
+         * Historical approval:
+         * PO <= 2026-08-07 masih menggunakan Plant Manager lama (pmbri).
+         * PO > 2026-08-07 menggunakan Plant Manager baru (pmbri02).
+         *
+         * Hanya pmbri02 yang diubah.
+         * User approval lainnya tetap.
+         */
+        if ($poDate <= $cutoffDate2) {
+
+            foreach ($approvalPrUsers as $key => $user) {
+                if ($user === 'pmbri02') {
+                    $approvalPrUsers[$key] = 'pmbri';
+                }
+            }
+
+            foreach ($approvalPoUsers as $key => $user) {
+                if ($user === 'pmbri02') {
+                    $approvalPoUsers[$key] = 'pmbri';
+                }
+            }
+        }
+        $firstPoApproval = !empty($approvalPoUsers)
+            ? $approvalPoUsers[0]
+            : null;
+
         $knownUsers = [];
 
-        foreach($approvalPrUsers as $approvalPrUser){
-            if(!in_array($approvalPrUser, $knownUsers)){
+        foreach ($approvalPrUsers as $approvalPrUser) {
+
+            if (!in_array($approvalPrUser, $knownUsers)) {
                 $knownUsers[] = $approvalPrUser;
             }
         }
 
-        if(!empty($firstPoApproval) && !in_array($firstPoApproval, $knownUsers)){
+        if (
+            !empty($firstPoApproval) &&
+            !in_array($firstPoApproval, $knownUsers)
+        ) {
             $knownUsers[] = $firstPoApproval;
         }
 
-        foreach($knownUsers as $knownUser){
+        foreach ($knownUsers as $knownUser) {
+
             $approvalData[] = $buildApproval(
                 'Known',
                 $knownUser,
-                ($knownUser === $firstPoApproval) ? ($approvedLevel >= 1) : true
+                ($knownUser === $firstPoApproval)
+                    ? ($approvedLevel >= 1)
+                    : true
             );
         }
 
-        foreach(array_slice($approvalPoUsers, 1) as $index => $approvedUser){
+        foreach (array_slice($approvalPoUsers, 1) as $index => $approvedUser) {
+
             $approvalData[] = $buildApproval(
                 'Approved',
                 $approvedUser,
@@ -2171,56 +2691,100 @@ class Purchase_orders extends CI_Controller
 
         $approvalData = array_reverse($approvalData);
 
-        $poDate = date('Y-m-d', strtotime($purchase_orders->po_date)); 
-        $cutoffDate = '2025-09-01';
-
         $user1 = null;
         $user2 = null;
 
-        if(intval($sqlApproval->approved_by)==5){
+        // if(intval($sqlApproval->approved_by)==5){
+
+        //     if ($poDate <= $cutoffDate) {
+        //         $user1 = 'DR001';
+        //         $user2 = 'PRESDIR';
+        //     } else {
+        //         $user1 = $sqlApproval->user_approval_4;
+        //         $user2 = $sqlApproval->user_approval_5;
+        //     }
+
+        // }
+        // if(intval($sqlApproval->approved_by)==4){
+
+        //     if ($poDate <= $cutoffDate) {
+        //         $user1 = 'DR001';
+        //         $user2 = 'PRESDIR';
+        //     } else {
+        //         $user1=$sqlApproval->user_approval_3;
+        //         $user2=$sqlApproval->user_approval_4;
+        //     }
+        // }
+        // if(intval($sqlApproval->approved_by)==3){
+
+        //     if ($poDate <= $cutoffDate) {
+        //         $user1 = 'DR001';
+        //         $user2 = 'PRESDIR';
+        //     } else {
+        //         $user1=$sqlApproval->user_approval_2;
+        //         $user2=$sqlApproval->user_approval_3;
+        //     }
+        // }
+        // if(intval($sqlApproval->approved_by)==2){
+
+        //     if ($poDate <= $cutoffDate) {
+        //         $user1 = 'scmbri01';
+        //         $user2 = 'DR001';
+        //     } else {
+        //         $user1=$sqlApproval->user_approval_1;
+        //         $user2=$sqlApproval->user_approval_2;
+        //     }
+        // }
+        // if(intval($sqlApproval->approved_by)==1){
+        //     $user1=null;
+        //     $user2=$sqlApproval->user_approval_1;
+        // }
+
+
+        if ($approvedLevel == 5) {
 
             if ($poDate <= $cutoffDate) {
                 $user1 = 'DR001';
                 $user2 = 'PRESDIR';
             } else {
-                $user1 = $sqlApproval->user_approval_4;
-                $user2 = $sqlApproval->user_approval_5;
+                $user1 = $approvalPoUsers[3] ?? null;
+                $user2 = $approvalPoUsers[4] ?? null;
             }
 
-        }
-        if(intval($sqlApproval->approved_by)==4){
-
-            if ($poDate <= $cutoffDate) {
-                $user1 = 'DR001';
-                $user2 = 'PRESDIR';
-            } else {
-                $user1=$sqlApproval->user_approval_3;
-                $user2=$sqlApproval->user_approval_4;
-            }
-        }
-        if(intval($sqlApproval->approved_by)==3){
+        } elseif ($approvedLevel == 4) {
 
             if ($poDate <= $cutoffDate) {
                 $user1 = 'DR001';
                 $user2 = 'PRESDIR';
             } else {
-                $user1=$sqlApproval->user_approval_2;
-                $user2=$sqlApproval->user_approval_3;
+                $user1 = $approvalPoUsers[2] ?? null;
+                $user2 = $approvalPoUsers[3] ?? null;
             }
-        }
-        if(intval($sqlApproval->approved_by)==2){
+
+        } elseif ($approvedLevel == 3) {
+
+            if ($poDate <= $cutoffDate) {
+                $user1 = 'DR001';
+                $user2 = 'PRESDIR';
+            } else {
+                $user1 = $approvalPoUsers[1] ?? null;
+                $user2 = $approvalPoUsers[2] ?? null;
+            }
+
+        } elseif ($approvedLevel == 2) {
 
             if ($poDate <= $cutoffDate) {
                 $user1 = 'scmbri01';
                 $user2 = 'DR001';
             } else {
-                $user1=$sqlApproval->user_approval_1;
-                $user2=$sqlApproval->user_approval_2;
+                $user1 = $approvalPoUsers[0] ?? null;
+                $user2 = $approvalPoUsers[1] ?? null;
             }
-        }
-        if(intval($sqlApproval->approved_by)==1){
-            $user1=null;
-            $user2=$sqlApproval->user_approval_1;
+
+        } elseif ($approvedLevel == 1) {
+
+            $user1 = null;
+            $user2 = $approvalPoUsers[0] ?? null;
         }
 
         // if(intval($sqlApproval->approved_by)==0){
@@ -2294,6 +2858,8 @@ class Purchase_orders extends CI_Controller
 
         $this->createQrcode($purchase_orders->po_no, "assets/image/qrcode/");
 
+        $poQrBase64 = $this->imageToBase64(FCPATH . 'assets/image/qrcode/' . $purchase_orders->po_no . '.png');
+
         if ($user1 !== null && $user_1) {
             $this->createQrcode(md5($user_1->name), "assets/image/qrcode/");
         }
@@ -2338,12 +2904,20 @@ class Purchase_orders extends CI_Controller
                         body {
                             font-family: Arial, Helvetica, sans-serif;
                         }
-                        #customers {
-                            border-collapse: collapse;width: 100%;
-                            font-size: 12px;
+
+                        #customers{
+                            width:100%;
+                            border-collapse:collapse;
+                            table-layout:fixed;
+                            font-size:12px;
                         }
-                        #customers td, #customers th {
-                            border: 1px solid black;padding: 2px;
+
+                        #customers td,
+                        #customers th{
+                            border:1px solid #000;
+                            padding:2px;
+                            word-wrap:break-word;
+                            overflow-wrap:break-word;
                         }
                         #customers th {
                             padding-top: 2px;
@@ -2360,15 +2934,47 @@ class Purchase_orders extends CI_Controller
                                 display: none !important;
                             }
                         }
-                    </style>
-                    <body>
-                        <div style="margin:20%;" class="noprint">
-                            <center>
-                                <h1>Press CTRL + P for Print</h1>
-                            </center>
-                        </div>
-                        <div class="print">
-                        <div style="width:100%; display:flex, flex-direction:column">';
+
+                        ';
+
+                        if($is_pdf == true) {
+                            $html .= '
+                                @page{
+                                    margin:0;
+                                }
+
+                                html{
+                                    margin:0;
+                                    padding:0;
+                                }
+
+                                body{
+                                    margin:10px;
+                                    padding:0;
+                                }
+                            ';
+                        }
+
+                    $html .= '</style>
+                    <body>';
+
+            if (!$is_pdf) {
+
+                $html .= '
+                    <div style="margin:20%;" class="noprint">
+                        <center>
+                            <h1>Press CTRL + P for Print</h1>
+                        </center>
+                    </div>
+
+                    <div class="print">';
+            }
+
+            if ($is_pdf) {
+
+                $html .= '<div>';
+            }
+
         //Loop Page
         $no = 1;
         $hal = 1;
@@ -2396,14 +3002,14 @@ class Purchase_orders extends CI_Controller
                                 <th width="10">
                                     <img src="' . $config->favicon . '" width="60" />
                                 </th>
-                                <td width="250" style="padding:10px;">
+                                <td width="300" style="padding:10px;">
                                     <b style="font-size:14px;">' . $config->name . '</b><br>
                                     <span style="font-size:10px;">' . $config->address . '</span><br>
                                 </td>
                                 <th width="100" style="text-align:right;">
-                                    <table style="width:100%; font-size:10px;">
+                                    <table style="width:100%; font-size:10px;font-weight:normal;">
                                         <tr>
-                                            <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $purchase_orders->po_no . '.png') . '" width="60"/></td>
+                                            <td width="50" rowspan="4"><img src="' . $poQrBase64 . '" width="60"/></td>
                                             <td width="60">Doc No</td>
                                             <td width="5">:</td>
                                             <td width="100">' . $config_iso->doc_purchase_order_additional . '</td>
@@ -2438,18 +3044,31 @@ class Purchase_orders extends CI_Controller
                                             <tr>
                                                 <td width="80">Supplier</td>
                                                 <td width="10">:</td>
-                                                <td width="30%"><b>' . @$supplier->name . '</b></td>
-                                                <td style="text-align:right;" rowspan="7">
-                                                    <div style="display:flex;flex-direction:column;">
-                                                        <div style="text-align:left;align-self:flex-end;">
-                                                            <h4>Plant : '. @$plant .'</h4>
-                                                            Page <span><b>' . $hal . '</b> of <b>' . $page . '</b></span><br><br>
-                                                            PO Periode: <b>' . date("F Y", strtotime($purchase_orders->po_date)) . '</b><br>
-                                                            Revision: <b>' . $purchase_orders->revision . '</b><br>
-                                                            Revision Date: <b>' . date("d F Y", strtotime($revision_date)) . '</b><br>
-                                                            Payment Terms: <b>' . $supplier->payment_term . ' Days</b>
-                                                        </div>
-                                                    </div>
+                                                <td width="50%"><b>' . @$supplier->name . '</b></td>
+                                                <td style="text-align:right;padding-left: 50px;" rowspan="7">
+
+                                                    <table style="width:100%;">
+                                                        <tr>
+                                                            <td style="text-align:left;">
+                                                                <h4 style="margin:0;">Plant : '. @$plant .'</h4>
+
+                                                                Page <b>' . $hal . '</b> of <b>' . $page . '</b><br><br>
+
+                                                                PO Periode :
+                                                                <b>' . date("F Y", strtotime($purchase_orders->po_date)) . '</b><br>
+
+                                                                Revision :
+                                                                <b>' . $purchase_orders->revision . '</b><br>
+
+                                                                Revision Date :
+                                                                <b>' . date("d F Y", strtotime($revision_date)) . '</b><br>
+
+                                                                Payment Terms :
+                                                                <b>' . $supplier->payment_term . ' Days</b>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+
                                                 </td>
                                             </tr>
                                             <tr>
@@ -2500,19 +3119,39 @@ class Purchase_orders extends CI_Controller
                                             </tr>
                                     </table>';
             }
+
+            $showPrice = false;
+            $showAmount = false;
+
+            foreach ($records as $item) {
+
+                if ($item['price'] > 0) {
+                    $showPrice = true;
+                }
+
+                if ($item['total'] > 0) {
+                    $showAmount = true;
+                }
+
+            }
+
+            $widthPrice  = $showPrice ? 11 : 8;
+            $widthAmount = $showAmount ? 12 : 8;
+            $widthRemarks = (!$showPrice && !$showAmount) ? 22 : 15;
+
             $html .= '<table id="customers">
             <tr>
-                <th width="30" style="text-align:center;">No</th>
-                <th width="150" style="text-align:center;">Part No</th>
-                <th width="150" style="text-align:center;">Part Name</th>
-                <th width="50" style="text-align:center;">Description</th>
-                <th width="50" style="text-align:center;">Qty</th>
-                <th width="50" style="text-align:center;">Uom</th>
-                <th width="50" style="text-align:center;">Unit<br>Price</th>
-                <th width="50" style="text-align:center;">Currency</th>
-                <th width="50" style="text-align:center;">Amount</th>
-                <th width="80" style="text-align:center;">Delivery<br>Date</th>
-                <th width="80" style="text-align:center;">Remarks</th>
+                <th style="width:3%;text-align:center;">No</th>
+                <th style="width:10.5%;text-align:center;">Part No</th>
+                <th style="width:11%;text-align:center;">Part Name</th>
+                <th style="width:9.5%;text-align:center;">Description</th>
+                <th style="width:7%;text-align:center;">Qty</th>
+                <th style="width:5%;text-align:center;">Uom</th>
+                <th style="width:'.$widthPrice.'%;text-align:center;">Unit Price</th>
+                <th style="width:8%;text-align:center;">Currency</th>
+                <th style="width:'.$widthAmount.'%;text-align:center;">Amount</th>
+                <th style="width:8%;text-align:center;">Delivery Date</th>
+                <th style="width:'.$widthRemarks.'%;text-align:center;">Remarks</th>
             </tr>';
             foreach ($records as $record) {
                 $subtotal += ($record['qty'] * $record['price']);
@@ -2525,16 +3164,16 @@ class Purchase_orders extends CI_Controller
 
                 $html .= '<tr>    
                 <td style="text-align:center;">' . $no . '</td>
-                <td>' . $record['item_id'] . '</td>
-                <td><span style="font-size:10px;">' . $record['item_name'] . '</span></td>
-                <td style="text-align:center;">' . $record['description'] . '</td>
+                <td style="word-break:break-word;">' . $record['item_id'] . '</td>
+                <td><span style="font-size:10px;word-break:break-word;">' . $record['item_name'] . '</span></td>
+                <td style="text-align:center;word-break:break-word;">' . $record['description'] . '</td>
                 <td style="text-align:right;">' . number_format($record['qty'], 2, ',', '.') . '</td>
                 <td style="text-align:center;">' . $record['uom'] . '</td>
                 <td style="text-align:right;">' . number_format($record['price'], $digits, ',', '.') . '</td>
                 <td style="text-align:center;">' . $record['currency'] . '</td>
                 <td style="text-align:right;">' . number_format($record['total'], 2) . '</td>
                 <td style="text-align:center;">' . $record['delivery_date'] . '</td>
-                <td style="text-align:left;">' . $record['remarks'] . '</td>
+                <td style="text-align:left;font-size:10px;word-break:break-word;">' . $record['remarks'] . '</td>
               </tr>';
                 $no++;
             }
@@ -2556,22 +3195,22 @@ class Purchase_orders extends CI_Controller
                 <tr>
                     <th style="text-align:right; padding-right: 10px;" colspan="8">Sub Total</th>
                     <th style="text-align:right;">' . number_format($record['total_sub'], 2, ',', '.') . '</th>
-                    <th style="text-align:right;" colspan="5"></th> 
+                    <th style="text-align:right;" colspan="2"></th> 
                 </tr>
                 <tr>
                     <th style="text-align:right; padding-right: 10px;" colspan="8">VAT</th>
                     <th style="text-align:right;">' . number_format($totalVat) . '</th>
-                    <th style="text-align:right;" colspan="5"></th> 
+                    <th style="text-align:right;" colspan="2"></th> 
                 </tr>
                 <tr>
                     <th style="text-align:right; padding-right: 10px;" colspan="8">On Site Cost</th>
                     <th style="text-align:right;">' . number_format($totalOnSiteCost) . '</th>
-                    <th style="text-align:right;" colspan="5"></th> 
+                    <th style="text-align:right;" colspan="2"></th> 
                 </tr>
                 <tr>
                     <th style="text-align:right; padding-right: 10px;" colspan="8">Grand Total</th>
                     <th style="text-align:right;">' . number_format($totalGrand) . '</th>
-                    <th style="text-align:right;" colspan="5"></th> 
+                    <th style="text-align:right;" colspan="2"></th> 
                 </tr>
                 </table>';
                 $html .= '</table>';
@@ -2584,14 +3223,14 @@ class Purchase_orders extends CI_Controller
                                 <th width="10">
                                     <img src="' . $config->favicon . '" width="60" />
                                 </th>
-                                <td width="250" style="padding:10px;">
+                                <td width="300" style="padding:10px;">
                                     <b style="font-size:14px;">' . $config->name . '</b><br>
                                     <span style="font-size:10px;">' . $config->address . '</span><br>
                                 </td>
                                 <th width="100" style="text-align:right;">
-                                    <table style="width:100%; font-size:10px;">
+                                    <table style="width:100%; font-size:10px;font-weight: normal;">
                                         <tr>
-                                            <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $purchase_orders->po_no . '.png') . '" width="60"/></td>
+                                            <td width="50" rowspan="4"><img src="' . $poQrBase64 . '" width="60"/></td>
                                             <td width="60">Doc No</td>
                                             <td width="5">:</td>
                                             <td width="100">' . $config_iso->doc_purchase_order . '</td>
@@ -2620,257 +3259,450 @@ class Purchase_orders extends CI_Controller
 
                 // Memindahkan informasi approval ke sini
                 if($user1!==null){
-                    $html .= '<div style="width:100%; display: grid; grid-template-columns: auto;">
-                        <div style="width:100%; display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-                    ';
 
                     $html .= '
+                    <table style="width:100%; margin-top:40px; border-collapse:collapse;">
+                        <tr>
 
-                        <div style="text-align: center;">
-                            <table style="width:100%; border-collapse:collapse; margin-top:28px;" border="1" cellpadding="4">
-                                <tr style="text-align:center;">
-                                    <td>Supplier Approval</td>
-                                </tr>
+                            <td style="width:20%; vertical-align:top;">
 
-                                <tr style="height:100px; text-align:center; vertical-align:center;">
-                                </tr>
+                                <table style="width:100%; border-collapse:collapse;" border="1" cellpadding="4">
+                                    <tr style="text-align:center;">
+                                        <td>Supplier Approval</td>
+                                    </tr>
 
-                                <tr style="text-align:center;">
-                                    <td style="height: 20px;"></td>
-                                </tr>
+                                    <tr>
+                                        <td style="height:80px;"></td>
+                                    </tr>
 
-                                <tr style="text-align:center;">
-                                    <td style="height: 20px;"></td>
-                                </tr>
-                            </table>
-                        </div>';
+                                    <tr style="text-align:center;">
+                                        <td style="height:17px;"></td>
+                                    </tr>
 
-                        $html .= '
-                            <div style="width:75%; text-align:center;">
-                                <table style="width:100%; border-collapse:collapse; table-layout:fixed; margin-top:30px;" border="1" cellpadding="3">';
-
-                                
-                            $html .= '<tr style="text-align:center;">';
-
-                            foreach ($approvalData as $approval){
-
-                                $html .= '<td>'.$approval['title'].'</td>';
-
-                            }
-
-                            $html .= '</tr>';
-
-                            $html .= '<tr style="height:100px;text-align:center;vertical-align:middle;">';
-
-
-                            foreach($approvalData as $approval){
-
-                                $html.='<td>';
-
-                                if($approval['show']){
-
-                                    $html.='<img src="'.
-                                        $approval['barcode'].
-                                        '" width="80"/>';
-
-                                }
-
-                                $html.='</td>';
-
-                            }
-
-                            $html.='</tr>';
-
-
-                            $html.='<tr style="text-align:center;">';
-
-                            foreach($approvalData as $approval){
-
-                                $html.='<td>'.$approval['name'].'</td>';
-
-                            }
-
-                            $html.='</tr>';
-
-                            $html.='<tr style="text-align:center;">';
-
-                            foreach($approvalData as $approval){
-
-                                $html.='<td>'.$approval['position'].'</td>';
-
-                            }
-
-                            $html.='</tr>';
-
-                            $html .= '</tr>';
-                            
-                            $html .= '
+                                    <tr style="text-align:center;">
+                                        <td style="height:17px;"></td>
+                                    </tr>
                                 </table>
-                            </div>
-                        ';
+
+                            </td>
+
+                            <td style="width:5%;"></td>
+
+                            <td style="width:75%; vertical-align:top;">
+
+                                <table style="width:100%; border-collapse:collapse; table-layout:fixed;" border="1" cellpadding="3">';
+
+
+                    $html .= '<tr style="text-align:center;">';
+
+                    foreach ($approvalData as $approval) {
+                        $html .= '<td>' . $approval['title'] . '</td>';
+                    }
+
+                    $html .= '</tr>';
+
+
+                    $html .= '<tr style="height:100px !important; text-align:center; vertical-align:middle;">';
+
+                    foreach ($approvalData as $approval) {
+
+                        $html .= '<td>';
+
+                        if ($approval['show']) {
+
+                            $html .= '<img src="' . $approval['barcode'] . '" width="80"/>';
+
+                        }
+
+                        $html .= '</td>';
+
+                    }
+
+                    $html .= '</tr>';
+
+
+                    $html .= '<tr style="text-align:center;">';
+
+                    foreach ($approvalData as $approval) {
+
+                        $html .= '<td>' . $approval['name'] . '</td>';
+
+                    }
+
+                    $html .= '</tr>';
+
+                    $html .= '<tr style="text-align:center;">';
+
+                    foreach ($approvalData as $approval) {
+
+                        $html .= '<td>' . $approval['position'] . '</td>';
+
+                    }
+
+                    $html .= '</tr>';
 
                     $html .= '
+                                </table>
 
-                    </div>
-                    <div style="text-align: right; margin-top: 45px; font-style: italic; font-size:10px;">
-                        Electronic Auto Generating Approval No Need Signature
-                    </div>
-                        </div>
-    
-                    <div style="font-size:12px; margin-top:20px;">
-                        <tr>
-                            <td>Term & Condition</td>
-                        </tr>
-                    </div>
-    
-                    <table style="width:100%; font-size:12px; margin-top:20px;">
-                        <tr>
-                            <td width="20">1.</td>
-                            <td>
-                                Please sign, stamp & reply email to : ' . $emailReply . '. Maximum one day after PO received.
                             </td>
-                        </tr>
-                        <tr>
-                            <td>2.</td>
-                            <td>Please mention the Purchase Order Number in the Shipping & Billing Document.</td>
-                        </tr>
-                        <tr>
-                            <td>3.</td>
-                            <td>Please make sure delivery date is same with Purchase Order.</td>
+
                         </tr>
                     </table>
-    
-                    </div>';
+
+                    <div style="text-align:right; margin-top:30px; font-style:italic; font-size:10px;">
+                        Electronic Auto Generating Approval No Need Signature
+                    </div>
+
+                    <table style="margin-top:30px; font-size:12px;">
+                        <tr>
+                            <td><b>Term &amp; Condition</b></td>
+                        </tr>
+                    </table>
+
+                    <table style="width:100%; font-size:12px; border-collapse:collapse;">
+                        <tr>
+                            <td width="20" valign="top">1.</td>
+                            <td>Please sign, stamp &amp; reply email to : ' . $emailReply . '. Maximum one day after PO received.</td>
+                        </tr>
+                        <tr>
+                            <td valign="top">2.</td>
+                            <td>Please mention the Purchase Order Number in the Shipping &amp; Billing Document.</td>
+                        </tr>
+                        <tr>
+                            <td valign="top">3.</td>
+                            <td>Please make sure delivery date is same with Purchase Order.</td>
+                        </tr>
+                    </table>';
                 }
 
                 if($user1==null){
-                    $html .= '<div style="width:100%; display: grid; grid-template-columns: auto;">
-                    <div style="width:100%; display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-                    ';
 
                     $html .= '
+                    <table style="width:100%; margin-top:40px; border-collapse:collapse;">
+                        <tr>
 
-                        <div style="text-align: center;">
-                            <table style="width:100%; border-collapse:collapse; margin-top:28px;" border="1" cellpadding="4">
-                                <tr style="text-align:center;">
-                                    <td>Supplier Approval</td>
-                                </tr>
+                            <td style="width:20%; vertical-align:top;">
 
-                                <tr style="height:100px; text-align:center; vertical-align:center;">
-                                </tr>
+                                <table style="width:100%; border-collapse:collapse;" border="1" cellpadding="4">
+                                    <tr style="text-align:center;">
+                                        <td>Supplier Approval</td>
+                                    </tr>
 
-                                <tr style="text-align:center;">
-                                    <td style="height: 25px;"></td>
-                                </tr>
+                                    <tr>
+                                        <td style="height:80px;"></td>
+                                    </tr>
 
-                                <tr style="text-align:center;">
-                                    <td style="height: 25px;"></td>
-                                </tr>
-                            </table>
-                        </div>';
+                                    <tr style="text-align:center;">
+                                        <td style="height:17px;"></td>
+                                    </tr>
 
-                        $html .= '
-                            <div style="width:75%; text-align:center;">
-                                <table style="width:100%; border-collapse:collapse; table-layout:fixed; margin-top:30px;" border="1" cellpadding="3">';
-
-                                
-                            $html .= '<tr style="text-align:center;">';
-
-                            foreach ($approvalData as $approval){
-
-                                $html .= '<td>'.$approval['title'].'</td>';
-
-                            }
-
-                            $html .= '</tr>';
-
-
-                            $html .= '<tr style="height:100px;text-align:center;vertical-align:middle;">';
-
-                            foreach($approvalData as $approval){
-
-                                $html.='<td>';
-
-                                if($approval['show']){
-
-                                    $html.='<img src="'.
-                                        $approval['barcode'].
-                                        '" width="80"/>';
-
-                                }
-
-                                $html.='</td>';
-
-                            }
-
-                            $html.='<tr style="text-align:center;">';
-
-                            foreach($approvalData as $approval){
-
-                                $html.='<td>'.$approval['name'].'</td>';
-
-                            }
-
-                            $html.='</tr>';
-
-                            $html.='<tr style="text-align:center;">';
-
-                            foreach($approvalData as $approval){
-
-                                $html.='<td>'.$approval['position'].'</td>';
-
-                            }
-
-                            $html.='</tr>';
-
-                            $html .= '</tr>';
-                            
-                            $html .= '
-
+                                    <tr style="text-align:center;">
+                                        <td style="height:17px;"></td>
+                                    </tr>
                                 </table>
-                            </div>
-                        ';
+
+                            </td>
+
+                            <td style="width:5%;"></td>
+
+                            <td style="width:75%; vertical-align:top;">
+
+                                <table style="width:100%; border-collapse:collapse; table-layout:fixed;" border="1" cellpadding="3">';
+
+                    $html .= '<tr style="text-align:center;">';
+
+                    foreach ($approvalData as $approval) {
+                        $html .= '<td>' . $approval['title'] . '</td>';
+                    }
+
+                    $html .= '</tr>';
+
+
+                    $html .= '<tr style="height:100px !important; text-align:center; vertical-align:middle;">';
+
+                    foreach ($approvalData as $approval) {
+
+                        $html .= '<td>';
+
+                        if ($approval['show']) {
+
+                            $html .= '<img src="' . $approval['barcode'] . '" width="80"/>';
+
+                        }
+
+                        $html .= '</td>';
+
+                    }
+
+                    $html .= '</tr>';
+
+
+                    $html .= '<tr style="text-align:center;">';
+
+                    foreach ($approvalData as $approval) {
+
+                        $html .= '<td>' . $approval['name'] . '</td>';
+
+                    }
+
+                    $html .= '</tr>';
+
+
+                    $html .= '<tr style="text-align:center;">';
+
+                    foreach ($approvalData as $approval) {
+
+                        $html .= '<td>' . $approval['position'] . '</td>';
+
+                    }
+
+                    $html .= '</tr>';
+
 
                     $html .= '
+                                </table>
 
-                    </div>
-                    <div style="text-align: right; margin-top: 45px; font-style: italic; font-size:10px;">
-                        Electronic Auto Generating Approval No Need Signature
-                    </div>
-                        </div>
-
-                    <div style="font-size:12px; margin-top:20px;">
-                        <tr>
-                            <td>Term & Condition</td>
-                        </tr>
-                    </div>
-
-                    <table style="width:100%; font-size:12px; margin-top:20px;">
-                        <tr>
-                            <td width="20">1.</td>
-                            <td>
-                                Please sign, stamp & reply email to : ' . $emailReply . '. Maximum one day after PO received.
                             </td>
-                        </tr>
-                        <tr>
-                            <td>2.</td>
-                            <td>Please mention the Purchase Order Number in the Shipping & Billing Document.</td>
-                        </tr>
-                        <tr>
-                            <td>3.</td>
-                            <td>Please make sure delivery date is same with Purchase Order.</td>
+
                         </tr>
                     </table>
 
-                    </div>';
+                    <div style="text-align:right; margin-top:30px; font-style:italic; font-size:10px;">
+                        Electronic Auto Generating Approval No Need Signature
+                    </div>
+
+                    <table style="margin-top:30px; font-size:12px;">
+                        <tr>
+                            <td><b>Term &amp; Condition</b></td>
+                        </tr>
+                    </table>
+
+                    <table style="width:100%; font-size:12px; border-collapse:collapse;">
+                        <tr>
+                            <td width="20" valign="top">1.</td>
+                            <td>Please sign, stamp &amp; reply email to : ' . $emailReply . '. Maximum one day after PO received.</td>
+                        </tr>
+                        <tr>
+                            <td valign="top">2.</td>
+                            <td>Please mention the Purchase Order Number in the Shipping &amp; Billing Document.</td>
+                        </tr>
+                        <tr>
+                            <td valign="top">3.</td>
+                            <td>Please make sure delivery date is same with Purchase Order.</td>
+                        </tr>
+                    </table>';
                 }
             } else {
                 $html .= '</table></div><div style="page-break-after:always;"/></div>';
             }
             $hal++;
         }
-        $html .= '<script>window.print()</script>';
+        // $html .= '<script>window.print()</script>';
+        $html .= '</div></body></html>';
+
+        return $html;
+    }
+
+    public function print_po_additional($po_no)
+    {
+        $html = $this->generatePoAdditionalHtml($po_no, false);
         die($html);
+    }
+
+    public function print_po_additional_pdf($po_no)
+    {
+        $html = $this->generatePoAdditionalHtml($po_no, true);
+
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('chroot', FCPATH);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $pdfContent = $dompdf->output();
+
+        $tempDir = FCPATH . 'assets/temp/';
+
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0777, true);
+        }
+
+        $poPdf = $tempDir . base64_decode($po_no) . '.pdf';
+
+        file_put_contents($poPdf, $pdfContent);
+
+        $attachment = $this->db
+            ->select('attachment')
+            ->from('purchase_orders')
+            ->where('po_no', base64_decode($po_no))
+            ->where('deleted', 0)
+            ->where('attachment IS NOT NULL', null, false)
+            ->where('attachment !=', '')
+            ->limit(1)
+            ->get()
+            ->row();
+
+        $attachmentFile = !empty($attachment) ? $attachment->attachment : '';
+
+        $attachmentPath = '';
+        if (!empty($attachmentFile)) {
+            $attachmentPath = FCPATH . 'assets/image/purchase_orders/' .$attachmentFile;
+        }
+
+        $pdf = new Fpdi();
+
+        $pageCount = $pdf->setSourceFile($poPdf);
+
+        for ($page = 1; $page <= $pageCount; $page++) {
+            $tpl = $pdf->importPage($page);
+            $size = $pdf->getTemplateSize($tpl);
+
+            // $pdf->AddPage(
+            //     $size['orientation'],
+            //     [$size['width'], $size['height']]
+            // );
+
+            // $pdf->useTemplate($tpl);
+
+            $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
+
+            $pdf->AddPage($orientation, 'A4');
+
+            $pageWidth  = ($orientation == 'P') ? 210 : 297;
+            $pageHeight = ($orientation == 'P') ? 297 : 210;
+
+            $scale = min(
+                $pageWidth / $size['width'],
+                $pageHeight / $size['height']
+            );
+
+            $newWidth  = $size['width'] * $scale;
+            $newHeight = $size['height'] * $scale;
+
+            $x = ($pageWidth - $newWidth) / 2;
+            $y = ($pageHeight - $newHeight) / 2;
+
+            $pdf->useTemplate($tpl, $x, $y, $newWidth, $newHeight);
+
+        }
+
+        // if (!empty($attachmentPath) && file_exists($attachmentPath)) {
+        //     $pageCount = $pdf->setSourceFile($attachmentPath);
+
+        //     for ($page = 1; $page <= $pageCount; $page++) {
+        //         $tpl = $pdf->importPage($page);
+        //         $size = $pdf->getTemplateSize($tpl);
+
+        //         // $pdf->AddPage(
+        //         //     $size['orientation'],
+        //         //     [$size['width'], $size['height']]
+        //         // );
+
+        //         // $pdf->useTemplate($tpl);
+
+        //         $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
+
+        //         $pdf->AddPage($orientation, 'A4');
+
+        //         $pageWidth  = ($orientation == 'P') ? 210 : 297;
+        //         $pageHeight = ($orientation == 'P') ? 297 : 210;
+
+        //         $scale = min(
+        //             $pageWidth / $size['width'],
+        //             $pageHeight / $size['height']
+        //         );
+
+        //         $newWidth  = $size['width'] * $scale;
+        //         $newHeight = $size['height'] * $scale;
+
+        //         $x = ($pageWidth - $newWidth) / 2;
+        //         $y = ($pageHeight - $newHeight) / 2;
+
+        //         $pdf->useTemplate($tpl, $x, $y, $newWidth, $newHeight);
+
+        //     }
+
+        // }
+
+
+        if (!empty($attachmentPath) && file_exists($attachmentPath)) {
+
+            $pdfToMerge = $attachmentPath;
+
+            $normalizedPdf = $tempDir .
+                'normalized_' . md5($attachmentPath) . '.pdf';
+
+            try {
+                $pageCount = $pdf->setSourceFile($pdfToMerge);
+            } catch (\Throwable $e) {
+                $pdfToMerge = $normalizedPdf;
+
+                if (!$this->normalizePdf($attachmentPath, $pdfToMerge)) {
+                    $pageCount = 0;
+                } else {
+                    $pageCount = $pdf->setSourceFile($pdfToMerge);
+                }
+            }
+
+            if ($pageCount > 0) {
+
+                for ($page = 1; $page <= $pageCount; $page++) {
+
+                    $tpl = $pdf->importPage($page);
+                    $size = $pdf->getTemplateSize($tpl);
+
+                    $orientation = ($size['width'] > $size['height'])
+                        ? 'L'
+                        : 'P';
+
+                    $pdf->AddPage($orientation, 'A4');
+
+                    $pageWidth = ($orientation === 'P')
+                        ? 210
+                        : 297;
+
+                    $pageHeight = ($orientation === 'P')
+                        ? 297
+                        : 210;
+
+                    $scale = min(
+                        $pageWidth / $size['width'],
+                        $pageHeight / $size['height']
+                    );
+
+                    $newWidth = $size['width'] * $scale;
+                    $newHeight = $size['height'] * $scale;
+
+                    $x = ($pageWidth - $newWidth) / 2;
+                    $y = ($pageHeight - $newHeight) / 2;
+
+                    $pdf->useTemplate(
+                        $tpl,
+                        $x,
+                        $y,
+                        $newWidth,
+                        $newHeight
+                    );
+                }
+            }
+
+            if (file_exists($normalizedPdf)) {
+                @unlink($normalizedPdf);
+            }
+        }
+
+        $pdf->SetTitle(base64_decode($po_no));
+        $pdf->Output('I', base64_decode($po_no).'.pdf');
+
+        if (is_file($poPdf)) {
+            @unlink($poPdf);
+        }
+
+        exit; 
     }
 
     public function print($option = "")

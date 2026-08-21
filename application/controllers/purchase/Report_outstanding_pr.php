@@ -64,7 +64,7 @@ class Report_outstanding_pr extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=sales_orders_$format.xls");
+            header("Content-Disposition: attachment; filename=outstanding_pr_$format.xls");
         }
 
         $filter_from = base64_decode($this->input->get("filter_from"));

@@ -123,10 +123,13 @@ class Users extends CI_Controller
             if ($this->form_validation->run() == TRUE) {
                 $post = $this->input->post();
 
-                if (isset($post['department'])) {
+                if (!empty($post['department'])) {
                     $post['department_id'] = $post['department'];
-                    unset($post['department']);
+                } else {
+                    $post['department_id'] = null;
                 }
+
+                unset($post['department']);
 
                 $dataFinal = array(
                     "number" => $post['number'],
@@ -214,10 +217,13 @@ class Users extends CI_Controller
 
             $post = $this->input->post();
 
-            if (isset($post['department'])) {
+            if (!empty($post['department'])) {
                 $post['department_id'] = $post['department'];
-                unset($post['department']);
+            } else {
+                $post['department_id'] = null;
             }
+
+            unset($post['department']);
 
             $postFinal = array_merge($post, [
                 "api_key" => $this->generate_api(),

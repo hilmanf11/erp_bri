@@ -195,6 +195,120 @@ class New_barcode_fg extends CI_Controller
         ]);
     }
 
+    private function acquireRfgLabelSequenceLock()
+    {
+        $lock = $this->db
+            ->query("SELECT GET_LOCK('rfg_label_sequence_lock', 10) AS locked")
+            ->row();
+
+        return !empty($lock) && (int) $lock->locked === 1;
+    }
+
+    private function releaseRfgLabelSequenceLock()
+    {
+        $this->db->query("SELECT RELEASE_LOCK('rfg_label_sequence_lock')");
+    }
+
+    private function getShiftCode($shift)
+    {
+        $shiftCode = [
+            '1' => 'A',
+            '2' => 'B',
+            '3' => 'C',
+            'A' => 'A',
+            'B' => 'B',
+            'C' => 'C'
+        ];
+
+        return isset($shiftCode[$shift]) ? $shiftCode[$shift] : $shift;
+    }
+
+    private function generateSerialLabel($prefix, $productNo, $prod_date, $shift, $item_fg_id)
+    {
+        $prefixParts = explode('|', $prefix);
+        $sequencePrefix = $prefixParts[0] . '|' . $prefixParts[1] . '|%';
+
+        $shiftCode = $this->getShiftCode($shift);
+        while (true) {
+            $last = $this->db
+                ->query("
+                    SELECT MAX(sequence_no) AS sequence_no
+                    FROM (
+                        SELECT CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(nbf.serial_label, '|', 4), '|', -1) AS UNSIGNED) AS sequence_no
+                        FROM new_barcode_fg_detail nbf
+                        LEFT JOIN new_barcode_fg nb ON nb.serial_no = nbf.serial_no
+                        WHERE nbf.deleted = 0
+                            AND COALESCE(nb.deleted, 0) = 0
+                            AND nb.prod_date = ?
+                            AND nb.shift = ?
+                            AND nbf.item_fg_id = ?
+                            AND nbf.serial_label LIKE ?
+
+                        UNION ALL
+
+                        SELECT CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(serial_label, '|', 4), '|', -1) AS UNSIGNED) AS sequence_no
+                        FROM fg_visual_checker_label
+                        WHERE deleted = 0
+                            AND prod_date = ?
+                            AND shift = ?
+                            AND item_fg_id = ?
+                            AND serial_label LIKE ?
+
+                        UNION ALL
+
+                        SELECT CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(serial_label, '|', 4), '|', -1) AS UNSIGNED) AS sequence_no
+                        FROM po_subcont_production_labels
+                        WHERE deleted = 0
+                            AND prod_date = ?
+                            AND shift = ?
+                            AND item_fg_id = ?
+                            AND serial_label LIKE ?
+                    ) labels
+                ", [
+                    $prod_date,
+                    $shift,
+                    $item_fg_id,
+                    $sequencePrefix,
+
+                    $prod_date,
+                    $shiftCode,
+                    $item_fg_id,
+                    $sequencePrefix,
+
+                    $prod_date,
+                    $shiftCode,
+                    $item_fg_id,
+                    $sequencePrefix,
+                ])
+                ->row();
+
+            $sequence = !empty($last->sequence_no) ? ((int) $last->sequence_no + 1) : 1;
+            $serial_label = implode('|', [$prefix, sprintf('%03d', $sequence), $productNo]);
+
+            $exists_barcode = $this->db
+                ->where('serial_label', $serial_label)
+                ->where('deleted', 0)
+                ->get('new_barcode_fg_detail')
+                ->row();
+
+            $exists_fg = $this->db
+                ->where('serial_label', $serial_label)
+                ->where('deleted', 0)
+                ->get('fg_visual_checker_label')
+                ->row();
+
+            $exists_po = $this->db
+                ->where('serial_label', $serial_label)
+                ->where('deleted', 0)
+                ->get('po_subcont_production_labels')
+                ->row();
+
+            if (!$exists_barcode && !$exists_fg && !$exists_po) {
+                return $serial_label;
+            }
+        }
+    }
+
     public function create()
     {
         if ($this->input->post()) {
@@ -202,87 +316,106 @@ class New_barcode_fg extends CI_Controller
                 $post = $this->input->post();
                 $date = new DateTime($post['trans_date']);
                 $formatted_date = $date->format('ymd');
-                $product_id = $post['item_fg_id'];
+                $prod_date = !empty($post['prod_date']) ? date('Y-m-d', strtotime($post['prod_date'])) : date('Y-m-d');
+                $prod_date_code = date('dmY', strtotime($prod_date));
+                // $shift = $this->getShiftCode($post['shift']);
                 $qty_wip = intval($post['qty_wip']);
-                
+
+                $shift = (int) $post['shift'];
+                $shiftCode = $this->getShiftCode($shift);
+
                 // Set qty_packing sama dengan qty_wip (1:1)
                 $qty_packing = $qty_wip;
-                $qty_label = 1; // 1 product = 1 label
+                // $qty_label = 1; // 1 product = 1 label
+                $sequence_lock_acquired = false;
 
-                // Ambil sequence terakhir berdasarkan tanggal di new_barcode_fg
-                $this->db->select_max('serial_no');
-                $this->db->like('serial_no', $formatted_date, 'after');
-                $last_serial_no = $this->db->get('new_barcode_fg')->row()->serial_no;
+                $this->db->trans_begin();
 
-                // Jika ada serial_no sebelumnya, ambil sequence terakhir, jika tidak mulai dari 0001
-                $sequence = 1;
-                if ($last_serial_no) {
-                    $last_sequence = intval(substr($last_serial_no, -4));
-                    $sequence = $last_sequence + 1;
+                try {
+                    if (!$this->acquireRfgLabelSequenceLock()) {
+                        throw new Exception("Failed to acquire label sequence lock");
+                    }
+
+                    $sequence_lock_acquired = true;
+
+                    // Ambil sequence terakhir berdasarkan tanggal di new_barcode_fg
+                    $this->db->select_max('serial_no');
+                    $this->db->like('serial_no', $formatted_date, 'after');
+                    $last_serial_no = $this->db->get('new_barcode_fg')->row()->serial_no;
+
+                    // Jika ada serial_no sebelumnya, ambil sequence terakhir, jika tidak mulai dari 0001
+                    $sequence = 1;
+                    if ($last_serial_no) {
+                        $last_sequence = intval(substr($last_serial_no, -4));
+                        $sequence = $last_sequence + 1;
+                    }
+                    $serial_no = $formatted_date . sprintf("%04d", $sequence);
+
+                    // Simpan data ke tabel new_barcode_fg
+                    $data = [
+                        'trans_date' => $post['trans_date'],
+                        'shift' => $shift,
+                        'leader' => $post['leader'],
+                        'item_fg_id' => $post['item_fg_id'],
+                        'qty_wip' => $qty_wip,
+                        'operator' => $post['operator'],
+                        'serial_no' => $serial_no,
+                        'specification' => $post['specification'],
+                        'compound_lot' => $post['compound_lot'],
+                        'prod_date' => $prod_date,
+                        'qc' => $post['qc'],
+                        'created_by' => $this->session->username,
+                        'created_date' => date('Y-m-d H:i:s'),
+                        'request_no' => $post['request_no']
+                    ];
+                    $this->crud->create('new_barcode_fg', $data);
+
+                    $item_fg = $this->db
+                        ->select('number')
+                        ->where('id', $post['item_fg_id'])
+                        ->get('item_fg')
+                        ->row();
+
+                    $product_no = !empty($item_fg->number) ? $item_fg->number : $post['item_fg_id'];
+                    $prefix = implode('|', [$prod_date_code, $shiftCode, (int) $qty_packing]);
+                    $serial_label = $this->generateSerialLabel($prefix, $product_no, $prod_date, $shift, $post['item_fg_id']);
+
+                    $detail_data = [
+                        'created_by' => $this->session->username,
+                        'created_date' => date('Y-m-d H:i:s'),
+                        'serial_label' => $serial_label,
+                        'serial_no' => $serial_no,
+                        'item_fg_id' => $post['item_fg_id'],
+                        'qty_packing' => $qty_packing,
+                        'request_no' => $post['request_no']
+                    ];
+                    $this->crud->create('new_barcode_fg_detail', $detail_data);
+
+                    if ($this->db->trans_status() === FALSE) {
+                        throw new Exception('Failed save new barcode FG');
+                    }
+
+                    $this->db->trans_commit();
+
+                    if ($sequence_lock_acquired) {
+                        $this->releaseRfgLabelSequenceLock();
+                    }
+
+                    echo json_encode([
+                        'success' => true, 
+                        'message' => 'Data saved successfully', 
+                        'serial_no' => $serial_no, 
+                        'request_no' => $post['request_no']
+                    ]);
+                } catch (Exception $e) {
+                    $this->db->trans_rollback();
+
+                    if ($sequence_lock_acquired) {
+                        $this->releaseRfgLabelSequenceLock();
+                    }
+
+                    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
                 }
-                $serial_no = $formatted_date . sprintf("%04d", $sequence);
-
-                // Simpan data ke tabel new_barcode_fg
-                $data = [
-                    'trans_date' => $post['trans_date'],
-                    'shift' => $post['shift'],
-                    'leader' => $post['leader'],
-                    'item_fg_id' => $post['item_fg_id'],
-                    'qty_wip' => $qty_wip,
-                    'operator' => $post['operator'],
-                    'serial_no' => $serial_no,
-                    'specification' => $post['specification'],
-                    'compound_lot' => $post['compound_lot'],
-                    'prod_date' => !empty($post['prod_date']) ? date('Y-m-d', strtotime($post['prod_date'])) : date('Y-m-d'),
-                    'qc' => $post['qc'],
-                    'created_by' => $this->session->username,
-                    'created_date' => date('Y-m-d H:i:s'),
-                    'request_no' => $post['request_no']
-                ];
-                $new_barcode_fg_id = $this->crud->create('new_barcode_fg', $data);
-
-                // Ambil sequence terakhir dari kedua tabel
-                $this->db->select_max('serial_label');
-                $this->db->like('serial_label', $formatted_date . $product_id, 'after');
-                $last_serial_label_packing = $this->db->get('label_packing_detail')->row()->serial_label;
-
-                $this->db->select_max('serial_label');
-                $this->db->like('serial_label', $formatted_date . $product_id, 'after');
-                $last_serial_label_barcode = $this->db->get('new_barcode_fg_detail')->row()->serial_label;
-
-                // Tentukan sequence terakhir dari kedua tabel
-                $last_sequence_packing = 0;
-                $last_sequence_barcode = 0;
-
-                if ($last_serial_label_packing) {
-                    $last_sequence_packing = intval(substr($last_serial_label_packing, -4));
-                }
-                if ($last_serial_label_barcode) {
-                    $last_sequence_barcode = intval(substr($last_serial_label_barcode, -4));
-                }
-
-                // Gunakan sequence terbesar + 1
-                $detail_sequence = max($last_sequence_packing, $last_sequence_barcode) + 1;
-
-                $serial_label = $formatted_date . $product_id . sprintf("%04d", $detail_sequence);
-
-                $detail_data = [
-                    'created_by' => $this->session->username,
-                    'created_date' => date('Y-m-d H:i:s'),
-                    'serial_label' => $serial_label,
-                    'serial_no' => $serial_no,
-                    'item_fg_id' => $post['item_fg_id'],
-                    'qty_packing' => $qty_packing,
-                    'request_no' => $post['request_no']
-                ];
-                $this->crud->create('new_barcode_fg_detail', $detail_data);
-
-                echo json_encode([
-                    'success' => true, 
-                    'message' => 'Data saved successfully', 
-                    'serial_no' => $serial_no, 
-                    'request_no' => $post['request_no']
-                ]);
             } else {
                 echo json_encode(['success' => false, 'message' => validation_errors()]);
             }
@@ -348,7 +481,16 @@ class New_barcode_fg extends CI_Controller
         }
         
         $this->db->group_by('lpd.serial_label');
-        
+        $this->db->order_by("
+            CAST(
+                SUBSTRING_INDEX(
+                    SUBSTRING_INDEX(lpd.serial_label, '|', 4),
+                    '|',
+                    -1
+                ) AS UNSIGNED
+            )
+        ", 'ASC', false);
+
         $new_barcode_fg_details = $this->db->get()->result();
         
         if (empty($new_barcode_fg_details)) {
@@ -368,7 +510,7 @@ class New_barcode_fg extends CI_Controller
                         <link rel="icon" type="image/png" href="' . base_url('assets/image/icon.png') . '">
                         <style>
                             body { font-family: Arial, Helvetica, sans-serif; margin: 2; }
-                            table { border-collapse: collapse; width: 7.5cm; height: 8cm; font-size: 20px; border: 2px solid black; table-layout: fixed; }
+                            table { border-collapse: collapse; width: 7.5cm; height: 8cm; font-size: 11px; border: 2px solid black; table-layout: fixed; }
                             th, td { border: 1px solid black; padding: 2px; text-align: left; }
                             th { text-align: center; font-size: 14px; font-weight: bold; }
                             .header { text-align: center; font-size: 15px; font-weight: bold; }
@@ -393,7 +535,7 @@ class New_barcode_fg extends CI_Controller
 
                                     table {
                                         width: 100%;
-                                        font-size: 15px;
+                                        font-size: 12px;
                                         margin: 0;
                                         padding: 0;
                                     }
@@ -409,6 +551,7 @@ class New_barcode_fg extends CI_Controller
         
         foreach ($new_barcode_fg_details as $detail) {
             $qty_packing_formatted = number_format($detail->qty_packing, 0, ',', '.') . ' ' .strtoupper($new_barcode_fg_details[0]->uom);
+            $serial_label_display = preg_replace('/^((?:[^|]*\|){3}[^|]*).*/', '$1', $detail->serial_label);
             $html .= '<div class="printLabel">
                         <table style="max-width: 7.5cm; max-height:8cm;">
                         <tr>
@@ -453,7 +596,7 @@ class New_barcode_fg extends CI_Controller
                             <td class="operator-sign" colspan="2">' . $detail->qc . '</td>
                             <td class="qr-code" colspan="4">
                                 <img src="' . base_url('assets/image/qrcode/' . $detail->serial_label . '.png') . '"/>
-                                <div class="serial-label">' . $detail->serial_label . '</div>
+                                <div class="serial-label">' . $serial_label_display . '</div>
                             </td>
                         </tr>
                     </table>
@@ -702,7 +845,16 @@ class New_barcode_fg extends CI_Controller
         $this->db->where('lpd.request_no', $request_no);
         
         $this->db->group_by('lpd.serial_label');
-        
+        $this->db->order_by("
+            CAST(
+                SUBSTRING_INDEX(
+                    SUBSTRING_INDEX(lpd.serial_label, '|', 4),
+                    '|',
+                    -1
+                ) AS UNSIGNED
+            )
+        ", 'ASC', false);
+
         $new_barcode_fg_details = $this->db->get()->result();
         
         if (empty($new_barcode_fg_details)) {
@@ -722,7 +874,7 @@ class New_barcode_fg extends CI_Controller
                         <link rel="icon" type="image/png" href="' . base_url('assets/image/icon.png') . '">
                         <style>
                             body { font-family: Arial, Helvetica, sans-serif; margin: 2; }
-                            table { border-collapse: collapse; width: 7.5cm; height: 8cm; font-size: 20px; border: 2px solid black; table-layout: fixed; }
+                            table { border-collapse: collapse; width: 7.5cm; height: 8cm; font-size: 11px; border: 2px solid black; table-layout: fixed; }
                             th, td { border: 1px solid black; padding: 2px; text-align: left; }
                             th { text-align: center; font-size: 14px; font-weight: bold; }
                             .header { text-align: center; font-size: 15px; font-weight: bold; }
@@ -747,7 +899,7 @@ class New_barcode_fg extends CI_Controller
 
                                     table {
                                         width: 100%;
-                                        font-size: 15px;
+                                        font-size: 12px;
                                         margin: 0;
                                         padding: 0;
                                     }
@@ -763,6 +915,7 @@ class New_barcode_fg extends CI_Controller
         
         foreach ($new_barcode_fg_details as $detail) {
             $qty_packing_formatted = number_format($detail->qty_packing, 0, ',', '.') . ' ' .strtoupper($new_barcode_fg_details[0]->uom);
+            $serial_label_display = preg_replace('/^((?:[^|]*\|){3}[^|]*).*/', '$1', $detail->serial_label);
             $html .= '<div class="printLabel">
                         <table style="max-width: 7.5cm; max-height:8cm;">
                         <tr>
@@ -807,7 +960,7 @@ class New_barcode_fg extends CI_Controller
                             <td class="operator-sign" colspan="2">' . $detail->qc . '</td>
                             <td class="qr-code" colspan="4">
                                 <img src="' . base_url('assets/image/qrcode/' . $detail->serial_label . '.png') . '"/>
-                                <div class="serial-label">' . $detail->serial_label . '</div>
+                                <div class="serial-label">' . $serial_label_display . '</div>
                             </td>
                         </tr>
                     </table>
