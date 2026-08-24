@@ -686,6 +686,16 @@ class Po_subcont_productions extends CI_Controller
         $this->db->where('a.subcont_id',$purchase_order->subcont_id);
         $this->db->where('a.order_type',$purchase_order->order_type);
 
+        $po_item_ids = array_map(function($detail) {
+            return is_object($detail) ? $detail->item_fg_id : $detail['item_fg_id'];
+        }, (array) $purchase_orders_total);
+
+        if (!empty($po_item_ids)) {
+            $this->db->where_in('a.item_fg_id', $po_item_ids);
+        } else {
+            $this->db->where('1=0'); 
+        }
+
         $this->db->order_by('c.number','ASC');
 
         $pr_attachment = $this->db->get()->result_array();
