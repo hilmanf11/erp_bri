@@ -297,132 +297,132 @@ class Approvals extends CI_Controller
     }
 
     public function disapprove()
-{
-    $id = $this->input->post('id');
-    $tablename = $this->input->post('tablename');
-    $reason = trim($this->input->post('reason', true) ?? '');
-    $read = $this->crud->read($tablename, [], ["id" => $id]);
-    $read_table_approvals = $this->crud->read('approvals', [], ["table_name" => $tablename]);
-    $data = json_decode($read->approved_data, true); // Decode sebagai array
-    if (!is_array($data)) {
-        $data = []; // Pastikan selalu array
-    }
-    $table_approval = $tablename;
+    {
+        $id = $this->input->post('id');
+        $tablename = $this->input->post('tablename');
+        $reason = trim($this->input->post('reason', true) ?? '');
+        $read = $this->crud->read($tablename, [], ["id" => $id]);
+        $read_table_approvals = $this->crud->read('approvals', [], ["table_name" => $tablename]);
+        $data = json_decode($read->approved_data, true); // Decode sebagai array
+        if (!is_array($data)) {
+            $data = []; // Pastikan selalu array
+        }
+        $table_approval = $tablename;
 
-    if(
-        $tablename === "purchase_orders" ||
-        $tablename === "purchase_requests" ||
-        $tablename === "supplier_items" ||
-        $tablename === "po_subcont_productions"
-    ){
-        $read_table_approvals = $this->crud->getApprovalV2($table_approval, $read->created_by);
-    }
+        if(
+            $tablename === "purchase_orders" ||
+            $tablename === "purchase_requests" ||
+            $tablename === "supplier_items" ||
+            $tablename === "po_subcont_productions"
+        ){
+            $read_table_approvals = $this->crud->getApprovalV2($table_approval, $read->created_by);
+        }
 
-    // if ($tablename === "purchase_orders") {
-    //     $purchaseRequests = $this->crud->read('purchase_requests', [], ["request_no" => $read->request_no]);
-    //     $table_approval = ($purchaseRequests->division === "DIV01") ? 'purchase_orders' : 'purchase_orders_2';
-    //     $read_table_approvals = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
-    // }
-
-    // if ($tablename === "supplier_items") {
-    //     $user = $this->crud->read('users', [], ["username" => $read->created_by]);
-    //     $table_approval = (preg_match('/\bExtruder\b/i', $user->position)) ? 'supplier_items_2' : 'supplier_items';
-    //     $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
-    // }
-
-    if ($tablename === "delivery_notes") {
-        $user = $this->crud->read('users', [], ["username" => $read->created_by]);
-        $table_approval = (preg_match('/\bExtruder\b/i', $user->position)) ? 'delivery_notes_2' : 'delivery_notes';
-        $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
-    }
-    if ($tablename === "delivery_to_subconts") {
-        $user = $this->crud->read('users', [], ["username" => $read->created_by]);
-        $table_approval = 'delivery_to_subconts';
-        $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
-    }
-    if ($tablename === "delivery_rework") {
-        $user = $this->crud->read('users', [], ["username" => $read->created_by]);
-        $table_approval = 'delivery_rework';
-        $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
-    }
-    if (!empty($read_table_approvals->id)) {
-        /* Default */
-        // if (empty($data)) {
-        //     $send = $this->db->update($tablename, ["deleted" => 2], ["id" => $id]);
-        // } else {
-        //     $data = array_merge($data, ["deleted" => 2]); // $data sudah pasti array
-        //     $send = $this->db->update($tablename, $data, ["id" => $id]);
+        // if ($tablename === "purchase_orders") {
+        //     $purchaseRequests = $this->crud->read('purchase_requests', [], ["request_no" => $read->request_no]);
+        //     $table_approval = ($purchaseRequests->division === "DIV01") ? 'purchase_orders' : 'purchase_orders_2';
+        //     $read_table_approvals = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
         // }
 
-        if (empty($data)) {
-            $update_data = [
-                "deleted" => 2
-            ];
-        } else {
-            $update_data = array_merge($data, [
-                "deleted" => 2
-            ]);
+        // if ($tablename === "supplier_items") {
+        //     $user = $this->crud->read('users', [], ["username" => $read->created_by]);
+        //     $table_approval = (preg_match('/\bExtruder\b/i', $user->position)) ? 'supplier_items_2' : 'supplier_items';
+        //     $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
+        // }
+
+        if ($tablename === "delivery_notes") {
+            $user = $this->crud->read('users', [], ["username" => $read->created_by]);
+            $table_approval = (preg_match('/\bExtruder\b/i', $user->position)) ? 'delivery_notes_2' : 'delivery_notes';
+            $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
         }
-
-        if ($reason !== '') {
-            $update_data['reason_approval'] = $reason;
+        if ($tablename === "delivery_to_subconts") {
+            $user = $this->crud->read('users', [], ["username" => $read->created_by]);
+            $table_approval = 'delivery_to_subconts';
+            $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
         }
+        if ($tablename === "delivery_rework") {
+            $user = $this->crud->read('users', [], ["username" => $read->created_by]);
+            $table_approval = 'delivery_rework';
+            $approval = $this->crud->read('approvals', [], ["table_name" => $table_approval]);
+        }
+        if (!empty($read_table_approvals->id)) {
+            /* Default */
+            // if (empty($data)) {
+            //     $send = $this->db->update($tablename, ["deleted" => 2], ["id" => $id]);
+            // } else {
+            //     $data = array_merge($data, ["deleted" => 2]); // $data sudah pasti array
+            //     $send = $this->db->update($tablename, $data, ["id" => $id]);
+            // }
 
-        $this->db->update($tablename, $update_data, ["id" => $id]);
+            if (empty($data)) {
+                $update_data = [
+                    "deleted" => 2
+                ];
+            } else {
+                $update_data = array_merge($data, [
+                    "deleted" => 2
+                ]);
+            }
 
-        $columns = ['user_approval_1', 'user_approval_2', 'user_approval_3', 'user_approval_4', 'user_approval_5'];
+            if ($reason !== '') {
+                $update_data['reason_approval'] = $reason;
+            }
 
-        $approval_column = null;
-        $preceding_values = [];
+            $this->db->update($tablename, $update_data, ["id" => $id]);
 
-        $this->db->select($columns);
-        $this->db->from('approvals');
-        $this->db->where('id', $read_table_approvals->id);
-        $this->db->where('status', 0);
-        $query = $this->db->get();
+            $columns = ['user_approval_1', 'user_approval_2', 'user_approval_3', 'user_approval_4', 'user_approval_5'];
 
-        if ($query->num_rows() > 0) {
-            foreach ($query->result_array() as $row) {
-                foreach ($columns as $index => $column) {
-                    if ($row[$column] === $this->session->username) {
-                        $approval_column = $column;
-                        for ($i = 0; $i < $index; $i++) {
-                            $preceding_values[$columns[$i]] = $row[$columns[$i]];
+            $approval_column = null;
+            $preceding_values = [];
+
+            $this->db->select($columns);
+            $this->db->from('approvals');
+            $this->db->where('id', $read_table_approvals->id);
+            $this->db->where('status', 0);
+            $query = $this->db->get();
+
+            if ($query->num_rows() > 0) {
+                foreach ($query->result_array() as $row) {
+                    foreach ($columns as $index => $column) {
+                        if ($row[$column] === $this->session->username) {
+                            $approval_column = $column;
+                            for ($i = 0; $i < $index; $i++) {
+                                $preceding_values[$columns[$i]] = $row[$columns[$i]];
+                            }
+                            break 2;
                         }
-                        break 2;
                     }
                 }
-            }
 
-            if ($approval_column) {
-                $preceding_values['user_created_by'] = $read->created_by;
-                foreach ($preceding_values as $col_name => $value) {
-                    $this->crud->create("notifications", [
-                        "users_id_from" => $this->session->username,
-                        "users_id_to" => $value,
-                        "approvals_id" => $read_table_approvals->id,
-                        "table_id" => $id,
-                        "table_name" => $table_approval,
-                        "name" => "Disapprove",
-                        "description" => 'Data in Module ' . strtoupper(str_replace("_", " ", $tablename)) . ' has been disapproved',
-                        "status" => 0,
-                    ]);
+                if ($approval_column) {
+                    $preceding_values['user_created_by'] = $read->created_by;
+                    foreach ($preceding_values as $col_name => $value) {
+                        $this->crud->create("notifications", [
+                            "users_id_from" => $this->session->username,
+                            "users_id_to" => $value,
+                            "approvals_id" => $read_table_approvals->id,
+                            "table_id" => $id,
+                            "table_name" => $table_approval,
+                            "name" => "Disapprove",
+                            "description" => 'Data in Module ' . strtoupper(str_replace("_", " ", $tablename)) . ' has been disapproved',
+                            "status" => 0,
+                        ]);
+                    }
+                    echo json_encode(array("title" => "Disapproved", "message" => "Data Disapproved Successfully", "theme" => "success"));
+                } else {
+                    echo json_encode(array("title" => "Disapproved", "message" => "User not found in any approvals column.", "theme" => "error"));
                 }
-                echo json_encode(array("title" => "Disapproved", "message" => "Data Disapproved Successfully", "theme" => "success"));
             } else {
-                echo json_encode(array("title" => "Disapproved", "message" => "User not found in any approvals column.", "theme" => "error"));
+                echo json_encode(array("title" => "Disapproved", "message" => "No records found.", "theme" => "error"));
             }
         } else {
-            echo json_encode(array("title" => "Disapproved", "message" => "No records found.", "theme" => "error"));
+            echo json_encode([
+                "title" => "Error",
+                "message" => "Approval tidak ditemukan",
+                "theme" => "error"
+            ]);
         }
-    } else {
-        echo json_encode([
-            "title" => "Error",
-            "message" => "Approval tidak ditemukan",
-            "theme" => "error"
-        ]);
     }
-}
 
 
     // public function disapprove()
@@ -557,8 +557,9 @@ class Approvals extends CI_Controller
         $delivery_rework = $this->crud->reads('delivery_rework', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
 
         $po_subcont_productions = $this->crud->reads('po_subcont_productions', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
+        $finishing_invoices = $this->crud->reads('finishing_invoices', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
 
-        $totalRows = (count($users) + count($purchase_orders) + count($suppliers) + count($supplier_items) + count($purchase_requests) + count($delivery_notes) + count($delivery_to_subconts) + count($delivery_rework) + count($po_subcont_productions)); //+ count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) 
+        $totalRows = (count($users) + count($purchase_orders) + count($suppliers) + count($supplier_items) + count($purchase_requests) + count($delivery_notes) + count($delivery_to_subconts) + count($delivery_rework) + count($po_subcont_productions) + count($finishing_invoices)); //+ count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) 
         if ($totalRows > 0) {
             echo '<span class="badge">' . $totalRows . '</span>';
         } else {
@@ -587,6 +588,7 @@ class Approvals extends CI_Controller
         $delivery_rework = $this->crud->reads('delivery_rework', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
 
         $po_subcont_productions = $this->crud->reads('po_subcont_productions', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
+        $finishing_invoices = $this->crud->reads('finishing_invoices', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
 
         foreach ($users as $user) {
             $this->approvalMessage($user->approved_by, $user->approved_to, "users");
@@ -638,6 +640,9 @@ class Approvals extends CI_Controller
         }
         foreach ($po_subcont_productions as $po_sub_prod) {
             $this->approvalMessage($po_sub_prod->approved_by, $po_sub_prod->approved_to, "po_subcont_productions");
+        }
+        foreach ($finishing_invoices as $finishing_invoice) {
+            $this->approvalMessage($finishing_invoice->approved_by, $finishing_invoice->approved_to, "finishing_invoices");
         }
     }
 
@@ -808,6 +813,18 @@ class Approvals extends CI_Controller
             $data['table'] = "po_subcont_productions";
             $this->load->view('template/header', $data);
             $this->load->view('approval/po_subcont_productions');
+        }
+    }
+
+    public function finishing_invoices($approved_to, $approved_by){
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['approved_to'] = base64_decode($approved_to);
+            $data['approved_by'] = base64_decode($approved_by);
+            $data['table'] = "finishing_invoices";
+            $this->load->view('template/header', $data);
+            $this->load->view('approval/finishing_invoices');
         }
     }
 
@@ -1096,6 +1113,44 @@ class Approvals extends CI_Controller
         $records = $this->db->get()->result_array();
 
         die(json_encode($records));
+    }
+
+    public function approvalFinishingInvoices($approved_to, $approved_by)
+    {
+        $approved_to = base64_decode($approved_to);
+        $approved_by = base64_decode($approved_by);
+
+        $this->db->select('a.*, COALESCE(tf.name, sc.name) as vendor_name');
+        $this->db->from('finishing_invoices a');
+        $this->db->join('teaching_factory tf', 'a.subcont = tf.id', 'left');
+        $this->db->join('subconts sc', 'a.subcont = sc.id', 'left');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.approved_by', $approved_by);
+        $this->db->where('a.deleted', 0);
+        $this->db->order_by('a.created_date', 'DESC');
+        
+        $records = $this->db->get()->result_array();
+
+        // Format mata uang agar rapi di tabel Approval
+        $arr = [];
+        foreach ($records as $record) {
+            $arr[] = array(
+                "id" => $record['id'], 
+                "finishing_invoice_no" => $record['finishing_invoice_no'],
+                "finishing_invoice_date" => $record['finishing_invoice_date'],
+                "period_start" => $record['period_start'],
+                "period_end" => $record['period_end'],
+                "vendor_name" => $record['vendor_name'],
+                "total" => "Rp " . number_format($record['total'], 0, ',', '.'),
+                "biaya_fee" => "Rp " . number_format($record['biaya_fee'], 0, ',', '.'),
+                "grand_total" => "Rp " . number_format($record['grand_total'], 0, ',', '.'),
+                "created_by" => $record['created_by'],
+                "created_date" => date('Y-m-d', strtotime($record['created_date'])),
+            );
+        }
+
+        // Kembalikan langsung sebagai Array murni (karena pagination: false)
+        die(json_encode($arr));
     }
 
     // public function purchase_orders($approved_to, $approved_by){
