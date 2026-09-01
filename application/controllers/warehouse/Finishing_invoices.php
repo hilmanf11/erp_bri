@@ -1162,4 +1162,311 @@ class Finishing_invoices extends CI_Controller
 
         echo $html;
     }
+
+    public function print($option = "")
+    {
+        if ($option == "excel") {
+            $format  = date("Ymd");
+            header("Content-type: application/vnd-ms-excel");
+            header("Content-Disposition: attachment; filename=finishing_invoices_$format.xls");
+        }
+        
+        $filter_from = $this->input->get('filter_from');
+        $filter_to   = $this->input->get('filter_to');
+        $filter_invoice_no = $this->input->get('filter_invoice_no');
+        $filter_subcont = $this->input->get('filter_subcont');
+
+        //Config
+        $this->db->select('*');
+        $this->db->from('config');
+        $config = $this->db->get()->row();
+
+        $this->db->select('
+            a.*, 
+            COALESCE(tf.name, sc.name) as subcont_name, 
+            i.number as part_no, 
+            i.name as part_name, 
+            d.price, 
+            SUM(d.qty) as qty_fg, 
+            SUM(d.price_fg) as price_fg, 
+            SUM(d.qty_1) as qty_defect, 
+            SUM(d.price_defect) as price_defect, 
+            SUM(d.sub_total) as total_pendapatan
+        ');
+        $this->db->from('finishing_invoices a');
+        
+        $this->db->join('teaching_factory tf', 'a.subcont = tf.id', 'left');
+        $this->db->join('subconts sc', 'a.subcont = sc.id', 'left');
+        $this->db->join('users u', 'u.username = a.created_by', 'left');
+        $this->db->join('finishing_invoice_details d', 'a.id = d.finishing_invoice_id', 'left');
+        $this->db->join('item_fg i', 'd.item_fg_id = i.id', 'left');
+
+        // Filter User Department
+        if (!empty($user->department_id) && !in_array($user->department, $this->crud->getIgnoreDept())) {
+            $this->db->where('u.department_id', $user->department_id);
+        }
+
+        $this->db->where_in('a.deleted', [0, 2]);
+
+        // Filter Pencarian
+        if ($filter_from != "" or $filter_to != "") {
+            $this->db->where('a.finishing_invoice_date >=', $filter_from);
+            $this->db->where('a.finishing_invoice_date <=', $filter_to);
+        }
+        if ($filter_invoice_no != "") {
+            $this->db->like('a.finishing_invoice_no', $filter_invoice_no);
+        }
+        if ($filter_subcont != "") {
+            $this->db->where('a.subcont', $filter_subcont);
+        }
+
+        $this->db->group_by(['a.id', 'd.item_fg_id', 'i.number', 'i.name', 'd.price']);
+
+        $sort = $this->input->post('sort');
+        $order = $this->input->post('order') ? $this->input->post('order') : 'desc';
+        if ($sort == "finishing_invoice_no") {
+            $this->db->order_by('a.finishing_invoice_no', $order);
+        } else {
+            $this->db->order_by('a.created_date', 'DESC');
+        }
+
+        $records = $this->db->get()->result_array();
+        
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: black;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; margin-right:10px;">
+                                <img src="' .  @$config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . @$config->name . '</b><br>
+                                <small>FINISHING INVOICES</small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:i:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+            </center>
+            <br><br><br>
+            
+            <table id="customers" border="1">
+            <tr>
+                <th width="20">No</th>
+                <th>Finishing Invoice No</th>
+                <th>Finishing Invoice Date</th>
+                <th>Period Start</th>
+                <th>Period End</th>
+                <th>Subcont</th>
+                <th>Part No</th>
+                <th>Part Name</th>
+                <th>Price</th>
+                <th>Qty FG</th>
+                <th>Price FG</th>
+                <th>Qty Defect</th>
+                <th>Price Defect</th>
+                <th>Total Pendapatan</th>
+            </tr>';
+            
+        $no = 1;
+        foreach ($records as $data) {
+            $html .= '<tr>
+                        <td style="text-align:center">' . $no . '</td>
+                        <td>' . $data['finishing_invoice_no'] . '</td>
+                        <td>' . $data['finishing_invoice_date'] . '</td>
+                        <td>' . $data['period_start'] . '</td>
+                        <td>' . $data['period_end'] . '</td>
+                        <td>' . $data['subcont_name'] . '</td>
+                        <td style="mso-number-format:\@;">' . $data['part_no'] . '</td>
+                        <td style="mso-number-format:\@;">' . $data['part_name'] . '</td>
+                        <td style="text-align:right;">' . (float)$data['price'] . '</td>
+                        <td style="text-align:center;">' . (float)$data['qty_fg'] . '</td>
+                        <td style="text-align:right;">' . (float)$data['price_fg'] . '</td>
+                        <td style="text-align:center;">' . (float)$data['qty_defect'] . '</td>
+                        <td style="text-align:right;">' . (float)$data['price_defect'] . '</td>
+                        <td style="text-align:right;">' . (float)$data['total_pendapatan'] . '</td>
+                    </tr>';
+            $no++;
+        }
+        $html .= '</table></body></html>';
+        
+        echo $html;
+    }
+
+    // public function print($option = "")// PLUS TOTAL
+    // {
+    //     if ($option == "excel") {
+    //         $format  = date("Ymd");
+    //         header("Content-type: application/vnd-ms-excel");
+    //         header("Content-Disposition: attachment; filename=finishing_invoices_$format.xls");
+    //     }
+        
+    //     $filter_from = $this->input->get('filter_from');
+    //     $filter_to   = $this->input->get('filter_to');
+    //     $filter_invoice_no = $this->input->get('filter_invoice_no');
+    //     $filter_subcont = $this->input->get('filter_subcont');
+
+    //     //Config
+    //     $this->db->select('*');
+    //     $this->db->from('config');
+    //     $config = $this->db->get()->row();
+
+    //     // Ambil data user yang sedang login untuk keperluan filter departemen
+    //     $user = $this->crud->currentUserDept();
+
+    //     $this->db->select('
+    //         a.*, 
+    //         COALESCE(tf.name, sc.name) as subcont_name, 
+    //         i.number as part_no, 
+    //         i.name as part_name, 
+    //         d.price, 
+    //         SUM(d.qty) as qty_fg, 
+    //         SUM(d.price_fg) as price_fg, 
+    //         SUM(d.qty_1) as qty_defect, 
+    //         SUM(d.price_defect) as price_defect, 
+    //         SUM(d.sub_total) as total_pendapatan
+    //     ');
+    //     $this->db->from('finishing_invoices a');
+        
+    //     // Hapus deklarasi ganda 'users u' di FROM, gabungkan semua lewat JOIN
+    //     $this->db->join('teaching_factory tf', 'a.subcont = tf.id', 'left');
+    //     $this->db->join('subconts sc', 'a.subcont = sc.id', 'left');
+    //     $this->db->join('users u', 'u.username = a.created_by', 'left');
+    //     $this->db->join('finishing_invoice_details d', 'a.id = d.finishing_invoice_id', 'left');
+    //     $this->db->join('item_fg i', 'd.item_fg_id = i.id', 'left');
+    //     $this->db->join('departments dept', 'dept.id = u.department_id', 'left');
+    //     $this->db->join('divisions div', 'div.id = dept.plant_id', 'left');
+
+    //     // Filter User Department
+    //     if (!empty($user->department_id) && !in_array($user->department, $this->crud->getIgnoreDept())) {
+    //         $this->db->where('u.department_id', $user->department_id);
+    //     }
+
+    //     $this->db->where_in('a.deleted', [0, 2]);
+
+    //     // Filter Pencarian
+    //     if ($filter_from != "" or $filter_to != "") {
+    //         $this->db->where('a.finishing_invoice_date >=', $filter_from);
+    //         $this->db->where('a.finishing_invoice_date <=', $filter_to);
+    //     }
+    //     if ($filter_invoice_no != "") {
+    //         $this->db->like('a.finishing_invoice_no', $filter_invoice_no);
+    //     }
+    //     if ($filter_subcont != "") {
+    //         $this->db->where('a.subcont', $filter_subcont);
+    //     }
+
+    //     $this->db->group_by(['a.id', 'd.item_fg_id', 'i.number', 'i.name', 'd.price']);
+
+    //     $sort = $this->input->post('sort');
+    //     $order = $this->input->post('order') ? $this->input->post('order') : 'desc';
+    //     if ($sort == "finishing_invoice_no") {
+    //         $this->db->order_by('a.finishing_invoice_no', $order);
+    //     } else {
+    //         $this->db->order_by('a.created_date', 'DESC');
+    //     }
+
+    //     $records = $this->db->get()->result_array();
+
+    //     // Pengelompokan data berdasarkan nomor invoice
+    //     $grouped_invoices = [];
+    //     foreach ($records as $row) {
+    //         $inv_no = $row['finishing_invoice_no'];
+    //         if (!isset($grouped_invoices[$inv_no])) {
+    //             $grouped_invoices[$inv_no] = [
+    //                 'header' => $row,
+    //                 'items' => []
+    //             ];
+    //         }
+    //         $grouped_invoices[$inv_no]['items'][] = $row;
+    //     }
+
+    //     $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid black;padding: 4px;}#customers tr:nth-child(even){background-color: #f9f9f9;}#customers tr:hover {background-color: #f1f1f1;}#customers th {padding-top: 6px;padding-bottom: 6px;text-align: center;color: black; background-color: #e2e2e2;}</style><body>
+    //         <center>
+    //             <div style="float: left; font-size: 12px; text-align: left;">
+    //                 <table style="width: 100%;">
+    //                     <tr>
+    //                         <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; margin-right:10px;">
+    //                             <img src="' .  @$config->favicon . '" width="30">
+    //                         </td>
+    //                         <td style="font-size: 14px; text-align: left; margin:2px;">
+    //                             <b>' . @$config->name . '</b><br>
+    //                             <small>FINISHING INVOICES</small>
+    //                         </td>
+    //                     </tr>
+    //                 </table>
+    //             </div>
+    //             <div style="float: right; font-size: 12px; text-align: right;">
+    //                 Print Date ' . date("d M Y H:i:s") . ' <br>
+    //                 Print By ' . $this->session->username . '  
+    //             </div>
+    //         </center>
+    //         <br><br><br>
+            
+    //         <table id="customers" border="1">
+    //         <thead>
+    //             <tr>
+    //                 <th width="20">No</th>
+    //                 <th>Finishing Invoice No</th>
+    //                 <th>Finishing Invoice Date</th>
+    //                 <th>Period Start</th>
+    //                 <th>Period End</th>
+    //                 <th>Subcont</th>
+    //                 <th>Part No</th>
+    //                 <th>Part Name</th>
+    //                 <th>Price</th>
+    //                 <th>Qty FG</th>
+    //                 <th>Price FG</th>
+    //                 <th>Qty Defect</th>
+    //                 <th>Price Defect</th>
+    //                 <th>Total Pendapatan</th>
+    //             </tr>
+    //         </thead>
+    //         <tbody>';
+            
+    //     $no = 1;
+    //     foreach ($grouped_invoices as $inv_no => $data) {
+    //         $header = $data['header'];
+            
+    //         foreach ($data['items'] as $item) {
+    //             $html .= '<tr>
+    //                         <td style="text-align:center">' . $no++ . '</td>
+    //                         <td>' . $item['finishing_invoice_no'] . '</td>
+    //                         <td>' . $item['finishing_invoice_date'] . '</td>
+    //                         <td>' . $item['period_start'] . '</td>
+    //                         <td>' . $item['period_end'] . '</td>
+    //                         <td>' . $item['subcont_name'] . '</td>
+    //                         <td style="mso-number-format:\@;">' . $item['part_no'] . '</td>
+    //                         <td style="mso-number-format:\@;">' . $item['part_name'] . '</td>
+    //                         <td style="text-align:right;">' . (float)$item['price'] . '</td>
+    //                         <td style="text-align:center;">' . (float)$item['qty_fg'] . '</td>
+    //                         <td style="text-align:right;">' . (float)$item['price_fg'] . '</td>
+    //                         <td style="text-align:center;">' . (float)$item['qty_defect'] . '</td>
+    //                         <td style="text-align:right;">' . (float)$item['price_defect'] . '</td>
+    //                         <td style="text-align:right;">' . (float)$item['total_pendapatan'] . '</td>
+    //                     </tr>';
+    //         }
+            
+    //         $html .= '<tr style="background-color: #fffbdd; font-weight: bold;">
+    //                     <td colspan="13" style="text-align:right;">TOTAL INVOICE (' . $inv_no . ')</td>
+    //                     <td style="text-align:right;">' . (float)$header['total'] . '</td>
+    //                   </tr>
+    //                   <tr style="background-color: #fffbdd; font-weight: bold;">
+    //                     <td colspan="13" style="text-align:right;">BIAYA FEE</td>
+    //                     <td style="text-align:right;">' . (float)$header['biaya_fee'] . '</td>
+    //                   </tr>
+    //                   <tr style="background-color: #e5f2cf; font-weight: bold;">
+    //                     <td colspan="13" style="text-align:right;">GRAND TOTAL (' . $inv_no . ')</td>
+    //                     <td style="text-align:right;">' . (float)$header['grand_total'] . '</td>
+    //                   </tr>';
+    //     }
+        
+    //     $html .= '</tbody></table></body></html>';
+        
+    //     echo $html;
+    // }
 }
