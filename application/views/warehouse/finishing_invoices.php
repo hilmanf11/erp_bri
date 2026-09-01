@@ -7,7 +7,7 @@
             <th rowspan="2" data-options="field:'vendor_name',width:250,halign:'center'">Subcont / Teaching Factory</th>
             <th rowspan="2" data-options="field:'approved_to',width:120,halign:'center',align:'center',styler:styleApprovedStatus,formatter:formatApprovedStatus">Status Approve</th>
             <th rowspan="2" data-options="field:'approved_by',width:120,halign:'center'">Approve By</th>
-            <th rowspan="2" data-options="field:'approved_date',width:120,halign:'center'">Approve By</th>
+            <th rowspan="2" data-options="field:'approved_date',width:120,halign:'center'">Approve Date</th>
             <th rowspan="2" data-options="field:'finishing_invoice_date',width:120,halign:'center',align:'center',sortable:true">Invoice Date</th>
             <th rowspan="2" data-options="field:'period_start',width:100,halign:'center',align:'center'">Period Start</th>
             <th rowspan="2" data-options="field:'period_end',width:100,halign:'center',align:'center'">Period End</th>
@@ -515,7 +515,7 @@
                 if (r) {
                     for (var i = 0; i < rows.length; i++) {
                         var row = rows[i];
-                        if (row.approved_to == "") {
+                        if (row.approved_to != "") {
                             $.ajax({
                                 method: 'post',
                                 url: '<?= base_url('warehouse/finishing_invoices/delete') ?>',
@@ -938,7 +938,26 @@
         var hasTF = false;
         var hasSub = false;
 
+        // Ambil tanggal dari baris pertama sebagai patokan pembanding
+        var firstInvoiceDate = rows[0].finishing_invoice_date;
+        var firstPeriodStart = rows[0].period_start;
+        var firstPeriodEnd   = rows[0].period_end;
+
         for (var i = 0; i < rows.length; i++) {
+            // VALIDASI 1: Cek apakah statusnya belum Approved
+            if (rows[i].approved_to_status !== 'Approved') {
+                toastr.error('Gagal! Invoice nomor <b>' + rows[i].finishing_invoice_no + '</b> belum fully approved. Rekap hanya bisa dicetak untuk data yang sudah disetujui.');
+                return; 
+            }
+
+            // VALIDASI 2: Cek kesamaan tanggal dengan baris pertama
+            if (rows[i].finishing_invoice_date !== firstInvoiceDate || 
+                rows[i].period_start !== firstPeriodStart || 
+                rows[i].period_end !== firstPeriodEnd) {
+                toastr.error('Validasi Gagal! Tanggal Invoice, Period Start, dan Period End dari data yang dipilih harus sama.');
+                return;
+            }
+
             ids.push(rows[i].id);
             
             var invoiceNo = rows[i].finishing_invoice_no.toUpperCase();
@@ -949,6 +968,7 @@
             }
         }
 
+        // VALIDASI 3: Pengecekan campuran kategori TF dan SUB
         if (hasTF && hasSub) {
             toastr.error('Tidak boleh mencampur antara Invoice Teaching Factory dan Subcont/Koordinator dalam satu cetakan rekap!');
             return;
@@ -957,5 +977,4 @@
         var url = '<?= base_url('warehouse/finishing_invoices/print_recap/') ?>?ids=' + ids.join(',');
         window.open(url, '_blank');
     }
-
 </script>

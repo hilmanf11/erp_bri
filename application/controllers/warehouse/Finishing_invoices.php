@@ -148,15 +148,24 @@ class Finishing_invoices extends CI_Controller
     public function datatableDetails()
     {
         $id = base64_decode($this->input->get('id'));
-        
+
         $this->db->select('
-            d.*, 
+            d.item_fg_id, 
             i.number as item_number, 
-            i.name as item_name
+            i.name as item_name,
+            d.price,
+            SUM(d.qty) as qty,
+            SUM(d.price_fg) as price_fg,
+            SUM(d.qty_1) as qty_1,
+            SUM(d.price_defect) as price_defect,
+            SUM(d.sub_total) as sub_total
         ');
         $this->db->from('finishing_invoice_details d');
         $this->db->join('item_fg i', 'd.item_fg_id = i.id', 'left');
         $this->db->where('d.finishing_invoice_id', $id);
+        
+        $this->db->group_by(['d.item_fg_id', 'i.number', 'i.name', 'd.price']);
+        
         $this->db->order_by('i.number', 'ASC');
         
         $records = $this->db->get()->result_array();
@@ -288,29 +297,36 @@ class Finishing_invoices extends CI_Controller
         $data = new Spreadsheet_Excel_Reader($target, false);
         $total_row = $data->rowcount($sheet_index = 0);
 
-        $vendor_name = trim($data->val(2, 3)); 
+        $vendor_id = trim($data->val(2, 3)); 
 
         $datas = [];
         for ($i = 4; $i <= $total_row; $i++) {
             $product_number = trim($data->val($i, 5));
-            if(empty($product_number)) continue; 
+            if (empty($product_number)) continue; 
+
+            $price = (float)trim($data->val($i, 6));
+            $qty   = (float)trim($data->val($i, 7));
+            $qty_1 = (float)trim($data->val($i, 8));
+
+            $price_fg     = $price * $qty;
+            $price_defect = $price * $qty_1;
 
             $datas[] = array(
                 'invoice_date' => trim($data->val($i, 2)),
                 'period_start' => trim($data->val($i, 3)),
                 'period_end'   => trim($data->val($i, 4)),
-                'item_number'  => $product_number,         
-                'price'        => (float)trim($data->val($i, 6)),
-                'qty'          => (float)trim($data->val($i, 7)),
-                'price_fg'     => (float)trim($data->val($i, 8)),
-                'qty_1'        => (float)trim($data->val($i, 9)),
-                'price_defect' => (float)trim($data->val($i, 10))
+                'item_number'  => $product_number,        
+                'price'        => $price,
+                'qty'          => $qty,
+                'price_fg'     => $price_fg,
+                'qty_1'        => $qty_1,
+                'price_defect' => $price_defect
             );
         }
 
         $response = [
             'header' => [
-                'vendor_name' => $vendor_name,
+                'vendor_id' => $vendor_id,
             ],
             'details' => $datas,
             'total_items' => count($datas)
@@ -348,26 +364,155 @@ class Finishing_invoices extends CI_Controller
         @readfile($file);
     }
 
+    // public function uploadcreate()
+    // {
+    //     if ($this->input->post()) {
+    //         $header_data = $this->input->post('header');
+    //         $detail_data = $this->input->post('details'); 
+
+    //         $vendor_id = $header_data['vendor_id'];
+
+    //         $vendor_type = '';
+    //         $vendor_id = '';
+    //         $fee_db = 0;
+
+    //         $cek_tf = $this->crud->read('teaching_factory', [], ["id" => $vendor_id]);
+            
+    //         if (!empty($cek_tf)) {
+    //             $vendor_type = 'TF';
+    //             $vendor_id = $cek_tf->id;
+    //             $fee_db = (float)$cek_tf->fee;
+    //         } else {
+    //             $cek_subcont = $this->crud->read('subconts', [], ["id" => $vendor_id]);
+    //             if (!empty($cek_subcont)) {
+    //                 $vendor_type = 'Koordinator';
+    //                 $vendor_id = $cek_subcont->id;
+    //                 $fee_db = (float)$cek_subcont->fee;
+    //             }
+    //         }
+
+    //         if (empty($vendor_type)) {
+    //             echo json_encode(array("title" => "Error", "message" => "Subcont atau Koordinator tidak ditemukan: " . $vendor_id, "theme" => "error"));
+    //             return;
+    //         }
+
+    //         // ==================== MULAI TRANSAKSI DATABASE ====================
+    //         $this->db->trans_start();
+
+    //         $invoice_date = !empty($detail_data[0]['invoice_date']) ? $detail_data[0]['invoice_date'] : date('Y-m-d');
+    //         $period_start = !empty($detail_data[0]['period_start']) ? $detail_data[0]['period_start'] : null;
+    //         $period_end   = !empty($detail_data[0]['period_end']) ? $detail_data[0]['period_end'] : null;
+
+    //         $period_ym = date('ym'); 
+    //         $prefix = ($vendor_type == 'TF') ? 'INV-TF' : 'INV-SUB';
+
+    //         $sql = $this->db->query("
+    //             SELECT MAX(CAST(RIGHT(finishing_invoice_no,3) AS UNSIGNED)) AS nomor
+    //             FROM finishing_invoices
+    //             WHERE finishing_invoice_no LIKE '{$prefix}-{$period_ym}-%'
+    //         ");
+            
+    //         $row = $sql->row();
+    //         $next = ($row && $row->nomor) ? $row->nomor + 1 : 1;
+    //         $finishing_invoice_no = sprintf('%s-%s-%03d', $prefix, $period_ym, $next);
+
+    //         // --- 3. VALIDASI ITEM & KALKULASI DETAIL ---
+    //         $total_amount = 0;
+    //         $detail_insert = [];
+            
+    //         // Generate ID Master di awal agar bisa mengikat tabel Details dan dilempar ke crud->create
+    //         $invoice_id = 'INV-' . time() . rand(10, 99); 
+
+    //         foreach ($detail_data as $row_item) {
+    //             // Validasi Item FG ke master
+    //             $item_fg = $this->crud->read('item_fg', [], ["number" => $row_item['item_number']]); 
+                
+    //             // JIKA ADA 1 BARIS YANG GAGAL, BATALKAN SEMUA PROSES
+    //             if (empty($item_fg)) {
+    //                 $this->db->trans_rollback(); // Membatalkan seluruh transaksi jika ada yg sempat tereksekusi
+    //                 echo json_encode(array("title" => "Error", "message" => "Proses Dibatalkan! Product Number " . $row_item['item_number'] . " tidak terdaftar di sistem.", "theme" => "error"));
+    //                 return;
+    //             }
+
+    //             // Kalkulasi Sub Total
+    //             $sub_total = $row_item['price_fg'] - $row_item['price_defect'];
+    //             $total_amount += $sub_total;
+
+    //             $detail_insert[] = array(
+    //                 "id" => 'DTL-' . uniqid(),
+    //                 "finishing_invoice_id" => $invoice_id, // Menggunakan ID yang sudah di-generate di atas
+    //                 "item_fg_id" => $item_fg->id, 
+    //                 "qty" => $row_item['qty'],
+    //                 "qty_1" => $row_item['qty_1'],
+    //                 "price" => $row_item['price'],
+    //                 "price_fg" => $row_item['price_fg'],
+    //                 "price_defect" => $row_item['price_defect'],
+    //                 "sub_total" => $sub_total
+    //             );
+    //         }
+
+    //         // --- 4. KALKULASI TOTAL HEADER ---
+    //         if ($vendor_type == 'TF') {
+    //             $biaya_fee = $total_amount * ($fee_db / 100); 
+    //         } else {
+    //             $biaya_fee = $fee_db; 
+    //         }
+    //         $grand_total = $total_amount + $biaya_fee;
+
+    //         // --- 5. INSERT MASTER MENGGUNAKAN LIBRARY CRUD ---
+    //         $header_insert = array(
+    //             "id" => $invoice_id, // Kita paksa set ID agar crud->create tidak melakukan auto-id yang tidak bisa kita lacak
+    //             "finishing_invoice_no" => $finishing_invoice_no,
+    //             "finishing_invoice_date" => $invoice_date,
+    //             "period_start" => $period_start,
+    //             "period_end" => $period_end,
+    //             "subcont" => $vendor_id, 
+    //             "total" => $total_amount,
+    //             "biaya_fee" => $biaya_fee,
+    //             "grand_total" => $grand_total,
+    //             "status" => 0,
+    //             "deleted" => 0
+    //         );
+            
+    //         // Eksekusi insert header lewat library bawaanmu
+    //         // Kita tampung kembalian JSON-nya agar tidak langsung ter-echo ganda
+    //         $crud_response = $this->crud->create('finishing_invoices', $header_insert); 
+
+    //         // --- 6. INSERT DETAILS MENGGUNAKAN BATCH ---
+    //         // Proses ini sangat cepat dan efisien meski berisi puluhan row
+    //         $this->db->insert_batch('finishing_invoice_details', $detail_insert);
+
+    //         // ==================== SELESAIKAN TRANSAKSI DATABASE ====================
+    //         $this->db->trans_complete();
+
+    //         // Pengecekan akhir: Apakah ada query yang gagal di level sistem/database?
+    //         if ($this->db->trans_status() === FALSE) {
+    //             echo json_encode(array("title" => "Error", "message" => "Gagal menyimpan data ke database. Silakan periksa kembali struktur tabel.", "theme" => "error"));
+    //         } else {
+    //             echo json_encode(array("title" => "Success", "message" => "Data Berhasil Disimpan!", "theme" => "success"));
+    //         }
+    //     }
+    // }
+
     public function uploadcreate()
     {
         if ($this->input->post()) {
             $header_data = $this->input->post('header');
             $detail_data = $this->input->post('details'); 
 
-            $vendor_name = $header_data['vendor_name'];
+            $vendor_id = $header_data['vendor_id'];
 
             $vendor_type = '';
-            $vendor_id = '';
             $fee_db = 0;
 
-            $cek_tf = $this->crud->read('teaching_factory', [], ["name" => $vendor_name]);
+            $cek_tf = $this->crud->read('teaching_factory', [], ["id" => $vendor_id]);
             
             if (!empty($cek_tf)) {
                 $vendor_type = 'TF';
                 $vendor_id = $cek_tf->id;
                 $fee_db = (float)$cek_tf->fee;
             } else {
-                $cek_subcont = $this->crud->read('subconts', [], ["name" => $vendor_name]);
+                $cek_subcont = $this->crud->read('subconts', [], ["id" => $vendor_id]);
                 if (!empty($cek_subcont)) {
                     $vendor_type = 'Koordinator';
                     $vendor_id = $cek_subcont->id;
@@ -376,7 +521,7 @@ class Finishing_invoices extends CI_Controller
             }
 
             if (empty($vendor_type)) {
-                echo json_encode(array("title" => "Error", "message" => "Subcont atau Koordinator tidak ditemukan: " . $vendor_name, "theme" => "error"));
+                echo json_encode(array("title" => "Error", "message" => "Subcont atau Koordinator tidak ditemukan dengan ID: " . $vendor_id, "theme" => "error"));
                 return;
             }
 
@@ -404,34 +549,39 @@ class Finishing_invoices extends CI_Controller
             $total_amount = 0;
             $detail_insert = [];
             
-            // Generate ID Master di awal agar bisa mengikat tabel Details dan dilempar ke crud->create
             $invoice_id = 'INV-' . time() . rand(10, 99); 
 
             foreach ($detail_data as $row_item) {
-                // Validasi Item FG ke master
                 $item_fg = $this->crud->read('item_fg', [], ["number" => $row_item['item_number']]); 
                 
-                // JIKA ADA 1 BARIS YANG GAGAL, BATALKAN SEMUA PROSES
                 if (empty($item_fg)) {
-                    $this->db->trans_rollback(); // Membatalkan seluruh transaksi jika ada yg sempat tereksekusi
+                    $this->db->trans_rollback(); 
                     echo json_encode(array("title" => "Error", "message" => "Proses Dibatalkan! Product Number " . $row_item['item_number'] . " tidak terdaftar di sistem.", "theme" => "error"));
                     return;
                 }
 
+                // PERHITUNGAN ULANG DI AGAR LEBIH AMAN
+                $price = (float)$row_item['price'];
+                $qty   = (float)$row_item['qty'];
+                $qty_1 = (float)$row_item['qty_1'];
+
+                $price_fg     = $price * $qty;
+                $price_defect = $price * $qty_1;
+                
                 // Kalkulasi Sub Total
-                $sub_total = $row_item['price_fg'] - $row_item['price_defect'];
+                $sub_total = $price_fg - $price_defect;
                 $total_amount += $sub_total;
 
                 $detail_insert[] = array(
-                    "id" => 'DTL-' . uniqid(),
-                    "finishing_invoice_id" => $invoice_id, // Menggunakan ID yang sudah di-generate di atas
-                    "item_fg_id" => $item_fg->id, 
-                    "qty" => $row_item['qty'],
-                    "qty_1" => $row_item['qty_1'],
-                    "price" => $row_item['price'],
-                    "price_fg" => $row_item['price_fg'],
-                    "price_defect" => $row_item['price_defect'],
-                    "sub_total" => $sub_total
+                    "id"                   => 'DTL-' . uniqid(),
+                    "finishing_invoice_id" => $invoice_id, 
+                    "item_fg_id"           => $item_fg->id, 
+                    "qty"                  => $qty,
+                    "qty_1"                => $qty_1,
+                    "price"                => $price,
+                    "price_fg"             => $price_fg,
+                    "price_defect"         => $price_defect,
+                    "sub_total"            => $sub_total
                 );
             }
 
@@ -443,33 +593,29 @@ class Finishing_invoices extends CI_Controller
             }
             $grand_total = $total_amount + $biaya_fee;
 
-            // --- 5. INSERT MASTER MENGGUNAKAN LIBRARY CRUD ---
+            // --- 5. INSERT MASTER ---
             $header_insert = array(
-                "id" => $invoice_id, // Kita paksa set ID agar crud->create tidak melakukan auto-id yang tidak bisa kita lacak
-                "finishing_invoice_no" => $finishing_invoice_no,
+                "id"                     => $invoice_id, 
+                "finishing_invoice_no"   => $finishing_invoice_no,
                 "finishing_invoice_date" => $invoice_date,
-                "period_start" => $period_start,
-                "period_end" => $period_end,
-                "subcont" => $vendor_id, 
-                "total" => $total_amount,
-                "biaya_fee" => $biaya_fee,
-                "grand_total" => $grand_total,
-                "status" => 0,
-                "deleted" => 0
+                "period_start"           => $period_start,
+                "period_end"             => $period_end,
+                "subcont"                => $vendor_id, 
+                "total"                  => $total_amount,
+                "biaya_fee"              => $biaya_fee,
+                "grand_total"            => $grand_total,
+                "status"                 => 0,
+                "deleted"                => 0
             );
             
-            // Eksekusi insert header lewat library bawaanmu
-            // Kita tampung kembalian JSON-nya agar tidak langsung ter-echo ganda
             $crud_response = $this->crud->create('finishing_invoices', $header_insert); 
 
-            // --- 6. INSERT DETAILS MENGGUNAKAN BATCH ---
-            // Proses ini sangat cepat dan efisien meski berisi puluhan row
+            // --- 6. INSERT DETAILS BATCH ---
             $this->db->insert_batch('finishing_invoice_details', $detail_insert);
 
             // ==================== SELESAIKAN TRANSAKSI DATABASE ====================
             $this->db->trans_complete();
 
-            // Pengecekan akhir: Apakah ada query yang gagal di level sistem/database?
             if ($this->db->trans_status() === FALSE) {
                 echo json_encode(array("title" => "Error", "message" => "Gagal menyimpan data ke database. Silakan periksa kembali struktur tabel.", "theme" => "error"));
             } else {
@@ -494,11 +640,22 @@ class Finishing_invoices extends CI_Controller
             $is_tf = false;
         }
 
-        // 3. Ambil Data Details
-        $this->db->select('d.*, i.number as item_number, i.name as item_name');
+        // 3. Ambil Data Details (DENGAN GROUPING DAN SUM)
+        $this->db->select('
+            d.item_fg_id, 
+            i.number as item_number, 
+            i.name as item_name,
+            d.price,
+            SUM(d.qty) as qty,
+            SUM(d.price_fg) as price_fg,
+            SUM(d.qty_1) as qty_1,
+            SUM(d.price_defect) as price_defect,
+            SUM(d.sub_total) as sub_total
+        ');
         $this->db->from('finishing_invoice_details d');
         $this->db->join('item_fg i', 'd.item_fg_id = i.id', 'left');
         $this->db->where('d.finishing_invoice_id', $id);
+        $this->db->group_by(['d.item_fg_id', 'i.number', 'i.name', 'd.price']);
         $this->db->order_by('i.number', 'ASC');
         $details = $this->db->get()->result();
 
@@ -524,14 +681,13 @@ class Finishing_invoices extends CI_Controller
         }
 
         // ========================================================================
-        // 4. LOGIKA BARCODE & APPROVAL MAPPING (SUDAH DIPERBAIKI)
+        // 4. LOGIKA BARCODE & APPROVAL MAPPING
         // ========================================================================
         
         $approval_rule = $this->db->get_where('approvals', ['table_name' => 'finishing_invoices'])->row();
-        $approvedLevel = (int)$header->approved; // Level approval saat ini    
+        $approvedLevel = (int)$header->approved; 
         $is_fully_approved = (empty($header->approved_to) && !empty($header->approved_by));
 
-        // Helper untuk generate data kolom
         $buildApproval = function($username, $is_approved) {
             if (empty($username)) {
                 return ['name' => '', 'position' => '', 'barcode' => ''];
@@ -570,28 +726,41 @@ class Finishing_invoices extends CI_Controller
             <meta charset="UTF-8">
             <title>Print Invoice - ' . $header->finishing_invoice_no . '</title>
             <style>
-                body { font-family: Arial, sans-serif; font-size: 10pt; color: #000; margin: 0; padding: 20px; background-color: #fff; }
+                /* Menyetel orientasi cetak default ke Landscape */
+                @page {
+                    size: A4 landscape;
+                    margin: 10mm;
+                }
+                
+                body { font-family: Arial, sans-serif; font-size: 10pt; color: #000; margin: 0; padding: 0; background-color: #fff; }
                 .screen-instruction { text-align: center; margin-top: 150px; }
                 .screen-instruction h2 { font-size: 18pt; font-weight: bold; margin: 0 0 10px 0; color: #000; }
                 .screen-instruction p { font-size: 11pt; margin: 4px 0; color: #000; }
                 .invoice-container { display: none; }
+                
                 @media print {
                     .screen-instruction { display: none !important; }
                     .invoice-container { display: block !important; }
                     body { padding: 0; }
                 }
+                
                 .header-title { text-align: center; font-weight: bold; font-size: 14pt; margin-bottom: 5px; }
                 .sub-title { text-align: center; font-weight: bold; font-size: 12pt; margin-bottom: 5px; }
                 .period { text-align: center; font-weight: bold; font-size: 10pt; margin-bottom: 20px; }
+                
                 table.print-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
                 table.print-table th, table.print-table td { border: 1px solid #000; padding: 5px 8px; font-size: 9pt; }
                 table.print-table th { text-align: center; background-color: #f2f2f2; }
+                
                 .text-right { text-align: right; }
                 .text-center { text-align: center; }
                 .bold { font-weight: bold; }
+                .nowrap { white-space: nowrap; } /* Mencegah teks turun ke bawah */
+                
                 .money-box { display: flex; justify-content: space-between; align-items: center; width: 100%; }
                 .money-box .rp { text-align: left; }
                 .money-box .val { text-align: right; flex-grow: 1; }
+                
                 .signature-section { margin-top: 25px; width: 100%; page-break-inside: avoid; }
                 table.sign-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 8pt; }
                 table.sign-table th, table.sign-table td { border: 1px solid #000; padding: 4px; }
@@ -647,8 +816,8 @@ class Finishing_invoices extends CI_Controller
             
             $html .= '<tr>
                 <td class="text-center">' . $no++ . '</td>
-                <td>' . $row->item_number . '</td>
-                <td>' . $row->item_name . '</td>
+                <td class="nowrap">' . $row->item_number . '</td>
+                <td class="nowrap">' . $row->item_name . '</td>
                 <td>' . format_money($row->price) . '</td>
                 <td class="text-right">' . number_format($row->qty, 0, ',', '.') . '</td>
                 <td>' . format_money($row->price_fg) . '</td>
@@ -764,7 +933,11 @@ class Finishing_invoices extends CI_Controller
         // VALIDASI 1: Cek apakah ada invoice yang approved_to nya masih ada isi (belum fully approved)
         foreach ($all_invoices as $inv) {
             if (!empty($inv->approved_to)) {
-                show_error("Gagal! Invoice nomor [ " . $inv->finishing_invoice_no . " ] belum fully approved (masih dalam proses approval). Rekap hanya bisa dicetak untuk data yang sudah sepenuhnya disetujui.");
+                echo "<script>
+                        alert('Gagal! Invoice nomor [ " . $inv->finishing_invoice_no . " ] belum fully approved.');
+                        window.close();
+                    </script>";
+                return;
             }
         }
 
@@ -777,7 +950,11 @@ class Finishing_invoices extends CI_Controller
             if ($inv->finishing_invoice_date != $first_invoice_date || 
                 $inv->period_start != $first_period_start || 
                 $inv->period_end != $first_period_end) {
-                show_error("Validasi Gagal! Tanggal Invoice, Period Start, dan Period End dari data yang dipilih harus sama.");
+                echo "<script>
+                        alert('Validasi Gagal! Tanggal Invoice, Period Start, dan Period End dari data yang dipilih harus sama.');
+                        window.close();
+                    </script>";
+                return;
             }
         }
 
