@@ -1,0 +1,1768 @@
+<?php
+error_reporting(0);
+defined('BASEPATH') or exit('No direct script access allowed');
+
+class Generate_mrp_rubber_part extends CI_Controller
+{
+    public function __construct()
+    {
+        parent::__construct();
+        $this->load->helper('url');
+        $this->load->helper(array('form', 'url'));
+        $this->load->library('form_validation');
+        $this->load->library('session');
+        $this->load->model('crud');
+        // $this->dummy = $this->load->database('dummy', TRUE);
+
+        //Validasi Form
+        $this->form_validation->set_rules('item_rm_id', 'Product No', 'required|min_length[2]|max_length[50]|is_unique[generate_mrp_rubber_part.item_rm_id]');
+    }
+
+    public function index()
+    {
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
+            $data['button'] = $this->getbutton($this->id_menu());
+            $this->load->view('template/header', $data);
+            $this->load->view('planning/generate_mrp_rubber_part');
+        } else {
+            redirect('error_access');
+        }
+    }
+
+    public function readMonths()
+    {
+        $months = array('1' => 'January', '2' => 'February', '3' => 'March', '4' => 'April', '5' => 'May', '6' => 'June', '7' => 'July', '8' => 'August', '9' => 'September', '10' => 'October', '11' => 'November', '12' => 'December');
+        foreach ($months as $key => $value) {
+            $arr[] = array("id" => $key, "name" => $value);
+        }
+
+        echo json_encode($arr);
+    }
+
+    public function readYears()
+    {
+        $tahun_before = date('Y', strtotime('-7 year', strtotime(date('Y'))));
+        $tahun_next = date('Y', strtotime('+1 year', strtotime(date('Y'))));
+        for ($i = $tahun_next; $i >= $tahun_before; $i--) {
+            $arr[] = array("id" => $i, "name" => $i);
+        }
+
+        echo json_encode($arr);
+    }
+
+    public function readRevisions() {
+        $filter_month = base64_decode($this->input->get('filter_month'));
+        $filter_year = base64_decode($this->input->get('filter_year'));
+
+        $this->db->select('revision, DATE(cutoff) as cutoff', FALSE);
+        $this->db->from('generate_mrp_rubber_part_finals');
+        $this->db->where('p_month', $filter_month);
+        $this->db->where('p_year', $filter_year);
+        
+        $this->db->group_by('revision');
+        $this->db->group_by('DATE(cutoff)');
+        
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function checkMps()
+    {
+        $filter_month = base64_decode($this->input->get('filter_month'));
+        $filter_year = base64_decode($this->input->get('filter_year'));
+        // $filter_revision = base64_decode($this->input->get('filter_revision'));
+
+        //Select Query
+        $this->db->select('*');
+        $this->db->from('generate_mps_details');
+        $this->db->where('p_month', $filter_month);
+        $this->db->where('p_year', $filter_year);
+        $this->db->like('revision', "0");
+        $this->db->group_by('item_fg_id');
+        $records = $this->db->get()->result_array();
+
+        if (count($records) > 0) {
+            echo json_encode(array("theme" => "success"));
+        } else {
+            echo json_encode(array("theme" => "error"));
+        }
+    }
+
+    public function checkOspo()
+    {
+        $filter_month = base64_decode($this->input->get('filter_month'));
+        $filter_year = base64_decode($this->input->get('filter_year'));
+        // $filter_revision = base64_decode($this->input->get('filter_revision'));
+        // $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
+
+        //Select Query
+        // $this->db->select('*');
+        // $this->db->from('os_po');
+        // $this->db->where("(approved_to = '' or approved_to is null)");
+        // $this->db->where('p_month', $filter_month);
+        // $this->db->where('p_year', $filter_year);
+        // $this->db->like('revision', $filter_revision);
+        // $this->db->like('revision', $filter_revision);
+        // $this->db->group_by('item_rm_id');
+        // $records = $this->db->get()->result_array();
+
+        // $sql = $this->db->query("SELECT a.item_rm_id, b.po_no, SUM(a.qty) AS qty_po, COALESCE(b.qty_receipt, 0) AS qty_receipt, COALESCE(SUM(a.qty) - b.qty_receipt, 0) AS outstanding FROM purchase_orders a
+        //     LEFT JOIN (SELECT po_no, item_rm_id, SUM(qty_receipt) AS qty_receipt FROM purchase_order_receipts GROUP BY po_no) b ON a.po_no = b.po_no AND a.item_rm_id = b.item_rm_id
+        //     WHERE a.po_date <= '$filter_cutoff'
+        //     GROUP BY a.item_rm_id, a.po_no");
+        // $records = $sql->result_array();
+
+        // if (count($records) > 0) {
+            echo json_encode(array("theme" => "success"));
+        // } else {
+        //     echo json_encode(array("theme" => "error"));
+        // }
+    }
+
+    public function checkWip()
+    {
+        $filter_month = base64_decode($this->input->get('filter_month'));
+        $filter_year = base64_decode($this->input->get('filter_year'));
+        // $filter_revision = base64_decode($this->input->get('filter_revision'));
+        // $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
+
+        //Select Query
+        // $sql = $this->db->query("SELECT a.item_rm_id, COALESCE(SUM(a.qty_act) - SUM(c.qty), 0) AS qty
+        //     FROM supply_sheets a
+        //     LEFT JOIN issued_materials b ON a.item_rm_id = b.item_rm_id AND a.workorder = b.workorder
+        //     LEFT JOIN issued_material_details c ON a.item_rm_id = c.item_rm_id AND b.request_no = c.request_no
+        //     WHERE a.request_date >= '$filter_cutoff'
+        //     GROUP BY a.item_rm_id");
+        // HAVING (SUM(a.qty_act) - SUM(c.qty)) > 0
+        // $records = $sql->result_array();
+
+        // if (count($records) > 0) {
+            echo json_encode(array("theme" => "success"));
+        // } else {
+        //     echo json_encode(array("theme" => "error"));
+        // }
+    }
+
+    public function checkMpp()
+    {
+        $filter_month = base64_decode($this->input->get('filter_month'));
+        $filter_year = base64_decode($this->input->get('filter_year'));
+        // $filter_revision = base64_decode($this->input->get('filter_revision'));
+        // $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
+
+        //Select Query
+        // $this->db->select('*');
+        // $this->db->from('os_wo');
+        // $this->db->where("(approved_to = '' or approved_to is null)");
+        // $this->db->where('p_month', $filter_month);
+        // $this->db->where('p_year', $filter_year);
+        // $this->db->like('revision', $filter_revision);
+        // $this->db->group_by('item_rm_id');
+        // $records = $this->db->get()->result_array();
+
+        // $sql = $this->db->query("SELECT item_rm_id, COALESCE(SUM(qty_act), 0) AS qty
+        //     FROM supply_sheets
+        //     WHERE request_date >= '$filter_cutoff' GROUP BY item_rm_id");
+        // $records = $sql->result_array();
+
+        // if (count($records) > 0) {
+            echo json_encode(array("theme" => "success"));
+        // } else {
+        //     echo json_encode(array("theme" => "error"));
+        // }
+    }
+
+    public function checkRm()
+    {
+        $filter_month = base64_decode($this->input->get('filter_month'));
+        $filter_year = base64_decode($this->input->get('filter_year'));
+        // $filter_revision = base64_decode($this->input->get('filter_revision'));
+        // $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
+        $filter_cutoff = $filter_year."-".$filter_month."-01";
+
+        //Select Query
+        // $this->db->select('*');
+        // $this->db->from('stock_rm');
+        // $this->db->where("(approved_to = '' or approved_to is null)");
+        // $this->db->where('p_month', $filter_month);
+        // $this->db->where('p_year', $filter_year);
+        // $this->db->like('revision', $filter_revision);
+        // $this->db->group_by('item_rm_id');
+        // $records = $this->db->get()->result_array();
+
+        $sql = $this->db->query("SELECT a.id, a.number, a.name, 
+            COALESCE(b.qty_receipt, 0) AS qty_receipt, 
+            COALESCE(c.qty_out, 0) AS qty_out, 
+            COALESCE(d.qty_return, 0) AS qty_return, 
+            COALESCE((b.qty_receipt + d.qty_return - c.qty_out), 0) AS qty_out
+        FROM item_rm a
+        LEFT JOIN (SELECT item_rm_id, SUM(qty_receipt) AS qty_receipt 
+                FROM purchase_order_receipts 
+                WHERE receipt_date <= '$filter_cutoff' 
+                GROUP BY item_rm_id) b ON a.id = b.item_rm_id
+        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_out
+                FROM issued_material_details 
+                WHERE DATE_FORMAT(created_date, '%Y-%m-%d') <= '$filter_cutoff' GROUP BY item_rm_id) c ON a.id = c.item_rm_id
+        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_return
+                FROM return_materials 
+                WHERE DATE_FORMAT(return_date, '%Y-%m-%d') <= '$filter_cutoff' GROUP BY item_rm_id) d ON a.id = d.item_rm_id
+        GROUP BY a.id");
+        $records = $sql->result_array();
+
+        if (count($records) > 0) {
+            echo json_encode(array("theme" => "success"));
+        } else {
+            echo json_encode(array("theme" => "error"));
+        }
+    }
+
+    public function checkSupply()
+    {
+        $filter_month = base64_decode($this->input->get('filter_month'));
+        $filter_year = base64_decode($this->input->get('filter_year'));
+        $filter_revision = base64_decode($this->input->get('filter_revision'));
+        $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
+
+        //Select Query
+        // $sql = $this->db->query("SELECT a.item_rm_id, COALESCE(SUM(a.qty_act) - SUM(c.qty), 0) AS qty
+        //     FROM supply_sheets a
+        //     LEFT JOIN issued_materials b ON a.item_rm_id = b.item_rm_id AND a.workorder = b.workorder
+        //     LEFT JOIN issued_material_details c ON a.item_rm_id = c.item_rm_id AND b.request_no = c.request_no
+        //     WHERE a.request_date >= '$filter_cutoff'
+        //     GROUP BY a.item_rm_id");
+        // $records = $sql->result_array();
+        // HAVING (SUM(a.qty_act) - SUM(c.qty)) < 0");
+
+        // if (count($records) > 0) {
+            echo json_encode(array("theme" => "success"));
+        // } else {
+        //     echo json_encode(array("theme" => "error"));
+        // }
+    }
+
+    // public function checkBom(){
+    //     $query = $this->db->query("SELECT a.id, a.number as item_rm_number, a.name as item_rm_name, b.item_rm_id as item_bom, c.item_rm_id as item_supplier FROM item_rm a JOIN (select b.item_rm_id from generate_mps a JOIN bom b ON a.item_fg_id = b.item_fg_id GROUP BY b.item_rm_id) b ON a.id = b.item_rm_id LEFT JOIN supplier_items c ON a.id = c.item_rm_id WHERE a.item_category_id = 'C01' and (c.item_rm_id is null) GROUP BY a.id");
+    //     $records = $query->result_array();
+
+    //     if(count($records) > 0){
+    //         die(json_encode(array("status" => "NG")));
+    //     }else{
+    //         die(json_encode(array("status" => "OK")));
+    //     }
+    // }
+
+    public function downloadBom(){
+        header("Content-type: application/vnd-ms-excel");
+        header("Content-Disposition: attachment; filename=notfound_supplier_items_".time().".xls");
+
+        $query = $this->db->query("SELECT a.id as item_rm_id, a.number as item_rm_number, a.name as item_rm_name, b.item_rm_id as item_bom, c.item_rm_id as item_supplier FROM item_rm a JOIN (select b.item_rm_id from generate_mps a JOIN bom b ON a.item_fg_id = b.item_fg_id GROUP BY b.item_rm_id) b ON a.id = b.item_rm_id LEFT JOIN supplier_items c ON a.id = c.item_rm_id WHERE a.item_category_id = 'C01' and (c.item_rm_id is null) GROUP BY a.id");
+        $records = $query->result_array();
+
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#os_fg {border-collapse: collapse;width: 100%;font-size: 12px;}#os_fg td, #os_fg th {border: 1px solid #ddd;padding: 2px;}#os_fg tr:nth-child(even){background-color: #f2f2f2;}#os_fg tr:hover {background-color: #ddd;}#os_fg th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>            
+        <table id="os_fg" border="1">
+            <tr>
+                <th width="20">No</th>
+                <th>Part No</th>
+                <th>Part No Supplier</th>
+                <th>Description</th>
+            </tr>';
+        $no = 1;
+        foreach ($records as $data) {
+            $html .= '<tr>
+                        <td>' . $no . '</td>
+                        <td style="mso-number-format:\@;">' . $data['item_rm_id'] . '</td>
+                        <td style="mso-number-format:\@;">' . $data['item_rm_number'] . '</td>
+                        <td style="mso-number-format:\@;">' . $data['item_rm_name'] . '</td>
+                    </tr>';
+            $no++;
+        }
+        $html .= '</table></body></html>';
+        echo $html;
+    }
+
+    public function datatableException(){
+        $post = $this->input->post();
+        $filter_month = $post['filter_month'];
+        $filter_year = $post['filter_year'];
+        $filter_revision = $post['filter_revision'];
+        
+        $this->db->select("b.*, 
+            COALESCE(c.mpq, 0) AS mpq, 
+            COALESCE(c.moq, 0) AS moq, 
+            COALESCE(c.leadtime, 0) AS leadtime, 
+            COALESCE(c.share_order, 0) AS share_order, 
+            d.number AS item_rm_number, 
+            d.name AS item_rm_name,
+            d.hsn_code");
+        $this->db->from("(SELECT item_fg_id, prod_plan FROM generate_mps_details WHERE prod_plan > 0 AND p_month = '$filter_month' AND p_year = '$filter_year' GROUP BY item_fg_id) a");
+        $this->db->join('bom b', 'a.item_fg_id = b.item_fg_id');
+        $this->db->join('supplier_items c', "b.item_rm_id = c.item_rm_id", 'left');
+        $this->db->join('item_rm d', 'b.item_rm_id = d.id');
+        $this->db->where("b.item_rm_id NOT IN (SELECT item_rm_id FROM generate_mrp_rubber_part_finals WHERE p_month = '$filter_month' AND p_year = '$filter_year' AND revision = '$filter_revision' GROUP BY item_rm_id) AND
+        (
+            COALESCE(c.mpq, 0) = 0 
+            OR COALESCE(c.moq, 0) = 0 
+            OR COALESCE(c.leadtime, 0) = 0 
+            OR COALESCE(c.share_order, 0) = 0 
+            OR d.hsn_code IN ('-','')
+        )");
+        $this->db->group_by('d.id');
+        $this->db->order_by('d.id', 'asc');
+        $records = $this->db->get()->result_array();
+        
+        $result['total'] = count($records);
+        $result = array_merge($result, ['rows' => $records]);
+        echo json_encode($result);
+    }
+
+    public function getDataMps()
+    {
+        if ($this->input->get()) {
+            //Filter Data
+            $filter_month = base64_decode($this->input->get('filter_month'));
+            $filter_year = base64_decode($this->input->get('filter_year'));
+            $filter_revision = base64_decode($this->input->get('filter_revision'));
+            $filter_part_no = base64_decode($this->input->get('filter_part_no'));
+            $filter_product_family = base64_decode($this->input->get('filter_product_family'));
+            $filter_trans_date = $filter_year . "-" . $filter_month. "-01";
+
+            $this->db->select('max(revision) as revision');
+            $this->db->from('generate_mrp_rubber_part_finals');
+            $this->db->where('p_month', $filter_month);
+            $this->db->where('p_year', $filter_year);
+            $this->db->like('revision', $filter_revision);
+            $this->db->group_by('revision');
+            $rev = $this->db->get()->row();
+
+            if($filter_revision == ""){
+                $revision = empty($rev) ? 0 : ($rev->revision + 1);
+            }else{
+                $revision = $filter_revision;
+            }
+
+            if($filter_part_no != ""){
+                $where_del_part_no = "AND item_rm_id = '$filter_part_no'";
+            }else{
+                $where_del_part_no = "";
+            }
+
+            $this->db->query("DELETE FROM generate_mrp_rubber_part WHERE p_month = '$filter_month' and p_year = '$filter_year' and revision = '$revision' $where_del_part_no");
+            
+            $this->db->select('max(revision) as revision');
+            $this->db->from('generate_mps_details');
+            $this->db->where('p_month', $filter_month);
+            $this->db->where('p_year', $filter_year);
+            $rev_mps = $this->db->get()->row();
+
+            $revision_mps = $rev_mps->revision;
+
+            //Select Query
+            $this->db->select("b.p_month, b.p_year, '$revision' as revision,
+                a.item_rm_id,
+                b.ltpp_month2 as period, 
+                SUM(b.prod_plan) as prodplan,
+                a.composition as qpa, 
+                ROUND(SUM(b.forecast), 2) as forecast,
+                ROUND(SUM(b.prod_plan * a.composition), 2) as qty");
+            $this->db->from('bom a');
+            $this->db->join('generate_mps_details b', 'a.item_fg_id = b.item_fg_id');
+            $this->db->join('item_rm c', 'a.item_rm_id = c.id');
+            $this->db->where('b.p_month', $filter_month);
+            $this->db->where('b.p_year', $filter_year);
+            $this->db->where('b.revision', $revision_mps);
+            // $this->db->where('b.revision', 0);
+            // $this->db->where('product_no', 'ZYM024-081C');
+            // $this->db->where('prod_plan >', 0);
+            if($filter_product_family != ""){
+                $this->db->where('c.item_family_id', $filter_product_family);
+            }
+            if($filter_product_family != ""){
+                $this->db->where('c.id', $filter_part_no);
+            }
+            $this->db->group_by('b.ltpp_month2');
+            $this->db->group_by('a.item_rm_id');
+            // $this->db->having('SUM(b.prod_plan * a.composition) > 0');
+            $this->db->order_by('a.item_rm_id', 'asc');
+            $this->db->order_by('b.ltpp_month2', 'asc');
+            $mpsDetails = $this->db->get()->result_array();
+
+            $mpsDetails['total'] = @count($mpsDetails);
+            die(json_encode($mpsDetails));
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+
+    public function getDataMrp()
+    {
+        if ($this->input->get()) {
+            //Filter Data
+            $filter_month = base64_decode($this->input->get('filter_month'));
+            $filter_year = base64_decode($this->input->get('filter_year'));
+            $revision = base64_decode($this->input->get('filter_revision'));
+            $filter_product_family = base64_decode($this->input->get('filter_product_family'));
+            $filter_part_no = base64_decode($this->input->get('filter_part_no'));
+            $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
+            $month1_1 = date("Y-m-01", strtotime($filter_cutoff));
+            $month1 = date("Y-m-01", strtotime("-1 month", strtotime($filter_year."-".$filter_month."-01"))); //merubah bulan cutoff menjadi tanggal 1 dari bulan yg sudah di kurangi 1
+            $month1_end = date("Y-m-t", strtotime("-1 month", strtotime($filter_year."-".$filter_month."-01")));
+            $month2 = date("Y-m-01", strtotime("-2 month", strtotime($filter_year."-".$filter_month."-01"))); //merubah bulan cutoff menjadi tanggal 1 dari bulan yg sudah di kurangi 2
+            $month2_end = date("Y-m-t", strtotime("-2 month", strtotime($filter_year."-".$filter_month."-01")));
+            $month3 = date("Y-m-01", strtotime("-3 month", strtotime($filter_year."-".$filter_month."-01"))); //merubah bulan cutoff menjadi tanggal 1 dari bulan yg sudah di kurangi 3
+            $month3_end = date("Y-m-t", strtotime("-3 month", strtotime($filter_year."-".$filter_month."-01")));
+            
+            $month_3 = date("m", strtotime("-3 month", strtotime($filter_year."-".$filter_month."-01"))); // menggabungkan filter year dan month menjadi awal bulan,
+            $year_3 = date("Y", strtotime("-3 month", strtotime($filter_year."-".$filter_month."-01")));  // kemudian dikurangi 3, 2, dan 1 bulan, dan diambil                                                                                             
+            $month_2 = date("m", strtotime("-2 month", strtotime($filter_year."-".$filter_month."-01"))); // bulan (m) dan tahun (Y)-nya secara terpisah
+            $year_2 = date("Y", strtotime("-2 month", strtotime($filter_year."-".$filter_month."-01")));  //
+            $month_1 = date("m", strtotime("-1 month", strtotime($filter_year."-".$filter_month."-01"))); //
+            $year_1 = date("Y", strtotime("-1 month", strtotime($filter_year."-".$filter_month."-01")));  //
+
+            $cutoffDate = date("j", strtotime($filter_cutoff));
+
+            $this->db->select('max(revision) as revision');
+            $this->db->from('generate_mrp_rubber_part_finals');
+            $this->db->where('p_month', $filter_month);
+            $this->db->where('p_year', $filter_year);
+            $this->db->like('revision', $revision);
+            $this->db->group_by('revision');
+            $rev = $this->db->get()->row();
+
+            if($revision == ""){
+                $filter_revision = empty($rev) ? 0 : ($rev->revision + 1);
+            }else{
+                $filter_revision = $revision;
+            }
+
+            if($filter_part_no != ""){
+                $where_del_part_no = "AND item_rm_id = '$filter_part_no'";
+            }else{
+                $where_del_part_no = "";
+            }
+
+            $this->db->query("DELETE FROM generate_mrp_rubber_part_finals WHERE p_month = '$filter_month' and p_year = '$filter_year' and revision = '$filter_revision' $where_del_part_no");
+
+            //Select Query
+            $this->db->select('i.id as item_rm_id, b.supplier_id, b.share_order,
+                coalesce(m.safety_stock, 0) as safety_stock, 
+                coalesce(b.mpq, 0) as mpq, 
+                coalesce(b.moq, 0) as moq, 
+                h.type as supplier_type,
+                coalesce(b.leadtime, 0) as leadtime,
+                coalesce(j.qty_os, 0) as os_po,
+                coalesce(d.balance, 0) as qty_wip,
+                coalesce(k.begin_stock, 0) as qty_whs, 
+                (coalesce(f.actual, 0) + coalesce(l.qty_out_transaction, 0)) as used_3,
+                (coalesce(f2.actual, 0) + coalesce(l2.qty_out_transaction, 0)) as used_2,
+                (coalesce(f3.actual, 0) + coalesce(l3.qty_out_transaction, 0)) as used_1');
+            $this->db->from('item_rm i');
+            // $this->db->join('generate_mrp_rubber_part a', "a.item_rm_id = i.id",'left');
+            //$this->db->join('supplier_items b', "i.id = b.item_rm_id and (b.mpq > 0 and b.moq > 0 and b.leadtime > 0 and b.share_order > 0)");
+            $this->db->join("( SELECT * FROM generate_mrp_rubber_part WHERE p_month = '$filter_month' AND p_year = '$filter_year' AND revision = '$filter_revision') a", "a.item_rm_id = i.id", 'left');
+            $this->db->join("(SELECT * FROM supplier_items WHERE mpq > 0 AND moq > 0 AND leadtime > 0 AND share_order > 0) b", "i.id = b.item_rm_id", "left");
+
+            $this->db->join("(SELECT a.item_rm_id, (COALESCE(b.issued, 0) + COALESCE(c.issued_non_supply_sheet, 0)) - SUM(a.total) AS balance 
+                FROM (
+                    SELECT b.item_rm_id, a.item_fg_id, SUM(a.qty) as qty, b.composition, (SUM(a.qty) * b.composition) AS total
+                    FROM production_schedules a
+                    JOIN bom b ON a.item_fg_id = b.item_fg_id
+                    
+                    LEFT JOIN (
+                        SELECT workorder, MAX(status) AS max_status 
+                        FROM supply_sheets 
+                        GROUP BY workorder
+                    ) ss ON a.workorder = ss.workorder
+                    
+                    WHERE a.trans_date BETWEEN '$month1_1' AND '$filter_cutoff' 
+                    GROUP BY a.item_fg_id, b.item_rm_id
+                ) a
+                LEFT JOIN (
+                    SELECT item_rm_id, SUM(qty) AS issued 
+                    FROM issued_material_details 
+                    WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$month1_1' AND '$filter_cutoff' AND request_no LIKE '%SH%' 
+                    GROUP BY item_rm_id
+                ) b ON a.item_rm_id = b.item_rm_id
+                LEFT JOIN (
+                    SELECT a.item_rm_id, SUM(a.qty) AS issued_non_supply_sheet 
+                    FROM issued_material_details a 
+                    LEFT JOIN supply_materials b ON a.request_no = b.request_no AND a.item_rm_id = b.item_rm_id
+                    LEFT JOIN item_rm c ON b.item_rm_id = c.id
+                    WHERE DATE_FORMAT(a.created_date, '%Y-%m-%d') BETWEEN '$month1_1' AND '$filter_cutoff' AND a.request_no LIKE '%REQ%'
+                    GROUP BY a.item_rm_id
+                ) c ON a.item_rm_id = c.item_rm_id
+            GROUP BY a.item_rm_id) d", "i.id = d.item_rm_id", "left");
+
+            // Used 3
+            $this->db->join("(SELECT item_rm_id, COALESCE(SUM(qty), 0) AS actual
+                FROM issued_material_details
+                WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$month1' and '$month1_end'
+                GROUP BY item_rm_id) f", 'i.id = f.item_rm_id', 'left');
+            
+            $this->db->join("(SELECT item_rm_id, SUM(qty) as qty_out_transaction
+                FROM transaction_rm
+                WHERE transaction_kind = 'OUT'
+                AND request_date BETWEEN '$month1' AND '$month1_end'
+                GROUP BY item_rm_id) l", 'i.id = l.item_rm_id', 'left');
+            // Used 2
+            $this->db->join("(SELECT item_rm_id, COALESCE(SUM(qty), 0) AS actual
+                FROM issued_material_details
+                WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$month2' and '$month2_end'
+                GROUP BY item_rm_id) f2", 'i.id = f2.item_rm_id', 'left');
+            
+            $this->db->join("(SELECT item_rm_id, SUM(qty) as qty_out_transaction
+                FROM transaction_rm
+                WHERE transaction_kind = 'OUT'
+                AND request_date BETWEEN '$month2' AND '$month2_end'
+                GROUP BY item_rm_id) l2", 'i.id = l2.item_rm_id', 'left');
+            // Used 1
+            $this->db->join("(SELECT item_rm_id, COALESCE(SUM(qty), 0) AS actual
+                FROM issued_material_details
+                WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$month3' and '$month3_end'
+                GROUP BY item_rm_id) f3", 'i.id = f3.item_rm_id', 'left');
+            
+            $this->db->join("(SELECT item_rm_id, SUM(qty) as qty_out_transaction
+                FROM transaction_rm
+                WHERE transaction_kind = 'OUT'
+                AND request_date BETWEEN '$month3' AND '$month3_end'
+                GROUP BY item_rm_id) l3", 'i.id = l3.item_rm_id', 'left');
+
+            $this->db->join('suppliers h', 'b.supplier_id = h.id and h.status = 0','left');
+
+            $this->db->join("(SELECT a.item_rm_id, SUM(COALESCE(a.qty, 0)) - SUM(COALESCE(b.qty_receipt, 0)) AS qty_os
+                FROM (SELECT item_rm_id, po_no, SUM(qty) AS qty FROM purchase_orders WHERE STATUS = 0 AND po_date < '$filter_cutoff' GROUP BY item_rm_id, po_no) a
+                LEFT JOIN (SELECT item_rm_id, po_no, SUM(qty_receipt) AS qty_receipt FROM purchase_order_receipts WHERE receipt_date < '$filter_cutoff' GROUP BY item_rm_id, po_no) b ON a.item_rm_id = b.item_rm_id AND a.po_no = b.po_no
+                GROUP BY a.item_rm_id) j", "i.id = j.item_rm_id", "left");
+            
+            $this->db->join("(SELECT
+                a.id,
+                (
+                    -- Qty In sebelum filter_cutoff
+                    COALESCE(d_in.qty_scan_in, 0) +  -- scan_item_receipts
+                    COALESCE(g.return_qty, 0) +      -- return_materials
+                    COALESCE(h.qty_stock_rm, 0) +    -- os_rm
+                    COALESCE(i.qty_in, 0)            -- transaction_rm (RE%)
+                ) - (
+                    -- Qty Out sebelum filter_cutoff
+                    COALESCE(f.qty_issued, 0) +      -- issued_material_details
+                    COALESCE(j.qty_out, 0)           -- transaction_rm (IS%)
+                ) as begin_stock   
+            FROM item_rm a 
+            JOIN item_familys b ON a.item_family_id = b.id AND b.number != '006'
+            LEFT JOIN (
+                SELECT p.item_rm_id, SUM(s.qty) as qty_scan_in 
+                FROM purchase_order_receipts p
+                JOIN scan_item_receipts s ON p.receipt_id = s.receipt_id
+                WHERE p.receipt_date < '$filter_cutoff'
+                GROUP BY p.item_rm_id
+            ) d_in ON a.id = d_in.item_rm_id
+
+            LEFT JOIN (
+                SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty_issued 
+                FROM issued_material_details 
+                WHERE DATE_FORMAT(created_date, '%Y-%m-%d') < '$filter_cutoff' 
+                GROUP BY item_rm_id
+            ) f ON a.id = f.item_rm_id
+            LEFT JOIN (
+                SELECT a.item_rm_id, SUM(c.qty) as return_qty
+                FROM return_materials a 
+                JOIN return_material_labels b ON a.return_id = b.return_id
+                JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
+                WHERE a.return_date < '$filter_cutoff'
+                GROUP BY a.item_rm_id
+            ) g ON a.id = g.item_rm_id
+            LEFT JOIN (
+                SELECT a.item_rm_id, SUM(a.qty) as qty_stock_rm
+                FROM os_rm a
+                JOIN item_rm b ON a.item_rm_id = b.id
+                WHERE a.trans_date < '$filter_cutoff'
+                GROUP BY a.item_rm_id
+            ) h ON a.id = h.item_rm_id
+            LEFT JOIN (
+                SELECT item_rm_id, SUM(qty) as qty_in 
+                FROM transaction_rm 
+                WHERE transaction_type LIKE 'RE%' 
+                AND request_date < '$filter_cutoff'
+                GROUP BY item_rm_id
+            ) i ON a.id = i.item_rm_id
+            LEFT JOIN (
+                SELECT item_rm_id, SUM(qty) as qty_out 
+                FROM transaction_rm 
+                WHERE transaction_type LIKE 'IS%' 
+                AND request_date < '$filter_cutoff'
+                GROUP BY item_rm_id
+            ) j ON a.id = j.item_rm_id
+            WHERE a.item_category_id = 'C02' 
+            GROUP BY a.id) k", "i.id = k.id", 'left');
+
+            $this->db->join('safety_stock_rm m', "i.id = m.item_rm_id",'left');
+
+            // $this->db->where_in('i.item_family_id', ['P01','P02','P06']); bawaan BPI
+            if($filter_product_family != ""){
+                $this->db->where('i.item_family_id', $filter_product_family);
+            }
+            if($filter_part_no != ""){
+                $this->db->where('i.id', $filter_part_no);
+            }
+            $this->db->group_by('i.id');
+            $this->db->group_by('b.supplier_id');
+            $this->db->order_by('i.number', 'asc');
+            $generates = $this->db->get()->result_array();
+
+            // var_dump($generates);
+            // die;
+
+            foreach ($generates as $generate) {
+                $this->db->select('item_rm_id, period, COALESCE(SUM(qty),0) as need');
+                $this->db->from('generate_mrp_rubber_part');
+                $this->db->where('item_rm_id', $generate['item_rm_id']);
+                $this->db->where('p_month', $filter_month);
+                $this->db->where('p_year', $filter_year);
+                $this->db->where('revision', $filter_revision);
+                $this->db->group_by('item_rm_id');
+                $this->db->group_by('period');
+                $this->db->order_by('period', 'asc');
+                $periods = $this->db->get()->result_array();
+
+                //WIP BANSHU
+                // $balance_wip = $this->crud->read("balance_wip", [], ["item_rm_id" => $generate['item_rm_id'], "p_month" => $filter_month, "p_year" => $filter_year]);
+
+                //Dokumentasi :Di komen dahulu karena tidak menggunakan qty_wip 
+                    // $supply = ($mpp_m3 + $mpp_m2 + $mpp_m1 + $mpp + @$balance_wip->qty) - $generate['qty_issued'];
+                    // if($supply > 0){
+                    //     $qty_supply = round($supply);
+                    //     $qty_wip = 0;
+                    // }else{
+                    //     $qty_wip = abs(round($supply));
+                    // }
+
+                    if($generate['qty_wip'] > 0){
+                        $qty_wip = $generate['qty_wip'];
+                        $qty_supply = 0;
+                    }else{
+                        $qty_wip = 0;
+                        $qty_supply = abs($generate['qty_wip']);
+                    }
+
+
+                    // $total_stock = ($generate['qty_rm'] + $qty_wip + $generate['qty_vendor']);
+                    // $total_wo = ($qty_supply + 0);
+                //-------------------------------------------------------------
+
+                $no = 1;
+                $need_1 = 0;
+                $need_2 = 0;
+                $need_3 = 0;
+                $need_4 = 0;
+                $need_5 = 0;
+                $need_6 = 0;
+                $need_11 = 0;
+
+                $balance_1 = 0;
+                $balance_2 = 0;
+                $balance_3 = 0;
+                $balance_4 = 0;
+                $balance_5 = 0;
+                $balance_6 = 0;
+                foreach ($periods as $period) {
+                    $item_rm_id = $generate['item_rm_id'];
+                    
+                    if($no == 1){
+                        $need_1 += $period['need'];
+
+                        // if($filter_revision == 0){
+                        //     $need_11 += $period['need'];
+                        // }else{
+                        //     $need_11 += 0;
+                        // }
+                        
+                        $no = 2;
+                    }elseif($no == 2){
+                        $need_2 += $period['need'];
+                        $no = 3;
+                    }elseif($no == 3){
+                        $need_3 += $period['need'];
+                        $no = 4;
+                    }elseif($no == 4){
+                        $need_4 += $period['need'];
+                        $no = 5;
+                    }elseif($no == 5){
+                        $need_5 += $period['need'];
+                        $no = 6;
+                    }elseif($no == 6){
+                        $need_6 += $period['need'];
+                        $no = 1;
+                    }
+                }
+
+                $os_po = $generate['os_po'];
+                $stock = $generate['qty_whs'];
+                $os_wo = 0;
+                $used_1 = $generate['used_1'];
+                $used_2 = $generate['used_2'];
+                $used_3 = $generate['used_3'];
+
+                // $balance_1 = ($total_stock - ($total_wo + $need_11));
+                // $balance_1 = (($os_supply + $stock) - $need_11);
+                $balance_1 = ($stock + $qty_wip + $os_po - $os_wo - $qty_supply - $need_1);
+                $balance_2 = ($balance_1 - $need_2);
+                $balance_3 = ($balance_2 - $need_3);
+                $balance_4 = ($balance_3 - $need_4);
+                $balance_5 = ($balance_4 - $need_5);
+                $balance_6 = ($balance_5 - $need_6);
+
+                $avg_usage = ($used_2 + $used_3 + $need_1) / 3;
+                $average = ($used_2 + $used_3 + $used_1) / 3;
+
+                if ($avg_usage > 0) {
+                    $ito = round($stock / $avg_usage, 2); // dibulatkan 2 desimal
+                } else {
+                    $ito = 0; 
+                }
+                
+                //PLAN ORDER
+                if($balance_1 > 0){
+                    $total_need = 0;
+                }else{
+                    $total_need = abs($balance_1);
+                }
+                
+                //Dokumentasi : dikomen dahulu tidak menggunkan supplier type Local atau export 
+                    // if(($generate['leadtime'] + $cutoffDate - 1) <= 30){
+                    //     if($generate['supplier_type'] == "LOCAL"){
+                    //         if($balance_1 > 0){
+                    //             $total_need = 0;
+                    //         }else{
+                    //             $total_need = abs($balance_1);
+                    //         }
+                    //     }else{
+                    //         if($balance_2 > 0){
+                    //             $total_need = 0;
+                    //         }else{
+                    //             $total_need = abs($balance_2);
+                    //         }
+                    //     }
+                    // }elseif(($generate['leadtime'] + $cutoffDate - 1) > 30 && ($generate['leadtime'] + $cutoffDate - 1) <= 60){
+                    //     if($generate['supplier_type'] == "LOCAL"){
+                    //         if($balance_2 > 0){
+                    //             $total_need = 0;
+                    //         }else{
+                    //             $total_need = abs($balance_2);
+                    //         }
+                    //     }else{
+                    //         if($balance_3 > 0){
+                    //             $total_need = 0;
+                    //         }else{
+                    //             $total_need = abs($balance_3);
+                    //         }
+                    //     }
+                    // }elseif(($generate['leadtime'] + $cutoffDate - 1) > 60 && ($generate['leadtime'] + $cutoffDate - 1) <= 90){
+                    //     if($generate['supplier_type'] == "LOCAL"){
+                    //         if($balance_3 > 0){
+                    //             $total_need = 0;
+                    //         }else{
+                    //             $total_need = abs($balance_3);
+                    //         }
+                    //     }else{
+                    //         if($balance_4 > 0){
+                    //             $total_need = 0;
+                    //         }else{
+                    //             $total_need = abs($balance_4);
+                    //         }
+                    //     }
+                    // }elseif(($generate['leadtime'] + $cutoffDate - 1) > 90 && ($generate['leadtime'] + $cutoffDate - 1) <= 120){
+                    //     if($generate['supplier_type'] == "LOCAL"){
+                    //         if($balance_4 > 0){
+                    //             $total_need = 0;
+                    //         }else{
+                    //             $total_need = abs($balance_4);
+                    //         }
+                    //     }else{
+                    //         if($balance_5 > 0){
+                    //             $total_need = 0;
+                    //         }else{
+                    //             $total_need = abs($balance_5);
+                    //         }
+                    //     }
+                    // }elseif(($generate['leadtime'] + $cutoffDate - 1) > 120 and ($generate['leadtime'] + $cutoffDate - 1) <= 150){
+                    //     if($generate['supplier_type'] == "LOCAL"){
+                    //         if($balance_5 > 0){
+                    //             $total_need = 0;
+                    //         }else{
+                    //             $total_need = abs($balance_5);
+                    //         }
+                    //     }else{
+                    //         if($balance_6 > 0){
+                    //             $total_need = 0;
+                    //         }else{
+                    //             $total_need = abs($balance_6);
+                    //         }
+                    //     }
+                    // }else{
+                    //     if($balance_6 > 0){
+                    //         $total_need = 0;
+                    //     }else{
+                    //         $total_need = abs($balance_6);
+                    //     }
+                    // }
+                //
+
+                // $leadtimeMonth = ceil(($generate['leadtime'] + $cutoffDate - 1) / 30);
+
+                //Dokumentasi : di komen dahulu karena safety stock menggunakan upload
+                    // switch ($leadtimeMonth) {
+                    //     case 6:
+                    //         $avg_need = (($need_1 + $need_2 + $need_3 + $need_4 + $need_5 + $need_6) / 6);
+                    //         $avg_balance = ($balance_6 - $avg_need);
+                    //         if($avg_balance > 0){
+                    //             $total_need = 0;
+                    //         }else{
+                    //             $total_need = abs($avg_balance);
+                    //         }
+                    //     break;
+                    //     case 7:
+                    //         $avg_need = (($need_1 + $need_2 + $need_3 + $need_4 + $need_5 + $need_6) / 6);
+                    //         $avg_balance = ($balance_6 - $avg_need);
+                    //         if($avg_balance > 0){
+                    //             $total_need = 0;
+                    //         }else{
+                    //             $total_need = abs($avg_balance);
+                    //         }
+                    //     break;
+                    //     case 8:
+                    //         $avg_need = ((($need_1 + $need_2 + $need_3 + $need_4 + $need_5 + $need_6) / 6) * 2);
+                    //         $avg_balance = ($balance_6 - $avg_need);
+                    //         if($avg_balance > 0){
+                    //             $total_need = 0;
+                    //         }else{
+                    //             $total_need = abs($avg_balance);
+                    //         }
+                    //     break;
+                    //     case 9:
+                    //         $avg_need = ((($need_1 + $need_2 + $need_3 + $need_4 + $need_5 + $need_6) / 6) * 3);
+                    //         $avg_balance = ($balance_6 - $avg_need);
+                    //         if($avg_balance > 0){
+                    //             $total_need = 0;
+                    //         }else{
+                    //             $total_need = abs($avg_balance);
+                    //         }
+                    //     break;
+                    //     case 10:
+                    //         $avg_need = ((($need_1 + $need_2 + $need_3 + $need_4 + $need_5 + $need_6) / 6) * 4);
+                    //         $avg_balance = ($balance_6 - $avg_need);
+                    //         if($avg_balance > 0){
+                    //             $total_need = 0;
+                    //         }else{
+                    //             $total_need = abs($avg_balance);
+                    //         }
+                    //     break;
+                    //     case 11:
+                    //         $avg_need = ((($need_1 + $need_2 + $need_3 + $need_4 + $need_5 + $need_6) / 6) * 5);
+                    //         $avg_balance = ($balance_6 - $avg_need);
+                    //         if($avg_balance > 0){
+                    //             $total_need = 0;
+                    //         }else{
+                    //             $total_need = abs($avg_balance);
+                    //         }
+                    //     break;
+                    //     case 12:
+                    //         $avg_need = ((($need_1 + $need_2 + $need_3 + $need_4 + $need_5 + $need_6) / 6) * 6);
+                    //         $avg_balance = ($balance_6 - $avg_need);
+                    //         if($avg_balance > 0){
+                    //             $total_need = 0;
+                    //         }else{
+                    //             $total_need = abs($avg_balance);
+                    //         }
+                    //     break;
+                    //     default:
+                    //         $avg_need = 0;
+                    //         $avg_balance = ($balance_6 - $avg_need);
+                    // }
+
+                    $share_order_qty = ($total_need * ($generate['share_order'] / 100)); 
+                    $safety_stock = round($share_order_qty * ($generate['safety_stock'] / 100));
+                    // $total_need = ($share_order_qty + $safety_stock);
+
+                    if($total_need > 0 && $generate['moq'] > 0){
+                        if($total_need > $generate['moq']){
+                            //FIX ORDER
+                            $purchase_order = (ceil($total_need / $generate['mpq']) * $generate['mpq']);
+                        }else{
+                            $purchase_order = (ceil($total_need / $generate['moq']) * $generate['moq']);
+                        }
+                    }else{
+                        $purchase_order = 0;
+                    }
+                //------------------------------------------------------------------------------
+
+                $arr[] = array(
+                    "p_month" => $filter_month,
+                    "p_year" => $filter_year,
+                    "revision" => $filter_revision,
+                    "cutoff" => $filter_cutoff . " " . date("H:i:s"),
+                    "item_rm_id" => $generate['item_rm_id'],
+                    "supplier_id" => $generate['supplier_id'],
+                    "share_order" => $generate['share_order'],
+                    "mpq" => $generate['mpq'],
+                    "moq" => $generate['moq'],
+                    "leadtime" => $generate['leadtime'],
+                    "qty_rm" => $generate['qty_whs'],
+                    "qty_wip" => $qty_wip,
+                    "qty_supply" => $qty_supply,
+                    // "qty_vendor" => $generate['qty_vendor'],
+                    // "total_stock" => $total_stock,
+                    "os_po" => $os_po,
+                    // "qty_wo" => $qty_wo,
+                    "ito" => $ito,//tambah field db
+                    "used_1" => $used_1,//tambah field db
+                    "used_2" => $used_2,//tambah field db
+                    "used_3" => $used_3,//tambah field db
+                    "average" => $average,//tambah field db
+                    "qty_wo" => 0,
+                    "total_wo" => $total_wo,
+                    "need_1" => $need_1,
+                    "need_2" => $need_2,
+                    "need_3" => $need_3,
+                    "need_4" => $need_4,
+                    "need_5" => $need_5,
+                    "need_6" => $need_6,
+                    "balance_1" => $balance_1,
+                    "balance_2" => $balance_2,
+                    "balance_3" => $balance_3,
+                    "balance_4" => $balance_4,
+                    "balance_5" => $balance_5,
+                    "balance_6" => $balance_6,
+                    "avg_need" => $avg_need,
+                    "avg_balance" => $avg_balance,
+                    "safety_stock" => $safety_stock,
+                    "safety_stock_persen" => $generate['safety_stock'],
+                    "share_order_qty" => $share_order_qty,
+                    "total_need" => $total_need,
+                    "purchase_order" => $purchase_order,
+                );
+            }
+
+            $arr['total'] = @count($arr);
+            die(json_encode($arr));
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+
+    public function getDataMrpFinals(){
+        if ($this->input->get()) {
+            //Filter Data
+            $filter_month = base64_decode($this->input->get('filter_month'));
+            $filter_year = base64_decode($this->input->get('filter_year'));
+            $revision = base64_decode($this->input->get('filter_revision'));
+            $filter_product_family = base64_decode($this->input->get('filter_product_family'));
+            $filter_part_no = base64_decode($this->input->get('filter_part_no'));
+
+            $this->db->select('max(revision) as revision');
+            $this->db->from('generate_mrp_rubber_part_finals');
+            $this->db->where('p_month', $filter_month);
+            $this->db->where('p_year', $filter_year);
+            $this->db->like('revision', $revision);
+            $this->db->group_by('revision');
+            $rev = $this->db->get()->row();
+            if($revision == ""){
+                $filter_revision = empty($rev) ? 0 : ($rev->revision + 1);
+            }else{
+                $filter_revision = $revision;
+            }
+
+            if($filter_part_no != ""){
+                $where_del_part_no = "AND item_rm_id = '$filter_part_no'";
+            }else{
+                $where_del_part_no = "";
+            }
+
+            $this->db->query("DELETE FROM generate_mrp_rubber_part_abcclass WHERE p_month = '$filter_month' and p_year = '$filter_year' and revision = '$filter_revision' $where_del_part_no");
+
+            $currency_date_from = $filter_year . '-01-01';
+            $currency_date_to = $filter_year . '-12-31';
+
+            $query_supplier_price ="SELECT a.supplier_id, a.item_rm_id, a.currency, a.price, coalesce(b.middle,1) as middle
+            from supplier_items a
+            left join exchange_rates b on a.currency=b.currency_from and start_date <= DATE(NOW()) and end_date>=DATE(NOW())";
+
+
+            // Menghitung Total Nominal per Family (Qty * Harga * Kurs)
+            $this->db->select('b.item_family_id, SUM(a.total_need) as total_need, SUM(a.total_need * COALESCE(d.price, 0) * COALESCE(d.middle, 1)) as total_need_amount', FALSE);
+            $this->db->from('generate_mrp_rubber_part_finals a');
+            $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+            $this->db->join('item_familys c', 'b.item_family_id = c.id');
+            $this->db->join('(' . $query_supplier_price . ') d', 'a.item_rm_id = d.item_rm_id and a.supplier_id = d.supplier_id', 'left');
+            $this->db->where('a.p_month', $filter_month);
+            $this->db->where('a.p_year', $filter_year);
+            $this->db->where('a.revision', $filter_revision);
+            $this->db->group_by('b.item_family_id');
+            $mrp = $this->db->get()->result_array();
+
+            $g_total_need = [];
+            $g_total_need_amount = [];
+            
+
+            foreach ($mrp as $generate) {
+                $g_total_need[$generate['item_family_id']] = $generate['total_need'];
+                $g_total_need_amount[$generate['item_family_id']] = $generate['total_need_amount'];
+            }
+
+            //Select Query
+            $this->db->select('a.*, b.item_family_id, (a.total_need * COALESCE(d.price, 0) * COALESCE(d.middle, 1)) as total_need_amount', FALSE);
+            $this->db->from('generate_mrp_rubber_part_finals a');
+            $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+            $this->db->join('item_familys c', 'b.item_family_id = c.id');
+            $this->db->join('(' . $query_supplier_price . ') d', 'a.item_rm_id = d.item_rm_id and a.supplier_id = d.supplier_id', 'left');
+            $this->db->where('a.p_month', $filter_month);
+            $this->db->where('a.p_year', $filter_year);
+            $this->db->where('a.revision', $filter_revision);
+            // $this->db->where_in('c.id', 'P06');
+            if($filter_product_family != ""){
+                $this->db->where('b.item_family_id', $filter_product_family);
+            }
+            if($filter_part_no != ""){
+                $this->db->where('a.item_rm_id', $filter_part_no);
+            }
+            $this->db->order_by('c.name', 'asc');
+            $this->db->order_by('total_need_amount', 'desc');
+            
+            $generates = $this->db->get()->result_array();
+
+            
+
+            $total_need_amount = 0;
+            $product_family = "";
+            $arr = array();
+            
+            foreach ($generates as $generate) {
+                if($generate['item_family_id'] != $product_family){
+                    $total_need_amount = 0;
+                    $kumulative_need = $generate['total_need_amount'] / $g_total_need_amount[$generate['item_family_id']] * 100;
+                    $composition = number_format($total_need_amount, 2 );
+                    $total_need_amount += $kumulative_need;
+                }else{
+                    $kumulative_need = $generate['total_need_amount'] / $g_total_need_amount[$generate['item_family_id']] * 100;
+                    $composition = number_format($total_need_amount, 2 );
+                    $total_need_amount += $kumulative_need;
+                }
+
+                // echo $composition . "<br>";
+
+                $round_composition = ceil($composition);
+
+                $this->db->select('*');
+                $this->db->from('safety_stock_abc');
+                $this->db->where("start <= '$round_composition' AND '$round_composition' <= ending");
+                $this->db->order_by('start', 'ASC');
+                $this->db->limit(1); // Menambahkan limit 1 baris data
+                $safety_stock = $this->db->get()->row();
+
+                $arr[] = array(
+                    "p_month" => $filter_month,
+                    "p_year" => $filter_year,
+                    "revision" => $filter_revision,
+                    "item_rm_id" => $generate['item_rm_id'],
+                    "supplier_id" => $generate['supplier_id'],
+                    "need" => $generate['total_need'],
+                    "total" => $g_total_need[$generate['item_family_id']],
+                    "composition" => $composition,
+                    "class" => $safety_stock->name,
+                    "safety" => $safety_stock->safety,
+                    "safety_stock" => round($generate['total_need'] * (@$safety_stock->safety / 100)),
+                    "need_amount" => $generate['total_need_amount'],
+                );
+
+                $product_family = $generate['item_family_id'];
+            }
+
+            $arr['total'] = @count($arr);
+            die(json_encode($arr));
+        }
+    }
+    
+    public function create()
+    {
+        if ($this->input->post()) {
+            $post = $this->input->post('data');
+            $records = $this->crud->reads('generate_mrp_rubber_part', [], [
+                "p_month" => $post['p_month'],
+                "p_year" => $post['p_year'],
+                "revision" => $post['revision'],
+                "period" => $post['period'],
+                "item_rm_id" => $post['item_rm_id']
+            ]);
+
+            if (count($records) > 0) {
+                $send = $this->db->update('generate_mrp_rubber_part', $post, [
+                    "p_month" => $post['p_month'],
+                    "p_year" => $post['p_year'],
+                    "revision" => $post['revision'],
+                    "period" => $post['period'],
+                    "item_rm_id" => $post['item_rm_id']
+                ]);
+
+                echo $send;
+            } else {
+                $send = $this->crud->createNotLog('generate_mrp_rubber_part', $post);
+                echo $send;
+            }
+        }
+    }
+
+    // public function createMrp()
+    // {
+    //     if ($this->input->post()) {
+    //         $post = $this->input->post('data');
+    //         $item_rm_id = $post['item_rm_id'];
+
+    //         $item_rm = $this->crud->read("item_rm", [], ["id"=>$item_rm_id]);
+    //         $part_no = @$item_rm->number;
+
+    //         //Select Query
+    //         // $this->db->select('*');
+    //         // $this->db->from('generate_mrp_rubber_part_finals');
+    //         // $this->db->where('p_month', $post['p_month']);
+    //         // $this->db->where('p_year', $post['p_year']);
+    //         // $this->db->where('revision', $post['revision']);
+    //         // $this->db->where('item_rm_id', $post['item_rm_id']);
+    //         // $records = $this->db->get()->result_array();
+
+    //         // $this->dummy = $this->load->database('dummy', TRUE);
+
+    //         // $period_1 = date("Ym", strtotime("-1 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
+    //         // $period_2 = date("Ym", strtotime("-2 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
+    //         // $period_3 = date("Ym", strtotime("-3 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
+    //         $period_1 = date("Y-m", strtotime("-1 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
+    //         $period_2 = date("Y-m", strtotime("-2 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
+    //         $period_3 = date("Y-m", strtotime("-3 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
+
+    //         // $qissued = $this->dummy->query("SELECT b.item_id, SUM(b.qty_need) as need from wip_trx_mpp a
+    //         //     join serial_detail_kanbanrm b ON a.temp_woc_id = b.kanbanrm_woc_id
+    //         //     where a.periode IN ('$period_1','$period_2','$period_3') and b.item_id = '$part_no'
+    //         //     group by b.item_id, a.periode
+    //         //     order by b.item_id, a.periode");
+
+    //         // $maxRevQuery1 = $this->dummy->query("SELECT max(rev) as revision FROM wip_trx_mpp WHERE periode = '$period_1'");
+    //         // $maxRev1 = $maxRevQuery1->row();
+    //         // $maxRevQuery2 = $this->dummy->query("SELECT max(rev) as revision FROM wip_trx_mpp WHERE periode = '$period_2'");
+    //         // $maxRev2 = $maxRevQuery2->row();
+    //         // $maxRevQuery3 = $this->dummy->query("SELECT max(rev) as revision FROM wip_trx_mpp WHERE periode = '$period_3'");
+    //         // $maxRev3 = $maxRevQuery3->row();
+    //         // $rev1 = @$maxRev1->revision;
+    //         // $rev2 = @$maxRev2->revision;
+    //         // $rev3 = @$maxRev3->revision;
+
+    //         // $qissued1 = $this->dummy->query("SELECT z.periode, z.bom_com_item, SUM(z.need) as need FROM(
+    //         //     SELECT b.bom_com_item, a.periode, (a.qty * b.bom_qty_perassy) as need from wip_trx_mpp a
+    //         //     JOIN mst_bom b ON b.bom_par_item = a.assy_no
+    //         //     where a.periode = '$period_1' and b.bom_com_item = '$part_no' and a.rev = '$rev1'
+    //         //     order by b.bom_com_item, a.periode) z GROUP BY z.periode, z.bom_com_item ORDER by z.periode asc");
+    //         // $missued1 = $qissued1->result_array();
+
+    //         // $qissued2 = $this->dummy->query("SELECT z.periode, z.bom_com_item, SUM(z.need) as need FROM(
+    //         //     SELECT b.bom_com_item, a.periode, (a.qty * b.bom_qty_perassy) as need from wip_trx_mpp a
+    //         //     JOIN mst_bom b ON b.bom_par_item = a.assy_no
+    //         //     where a.periode = '$period_2' and b.bom_com_item = '$part_no' and a.rev = '$rev2'
+    //         //     order by b.bom_com_item, a.periode) z GROUP BY z.periode, z.bom_com_item ORDER by z.periode asc");
+    //         // $missued2 = $qissued2->result_array();
+
+    //         // $qissued3 = $this->dummy->query("SELECT z.periode, z.bom_com_item, SUM(z.need) as need FROM(
+    //         //     SELECT b.bom_com_item, a.periode, (a.qty * b.bom_qty_perassy) as need from wip_trx_mpp a
+    //         //     JOIN mst_bom b ON b.bom_par_item = a.assy_no
+    //         //     where a.periode = '$period_3' and b.bom_com_item = '$part_no' and a.rev = '$rev3'
+    //         //     order by b.bom_com_item, a.periode) z GROUP BY z.periode, z.bom_com_item ORDER by z.periode asc");
+    //         // $missued3 = $qissued3->result_array();
+
+    //         $qissued1 = $this->db->query("SELECT item_rm_id, COALESCE(SUM(qty_act), 0) AS need FROM supply_sheets WHERE request_date like '%$period_1%' and item_rm_id = '$item_rm_id' GROUP BY item_rm_id");
+    //         $missued1 = $qissued1->result_array();
+
+    //         $qissued2 = $this->db->query("SELECT item_rm_id, COALESCE(SUM(qty_act), 0) AS need FROM supply_sheets WHERE request_date like '%$period_2%' and item_rm_id = '$item_rm_id' GROUP BY item_rm_id");
+    //         $missued2 = $qissued2->result_array();
+
+    //         $qissued3 = $this->db->query("SELECT item_rm_id, COALESCE(SUM(qty_act), 0) AS need FROM supply_sheets WHERE request_date like '%$period_3%' and item_rm_id = '$item_rm_id' GROUP BY item_rm_id");
+    //         $missued3 = $qissued3->result_array();
+
+    //         //Select Query
+    //         $this->db->select('*');
+    //         $this->db->from('generate_mrp_rubber_part_finals');
+    //         $this->db->where('p_month', $post['p_month']);
+    //         $this->db->where('p_year', $post['p_year']);
+    //         $this->db->where('revision', $post['revision']);
+    //         $this->db->where('item_rm_id', $post['item_rm_id']);
+    //         $this->db->where('supplier_id', $post['supplier_id']);
+    //         $records = $this->db->get()->result_array();
+
+    //         $postFinal = array_merge($post, array(
+    //             "issued_1" => @$missued1[0]['need'],
+    //             "issued_2" => @$missued2[0]['need'],
+    //             "issued_3" => @$missued3[0]['need'],
+    //             "issued_avg" => ((@$missued1[0]['need'] + @$missued2[0]['need'] + @$missued3[0]['need']) / 3),
+    //         ));
+
+    //         $postFinal = array_merge($post, array(
+    //             "issued_1" => 0,
+    //             "issued_2" => 0,
+    //             "issued_3" => 0,
+    //             "issued_avg" => 0,
+    //         ));
+
+    //         if (count($records) > 0) {
+    //             $send = $this->db->update('generate_mrp_rubber_part_finals', $postFinal, [
+    //                 "p_month" => $post['p_month'],
+    //                 "p_year" => $post['p_year'],
+    //                 "revision" => $post['revision'],
+    //                 "item_rm_id" => $post['item_rm_id'],
+    //                 "supplier_id" => $post['supplier_id'],
+    //             ]);
+
+    //             echo $send;
+    //         } else {
+    //             $send = $this->crud->createNotLog('generate_mrp_rubber_part_finals', $postFinal);
+    //             echo $send;
+    //         }
+    //     }
+    // }
+
+    public function createMrp()
+    {
+        if ($this->input->post()) {
+            $post = $this->input->post('data');
+            $item_rm_id = $post['item_rm_id'];
+
+            $item_rm = $this->crud->read("item_rm", [], ["id"=>$item_rm_id]);
+            $part_no = (!empty($item_rm)) ? $item_rm->number : 'Unknown RM';
+
+            $is_warning = false;
+            $warning_msg = [];
+
+            $moq = (float) $post['moq'];
+            $mpq = (float) $post['mpq'];
+            $share_order = (float) $post['share_order'];
+            $leadtime = (float) $post['leadtime'];
+
+            if ($moq == 0 || $mpq == 0 || $share_order == 0 || $leadtime == 0) {
+                $is_warning = true;
+                $zero_items = []; // Array sementara untuk menampung nama field yang 0
+
+                // Pengecekan (Aturan Fix Order = Plan Order)
+                if ($moq == 0) {
+                    $post['purchase_order'] = (float) $post['total_need']; 
+                    $zero_items[] = "MOQ ";
+                }
+                
+                if ($share_order == 0) $zero_items[] = "Share Order ";
+                if ($mpq == 0)         $zero_items[] = "MPQ ";
+                if ($leadtime == 0)    $zero_items[] = "Leadtime ";
+
+                $warning_msg[] = implode('or ', $zero_items) . " is 0";
+            }
+
+            $period_1 = date("Y-m", strtotime("-1 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
+            $period_2 = date("Y-m", strtotime("-2 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
+            $period_3 = date("Y-m", strtotime("-3 month", strtotime($post['p_year']."-".$post['p_month']."-01")));
+
+            $qissued1 = $this->db->query("SELECT item_rm_id, COALESCE(SUM(qty_act), 0) AS need FROM supply_sheets WHERE request_date like '%$period_1%' and item_rm_id = '$item_rm_id' GROUP BY item_rm_id");
+            $missued1 = $qissued1->result_array();
+
+            $qissued2 = $this->db->query("SELECT item_rm_id, COALESCE(SUM(qty_act), 0) AS need FROM supply_sheets WHERE request_date like '%$period_2%' and item_rm_id = '$item_rm_id' GROUP BY item_rm_id");
+            $missued2 = $qissued2->result_array();
+
+            $qissued3 = $this->db->query("SELECT item_rm_id, COALESCE(SUM(qty_act), 0) AS need FROM supply_sheets WHERE request_date like '%$period_3%' and item_rm_id = '$item_rm_id' GROUP BY item_rm_id");
+            $missued3 = $qissued3->result_array();
+
+            $this->db->select('*');
+            $this->db->from('generate_mrp_rubber_part_finals');
+            $this->db->where('p_month', $post['p_month']);
+            $this->db->where('p_year', $post['p_year']);
+            $this->db->where('revision', $post['revision']);
+            $this->db->where('item_rm_id', $post['item_rm_id']);
+            $this->db->where('supplier_id', $post['supplier_id']);
+            $records = $this->db->get()->result_array();
+
+            // Menggabungkan data post yang sudah diperbarui purchase_order nya dengan issued
+            // (Sesuai original script Anda, issued di set 0)
+            $postFinal = array_merge($post, array(
+                "issued_1" => 0,
+                "issued_2" => 0,
+                "issued_3" => 0,
+                "issued_avg" => 0,
+            ));
+
+            // Proses Simpan / Update ke DB
+            if (count($records) > 0) {
+                $send = $this->db->update('generate_mrp_rubber_part_finals', $postFinal, [
+                    "p_month" => $post['p_month'],
+                    "p_year" => $post['p_year'],
+                    "revision" => $post['revision'],
+                    "item_rm_id" => $post['item_rm_id'],
+                    "supplier_id" => $post['supplier_id'],
+                ]);
+            } else {
+                $send = $this->crud->createNotLog('generate_mrp_rubber_part_finals', $postFinal);
+            }
+
+            // Return Output JSON berdasarkan kondisi Warning
+            if ($is_warning) {
+                $msg_gabung = implode(', ', $warning_msg);
+                echo json_encode([
+                    'theme'   => 'failed', 
+                    'title'   => 'WARNING',
+                    'message' => 'Part No [' . $part_no . '] - ' . $msg_gabung
+                ]);
+            } else {
+                echo json_encode([
+                    'theme'   => 'success', 
+                    'title'   => 'SUCCESS',
+                    'message' => 'Data Part No [' . $part_no . '] Saved.'
+                ]);
+            }
+        }
+    }
+
+    public function createAbc()
+    {
+        if ($this->input->post()) {
+            $post = $this->input->post('data');
+            $records = $this->crud->reads('generate_mrp_rubber_part_abcclass', [], [
+                "p_month" => $post['p_month'],
+                "p_year" => $post['p_year'],
+                "revision" => $post['revision'],
+                "item_rm_id" => $post['item_rm_id'],
+                "supplier_id" => $post['supplier_id'],
+            ]);
+
+            if (count($records) > 0) {
+                $send = $this->db->update('generate_mrp_rubber_part_abcclass', $post, [
+                    "p_month" => $post['p_month'],
+                    "p_year" => $post['p_year'],
+                    "revision" => $post['revision'],
+                    "item_rm_id" => $post['item_rm_id'],
+                    "supplier_id" => $post['supplier_id'],
+                ]);
+
+                echo $send;
+            } else {
+                $send = $this->crud->createNotLog('generate_mrp_rubber_part_abcclass', $post);
+                echo $send;
+            }
+        }
+    }
+
+    public function print($option = "", $approved_to = "", $approved_by = "")
+    {
+        // if ($this->input->get()) {
+            if ($option == "excel") {
+                $format  = date("Ymd");
+                header("Content-type: application/vnd-ms-excel");
+                header("Content-Disposition: attachment; filename=mrp_$format.xls");
+            }
+
+            $approved_to = base64_decode($approved_to);
+            $approved_by = base64_decode($approved_by);
+
+            //Config
+            $this->db->select('*');
+            $this->db->from('config');
+            $config = $this->db->get()->row();
+
+            $filter_month = base64_decode($this->input->get('filter_month'));
+            $filter_year = base64_decode($this->input->get('filter_year'));
+            $filter_revision = base64_decode($this->input->get('filter_revision'));
+            $filter_product_family = base64_decode($this->input->get('filter_product_family'));
+            $filter_part_no = trim(base64_decode($this->input->get('filter_part_no')));
+
+            $period_1 = date("F Y", strtotime($filter_year."-".$filter_month."-01"));
+            $period_2 = date("F Y",  strtotime("1 month", strtotime($filter_year."-".$filter_month."-01")));
+            $period_3 = date("F Y",  strtotime("2 month", strtotime($filter_year."-".$filter_month."-01")));
+            $period_4 = date("F Y",  strtotime("3 month", strtotime($filter_year."-".$filter_month."-01")));
+            $period_5 = date("F Y",  strtotime("4 month", strtotime($filter_year."-".$filter_month."-01")));
+            $period_6 = date("F Y",  strtotime("5 month", strtotime($filter_year."-".$filter_month."-01")));
+
+            $need_1 = date("m/Y",  strtotime("-1 month", strtotime($filter_year."-".$filter_month."-01")));
+            $need_2 = date("m/Y",  strtotime("-2 month", strtotime($filter_year."-".$filter_month."-01")));
+            $need_3 = date("m/Y",  strtotime("-3 month", strtotime($filter_year."-".$filter_month."-01")));
+
+            $this->db->select('a.*, CONCAT(a.p_year, a.p_month) as period, b.number as item_rm_number, b.name as item_rm_name, e.id as supplier_number, e.name as supplier_name, f.leadtime as leadtime2, c.name as product_family, d.class, d.composition, d.safety');
+            $this->db->from('generate_mrp_rubber_part_finals a');
+            $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+            $this->db->join('item_familys c', 'b.item_family_id = c.id');
+            $this->db->join('generate_mrp_rubber_part_abcclass d', 'a.item_rm_id = d.item_rm_id and a.p_month = d.p_month and a.p_year = d.p_year and a.revision = d.revision', 'left');
+            $this->db->join('suppliers e', 'a.supplier_id = e.id','left');
+            $this->db->join('supplier_items f', 'a.supplier_id = f.supplier_id and a.item_rm_id = f.item_rm_id','left');
+            $this->db->join('purchase_orders po', 'a.request_no = po.request_no and a.item_rm_id = po.item_rm_id', 'left');
+            // $this->db->where('a.purchase_order >', 0);
+            if($approved_to != ""){
+                $this->db->where('a.p_month', $filter_month);
+                $this->db->where('a.p_year', $filter_year);
+                $this->db->where('a.revision', $filter_revision);
+                $this->db->where('a.approved_to', $approved_to);
+                $this->db->where('a.approved_by', $approved_by);
+            }else{
+                $this->db->where('a.p_month', $filter_month);
+                $this->db->where('a.p_year', $filter_year);
+                $this->db->where('a.revision', $filter_revision);
+                $this->db->like('b.item_family_id', $filter_product_family);
+                $this->db->like('a.item_rm_id', $filter_part_no);
+            }
+            // $this->db->where('leadtime >', 0);
+            $this->db->group_by('a.item_rm_id');
+            $this->db->group_by('a.supplier_id');
+            $this->db->order_by('c.name', 'asc');//order by product family
+            $this->db->order_by('d.class', 'asc');//order by class A/B/C
+            $this->db->order_by('d.need_amount', 'desc');//order by need amount desc
+            $this->db->order_by('a.total_need', 'desc');
+            $this->db->order_by('b.number', 'asc');
+            // $this->db->limit(10);
+            $records = $this->db->get()->result_array();
+
+            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 200%;font-size: 11px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;} 
+            .box-green{
+                height: 10px;
+                width: 10px;
+                margin: 10px;
+                font-size: 10px;
+                background-color: #D6FFCF;
+            }
+
+            .box-red{
+                height: 10px;
+                width: 10px;
+                margin: 10px;
+                font-size: 10px;
+                background-color: #FFCFCF;
+            }
+            </style>
+            <body>
+                <center>
+                    <div style="float: left; font-size: 12px; text-align: left;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                    <img src="' . $config->logo . '" width="30">
+                                </td>
+                                <td style="font-size: 14px; text-align: left; margin:2px;">
+                                    <b>' . $config->name . '</b><br>
+                                    <small>GENERATE MRP</small><br>
+                                    <small>CUTOFF DATE : '.@$records[0]['cutoff'].'</small>
+                                    <small>GENERATE DATE : '.date('Y-m-d', strtotime($records[0]['created_date'])).'</small>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div style="float: right; font-size: 12px; text-align: right;">
+                        Print Date ' . date("d M Y H:m:s") . ' <br>
+                        Print By ' . $this->session->username . '  
+                    </div>
+                    <br><br><br>
+                </center>
+
+                <table id="customers" border="1">
+                    <tr>
+                        <th rowspan="2" style="text-align:center;" width="20">No</th>
+                        <th rowspan="2" style="text-align:center;">PART NO</th>
+                        <th rowspan="2" style="text-align:center;">PART NAME</th>
+                        <th rowspan="2" style="text-align:center;">PRODUCT FAMILY</th>
+                        <th rowspan="2" style="text-align:center;">SUPPLIER NAME</th>
+                        <th rowspan="2" style="text-align:center;">CLASS<br>A/B/C</th>
+                        <th rowspan="2" style="text-align:center;">LEADTIME</th>
+                        <th rowspan="2" style="text-align:center;">MPQ</th>
+                        <th rowspan="2" style="text-align:center;">MOQ</th>
+                        <th colspan="3" style="text-align:center;">STOCK OF RAW MATERIAL</th>
+
+                        <th colspan="4" style="text-align:center;">ISSUED MATERIAL</th>
+
+                        <th rowspan="2" style="text-align:center;">OS PO</th>
+                        <th rowspan="2" style="text-align:center;">OS<br>Supply</th>
+                        <th rowspan="2" style="text-align:center;">OS<br>WO</th>
+                        <th colspan="2" style="text-align:center;">'.$period_1.'</th>
+                        <th colspan="2" style="text-align:center;">'.$period_2.'</th>
+                        <th colspan="2" style="text-align:center;">'.$period_3.'</th>
+                        <th colspan="2" style="text-align:center;">'.$period_4.'</th>
+                        <th colspan="2" style="text-align:center;">'.$period_5.'</th>
+                        <th colspan="2" style="text-align:center;">'.$period_6.'</th>
+                        <th rowspan="2" style="text-align:center;">ITO</th>
+                        <th rowspan="2" style="text-align:center;">SHARE<br>ORDER</th>
+                        <th rowspan="2" style="text-align:center;">SAFETY<br>STOCK</th>
+                        <th rowspan="2" style="text-align:center;">PLAN<br>ORDER</th>
+                        <th rowspan="2" style="text-align:center;">FIX<br>ORDER</th>
+                        <th rowspan="2" style="text-align:center;">STATUS<br>ORDER</th>
+                        <th rowspan="2" style="text-align:center;">STATUS<br>APPROVE</th>
+                        <th rowspan="2" style="text-align:center;">PR</th>
+                        <th rowspan="2" style="text-align:center;">PO</th>
+                    </tr>
+                    <tr>
+                        <th style="text-align:center;">WHS</th>
+                        <th style="text-align:center;">WIP</th>
+                        <th style="text-align:center;">TOTAL</th>
+
+                        <th style="text-align:center;">USED 1</th>
+                        <th style="text-align:center;">USED 2</th>
+                        <th style="text-align:center;">USED 3</th>
+                        <th style="text-align:center;">AVERAGE</th>
+
+                        <th style="text-align:center;">NEED</th>
+                        <th style="text-align:center;">BAL</th>
+                        <th style="text-align:center;">NEED</th>
+                        <th style="text-align:center;">BAL</th>
+                        <th style="text-align:center;">NEED</th>
+                        <th style="text-align:center;">BAL</th>
+                        <th style="text-align:center;">NEED</th>
+                        <th style="text-align:center;">BAL</th>
+                        <th style="text-align:center;">NEED</th>
+                        <th style="text-align:center;">BAL</th>
+                        <th style="text-align:center;">NEED</th>
+                        <th style="text-align:center;">BAL</th>
+                    </tr>';
+
+                    $no = 1;
+                    foreach ($records as $record) {
+                        if($record['balance_1'] > 0){ $style_1 = ""; }else{ $style_1 = "color:red;"; }
+                        if($record['balance_2'] > 0){ $style_2 = ""; }else{ $style_2 = "color:red;"; }
+                        if($record['balance_3'] > 0){ $style_3 = ""; }else{ $style_3 = "color:red;"; }
+                        if($record['balance_4'] > 0){ $style_4 = ""; }else{ $style_4 = "color:red;"; }
+                        if($record['balance_5'] > 0){ $style_5 = ""; }else{ $style_5 = "color:red;"; }
+                        if($record['balance_6'] > 0){ $style_6 = ""; }else{ $style_6 = "color:red;"; }
+                        if($record['avg_balance'] > 0){ $style_avg = ""; }else{ $style_avg = "color:red;"; }
+                        if($record['purchase_order'] > 0){ $status = "ORDER"; $style_7 = "background:green; color:white;"; }else{ $status = "NOT ORDER"; $style_7 = "background:red; color:white;"; }
+                        if($record['status'] == 0){ $po = "OPEN"; $style_8 = "background:red; color:white;"; }else{ $po = "CREATED"; $style_8 = "background:green; color:white;"; }
+
+                        if(round($record['total_need']) > 0 && $record['moq'] > 0){
+                            $final = ($record['total_need']);
+                            if($final > $record['moq']){
+                                $mrp_result = (ceil($final / $record['mpq']) * $record['mpq']);
+                            }else{
+                                $mrp_result = (ceil($final / $record['moq']) * $record['moq']);
+                            }
+                        }else{
+                            $mrp_result = 0;
+                        }
+
+                        if($record['approved_to'] == "" || $record['approved_to'] == null){
+                            $approved = "APPROVED";
+                            $styleApp = "background:green; color:white;";
+                        }else{
+                            $approved = "CHECKING";
+                            $styleApp = "background:orange; color:white;";
+                        }
+
+                        if(empty($record['request_no'])) { 
+                            $pr_status = "OPEN"; 
+                            $style_pr = "background:red; color:white;"; 
+                        } else { 
+                            $pr_status = "CREATED"; 
+                            $style_pr = "background:green; color:white;"; 
+                        }
+
+                        if(empty($record['po_id'])) { 
+                            $po_status = "OPEN"; 
+                            $style_po = "background:red; color:white;"; 
+                        } else { 
+                            $po_status = "CREATED"; 
+                            $style_po = "background:green; color:white;"; 
+                        }
+
+                        $html .= "  <tr>
+                                        <td>".$no."</td>
+                                        <td style='mso-number-format:\@;'>".trim($record['item_rm_number'])."</td>
+                                        <td style='mso-number-format:\@;'>".$record['item_rm_name']."</td>
+                                        <td>".$record['product_family']."</td>
+                                        <td>".$record['supplier_name']."</td>
+                                        <td>".$record['class']."</td>
+                                        <td>".$record['leadtime']."</td>
+                                        <td>".$record['mpq']."</td>
+                                        <td>".$record['moq']."</td>
+                                        <td style='text-align:right;'>".number_format($record['qty_rm'],2)."</td>
+                                        <td style='text-align:right;'>".number_format($record['qty_wip'],2)."</td>
+                                        <td style='text-align:right;'>".number_format($record['qty_rm'] + $record['qty_wip'],2)."</td>
+                                        <td style='text-align:right;'>".round($record['used_1'])."</td>
+                                        <td style='text-align:right;'>".round($record['used_2'])."</td>
+                                        <td style='text-align:right;'>".round($record['used_3'])."</td>
+                                        <td style='text-align:right;'>".round($record['average'])."</td>
+                                        <td style='text-align:right;'>".round($record['os_po'])."</td>
+                                        <td style='text-align:right;'>".round($record['qty_supply'])."</td>
+                                        <td style='text-align:right;'>".round($record['qty_wo'])."</td>
+                                        <td style='text-align:right;'>".number_format($record['need_1'],2)."</td>
+                                        <td style='text-align:right;$style_1'>".round($record['balance_1'])."</td>
+                                        <td style='text-align:right;'>".number_format($record['need_2'],2)."</td>
+                                        <td style='text-align:right;$style_2'>".round($record['balance_2'])."</td>
+                                        <td style='text-align:right;'>".number_format($record['need_3'],2)."</td>
+                                        <td style='text-align:right;$style_3'>".round($record['balance_3'])."</td>
+                                        <td style='text-align:right;'>".number_format($record['need_4'],2)."</td>
+                                        <td style='text-align:right;$style_4'>".round($record['balance_4'])."</td>
+                                        <td style='text-align:right;'>".number_format($record['need_5'],2)."</td>
+                                        <td style='text-align:right;$style_5'>".round($record['balance_5'])."</td>
+                                        <td style='text-align:right;'>".number_format($record['need_6'],2)."</td>
+                                        <td style='text-align:right;$style_6'>".round($record['balance_6'])."</td>
+                                        <td style='text-align:center;'>".$record['ito']."</td>
+                                        <td style='text-align:center;'>".$record['share_order']."</td>
+                                        <td style='text-align:right;'>".round($record['safety_stock_persen'])."</td>
+                                        <td style='text-align:right;'>".round($record['total_need'])."</td>
+                                        <td style='text-align:right;'>".round($record['purchase_order'])."</td>
+                                        <td style='text-align:right;".$style_7."'>".$status."</td>
+                                        <td style='text-align:right;".$styleApp."'>".$approved."</td>
+                                        <td style='text-align:right;".$style_pr."'>".$pr_status."</td>
+                                        <td style='text-align:right;".$style_po."'>".$po_status."</td>
+                                    </tr>";
+                        $no++;
+                    }
+
+            $html .= '</table></body></html>';
+            echo $html;
+        // }
+    }
+
+    function datatables_forecast_supplier() {
+        $p_month = $this->input->get('p_month') ? $this->input->get('p_month') : '';
+        $p_year = $this->input->get('p_year') ? $this->input->get('p_year') : '';
+        $revision = $this->input->get('revision');
+        $supplier_id = $this->input->get('supplier_id');
+        $product_family = $this->input->get('product_family');
+        $items = $this->input->get('items');
+        $status = $this->input->get('status');
+
+        $period_1 = date("F Y", strtotime($p_year."-".$p_month."-01"));
+        $period_2 = date("F Y",  strtotime("1 month", strtotime($p_year."-".$p_month."-01")));
+        $period_3 = date("F Y",  strtotime("2 month", strtotime($p_year."-".$p_month."-01")));
+        $period_4 = date("F Y",  strtotime("3 month", strtotime($p_year."-".$p_month."-01")));
+
+        // 1. Count Query
+        $this->db->select('count(*) as total');
+        $this->db->from('generate_mrp_rubber_part_finals a');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+        $this->db->join('item_familys c', 'b.item_family_id = c.id');
+        $this->db->join('generate_mrp_rubber_part_abcclass d', 'a.item_rm_id = d.item_rm_id and a.p_month = d.p_month and a.p_year = d.p_year and a.revision = d.revision', 'left');
+        $this->db->join('suppliers e', 'a.supplier_id = e.id','left');
+        $this->db->join('supplier_items f', 'a.supplier_id = f.supplier_id and a.item_rm_id = f.item_rm_id','left');
+
+        $this->db->where('a.p_month', $p_month);
+        $this->db->where('a.p_year', $p_year);
+        
+        if ($revision != "") {
+            $this->db->where('a.revision', $revision);
+        } else {
+            $this->db->where('a.revision >=', 0);
+        }
+
+        if ($supplier_id != "") {
+            $this->db->where('a.supplier_id', $supplier_id);
+        }
+        if ($product_family != "") {
+            $this->db->where('b.item_family_id', $product_family);
+        }
+        if ($items != "") {
+            $this->db->where('a.item_rm_id', $items);
+        }
+        if ($status != "") {
+            if ($status == "open") {
+                $this->db->where("(a.status = 'open' or a.status = 'draft')");
+            } else {
+                $this->db->where("a.status = 'close'");
+            }
+        }
+
+        $total_query = $this->db->get()->row();
+        $total = $total_query ? $total_query->total : 0;
+
+        // 2. Data Query
+        $per_page = $this->input->get_post('rows') ? $this->input->get_post('rows') : 10;
+        $page = $this->input->get_post('page') ? $this->input->get_post('page') : 1;
+        $offset = ($page - 1) * $per_page;
+
+        $this->db->select('a.*, b.number as part_no, b.name as part_name, c.id as product_family_id, c.name as product_family, e.name as supplier_name, d.class as class_abc, f.leadtime, f.moq, f.mpq');
+        $this->db->from('generate_mrp_rubber_part_finals a');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+        $this->db->join('item_familys c', 'b.item_family_id = c.id');
+        $this->db->join('generate_mrp_rubber_part_abcclass d', 'a.item_rm_id = d.item_rm_id and a.p_month = d.p_month and a.p_year = d.p_year and a.revision = d.revision', 'left');
+        $this->db->join('suppliers e', 'a.supplier_id = e.id','left');
+        $this->db->join('supplier_items f', 'a.supplier_id = f.supplier_id and a.item_rm_id = f.item_rm_id','left');
+
+        $this->db->where('a.p_month', $p_month);
+        $this->db->where('a.p_year', $p_year);
+        
+        if ($revision != "") {
+            $this->db->where('a.revision', $revision);
+        } else {
+            $this->db->where('a.revision >=', 0);
+        }
+
+        if ($supplier_id != "") {
+            $this->db->where('a.supplier_id', $supplier_id);
+        }
+        if ($product_family != "") {
+            $this->db->where('b.item_family_id', $product_family);
+        }
+        if ($items != "") {
+            $this->db->where('a.item_rm_id', $items);
+        }
+        if ($status != "") {
+            if ($status == "open") {
+                $this->db->where("(a.status = 'open' or a.status = 'draft')");
+            } else {
+                $this->db->where("a.status = 'close'");
+            }
+        }
+        
+        $this->db->group_by('a.item_rm_id');
+        $this->db->group_by('a.supplier_id');
+        $this->db->order_by('c.name', 'asc');
+        $this->db->order_by('d.class', 'asc');
+        $this->db->order_by('d.need_amount', 'desc');
+        $this->db->order_by('a.total_need', 'desc');
+        $this->db->order_by('b.number', 'asc');
+        // $this->db->limit($per_page, $offset);
+        $query = $this->db->get()->result_array();
+
+        $result = array(
+            'total' => $total,
+            'rows' => array(),
+            'period_1' => $period_2,
+            'period_2' => $period_3,
+            'period_3' => $period_4
+        );
+
+        $no = $offset + 1;
+        foreach ($query as $record) {//belum fix
+            $row = array(
+                'no' => $no++,
+                'item_rm_id' => isset($record['item_rm_id']) ? $record['item_rm_id'] : '',
+                'part_no' => isset($record['part_no']) ? $record['part_no'] : '',
+                'part_name' => isset($record['part_name']) ? $record['part_name'] : '',
+                'product_family_id' => isset($record['product_family_id']) ? $record['product_family_id'] : '',
+                'product_family' => isset($record['product_family']) ? $record['product_family'] : '',
+                'supplier_id' => isset($record['supplier_id']) ? $record['supplier_id'] : '',
+                'supplier_name' => isset($record['supplier_name']) ? $record['supplier_name'] : '',
+                'class_abc' => isset($record['class_abc']) ? $record['class_abc'] : '',
+                'leadtime' => isset($record['leadtime']) ? $record['leadtime'] : 0,
+                'mpq' => isset($record['moq']) ? $record['moq'] : 0,
+                'moq' => isset($record['mpq']) ? $record['mpq'] : 0,
+                'month_1' => $period_2,
+                'month_2' => $period_3,
+                'month_3' => $period_4,
+                'used_1' => isset($record['used_1']) ? $record['used_1'] : 0,
+                'used_2' => isset($record['used_2']) ? $record['used_2'] : 0,
+                'used_3' => isset($record['used_3']) ? $record['used_3'] : 0,
+                'average' => isset($record['average']) ? $record['average'] : 0,
+                'os_po' => isset($record['os_po']) ? $record['os_po'] : 0,
+                'need_1' => isset($record['need_2']) ? $record['need_2'] : 0, //lompat next month
+                'balance_1' => isset($record['balance_2']) ? $record['balance_2'] : 0, //lompat next month
+                'need_2' => isset($record['need_3']) ? $record['need_3'] : 0, //lompat next month
+                'balance_2' => isset($record['balance_3']) ? $record['balance_3'] : 0, //lompat next month
+                'need_3' => isset($record['need_4']) ? $record['need_4'] : 0, //lompat next month
+                'balance_3' => isset($record['balance_4']) ? $record['balance_4'] : 0, //lompat next month
+                'approved_by' => (empty($record['approved_by'])) ? 'Approved' : 'Checking',
+                'approved_date' => isset($record['approved_date']) ? $record['approved_date'] : '',
+                'created_by' => isset($record['created_by']) ? $record['created_by'] : '',
+                'created_date' => isset($record['created_date']) ? $record['created_date'] : ''
+            );
+
+            $result['rows'][] = $row;
+        }
+
+        echo json_encode($result);
+    }
+}
+
+

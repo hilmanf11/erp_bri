@@ -79,6 +79,7 @@
         <?= $button ?>
 
         <!-- <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a> -->
+        <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="update_price()"><i class="fa fa-money"></i> Update Price SB & TF</a>
 
     </div>
 </div>
@@ -161,6 +162,56 @@
 
 <!-- PDF -->
 <iframe id="printout" src="<?= base_url('master/setting_subconts/print') ?>" style="width: 100%;" hidden></iframe>
+
+<div id="dlg_update_price" class="easyui-dialog" title="Update Price SB & TF" data-options="closed: true,modal:true" style="width: 1000px; height: 500px; padding:10px; top: 20px;">
+    <table id="dg_update_price" class="easyui-datagrid" style="width:100%; height:100%;" 
+           toolbar="#tb_update_price" 
+           data-options="singleSelect:true, rownumbers:true">
+        <thead>
+            <tr>
+                <th data-options="field:'item_fg_id', width:350, 
+                    formatter:function(value,row){ 
+                        return row.item_fg_name ? row.item_fg_name : value; 
+                    },
+                    editor:{
+                        type:'combogrid',
+                        options:{
+                            idField:'id',
+                            textField:'number',
+                            url:'<?= base_url('master/setting_subconts/get_master_items') ?>', 
+                            mode:'remote',
+                            panelWidth:800,
+                            columns:[[
+                                {field:'number',title:'Product No',width:150},
+                                {field:'name',title:'Product Name',width:250},
+                                {field:'vendor_names',title:'Used By (SB/TF)',width:400}
+                            ]],
+                            required:true,
+                            onSelect: function(index, record){
+                            }
+                        }
+                    }">Product No</th>
+                
+                <th data-options="field:'price', width:150, align:'right', editor:{type:'numberbox',options:{precision:2, required:true}}">New Price</th>
+                <th data-options="field:'valid_date', width:150, editor:{type:'datebox', options:{required:true, formatter:myformatter, parser:myparser}}">Valid Date Until</th>
+            </tr>
+        </thead>
+    </table>
+
+    <div id="tb_update_price" style="height:auto; padding:5px;">
+        <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="appendPriceRow()">
+            <i class="fa fa-plus" style="color: #28a745;"></i> Add
+        </a>
+        <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removePriceRow()">
+            <i class="fa fa-trash" style="color: #dc3545;"></i> Remove
+        </a>
+        <span style="float:right;">
+            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="saveGlobalPrice()">
+                <i class="fa fa-save" style="color: #007bff;"></i> Save All
+            </a>
+        </span>
+    </div>
+</div>
 
 <script>
 
@@ -737,7 +788,13 @@
                             title: 'Valid Date Until',
                             halign: 'center',
                             width: 200
-                        }, 
+                        // }, {
+                        //     field: 'btn',
+                        //     title: 'History',
+                        //     halign: 'center',
+                        //     width: 80,
+                        //     formatter: btnHistories
+                        }
                         
                         // {
                         //     field: 'capacity',
@@ -1306,5 +1363,104 @@
             }
         }]
     });
+
+    var editIndexPrice = undefined;
+
+    function update_price() {
+        $('#dg_update_price').datagrid('loadData', {"total":0,"rows":[]});
+        editIndexPrice = undefined;
+        $('#dlg_update_price').dialog('open').dialog('center');
+    }
+
+    function endEditingPrice(){
+        if (editIndexPrice === undefined){ return true; }
+        if ($('#dg_update_price').datagrid('validateRow', editIndexPrice)){
+            var ed = $('#dg_update_price').datagrid('getEditor', {index:editIndexPrice, field:'item_fg_id'});
+            var itemName = $(ed.target).combogrid('getText');
+            $('#dg_update_price').datagrid('getRows')[editIndexPrice]['item_fg_name'] = itemName;
+            
+            $('#dg_update_price').datagrid('endEdit', editIndexPrice);
+            editIndexPrice = undefined;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function appendPriceRow(){
+        if (endEditingPrice()){
+            $('#dg_update_price').datagrid('appendRow',{});
+            editIndexPrice = $('#dg_update_price').datagrid('getRows').length - 1;
+            $('#dg_update_price').datagrid('selectRow', editIndexPrice)
+                                .datagrid('beginEdit', editIndexPrice);
+        }
+    }
+
+    function removePriceRow(){
+        if (editIndexPrice == undefined){ return; }
+        $('#dg_update_price').datagrid('cancelEdit', editIndexPrice)
+                            .datagrid('deleteRow', editIndexPrice);
+        editIndexPrice = undefined;
+    }
+
+    $('#dg_update_price').datagrid({
+        onClickCell: function(index, field){
+            if (editIndexPrice !== index){
+                if (endEditingPrice()){
+                    $('#dg_update_price').datagrid('selectRow', index)
+                                        .datagrid('beginEdit', index);
+                    editIndexPrice = index;
+                } else {
+                    $('#dg_update_price').datagrid('selectRow', editIndexPrice);
+                }
+            }
+        }
+    });
+
+    function saveGlobalPrice() {
+        if (!endEditingPrice()) {
+            toastr.warning("Harap lengkapi baris yang sedang diedit.");
+            return;
+        }
+        
+        var rows = $('#dg_update_price').datagrid('getRows'); 
+        if (rows.length === 0) {
+            toastr.info("Tidak ada data untuk disimpan.");
+            return;
+        }
+
+        $.ajax({
+            url: '<?= base_url("master/setting_subconts/update_price_global") ?>',
+            type: 'POST',
+            dataType: 'json',
+            data: { data_update: JSON.stringify(rows) },
+            success: function(res) {
+                if (res.theme === 'success') {
+                    toastr.success(res.message);
+                    $('#dlg_update_price').dialog('close');
+                    $('#dg').datagrid('reload');
+                } else {
+                    toastr.error(res.message);
+                }
+            },
+            error: function() {
+                toastr.error('Terjadi kesalahan pada server.');
+            }
+        });
+    }
+
+    // function btnHistories(val, row) {
+    //     var history = "viewHistories('" + row.supplier_id + "','" + row.item_fg_id + "')";
+    //     return '<a class="btn btn-primary w-100" onClick="' + history + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+    // }
+
+    // function viewHistories(supplier_id, item_fg_id) {
+    //     $("#dlg_history").dialog('open');
+    //     $('#dg_history').datagrid({
+    //         url: '<?= base_url('master/setting_subconts/datatableHistories?supplier_id=') ?>' + btoa(supplier_id) + "&item_fg_id=" + btoa(item_fg_id),
+    //         pagination: false,
+    //         rownumbers: true,
+    //     });
+    // }
 
 </script>

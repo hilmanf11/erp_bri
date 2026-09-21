@@ -36,6 +36,88 @@ class Setting_subconts extends CI_Controller
         echo json_encode($send);
     }
 
+    public function update_price_global()
+    {
+        if ($this->input->post()) {
+            $data_update = json_decode($this->input->post('data_update'), true);
+
+            if (empty($data_update)) {
+                echo json_encode(["theme" => "error", "message" => "Data kosong atau tidak valid."]);
+                return;
+            }
+
+            $this->db->trans_start();
+
+            foreach ($data_update as $row) {
+                if (empty($row['item_fg_id']) || !isset($row['price']) || empty($row['valid_date'])) {
+                    continue;
+                }
+
+                $raw_date = str_replace('/', '-', $row['valid_date']); 
+                $safe_valid_date = date('Y-m-d', strtotime($raw_date));
+
+                $update_payload = array(
+                    'price'      => (float)$row['price'],
+                    'valid_date' => $safe_valid_date
+                );
+
+                $this->db->where('item_fg_id', $row['item_fg_id']);
+                $this->db->update('setting_subconts', $update_payload);
+            }
+
+            $this->db->trans_complete();
+
+            if ($this->db->trans_status() === FALSE) {
+                echo json_encode(["theme" => "error", "message" => "Gagal menyimpan pembaruan harga."]);
+            } else {
+                echo json_encode(["theme" => "success", "message" => "Harga item berhasil diperbarui untuk semua Subcont & TF."]);
+            }
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+
+    public function get_master_items()
+    {
+        $q = $this->input->post('q');
+        
+        $page = $this->input->post('page') ? intval($this->input->post('page')) : 1;
+        $rows = $this->input->post('rows') ? intval($this->input->post('rows')) : 50;
+        $offset = ($page - 1) * $rows;
+
+        $this->db->select('
+            a.item_fg_id as id, 
+            i.number, 
+            i.name,
+            GROUP_CONCAT(DISTINCT COALESCE(b.name, c.name) SEPARATOR ", ") as vendor_names
+        ');
+        $this->db->from('setting_subconts a');
+        $this->db->join('item_fg i', 'a.item_fg_id = i.id', 'left');
+        $this->db->join('subconts b', 'a.subcont_id = b.id', 'left');
+        $this->db->join('teaching_factory c', 'a.teaching_factory_id = c.id', 'left');
+        
+        if (!empty($q)) {
+            $this->db->group_start();
+            $this->db->like('i.number', $q);
+            $this->db->or_like('i.name', $q);
+            $this->db->group_end();
+        }
+
+        $this->db->group_by(['a.item_fg_id', 'i.number', 'i.name']);
+
+        $total_query = clone $this->db;
+        $total = $total_query->get()->num_rows();
+
+        $this->db->order_by('i.number', 'ASC');
+        $this->db->limit($rows, $offset);
+        $records = $this->db->get()->result_array();
+
+        echo json_encode([
+            'total' => $total,
+            'rows'  => $records
+        ]);
+    }
+
     //GET DATATABLES
     public function datatables()
     {

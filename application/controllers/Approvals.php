@@ -558,8 +558,9 @@ class Approvals extends CI_Controller
 
         $po_subcont_productions = $this->crud->reads('po_subcont_productions', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
         $finishing_invoices = $this->crud->reads('finishing_invoices', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
+        $generate_finishing_invoices = $this->crud->reads('generate_finishing_invoices', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
 
-        $totalRows = (count($users) + count($purchase_orders) + count($suppliers) + count($supplier_items) + count($purchase_requests) + count($delivery_notes) + count($delivery_to_subconts) + count($delivery_rework) + count($po_subcont_productions) + count($finishing_invoices)); //+ count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) 
+        $totalRows = (count($users) + count($purchase_orders) + count($suppliers) + count($supplier_items) + count($purchase_requests) + count($delivery_notes) + count($delivery_to_subconts) + count($delivery_rework) + count($po_subcont_productions) + count($finishing_invoices) + count($generate_finishing_invoices)); //+ count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) 
         if ($totalRows > 0) {
             echo '<span class="badge">' . $totalRows . '</span>';
         } else {
@@ -589,6 +590,7 @@ class Approvals extends CI_Controller
 
         $po_subcont_productions = $this->crud->reads('po_subcont_productions', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
         $finishing_invoices = $this->crud->reads('finishing_invoices', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
+        $generate_finishing_invoices = $this->crud->reads('generate_finishing_invoices', [], ["approved_to" => $this->session->username,"deleted"=>0], "", "", "", ["approved_to", "approved_by"]);
 
         foreach ($users as $user) {
             $this->approvalMessage($user->approved_by, $user->approved_to, "users");
@@ -643,6 +645,9 @@ class Approvals extends CI_Controller
         }
         foreach ($finishing_invoices as $finishing_invoice) {
             $this->approvalMessage($finishing_invoice->approved_by, $finishing_invoice->approved_to, "finishing_invoices");
+        }
+        foreach ($generate_finishing_invoices as $generate_finishing_invoice) {
+            $this->approvalMessage($generate_finishing_invoice->approved_by, $generate_finishing_invoice->approved_to, "generate_finishing_invoices");
         }
     }
 
@@ -825,6 +830,18 @@ class Approvals extends CI_Controller
             $data['table'] = "finishing_invoices";
             $this->load->view('template/header', $data);
             $this->load->view('approval/finishing_invoices');
+        }
+    }
+
+    public function generate_finishing_invoices($approved_to, $approved_by){
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['approved_to'] = base64_decode($approved_to);
+            $data['approved_by'] = base64_decode($approved_by);
+            $data['table'] = "generate_finishing_invoices";
+            $this->load->view('template/header', $data);
+            $this->load->view('approval/generate_finishing_invoices');
         }
     }
 
@@ -1150,6 +1167,44 @@ class Approvals extends CI_Controller
         }
 
         // Kembalikan langsung sebagai Array murni (karena pagination: false)
+        die(json_encode($arr));
+    }
+
+    public function approvalGenerateFinishingInvoices($approved_to, $approved_by)
+    {
+        $approved_to = base64_decode($approved_to);
+        $approved_by = base64_decode($approved_by);
+
+        $this->db->select('a.*, COALESCE(tf.name, sc.name) as vendor_name');
+        $this->db->from('generate_finishing_invoices a');
+        $this->db->join('teaching_factory tf', 'a.subcont = tf.id', 'left');
+        $this->db->join('subconts sc', 'a.subcont = sc.id', 'left');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.approved_by', $approved_by);
+        $this->db->where('a.deleted', 0);
+        $this->db->order_by('a.created_date', 'DESC');
+        
+        $records = $this->db->get()->result_array();
+
+        // Format mata uang agar rapi di tabel Approval
+        $arr = [];
+        foreach ($records as $record) {
+            $arr[] = array(
+                "id"                   => $record['id'], 
+                "finishing_invoice_no" => $record['finishing_invoice_no'],
+                "p_month"              => $record['p_month'],
+                "p_year"               => $record['p_year'],
+                "cutoff_from"          => date('Y-m-d', strtotime($record['cutoff_from'])),
+                "cutoff_to"            => date('Y-m-d', strtotime($record['cutoff_to'])),
+                "vendor_name"          => $record['vendor_name'],
+                "total"                => "Rp " . number_format($record['total'], 0, ',', '.'),
+                "biaya_fee"            => "Rp " . number_format($record['biaya_fee'], 0, ',', '.'),
+                "grand_total"          => "Rp " . number_format($record['grand_total'], 0, ',', '.'),
+                "created_by"           => $record['created_by'],
+                "created_date"         => date('Y-m-d', strtotime($record['created_date'])),
+            );
+        }
+
         die(json_encode($arr));
     }
 
