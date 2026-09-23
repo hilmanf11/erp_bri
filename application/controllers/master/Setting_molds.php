@@ -774,8 +774,8 @@ class Setting_molds extends CI_Controller
                          <td>' . $data['mold_model'] . '</td>
                          <td>' . (int)$data['mold_actual'] . '</td>
                          <td>' . $data['mold_standard'] . '</td>
-                         <td>' . $data['cycle_time'] . '</td>
-                         <td>' . $data['target_shoot_hour'] . '</td>
+                         <td>' . number_format($data['cycle_time'], 0, ',', '.') . '</td>
+                         <td>' . number_format((float)$data['target_shoot_hour'], 2, ',', '.') . '</td>
                          <td>' . $data['lot_size'] . '</td>
                          <td>' . $data['efficiency'] . '</td>
                          <td>' . $data['priority'] . '</td>

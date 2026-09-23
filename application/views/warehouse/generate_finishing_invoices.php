@@ -309,14 +309,14 @@
                     columns: [[
                         {field: 'item_number', title: 'PART NUMBER', width: 150, halign: 'center'},
                         {field: 'item_name', title: 'PART NAME', width: 250, halign: 'center'},
-                        {field: 'price', title: 'PRICE (Rp)', width: 100, halign: 'center', align: 'right', formatter: formatRupiah},
+                        {field: 'price', title: 'PRICE (Rp)', width: 100, halign: 'center', align: 'right', formatter: formatUangDecimal},
                         {field: 'qty', title: 'QTY', width: 80, halign: 'center', align: 'right', formatter: formatRupiah},
-                        {field: 'price_fg', title: 'FG (Rp)', width: 120, halign: 'center', align: 'right', formatter: formatRupiah},
+                        {field: 'price_fg', title: 'FG (Rp)', width: 120, halign: 'center', align: 'right', formatter: formatUangDecimal},
                         {field: 'qty_1', title: 'QTY NG', width: 90, halign: 'center', align: 'right', formatter: formatRupiah},
-                        {field: 'price_defect', title: 'NG (Rp)', width: 120, halign: 'center', align: 'right', formatter: formatRupiah},
+                        {field: 'price_defect', title: 'NG (Rp)', width: 120, halign: 'center', align: 'right', formatter: formatUangDecimal},
                         {field: 'qty_rework', title: 'QTY REWORK', width: 90, halign: 'center', align: 'right', formatter: formatRupiah},
-                        {field: 'price_rework', title: 'REWORK (Rp)', width: 120, halign: 'center', align: 'right', formatter: formatRupiah},
-                        {field: 'sub_total', title: 'TOTAL INCOME', width: 130, halign: 'center', align: 'right', formatter: formatRupiah}
+                        {field: 'price_rework', title: 'REWORK (Rp)', width: 120, halign: 'center', align: 'right', formatter: formatUangDecimal},
+                        {field: 'sub_total', title: 'TOTAL INCOME', width: 130, halign: 'center', align: 'right', formatter: formatUangDecimal}
                     ]],
                     onResize: function() {
                         $('#dg').datagrid('fixDetailRowHeight', index);
@@ -536,10 +536,23 @@
         if (isNaN(num)) {
             return value;
         }
-
         return num.toLocaleString('id-ID', {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0
+        });
+    }
+
+    function formatUangDecimal(value, row, index) {
+        if (value === null || value === undefined || value === '') {
+            return '0,00';
+        }
+        var num = parseFloat(value);
+        if (isNaN(num)) {
+            return value;
+        }
+        return num.toLocaleString('id-ID', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         });
     }
 

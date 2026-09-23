@@ -548,12 +548,12 @@ class Production_capacities extends CI_Controller
                     <td>' . $data['item_fg_name'] . '</td>
                     <td>' . $data['mold_id'] . '</td>
                     <td>' . $data['machine_number'] . '</td>
-                    <td>' . $data['cycle_time'] . '</td>
+                    <td>' . number_format($data['cycle_time'], 0) . '</td>
                     <td>' . $data['productcivity'] . '</td>
-                    <td>' . $data['cavity_actual'] . '</td>
-                    <td>' . $data['capacity_hour'] . '</td>
-                    <td>' . $data['capacity_shift'] . '</td>
-                    <td>' . $data['capacity_day'] . '</td>
+                    <td>' . number_format($data['cavity_actual'], 0) . '</td>
+                    <td>' . number_format($data['capacity_hour'], 0) . '</td>
+                    <td>' . number_format($data['capacity_shift'], 0) . '</td>
+                    <td>' . number_format($data['capacity_day'], 0) . '</td>
                     <td>' . $data['remarks'] . '</td>';
             $no++;
         }
