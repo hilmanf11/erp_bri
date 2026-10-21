@@ -90,7 +90,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Bank Account No</span>
-                <input style="width:60%;" name="bank_account_no" id="bank_account_no" class="easyui-numberbox">
+                <input style="width:60%;" name="bank_account_no" id="bank_account_no" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Bank Account Holder</span>
