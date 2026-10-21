@@ -41,6 +41,7 @@
             <th rowspan="2" data-options="field:'website',width:150,halign:'center',sortable:true">Website</th> -->
 
             <th rowspan="2" data-options="field:'status',width:150,halign:'center', styler:cellStyler, formatter:cellFormatter,sortable:true">Status</th>
+            <th rowspan="2" data-options="field:'is_vcp',width:100,halign:'center',align:'center', styler:cellStylerVcp, formatter:cellFormatterVcp,sortable:true">VCP</th>
 
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -60,78 +61,75 @@
     <!-- <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a> -->
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 600px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 850px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">TF ID</span>
-                <input style="width:30%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+            <div style="float:left; width:50%;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">TF ID</span>
+                    <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">TF Name</span>
+                    <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">TF Code</span>
+                    <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Type</span>
+                    <input style="width:60%;" name="subcont_type_id" id="subcont_type_id" required="" class="easyui-combobox" data-options="panelHeight:'auto',editable:false">
+                </div>
+                <div class="fitem" id="fee_container">
+                    <span style="width:35%; display:inline-block;">Fee %</span>
+                    <input style="width:60%;" name="fee" id="fee" class="easyui-numberbox" data-options="min:0,precision:0,groupSeparator:'.'" required>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Area</span>
+                    <input style="width:60%;" name="delivery_area_id" id="delivery_area_id" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status</span>
+                    <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox" data-options="panelHeight:'auto',editable:false">
+                        <option value="0">Active</option>
+                        <option value="1">Not Active</option>
+                    </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">VCP Process</span>
+                    <select style="width:60%;" name="is_vcp" id="is_vcp" required="" panelHeight="auto" class="easyui-combobox" data-options="panelHeight:'auto',editable:false">
+                        <option value="0">No (Non-VCP)</option>
+                        <option value="1">Yes (VCP)</option>
+                    </select>
+                </div>
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">TF Name</span>
-                <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">TF Code</span>
-                <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Type</span>
-                <input style="width:60%;" name="subcont_type_id" id="subcont_type_id" required="" class="easyui-combobox" data-options="panelHeight:'auto',editable:false">
-            </div>
-            <div class="fitem" id="fee_container">
-                <span style="width:35%; display:inline-block;">Fee %</span>
-                <input style="width:60%;" name="fee" id="fee" class="easyui-numberbox" data-options="min:0,precision:0,groupSeparator:'.'" required>
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Bank Account Name</span>
-                <input style="width:60%;" name="bank_account_name" id="bank_account_name" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Bank Account No</span>
-                <input style="width:60%;" name="bank_account_no" id="bank_account_no" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Bank Account Holder</span>
-                <input style="width:60%;" name="bank_account_holder" id="bank_account_holder" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Address</span>
-                <input style="width:60%;" name="address" id="address" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Area</span>
-                <input style="width:60%;" name="delivery_area_id" id="delivery_area_id" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Contact Person</span>
-                <input style="width:60%;" name="contact_person" id="contact_person" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Telepon</span>
-                <input style="width:60%;" name="telp" id="telp" class="easyui-textbox">
-            </div>
-
-            <!-- <div class="fitem">
-                <span style="width:35%; display:inline-block;">Fax</span>
-                <input style="width:60%;" name="fax" id="fax" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Email</span>
-                <input style="width:60%;" name="email" id="email" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Website</span>
-                <input style="width:60%;" name="website" id="website" class="easyui-textbox">
-            </div> -->
-
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Status</span>
-                <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox" data-options="panelHeight:'auto',editable:false">
-                    <option value="0">Active</option>
-                    <option value="1">Not Active</option>
-                </select>
+            <div style="float:left; width:50%;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Bank Account Name</span>
+                    <input style="width:60%;" name="bank_account_name" id="bank_account_name" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Bank Account No</span>
+                    <input style="width:60%;" name="bank_account_no" id="bank_account_no" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Bank Account Holder</span>
+                    <input style="width:60%;" name="bank_account_holder" id="bank_account_holder" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Address</span>
+                    <input style="width:60%;" name="address" id="address" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Contact Person</span>
+                    <input style="width:60%;" name="contact_person" id="contact_person" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Telepon</span>
+                    <input style="width:60%;" name="telp" id="telp" class="easyui-textbox">
+                </div>
             </div>
         </fieldset>
     </form>
@@ -167,6 +165,7 @@
         $('#frm_insert').form('clear');
 
         $('#status').combobox('setValue', '0');
+        $('#is_vcp').combobox('setValue', '0');
         $('#fee_container').hide();
         $('#fee').numberbox({ required: false });
 
@@ -335,6 +334,23 @@
             return 'Active';
         } else {
             return 'Not Active';
+        }
+    };
+
+    //CELLSTYLE VCP
+    function cellStylerVcp(value, row, index) {
+        if (value == 1) {
+            return 'background: #28a745; color:white; font-weight:bold;';
+        } else {
+            return 'background: #6c757d; color:white;';
+        }
+    }
+    //FORMATTER VCP
+    function cellFormatterVcp(value) {
+        if (value == 1) {
+            return 'VCP';
+        } else {
+            return 'Non-VCP';
         }
     };
 
